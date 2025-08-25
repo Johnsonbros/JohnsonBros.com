@@ -90,37 +90,39 @@ export default function Header({ onBookService }: HeaderProps) {
 
       {/* Main Header */}
       <header className="bg-johnson-blue shadow-lg sticky top-0 z-50 border-t-2 border-johnson-blue">
-        <div className="container mx-auto px-4 py-3">
-          {/* Mobile Layout */}
-          <div className="lg:hidden">
-            {/* Logo - Full Width on Mobile */}
-            <div className="flex justify-center mb-3">
-              <img 
-                src="/JB_logo_New_1756136293648.png" 
-                alt="Johnson Bros. Plumbing & Drain Cleaning" 
-                className="h-20 w-full max-w-[350px] object-contain"
-                data-testid="company-logo"
-              />
-            </div>
-            
-            {/* Mobile Buttons Underneath Logo */}
-            <div className="flex gap-2">
-              <Button 
-                onClick={onBookService}
-                className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg font-bold transition-all duration-300 transform hover:scale-105 shadow-lg text-base touch-target"
-                data-testid="header-book-service-button"
-              >
-                BOOK SERVICE
-              </Button>
-              <a 
-                href="tel:6174799911" 
-                className="flex-1 bg-gradient-to-r from-johnson-orange to-orange-500 hover:from-orange-500 hover:to-johnson-orange text-white py-3 rounded-lg font-bold transition-all duration-300 transform hover:scale-105 shadow-lg text-base touch-target text-center"
-                data-testid="mobile-call-button"
-              >
-                TAP HERE TO CALL
-              </a>
-            </div>
+        {/* Mobile Layout - Full Width */}
+        <div className="lg:hidden px-2 py-2">
+          {/* Logo - Full Width on Mobile */}
+          <div className="flex justify-center mb-2">
+            <img 
+              src="/JB_logo_New_1756136293648.png" 
+              alt="Johnson Bros. Plumbing & Drain Cleaning" 
+              className="h-24 w-full max-w-[400px] object-contain"
+              data-testid="company-logo"
+            />
           </div>
+          
+          {/* Mobile Buttons Underneath Logo - Full Width */}
+          <div className="flex gap-1">
+            <Button 
+              onClick={onBookService}
+              className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2.5 rounded-md font-bold transition-all duration-300 shadow-lg text-sm touch-target"
+              data-testid="header-book-service-button"
+            >
+              BOOK SERVICE
+            </Button>
+            <a 
+              href="tel:6174799911" 
+              className="flex-1 bg-gradient-to-r from-johnson-orange to-orange-500 hover:from-orange-500 hover:to-johnson-orange text-white py-2.5 rounded-md font-bold transition-all duration-300 shadow-lg text-sm touch-target text-center flex items-center justify-center"
+              data-testid="mobile-call-button"
+            >
+              TAP HERE TO CALL
+            </a>
+          </div>
+        </div>
+
+        {/* Desktop Layout */}
+        <div className="container mx-auto px-4 py-3">
 
           {/* Desktop Layout */}
           <div className="hidden lg:flex justify-between items-center">
@@ -129,7 +131,7 @@ export default function Header({ onBookService }: HeaderProps) {
               <img 
                 src="/JB_logo_New_1756136293648.png" 
                 alt="Johnson Bros. Plumbing & Drain Cleaning" 
-                className="h-16 w-auto"
+                className="h-18 w-auto"
                 data-testid="company-logo-desktop"
               />
             </div>
