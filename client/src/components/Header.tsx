@@ -39,68 +39,58 @@ export default function Header({ onBookService }: HeaderProps) {
 
   return (
     <>
-      {/* Dynamic Business Hours Banner */}
-      <div className={`py-4 px-4 text-white relative overflow-hidden ${
+      {/* Dynamic Business Hours Banner - Integrated Design */}
+      <div className={`relative overflow-hidden transition-all duration-500 ${
         isBusinessHours 
-          ? 'bg-gradient-to-r from-green-600 to-green-700' 
-          : 'bg-gradient-to-r from-red-600 to-red-700'
-      }`}>
-        {/* Animated background pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent animate-shimmer"></div>
-        </div>
+          ? 'bg-gradient-to-r from-johnson-blue/95 to-blue-700/95' 
+          : 'bg-gradient-to-r from-red-600/95 to-red-700/95'
+      }`}
+        style={{
+          backgroundImage: 'url(/banner-bg.png)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundBlendMode: 'overlay'
+        }}
+      >
+        {/* Subtle animated overlay */}
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer"></div>
         
-        <div className="container mx-auto flex flex-col sm:flex-row justify-center sm:justify-between items-center gap-3 relative z-10">
-          <div className="flex items-center gap-3">
-            {isBusinessHours ? (
-              <>
-                <PhoneCall className="h-6 w-6 animate-pulse" />
-                <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
-                  <span className="font-bold text-base sm:text-lg uppercase tracking-wide">
-                    Owner Available Now!
-                  </span>
-                  <span className="text-sm sm:text-base opacity-95">
-                    Speak directly with the business owner
-                  </span>
-                </div>
-              </>
-            ) : (
-              <>
-                <AlertCircle className="h-6 w-6 animate-pulse" />
-                <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
-                  <span className="font-bold text-base sm:text-lg uppercase tracking-wide">
-                    24/7 Emergency Service
-                  </span>
-                  <span className="text-sm sm:text-base opacity-95">
-                    Immediate response for urgent repairs
-                  </span>
-                </div>
-              </>
-            )}
+        <div className="container mx-auto py-3 px-4 relative z-10">
+          <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-between gap-2">
+            {/* Message Section */}
+            <div className="flex items-center gap-2 text-white">
+              <PhoneCall className={`h-5 w-5 ${isBusinessHours ? 'animate-pulse' : 'animate-pulse-slow'}`} />
+              <div className="text-center sm:text-left">
+                <p className="text-sm sm:text-base font-semibold">
+                  {isBusinessHours 
+                    ? '🔧 Real Plumbers Answer • No Call Centers'
+                    : '🚨 24/7 Emergency • Real Plumbers On-Call'
+                  }
+                </p>
+              </div>
+            </div>
+            
+            {/* Call Button */}
+            <a 
+              href="tel:6174799911" 
+              className={`group flex items-center gap-2 px-5 py-2.5 rounded-full font-semibold transition-all transform hover:scale-105 shadow-md touch-target ${
+                isBusinessHours
+                  ? 'bg-white/95 text-johnson-blue hover:bg-johnson-orange hover:text-white'
+                  : 'bg-johnson-orange text-white hover:bg-orange-500 animate-pulse-slow'
+              }`}
+              data-testid="call-now-button"
+            >
+              <Phone className="h-4 w-4 group-hover:rotate-12 transition-transform" />
+              <span className="text-sm sm:text-base">
+                Click to Call
+              </span>
+            </a>
           </div>
-          
-          <a 
-            href="tel:6174799911" 
-            className={`group flex items-center gap-2 px-6 py-3 rounded-full font-bold transition-all transform hover:scale-105 shadow-lg animate-attention touch-target ${
-              isBusinessHours
-                ? 'bg-white text-green-700 hover:bg-yellow-400 hover:text-green-800'
-                : 'bg-yellow-400 text-red-900 hover:bg-yellow-300 animate-pulse-slow'
-            }`}
-            data-testid="call-now-button"
-          >
-            <Phone className="h-5 w-5 group-hover:animate-bounce" />
-            <span className="text-sm sm:text-base">
-              {isBusinessHours 
-                ? 'CALL NOW - DIRECT LINE' 
-                : 'EMERGENCY? CALL NOW'
-              }
-            </span>
-          </a>
         </div>
       </div>
 
       {/* Main Header */}
-      <header className="bg-johnson-blue shadow-lg sticky top-0 z-50">
+      <header className="bg-johnson-blue shadow-lg sticky top-0 z-50 border-t-2 border-johnson-blue">
         <div className="container mx-auto px-4 py-3">
           <div className="flex justify-between items-center">
             {/* Logo */}

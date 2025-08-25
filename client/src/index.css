@@ -87,6 +87,22 @@
   animation: pulse-slow 3s ease-in-out infinite;
 }
 
+/* Banner Integration Styles */
+.banner-integrated {
+  backdrop-filter: blur(2px);
+  position: relative;
+}
+
+.banner-integrated::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+}
+
 .line-clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;
