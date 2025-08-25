@@ -1,4 +1,4 @@
-import { Clock, Shield, DollarSign, Calendar, Phone } from "lucide-react";
+import { Clock, Shield, DollarSign, Calendar, Phone, Star, Award, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface HeroSectionProps {
@@ -9,6 +9,36 @@ export default function HeroSection({ onBookService }: HeroSectionProps) {
   return (
     <section className="bg-gradient-to-br from-johnson-blue to-johnson-teal text-white py-12 sm:py-16 lg:py-20">
       <div className="container mx-auto px-4">
+        {/* Trust Indicators Card - First thing in body */}
+        <div className="bg-white/10 backdrop-blur rounded-xl p-4 mb-8 border border-white/20 shadow-xl">
+          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8">
+            {/* Rating */}
+            <div className="flex items-center gap-2">
+              <div className="flex text-yellow-400">
+                <Star className="h-5 w-5 fill-current" />
+                <Star className="h-5 w-5 fill-current" />
+                <Star className="h-5 w-5 fill-current" />
+                <Star className="h-5 w-5 fill-current" />
+                <Star className="h-5 w-5 fill-current" />
+              </div>
+              <span className="text-white font-bold text-lg">4.8</span>
+              <span className="text-white/80 text-sm">(281 Reviews)</span>
+            </div>
+            
+            {/* Since 2008 */}
+            <div className="flex items-center gap-2">
+              <Award className="h-5 w-5 text-yellow-400" />
+              <span className="text-white font-bold">Since 2008</span>
+            </div>
+            
+            {/* Licensed & Insured */}
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5 text-green-400" />
+              <span className="text-white font-bold">Licensed & Insured</span>
+            </div>
+          </div>
+        </div>
+
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
           <div>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 leading-tight">

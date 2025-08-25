@@ -39,7 +39,7 @@ export default function Header({ onBookService }: HeaderProps) {
 
   return (
     <>
-      {/* Dynamic Business Hours Banner - Mobile Optimized */}
+      {/* Dynamic Business Hours Banner - Original Style */}
       <div className={`relative overflow-hidden transition-all duration-500 ${
         isBusinessHours 
           ? 'bg-gradient-to-r from-johnson-blue to-blue-600' 
@@ -51,20 +51,20 @@ export default function Header({ onBookService }: HeaderProps) {
         {/* Mobile-First Layout */}
         <div className="px-3 py-2 sm:py-3 sm:px-4 relative z-10">
           <div className="flex items-center justify-between gap-2">
-            {/* Simplified Message for Mobile */}
+            {/* Message with Icon */}
             <div className="flex items-center gap-2">
               <PhoneCall className={`h-5 w-5 sm:h-6 sm:w-6 text-white ${isBusinessHours ? 'animate-pulse' : 'animate-pulse-slow'}`} />
               <div className="text-white">
                 <p className="text-sm sm:text-base font-bold leading-tight">
                   {isBusinessHours 
-                    ? <><span className="sm:hidden">Real Plumbers</span><span className="hidden sm:inline">Real Plumbers Answer • No Call Centers</span></>
-                    : <><span className="sm:hidden">24/7 Emergency</span><span className="hidden sm:inline">24/7 Emergency • Real Plumbers On-Call</span></>
+                    ? 'Real Plumbers Answer • No Call Centers'
+                    : '24/7 Emergency • Real Plumbers On-Call'
                   }
                 </p>
               </div>
             </div>
             
-            {/* Prominent Mobile Call Button */}
+            {/* Compact Call Button */}
             <a 
               href="tel:6174799911" 
               className={`flex items-center justify-center px-4 sm:px-6 py-2 sm:py-2.5 rounded-full font-bold text-sm sm:text-base transition-all transform active:scale-95 shadow-lg ${
@@ -74,11 +74,8 @@ export default function Header({ onBookService }: HeaderProps) {
               }`}
               data-testid="call-now-button"
             >
-              <PhoneCall className="h-4 w-4 mr-1 sm:hidden" />
-              <span className="whitespace-nowrap">
-                <span className="sm:hidden">CALL NOW</span>
-                <span className="hidden sm:inline">Tap to Call</span>
-              </span>
+              <PhoneCall className="h-4 w-4 mr-1.5" />
+              <span className="whitespace-nowrap">CALL NOW</span>
             </a>
           </div>
         </div>
@@ -86,61 +83,40 @@ export default function Header({ onBookService }: HeaderProps) {
 
       {/* Main Header */}
       <header className="bg-johnson-blue shadow-xl sticky top-0 z-50">
-        {/* Mobile Layout - Optimized for Touch */}
+        {/* Mobile Layout - Compact with Side-by-Side Buttons */}
         <div className="lg:hidden">
           {/* Logo Section - Compact for Mobile */}
-          <div className="px-3 pt-3 pb-2 bg-white/10">
+          <div className="px-3 pt-3 pb-2">
             <img 
               src="/JB_logo_New_1756136293648.png" 
               alt="Johnson Bros. Plumbing & Drain Cleaning" 
-              className="h-16 w-auto mx-auto object-contain"
+              className="h-14 w-auto mx-auto object-contain"
               data-testid="company-logo"
             />
           </div>
           
-          {/* Mobile Action Buttons - Large and Prominent */}
-          <div className="px-3 pb-3 pt-1">
-            <div className="space-y-2">
-              {/* Primary Call Button - Most Prominent */}
+          {/* Mobile Action Buttons - Side by Side */}
+          <div className="px-3 pb-3">
+            <div className="flex gap-2">
+              {/* Call Button */}
               <a 
                 href="tel:6174799911" 
-                className="w-full bg-gradient-to-r from-johnson-orange to-orange-500 hover:from-orange-600 hover:to-orange-600 text-white py-4 rounded-xl font-bold transition-all duration-300 shadow-xl text-lg active:scale-98 text-center flex items-center justify-center relative overflow-hidden group"
+                className="flex-1 bg-gradient-to-r from-johnson-orange to-orange-500 hover:from-orange-600 hover:to-orange-600 text-white py-3.5 rounded-xl font-bold transition-all duration-300 shadow-xl text-base active:scale-98 text-center flex items-center justify-center"
                 data-testid="mobile-call-button"
               >
-                <div className="absolute inset-0 bg-white/20 transform -skew-x-12 -translate-x-full group-active:translate-x-full transition-transform duration-500"></div>
-                <PhoneCall className="h-5 w-5 mr-2 animate-pulse" />
-                <span className="relative">TAP TO CALL NOW</span>
+                <PhoneCall className="h-5 w-5 mr-1.5" />
+                <span>TAP TO CALL NOW</span>
               </a>
               
-              {/* Secondary Book Service Button */}
+              {/* Book Service Button */}
               <Button 
                 onClick={onBookService}
-                className="w-full bg-white/20 hover:bg-white/30 backdrop-blur text-white py-3.5 rounded-xl font-bold transition-all duration-300 shadow-lg text-base border-2 border-white/30 active:scale-98"
+                className="flex-1 bg-white/20 hover:bg-white/30 backdrop-blur text-white py-3.5 rounded-xl font-bold transition-all duration-300 shadow-lg text-base border-2 border-white/30 active:scale-98"
                 data-testid="header-book-service-button"
               >
-                <CalendarClock className="h-5 w-5 mr-2 inline" />
+                <CalendarClock className="h-5 w-5 mr-1.5 inline" />
                 BOOK SERVICE ONLINE
               </Button>
-            </div>
-            
-            {/* Trust Indicators - Compact Mobile Version */}
-            <div className="flex items-center justify-center mt-3 gap-3">
-              <div className="flex items-center bg-white/10 px-2 py-1 rounded-lg">
-                <div className="flex text-yellow-400">
-                  <Star className="h-3.5 w-3.5 fill-current" />
-                  <Star className="h-3.5 w-3.5 fill-current" />
-                  <Star className="h-3.5 w-3.5 fill-current" />
-                  <Star className="h-3.5 w-3.5 fill-current" />
-                  <Star className="h-3.5 w-3.5 fill-current" />
-                </div>
-                <span className="text-white text-xs font-medium ml-1">4.8</span>
-              </div>
-              <div className="bg-white/10 px-2 py-1 rounded-lg">
-                <span className="text-white text-xs font-medium">Since 1985</span>
-              </div>
-              <div className="bg-white/10 px-2 py-1 rounded-lg">
-                <span className="text-white text-xs font-medium">Licensed & Insured</span>
-              </div>
             </div>
           </div>
         </div>
