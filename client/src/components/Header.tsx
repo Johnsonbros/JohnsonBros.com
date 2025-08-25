@@ -1,4 +1,4 @@
-import { Phone, Star } from "lucide-react";
+import { Phone, Star, PhoneCall, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 
@@ -40,28 +40,61 @@ export default function Header({ onBookService }: HeaderProps) {
   return (
     <>
       {/* Dynamic Business Hours Banner */}
-      <div className={`py-3 px-4 text-white ${
+      <div className={`py-4 px-4 text-white relative overflow-hidden ${
         isBusinessHours 
-          ? 'bg-green-600' 
-          : 'bg-yellow-500'
+          ? 'bg-gradient-to-r from-green-600 to-green-700' 
+          : 'bg-gradient-to-r from-red-600 to-red-700'
       }`}>
-        <div className="container mx-auto flex flex-col sm:flex-row justify-center sm:justify-between items-center gap-2 text-sm">
-          <span className="font-medium text-center sm:text-left">
-            {isBusinessHours 
-              ? 'Always ready to answer the phone' 
-              : '24/7 service available'
-            }
-          </span>
+        {/* Animated background pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent animate-shimmer"></div>
+        </div>
+        
+        <div className="container mx-auto flex flex-col sm:flex-row justify-center sm:justify-between items-center gap-3 relative z-10">
+          <div className="flex items-center gap-3">
+            {isBusinessHours ? (
+              <>
+                <PhoneCall className="h-6 w-6 animate-pulse" />
+                <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
+                  <span className="font-bold text-base sm:text-lg uppercase tracking-wide">
+                    Owner Available Now!
+                  </span>
+                  <span className="text-sm sm:text-base opacity-95">
+                    Speak directly with the business owner
+                  </span>
+                </div>
+              </>
+            ) : (
+              <>
+                <AlertCircle className="h-6 w-6 animate-pulse" />
+                <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
+                  <span className="font-bold text-base sm:text-lg uppercase tracking-wide">
+                    24/7 Emergency Service
+                  </span>
+                  <span className="text-sm sm:text-base opacity-95">
+                    Immediate response for urgent repairs
+                  </span>
+                </div>
+              </>
+            )}
+          </div>
+          
           <a 
             href="tel:6174799911" 
-            className={`px-4 py-2 rounded-full font-bold transition-colors touch-target ${
+            className={`group flex items-center gap-2 px-6 py-3 rounded-full font-bold transition-all transform hover:scale-105 shadow-lg animate-attention touch-target ${
               isBusinessHours
-                ? 'bg-white text-green-600 hover:bg-gray-100'
-                : 'bg-white text-yellow-600 hover:bg-gray-100'
+                ? 'bg-white text-green-700 hover:bg-yellow-400 hover:text-green-800'
+                : 'bg-yellow-400 text-red-900 hover:bg-yellow-300 animate-pulse-slow'
             }`}
             data-testid="call-now-button"
           >
-            CALL NOW
+            <Phone className="h-5 w-5 group-hover:animate-bounce" />
+            <span className="text-sm sm:text-base">
+              {isBusinessHours 
+                ? 'CALL NOW - DIRECT LINE' 
+                : 'EMERGENCY? CALL NOW'
+              }
+            </span>
           </a>
         </div>
       </div>
