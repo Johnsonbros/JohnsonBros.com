@@ -145,15 +145,18 @@ export function ServiceHeatMap() {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 max-w-4xl mx-auto" data-testid="service-heat-map">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center">
-          <MapPin className="h-6 w-6 text-blue-600 mr-3" />
-          <h3 className="text-xl font-semibold text-gray-900">Massachusetts Service Coverage</h3>
-        </div>
-        <div className="flex items-center">
-          <Activity className="h-4 w-4 text-green-500 mr-2 animate-pulse" />
-          <span className="text-sm text-gray-600">Live Data</span>
+    <div className="bg-white rounded-2xl shadow-lg overflow-hidden max-w-4xl mx-auto" data-testid="service-heat-map">
+      {/* Header */}
+      <div className="p-4 border-b border-gray-100">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <MapPin className="h-5 w-5 text-blue-600 mr-2" />
+            <h3 className="text-lg font-semibold text-gray-900">Massachusetts Service Coverage</h3>
+          </div>
+          <div className="flex items-center">
+            <Activity className="h-4 w-4 text-green-500 mr-2 animate-pulse" />
+            <span className="text-sm text-gray-600">Live Data</span>
+          </div>
         </div>
       </div>
 
@@ -161,35 +164,35 @@ export function ServiceHeatMap() {
       <div className="relative">
         <div 
           ref={mapRef}
-          className="h-96 w-full rounded-lg border border-gray-200"
+          className="h-80 w-full"
           data-testid="google-map-container"
         />
 
-        {/* Service Stats Overlay */}
-        <div className="absolute bottom-4 left-4 right-4">
-          <div className="bg-white/95 backdrop-blur-sm rounded-lg p-4 shadow-lg border">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {/* Service Stats Overlay - Bottom Center */}
+        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
+          <div className="bg-white rounded-2xl p-4 shadow-xl border border-gray-100 min-w-80">
+            <div className="grid grid-cols-2 gap-4">
               <div className="text-center">
                 <div className="text-2xl font-bold text-blue-600" data-testid="cities-served">
                   {heatMapData.length}
                 </div>
-                <div className="text-sm text-gray-600">Cities Served</div>
+                <div className="text-xs text-gray-600">Cities Served</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-green-600" data-testid="total-jobs">
                   {heatMapData.reduce((sum, city) => sum + city.count, 0)}
                 </div>
-                <div className="text-sm text-gray-600">Total Customers</div>
+                <div className="text-xs text-gray-600">Total Jobs</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-purple-600" data-testid="most-active">
                   {Math.max(...heatMapData.map(city => city.count))}
                 </div>
-                <div className="text-sm text-gray-600">Most Active</div>
+                <div className="text-xs text-gray-600">Most Active</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-orange-600" data-testid="avg-rating">5.0★</div>
-                <div className="text-sm text-gray-600">Avg Rating</div>
+                <div className="text-xs text-gray-600">Avg Rating</div>
               </div>
             </div>
           </div>
@@ -197,18 +200,20 @@ export function ServiceHeatMap() {
       </div>
 
       {/* Legend */}
-      <div className="mt-6 flex items-center justify-center space-x-6">
-        <div className="flex items-center">
-          <div className="w-4 h-4 bg-blue-600 rounded-full mr-2" style={{ opacity: 0.8 }}></div>
-          <span className="text-sm text-gray-600">High Activity (20+ customers)</span>
-        </div>
-        <div className="flex items-center">
-          <div className="w-4 h-4 bg-blue-400 rounded-full mr-2" style={{ opacity: 0.5 }}></div>
-          <span className="text-sm text-gray-600">Medium Activity (10-19 customers)</span>
-        </div>
-        <div className="flex items-center">
-          <div className="w-4 h-4 bg-blue-300 rounded-full mr-2" style={{ opacity: 0.3 }}></div>
-          <span className="text-sm text-gray-600">Regular Service (1-9 customers)</span>
+      <div className="p-4 bg-gray-50 border-t border-gray-100">
+        <div className="flex items-center justify-center space-x-4 text-sm">
+          <div className="flex items-center">
+            <div className="w-3 h-3 bg-red-500 rounded-full mr-1.5"></div>
+            <span className="text-gray-700">High Activity</span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-3 h-3 bg-yellow-500 rounded-full mr-1.5"></div>
+            <span className="text-gray-700">Medium Activity (10-19 jobs)</span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-3 h-3 bg-green-500 rounded-full mr-1.5"></div>
+            <span className="text-gray-700">Regular Service (1-9 jobs)</span>
+          </div>
         </div>
       </div>
     </div>
