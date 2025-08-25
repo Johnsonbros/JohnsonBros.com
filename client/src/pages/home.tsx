@@ -3,6 +3,7 @@ import HeroSection from "@/components/HeroSection";
 import ServicesSection from "@/components/ServicesSection";
 import ReviewsSection from "@/components/ReviewsSection";
 import ServiceAreaSection from "@/components/ServiceAreaSection";
+import { SocialProofSection } from "@/components/SocialProofSection";
 import Footer from "@/components/Footer";
 import BookingModal from "@/components/BookingModal";
 import { useState } from "react";
@@ -27,6 +28,7 @@ export default function Home() {
         <Header onBookService={() => openBookingModal()} />
         <HeroSection onBookService={() => openBookingModal()} />
         <ServicesSection onBookService={openBookingModal} />
+        <SocialProofSection />
         <ReviewsSection />
         <ServiceAreaSection />
         <Footer onBookService={() => openBookingModal()} />
