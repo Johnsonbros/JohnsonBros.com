@@ -1,6 +1,7 @@
 import Header from "@/components/Header";
 import HeroSection from "@/components/HeroSection";
 import ServicesSection from "@/components/ServicesSection";
+import TruckSection from "@/components/TruckSection";
 import ReviewsSection from "@/components/ReviewsSection";
 import ServiceAreaSection from "@/components/ServiceAreaSection";
 import { SocialProofSection } from "@/components/SocialProofSection";
@@ -28,6 +29,7 @@ export default function Home() {
         <Header onBookService={() => openBookingModal()} />
         <HeroSection onBookService={() => openBookingModal()} />
         <ServicesSection onBookService={openBookingModal} />
+        <TruckSection />
         <SocialProofSection />
         <ReviewsSection />
         <ServiceAreaSection />

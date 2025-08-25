@@ -1,4 +1,4 @@
-import { Wrench, Phone, Mail, MapPin, Facebook, Globe, Star } from "lucide-react";
+import { Phone, Mail, MapPin, Facebook, Globe, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface FooterProps {
@@ -12,14 +12,13 @@ export default function Footer({ onBookService }: FooterProps) {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
           {/* Company Info */}
           <div>
-            <div className="flex items-center space-x-2 sm:space-x-3 mb-4 sm:mb-6">
-              <div className="bg-johnson-blue p-2 rounded-lg">
-                <Wrench className="text-white h-4 w-4 sm:h-5 sm:w-5" />
-              </div>
-              <div>
-                <h3 className="text-lg sm:text-xl font-bold" data-testid="footer-company-name">Johnson Bros.</h3>
-                <p className="text-gray-400 text-sm sm:text-base">Plumbing & Drain Cleaning</p>
-              </div>
+            <div className="mb-4 sm:mb-6">
+              <img 
+                src="/JB_logo_New_1756136293648.png" 
+                alt="Johnson Bros. Plumbing & Drain Cleaning" 
+                className="h-12 sm:h-14 w-auto brightness-0 invert"
+                data-testid="footer-company-logo"
+              />
             </div>
             <p className="text-gray-400 mb-4 sm:mb-6 text-sm sm:text-base">
               Professional plumbing services in Quincy, MA and surrounding areas. Licensed, insured, and committed to quality.

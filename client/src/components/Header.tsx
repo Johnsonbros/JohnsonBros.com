@@ -1,4 +1,4 @@
-import { Phone, Wrench, Star } from "lucide-react";
+import { Phone, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 
@@ -71,14 +71,13 @@ export default function Header({ onBookService }: HeaderProps) {
         <div className="container mx-auto px-4 py-3">
           <div className="flex justify-between items-center">
             {/* Logo */}
-            <div className="flex items-center space-x-2 sm:space-x-3">
-              <div className="bg-white p-2 rounded-lg">
-                <Wrench className="text-johnson-blue h-5 w-5 sm:h-6 sm:w-6" />
-              </div>
-              <div>
-                <h1 className="text-white font-bold text-lg sm:text-xl" data-testid="company-name">Johnson Bros.</h1>
-                <p className="text-blue-100 text-xs sm:text-sm">Plumbing & Drain</p>
-              </div>
+            <div className="flex items-center">
+              <img 
+                src="/JB_logo_New_1756136293648.png" 
+                alt="Johnson Bros. Plumbing & Drain Cleaning" 
+                className="h-12 sm:h-14 w-auto"
+                data-testid="company-logo"
+              />
             </div>
 
             {/* Desktop Navigation */}
