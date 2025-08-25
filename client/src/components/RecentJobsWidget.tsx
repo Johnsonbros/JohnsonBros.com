@@ -7,9 +7,13 @@ import { formatDistanceToNow } from "date-fns";
 interface RecentJob {
   id: string;
   serviceType: string;
+  jobSummary: string;
   completedAt: string;
   city: string;
   state: string;
+  technician: string;
+  customerInitial: string;
+  streetAddress: string;
 }
 
 export function RecentJobsWidget() {
@@ -60,7 +64,7 @@ export function RecentJobsWidget() {
             >
               <div className="flex justify-between items-start mb-1">
                 <p className="font-medium text-sm text-gray-900" data-testid={`service-type-${job.id}`}>
-                  {job.serviceType}
+                  {job.jobSummary}
                 </p>
                 <Badge variant="outline" className="text-xs bg-green-100" data-testid={`location-badge-${job.id}`}>
                   {job.city}
@@ -83,9 +87,14 @@ export function RecentJobsWidget() {
                 )}
               </div>
               
-              <p className="text-xs text-gray-500 mt-1" data-testid={`status-${job.id}`}>
-                Service completed successfully
-              </p>
+              <div className="flex items-center justify-between mt-2">
+                <p className="text-xs text-gray-500" data-testid={`technician-${job.id}`}>
+                  By {job.technician}
+                </p>
+                <p className="text-xs text-green-600 font-medium" data-testid={`status-${job.id}`}>
+                  ✓ Completed
+                </p>
+              </div>
             </div>
           ))}
         </div>
