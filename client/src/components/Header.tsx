@@ -10,9 +10,6 @@ export default function Header({ onBookService }: HeaderProps) {
   const [isBusinessHours, setIsBusinessHours] = useState(false);
 
   const checkBusinessHours = () => {
-    // Temporarily forcing after-hours view for demonstration
-    return false;
-    
     const now = new Date();
     // Convert to EST timezone
     const estTime = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
@@ -84,7 +81,7 @@ export default function Header({ onBookService }: HeaderProps) {
               data-testid="call-now-button"
             >
               <span className="text-base sm:text-lg">
-                Click to Call
+                Tap to Call
               </span>
             </a>
           </div>
