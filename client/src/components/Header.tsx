@@ -49,7 +49,7 @@ export default function Header({ onBookService }: HeaderProps) {
           : 'bg-gradient-to-r from-red-600/95 to-red-700/95'
       }`}
         style={{
-          backgroundImage: 'url(/banner-bg.png)',
+          backgroundImage: isBusinessHours ? 'url(/banner-bg.png)' : 'url(/banner-bg-emergency.png)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundBlendMode: 'overlay'
