@@ -300,28 +300,6 @@
   touch-action: manipulation;
 }
 
-/* Mobile button active states for better feedback */
-.active\:scale-98:active {
-  transform: scale(0.98);
-}
-
-.active\:scale-95:active {
-  transform: scale(0.95);
-}
-
-/* Improved mobile button animations */
-@media (max-width: 768px) {
-  button, a[href^="tel:"] {
-    -webkit-tap-highlight-color: transparent;
-    user-select: none;
-  }
-  
-  /* Smooth slide animation for call button overlay */
-  .group:active .group-active\:translate-x-full {
-    transform: translateX(100%);
-  }
-}
-
 /* Mobile-first responsive adjustments */
 @media (max-width: 640px) {
   .container {

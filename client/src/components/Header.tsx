@@ -1,4 +1,4 @@
-import { Phone, Star, PhoneCall, AlertCircle, CalendarClock } from "lucide-react";
+import { Phone, Star, PhoneCall, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 
@@ -39,23 +39,29 @@ export default function Header({ onBookService }: HeaderProps) {
 
   return (
     <>
-      {/* Dynamic Business Hours Banner - Original Style */}
+      {/* Dynamic Business Hours Banner - Integrated Design */}
       <div className={`relative overflow-hidden transition-all duration-500 ${
         isBusinessHours 
-          ? 'bg-gradient-to-r from-johnson-blue to-blue-600' 
-          : 'bg-gradient-to-r from-red-600 to-red-700'
-      }`}>
+          ? 'bg-gradient-to-r from-johnson-blue/95 to-blue-700/95' 
+          : 'bg-gradient-to-r from-red-600/95 to-red-700/95'
+      }`}
+        style={{
+          backgroundImage: isBusinessHours ? 'url(/banner-bg.png)' : 'url(/banner-bg-emergency.png)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundBlendMode: 'overlay'
+        }}
+      >
         {/* Subtle animated overlay */}
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer"></div>
         
-        {/* Mobile-First Layout */}
-        <div className="px-3 py-2 sm:py-3 sm:px-4 relative z-10">
-          <div className="flex items-center justify-between gap-2">
-            {/* Message with Icon */}
-            <div className="flex items-center gap-2">
-              <PhoneCall className={`h-5 w-5 sm:h-6 sm:w-6 text-white ${isBusinessHours ? 'animate-pulse' : 'animate-pulse-slow'}`} />
-              <div className="text-white">
-                <p className="text-sm sm:text-base font-bold leading-tight">
+        <div className="container mx-auto py-3 px-4 relative z-10">
+          <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-between gap-2">
+            {/* Message Section */}
+            <div className="flex items-center gap-2 text-black">
+              <PhoneCall className={`h-6 w-6 ${isBusinessHours ? 'animate-pulse' : 'animate-pulse-slow'}`} />
+              <div className="text-center sm:text-left">
+                <p className="text-base sm:text-lg font-bold">
                   {isBusinessHours 
                     ? 'Real Plumbers Answer • No Call Centers'
                     : '24/7 Emergency • Real Plumbers On-Call'
@@ -64,60 +70,54 @@ export default function Header({ onBookService }: HeaderProps) {
               </div>
             </div>
             
-            {/* Compact Call Button */}
+            {/* Call Button */}
             <a 
               href="tel:6174799911" 
-              className={`flex items-center justify-center px-4 sm:px-6 py-2 sm:py-2.5 rounded-full font-bold text-sm sm:text-base transition-all transform active:scale-95 shadow-lg ${
+              className={`group flex items-center justify-center px-8 py-3 rounded-full font-semibold transition-all transform hover:scale-105 shadow-md touch-target ${
                 isBusinessHours
-                  ? 'bg-white text-johnson-blue hover:bg-johnson-orange hover:text-white'
+                  ? 'bg-white/95 text-johnson-blue hover:bg-johnson-orange hover:text-white'
                   : 'bg-johnson-orange text-white hover:bg-orange-500 animate-pulse-slow'
               }`}
               data-testid="call-now-button"
             >
-              <PhoneCall className="h-4 w-4 mr-1.5" />
-              <span className="whitespace-nowrap">CALL NOW</span>
+              <span className="text-base sm:text-lg">
+                Tap to Call
+              </span>
             </a>
           </div>
         </div>
       </div>
 
       {/* Main Header */}
-      <header className="bg-johnson-blue shadow-xl sticky top-0 z-50">
-        {/* Mobile Layout - Compact with Side-by-Side Buttons */}
-        <div className="lg:hidden">
-          {/* Logo Section - Compact for Mobile */}
-          <div className="px-3 pt-3 pb-2">
+      <header className="bg-johnson-blue shadow-lg sticky top-0 z-50 border-t-2 border-johnson-blue">
+        {/* Mobile Layout - Full Width */}
+        <div className="lg:hidden px-2 py-2">
+          {/* Logo - Full Width on Mobile */}
+          <div className="flex justify-center mb-2">
             <img 
               src="/JB_logo_New_1756136293648.png" 
               alt="Johnson Bros. Plumbing & Drain Cleaning" 
-              className="h-14 w-auto mx-auto object-contain"
+              className="h-24 w-full max-w-[400px] object-contain"
               data-testid="company-logo"
             />
           </div>
           
-          {/* Mobile Action Buttons - Side by Side */}
-          <div className="px-3 pb-3">
-            <div className="flex gap-2">
-              {/* Call Button */}
-              <a 
-                href="tel:6174799911" 
-                className="flex-1 bg-gradient-to-r from-johnson-orange to-orange-500 hover:from-orange-600 hover:to-orange-600 text-white py-3.5 rounded-xl font-bold transition-all duration-300 shadow-xl text-base active:scale-98 text-center flex items-center justify-center"
-                data-testid="mobile-call-button"
-              >
-                <PhoneCall className="h-5 w-5 mr-1.5" />
-                <span>TAP TO CALL NOW</span>
-              </a>
-              
-              {/* Book Service Button */}
-              <Button 
-                onClick={onBookService}
-                className="flex-1 bg-white/20 hover:bg-white/30 backdrop-blur text-white py-3.5 rounded-xl font-bold transition-all duration-300 shadow-lg text-base border-2 border-white/30 active:scale-98"
-                data-testid="header-book-service-button"
-              >
-                <CalendarClock className="h-5 w-5 mr-1.5 inline" />
-                BOOK SERVICE ONLINE
-              </Button>
-            </div>
+          {/* Mobile Buttons Underneath Logo - Full Width */}
+          <div className="flex gap-1">
+            <Button 
+              onClick={onBookService}
+              className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2.5 rounded-md font-bold transition-all duration-300 shadow-lg text-sm touch-target"
+              data-testid="header-book-service-button"
+            >
+              BOOK SERVICE
+            </Button>
+            <a 
+              href="tel:6174799911" 
+              className="flex-1 bg-gradient-to-r from-johnson-orange to-orange-500 hover:from-orange-500 hover:to-johnson-orange text-white py-2.5 rounded-md font-bold transition-all duration-300 shadow-lg text-sm touch-target text-center flex items-center justify-center"
+              data-testid="mobile-call-button"
+            >
+              TAP HERE TO CALL
+            </a>
           </div>
         </div>
 
