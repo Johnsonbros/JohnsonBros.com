@@ -13,7 +13,7 @@ export default function HeroSection({ onBookService }: HeroSectionProps) {
           <div>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 leading-tight">
               Expert Plumbing Services in 
-              <span className="text-johnson-orange"> Quincy, MA</span>
+              <span className="text-johnson-orange"> Abington & Quincy, MA</span>
             </h2>
             <p className="text-base sm:text-lg lg:text-xl mb-6 sm:mb-8 text-blue-100">
               Fast, reliable, and professional plumbing solutions. Licensed, insured, and available 24/7 for emergencies.

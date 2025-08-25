@@ -1,23 +1,67 @@
 import { Phone, Wrench, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
 
 interface HeaderProps {
   onBookService: () => void;
 }
 
 export default function Header({ onBookService }: HeaderProps) {
+  const [isBusinessHours, setIsBusinessHours] = useState(false);
+
+  const checkBusinessHours = () => {
+    const now = new Date();
+    // Convert to EST timezone
+    const estTime = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
+    const day = estTime.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const hour = estTime.getHours();
+    
+    // Monday (1) to Friday (5), 8am (8) to 5pm (17)
+    const isWeekday = day >= 1 && day <= 5;
+    const isDuringHours = hour >= 8 && hour < 17;
+    
+    return isWeekday && isDuringHours;
+  };
+
+  useEffect(() => {
+    const updateBusinessHours = () => {
+      setIsBusinessHours(checkBusinessHours());
+    };
+    
+    // Check immediately
+    updateBusinessHours();
+    
+    // Check every minute
+    const interval = setInterval(updateBusinessHours, 60000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <>
-      {/* Emergency Banner */}
-      <div className="bg-emergency-red text-white py-3 px-4">
+      {/* Dynamic Business Hours Banner */}
+      <div className={`py-3 px-4 text-white ${
+        isBusinessHours 
+          ? 'bg-green-600' 
+          : 'bg-yellow-500'
+      }`}>
         <div className="container mx-auto flex flex-col sm:flex-row justify-center sm:justify-between items-center gap-2 text-sm">
-          <span className="font-medium text-center sm:text-left">24/7 Emergency Service</span>
+          <span className="font-medium text-center sm:text-left">
+            {isBusinessHours 
+              ? 'Always ready to answer the phone' 
+              : '24/7 service available'
+            }
+          </span>
           <a 
             href="tel:6174799911" 
-            className="bg-white text-red-600 px-4 py-2 rounded-full font-bold hover:bg-gray-100 transition-colors touch-target"
-            data-testid="emergency-call-button"
+            className={`px-4 py-2 rounded-full font-bold transition-colors touch-target ${
+              isBusinessHours
+                ? 'bg-white text-green-600 hover:bg-gray-100'
+                : 'bg-white text-yellow-600 hover:bg-gray-100'
+            }`}
+            data-testid="call-now-button"
           >
-            📞 (617) 479-9911
+            CALL NOW
           </a>
         </div>
       </div>

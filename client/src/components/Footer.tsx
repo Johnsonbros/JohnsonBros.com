@@ -83,7 +83,7 @@ export default function Footer({ onBookService }: FooterProps) {
               <div className="flex items-center space-x-3">
                 <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-johnson-blue flex-shrink-0" />
                 <div>
-                  <p className="font-semibold text-sm sm:text-base" data-testid="footer-location">Quincy, MA</p>
+                  <p className="font-semibold text-sm sm:text-base" data-testid="footer-location">Abington & Quincy, MA</p>
                   <p className="text-xs sm:text-sm text-gray-400">Service Area</p>
                 </div>
               </div>

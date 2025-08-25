@@ -2,6 +2,7 @@ import { MapPin, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const serviceAreas = [
+  "Abington",
   "Quincy",
   "Braintree", 
   "Milton",
@@ -17,7 +18,7 @@ export default function ServiceAreaSection() {
         <div className="text-center mb-12 sm:mb-16">
           <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Service Area</h2>
           <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto">
-            We proudly serve Quincy and surrounding communities with reliable plumbing services.
+            We proudly serve Abington, Quincy and surrounding communities with reliable plumbing services.
           </p>
         </div>
 
@@ -29,7 +30,7 @@ export default function ServiceAreaSection() {
                 <div className="text-center px-4">
                   <MapPin className="h-12 w-12 sm:h-16 sm:w-16 text-johnson-blue mx-auto mb-3 sm:mb-4" />
                   <p className="text-gray-600 text-base sm:text-lg font-medium">Interactive Service Area Map</p>
-                  <p className="text-xs sm:text-sm text-gray-500 mt-2">Quincy, MA and surrounding areas</p>
+                  <p className="text-xs sm:text-sm text-gray-500 mt-2">Abington & Quincy, MA and surrounding areas</p>
                   <div className="mt-3 sm:mt-4 grid grid-cols-2 gap-2 max-w-xs sm:max-w-sm mx-auto">
                     {serviceAreas.map((area) => (
                       <div 
