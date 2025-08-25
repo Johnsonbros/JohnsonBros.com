@@ -28,7 +28,7 @@ export function ServiceHeatMap() {
       const loader = new Loader({
         apiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "",
         version: "weekly",
-        libraries: ["visualization", "geometry"]
+        libraries: ["geometry"]
       });
 
       try {
@@ -50,63 +50,55 @@ export function ServiceHeatMap() {
 
         mapInstanceRef.current = map;
 
-        // Create heat map data points
-        const heatmapData = heatMapData.map(city => ({
-          location: new google.maps.LatLng(city.lat, city.lng),
-          weight: city.count
-        }));
-
-        // Create heat map
-        const heatmap = new google.maps.visualization.HeatmapLayer({
-          data: heatmapData,
-          map: map,
-          radius: 30,
-          opacity: 0.8,
-          gradient: [
-            'rgba(0, 255, 255, 0)',
-            'rgba(0, 255, 255, 1)',
-            'rgba(0, 191, 255, 1)',
-            'rgba(0, 127, 255, 1)',
-            'rgba(0, 63, 255, 1)',
-            'rgba(0, 0, 255, 1)',
-            'rgba(0, 0, 223, 1)',
-            'rgba(0, 0, 191, 1)',
-            'rgba(0, 0, 159, 1)',
-            'rgba(0, 0, 127, 1)',
-            'rgba(63, 0, 91, 1)',
-            'rgba(127, 0, 63, 1)',
-            'rgba(191, 0, 31, 1)',
-            'rgba(255, 0, 0, 1)'
-          ]
-        });
-
-        // Add city markers for top service areas
-        heatMapData.slice(0, 5).forEach(city => {
-          const marker = new google.maps.Marker({
-            position: { lat: city.lat, lng: city.lng },
+        // Create custom heat map effect with circles
+        const maxCustomers = Math.max(...heatMapData.map(city => city.count));
+        
+        heatMapData.forEach(city => {
+          const intensity = city.count / maxCustomers;
+          const radius = Math.max(5000, intensity * 25000); // Radius in meters
+          
+          // Create glowing circle for customer density
+          const circle = new google.maps.Circle({
+            strokeColor: '#3B82F6', // Blue color
+            strokeOpacity: 0,
+            strokeWeight: 0,
+            fillColor: '#3B82F6',
+            fillOpacity: Math.max(0.1, intensity * 0.6), // Brighter where more customers
             map: map,
-            title: `${city.city}: ${city.count} jobs completed`,
-            icon: {
-              path: google.maps.SymbolPath.CIRCLE,
-              fillColor: city.count > 20 ? '#ef4444' : city.count > 10 ? '#f59e0b' : '#10b981',
-              fillOpacity: 0.8,
-              strokeColor: '#ffffff',
-              strokeWeight: 2,
-              scale: Math.max(6, Math.min(16, city.count / 2))
-            }
+            center: { lat: city.lat, lng: city.lng },
+            radius: radius,
+            clickable: true
           });
 
+          // Add glow effect with larger, more transparent circle
+          const glowCircle = new google.maps.Circle({
+            strokeColor: '#60A5FA',
+            strokeOpacity: 0,
+            strokeWeight: 0,
+            fillColor: '#60A5FA',
+            fillOpacity: Math.max(0.05, intensity * 0.3),
+            map: map,
+            center: { lat: city.lat, lng: city.lng },
+            radius: radius * 1.8,
+            clickable: false
+          });
+
+          // Add info window for click interaction
           const infoWindow = new google.maps.InfoWindow({
             content: `
-              <div style="padding: 8px; font-family: system-ui;">
-                <h3 style="margin: 0 0 4px 0; font-size: 16px; font-weight: 600;">${city.city}</h3>
-                <p style="margin: 0; color: #666; font-size: 14px;">${city.count} jobs completed</p>
+              <div style="padding: 12px; font-family: system-ui;">
+                <h3 style="margin: 0 0 8px 0; font-size: 18px; font-weight: 600; color: #1f2937;">${city.city}</h3>
+                <p style="margin: 0; color: #6b7280; font-size: 14px;">${city.count} customers served</p>
+                <div style="margin-top: 8px; padding: 4px 8px; background: #dbeafe; border-radius: 4px; font-size: 12px; color: #1e40af; display: inline-block;">
+                  Service Area
+                </div>
               </div>
-            `
+            `,
+            position: { lat: city.lat, lng: city.lng }
           });
 
-          marker.addListener('click', () => {
-            infoWindow.open(map, marker);
+          circle.addListener('click', () => {
+            infoWindow.open(map);
           });
         });
 
@@ -187,7 +179,7 @@ export function ServiceHeatMap() {
                 <div className="text-2xl font-bold text-green-600" data-testid="total-jobs">
                   {heatMapData.reduce((sum, city) => sum + city.count, 0)}
                 </div>
-                <div className="text-sm text-gray-600">Total Jobs</div>
+                <div className="text-sm text-gray-600">Total Customers</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-purple-600" data-testid="most-active">
@@ -207,16 +199,16 @@ export function ServiceHeatMap() {
       {/* Legend */}
       <div className="mt-6 flex items-center justify-center space-x-6">
         <div className="flex items-center">
-          <div className="w-4 h-4 bg-red-500 rounded-full mr-2"></div>
-          <span className="text-sm text-gray-600">High Activity (20+ jobs)</span>
+          <div className="w-4 h-4 bg-blue-600 rounded-full mr-2" style={{ opacity: 0.8 }}></div>
+          <span className="text-sm text-gray-600">High Activity (20+ customers)</span>
         </div>
         <div className="flex items-center">
-          <div className="w-4 h-4 bg-yellow-500 rounded-full mr-2"></div>
-          <span className="text-sm text-gray-600">Medium Activity (10-19 jobs)</span>
+          <div className="w-4 h-4 bg-blue-400 rounded-full mr-2" style={{ opacity: 0.5 }}></div>
+          <span className="text-sm text-gray-600">Medium Activity (10-19 customers)</span>
         </div>
         <div className="flex items-center">
-          <div className="w-4 h-4 bg-green-500 rounded-full mr-2"></div>
-          <span className="text-sm text-gray-600">Regular Service (1-9 jobs)</span>
+          <div className="w-4 h-4 bg-blue-300 rounded-full mr-2" style={{ opacity: 0.3 }}></div>
+          <span className="text-sm text-gray-600">Regular Service (1-9 customers)</span>
         </div>
       </div>
     </div>
