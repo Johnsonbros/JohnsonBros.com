@@ -67,7 +67,7 @@ export default function ServiceAreaSection() {
               </p>
               <Button
                 asChild
-                className="bg-white text-johnson-blue hover:bg-gray-100 w-full sm:w-auto touch-target"
+                className="bg-white text-johnson-blue hover:bg-gray-50 w-full sm:w-auto touch-target border-2 border-white hover:border-gray-200 transition-all duration-300 transform hover:scale-105 shadow-lg font-bold"
                 data-testid="emergency-service-call-button"
               >
                 <a href="tel:6174799911" className="inline-flex items-center justify-center space-x-2">

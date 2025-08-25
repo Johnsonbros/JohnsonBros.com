@@ -39,7 +39,7 @@ export default function HeroSection({ onBookService }: HeroSectionProps) {
             <div className="flex flex-col space-y-3 sm:space-y-4">
               <Button 
                 onClick={onBookService}
-                className="bg-johnson-orange text-white px-6 py-4 sm:px-8 rounded-lg font-bold text-lg hover:bg-orange-600 transition-colors shadow-lg w-full sm:w-auto touch-target"
+                className="bg-gradient-to-r from-johnson-orange to-orange-500 text-white px-6 py-4 sm:px-8 rounded-lg font-bold text-lg hover:from-orange-500 hover:to-johnson-orange transition-all duration-300 transform hover:scale-105 shadow-xl w-full sm:w-auto touch-target"
                 data-testid="hero-book-online-button"
               >
                 <Calendar className="mr-2 h-5 w-5" />
@@ -47,7 +47,7 @@ export default function HeroSection({ onBookService }: HeroSectionProps) {
               </Button>
               <a 
                 href="tel:6174799911" 
-                className="bg-white text-johnson-blue px-6 py-4 sm:px-8 rounded-lg font-bold text-lg hover:bg-gray-100 transition-colors text-center inline-flex items-center justify-center w-full sm:w-auto touch-target"
+                className="bg-white text-johnson-blue px-6 py-4 sm:px-8 rounded-lg font-bold text-lg hover:bg-gray-50 transition-all duration-300 transform hover:scale-105 shadow-lg text-center inline-flex items-center justify-center w-full sm:w-auto touch-target border-2 border-johnson-blue hover:border-johnson-teal"
                 data-testid="hero-call-button"
               >
                 <Phone className="mr-2 h-5 w-5" />

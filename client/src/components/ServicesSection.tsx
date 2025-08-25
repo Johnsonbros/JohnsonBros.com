@@ -107,16 +107,13 @@ export default function ServicesSection({ onBookService }: ServicesSectionProps)
                     <h3 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight">{service.name}</h3>
                   </div>
                   <p className="text-gray-600 mb-4 sm:mb-6 text-sm sm:text-base">{service.description}</p>
-                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-                    <span className="text-johnson-blue font-bold text-base sm:text-lg" data-testid={`service-price-${service.id}`}>
-                      {service.basePrice === "2500.00" ? "Custom Quote" : `Starting at $${service.basePrice}`}
-                    </span>
+                  <div className="flex justify-center">
                     <Button 
                       onClick={() => onBookService(service.id)}
-                      className="bg-johnson-blue text-white px-4 py-3 rounded-lg hover:bg-johnson-teal transition-colors w-full sm:w-auto touch-target"
+                      className="bg-gradient-to-r from-johnson-blue to-johnson-teal text-white px-6 py-3 rounded-lg font-semibold hover:from-johnson-teal hover:to-johnson-blue transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl w-full sm:w-auto touch-target"
                       data-testid={`book-service-${service.id}`}
                     >
-                      {service.basePrice === "2500.00" ? "Get Quote" : "Book Now"}
+                      Book Service
                     </Button>
                   </div>
                 </div>

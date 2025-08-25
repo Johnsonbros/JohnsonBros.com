@@ -102,7 +102,7 @@ export default function Footer({ onBookService }: FooterProps) {
             
             <Button 
               onClick={onBookService}
-              className="w-full bg-johnson-orange text-white px-4 py-3 rounded-lg font-semibold hover:bg-orange-600 transition-colors touch-target"
+              className="w-full bg-gradient-to-r from-johnson-orange to-orange-500 text-white px-4 py-3 rounded-lg font-bold hover:from-orange-500 hover:to-johnson-orange transition-all duration-300 transform hover:scale-105 shadow-lg touch-target"
               data-testid="footer-book-service-button"
             >
               Book Service Online

@@ -321,7 +321,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                 <Button
                   onClick={nextStep}
                   disabled={!selectedService}
-                  className="bg-johnson-blue text-white px-6 py-3 rounded-lg font-semibold hover:bg-johnson-teal transition-colors disabled:opacity-50 w-full sm:w-auto touch-target"
+                  className="bg-gradient-to-r from-johnson-blue to-johnson-teal text-white px-6 py-3 rounded-lg font-bold hover:from-johnson-teal hover:to-johnson-blue transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:transform-none disabled:shadow-none w-full sm:w-auto touch-target"
                   data-testid="step1-continue-button"
                 >
                   Continue to Schedule
@@ -418,7 +418,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                 <Button
                   onClick={prevStep}
                   variant="outline"
-                  className="px-6 py-3 w-full sm:w-auto touch-target order-2 sm:order-1"
+                  className="px-6 py-3 w-full sm:w-auto touch-target order-2 sm:order-1 border-2 border-gray-300 hover:border-johnson-blue hover:bg-gray-50 transition-all duration-300 transform hover:scale-105"
                   data-testid="step2-back-button"
                 >
                   Back
@@ -426,7 +426,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                 <Button
                   onClick={nextStep}
                   disabled={!selectedDate || !selectedTimeSlot}
-                  className="bg-johnson-blue text-white px-6 py-3 rounded-lg font-semibold hover:bg-johnson-teal transition-colors disabled:opacity-50 w-full sm:w-auto touch-target order-1 sm:order-2"
+                  className="bg-gradient-to-r from-johnson-blue to-johnson-teal text-white px-6 py-3 rounded-lg font-bold hover:from-johnson-teal hover:to-johnson-blue transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:transform-none disabled:shadow-none w-full sm:w-auto touch-target order-1 sm:order-2"
                   data-testid="step2-continue-button"
                 >
                   Continue to Details
@@ -574,8 +574,11 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                       <div className="flex justify-between">
                         <span>Service Fee:</span>
                         <span className="font-semibold text-johnson-blue" data-testid="booking-summary-fee">
-                          ${selectedService?.basePrice}
+                          $99
                         </span>
+                      </div>
+                      <div className="text-xs text-green-600 font-medium mt-1">
+                        Applied to repair cost
                       </div>
                     </div>
                   </div>

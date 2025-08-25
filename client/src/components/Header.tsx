@@ -110,7 +110,7 @@ export default function Header({ onBookService }: HeaderProps) {
               </a>
               <Button 
                 onClick={onBookService}
-                className="bg-johnson-orange text-white px-3 py-2 sm:px-6 sm:py-3 rounded-lg font-semibold hover:bg-orange-600 transition-colors text-sm sm:text-base touch-target"
+                className="bg-gradient-to-r from-johnson-orange to-orange-500 text-white px-3 py-2 sm:px-6 sm:py-3 rounded-lg font-bold hover:from-orange-500 hover:to-johnson-orange transition-all duration-300 transform hover:scale-105 shadow-lg text-sm sm:text-base touch-target"
                 data-testid="header-book-service-button"
               >
                 <span className="hidden sm:inline">Book Service</span>
