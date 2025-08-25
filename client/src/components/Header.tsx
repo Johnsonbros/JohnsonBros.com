@@ -73,15 +73,14 @@ export default function Header({ onBookService }: HeaderProps) {
             {/* Call Button */}
             <a 
               href="tel:6174799911" 
-              className={`group flex items-center gap-2 px-5 py-2.5 rounded-full font-semibold transition-all transform hover:scale-105 shadow-md touch-target ${
+              className={`group flex items-center justify-center px-8 py-3 rounded-full font-semibold transition-all transform hover:scale-105 shadow-md touch-target ${
                 isBusinessHours
                   ? 'bg-white/95 text-johnson-blue hover:bg-johnson-orange hover:text-white'
                   : 'bg-johnson-orange text-white hover:bg-orange-500 animate-pulse-slow'
               }`}
               data-testid="call-now-button"
             >
-              <Phone className="h-4 w-4 group-hover:rotate-12 transition-transform" />
-              <span className="text-sm sm:text-base">
+              <span className="text-base sm:text-lg">
                 Click to Call
               </span>
             </a>
