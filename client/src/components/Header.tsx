@@ -58,13 +58,13 @@ export default function Header({ onBookService }: HeaderProps) {
         <div className="container mx-auto py-3 px-4 relative z-10">
           <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-between gap-2">
             {/* Message Section */}
-            <div className="flex items-center gap-2 text-white">
-              <PhoneCall className={`h-5 w-5 ${isBusinessHours ? 'animate-pulse' : 'animate-pulse-slow'}`} />
+            <div className="flex items-center gap-2 text-black">
+              <PhoneCall className={`h-6 w-6 ${isBusinessHours ? 'animate-pulse' : 'animate-pulse-slow'}`} />
               <div className="text-center sm:text-left">
-                <p className="text-sm sm:text-base font-semibold">
+                <p className="text-base sm:text-lg font-bold">
                   {isBusinessHours 
-                    ? '🔧 Real Plumbers Answer • No Call Centers'
-                    : '🚨 24/7 Emergency • Real Plumbers On-Call'
+                    ? 'Real Plumbers Answer • No Call Centers'
+                    : '24/7 Emergency • Real Plumbers On-Call'
                   }
                 </p>
               </div>
