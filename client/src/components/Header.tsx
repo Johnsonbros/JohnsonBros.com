@@ -91,28 +91,60 @@ export default function Header({ onBookService }: HeaderProps) {
       {/* Main Header */}
       <header className="bg-johnson-blue shadow-lg sticky top-0 z-50 border-t-2 border-johnson-blue">
         <div className="container mx-auto px-4 py-3">
-          <div className="flex justify-between items-center">
+          {/* Mobile Layout */}
+          <div className="lg:hidden">
+            {/* Logo - Full Width on Mobile */}
+            <div className="flex justify-center mb-3">
+              <img 
+                src="/JB_logo_New_1756136293648.png" 
+                alt="Johnson Bros. Plumbing & Drain Cleaning" 
+                className="h-14 w-full max-w-[280px] object-contain"
+                data-testid="company-logo"
+              />
+            </div>
+            
+            {/* Mobile Buttons Underneath Logo */}
+            <div className="flex gap-2">
+              <Button 
+                onClick={onBookService}
+                className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg font-bold transition-all duration-300 transform hover:scale-105 shadow-lg text-base touch-target"
+                data-testid="header-book-service-button"
+              >
+                BOOK SERVICE
+              </Button>
+              <a 
+                href="tel:6174799911" 
+                className="flex-1 bg-gradient-to-r from-johnson-orange to-orange-500 hover:from-orange-500 hover:to-johnson-orange text-white py-3 rounded-lg font-bold transition-all duration-300 transform hover:scale-105 shadow-lg text-base touch-target text-center"
+                data-testid="mobile-call-button"
+              >
+                TAP HERE TO CALL
+              </a>
+            </div>
+          </div>
+
+          {/* Desktop Layout */}
+          <div className="hidden lg:flex justify-between items-center">
             {/* Logo */}
             <div className="flex items-center">
               <img 
                 src="/JB_logo_New_1756136293648.png" 
                 alt="Johnson Bros. Plumbing & Drain Cleaning" 
-                className="h-12 sm:h-14 w-auto"
-                data-testid="company-logo"
+                className="h-14 w-auto"
+                data-testid="company-logo-desktop"
               />
             </div>
 
             {/* Desktop Navigation */}
-            <nav className="hidden lg:flex space-x-8">
+            <nav className="flex space-x-8">
               <a href="#services" className="text-white hover:text-blue-200 transition-colors font-medium">Services</a>
               <a href="#about" className="text-white hover:text-blue-200 transition-colors font-medium">About</a>
               <a href="#reviews" className="text-white hover:text-blue-200 transition-colors font-medium">Reviews</a>
               <a href="#contact" className="text-white hover:text-blue-200 transition-colors font-medium">Contact</a>
             </nav>
 
-            {/* CTA Buttons */}
-            <div className="flex items-center space-x-2 sm:space-x-4">
-              <div className="hidden lg:flex items-center space-x-2 bg-white/10 px-3 py-2 rounded-lg">
+            {/* Desktop CTA Buttons */}
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2 bg-white/10 px-3 py-2 rounded-lg">
                 <div className="flex text-yellow-400">
                   <Star className="h-4 w-4 fill-current" />
                   <Star className="h-4 w-4 fill-current" />
@@ -122,20 +154,12 @@ export default function Header({ onBookService }: HeaderProps) {
                 </div>
                 <span className="text-white text-sm font-medium" data-testid="rating-display">4.8/5 (281 reviews)</span>
               </div>
-              <a 
-                href="tel:6174799911" 
-                className="md:hidden bg-white text-johnson-blue p-2 rounded-lg hover:bg-gray-100 transition-colors touch-target"
-                data-testid="mobile-call-button"
-              >
-                <Phone className="h-5 w-5" />
-              </a>
               <Button 
                 onClick={onBookService}
-                className="bg-gradient-to-r from-johnson-orange to-orange-500 text-white px-3 py-2 sm:px-6 sm:py-3 rounded-lg font-bold hover:from-orange-500 hover:to-johnson-orange transition-all duration-300 transform hover:scale-105 shadow-lg text-sm sm:text-base touch-target"
-                data-testid="header-book-service-button"
+                className="bg-gradient-to-r from-johnson-orange to-orange-500 text-white px-6 py-3 rounded-lg font-bold hover:from-orange-500 hover:to-johnson-orange transition-all duration-300 transform hover:scale-105 shadow-lg text-base"
+                data-testid="header-book-service-button-desktop"
               >
-                <span className="hidden sm:inline">Book Service</span>
-                <span className="sm:hidden">Book</span>
+                Book Service
               </Button>
             </div>
           </div>
