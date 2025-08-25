@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { MapPin, Activity } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Loader } from "@googlemaps/js-api-loader";
 
 /// <reference types="@types/google.maps" />
@@ -15,7 +15,10 @@ interface HeatMapData {
 
 export function ServiceHeatMap() {
   const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<google.maps.Map | null>(null);
+  const mapInstanceRef = useRef<any>(null);
+  const heatmapRef = useRef<any>(null);
+  const [showHeatmap, setShowHeatmap] = useState(true);
+  const [currentGradient, setCurrentGradient] = useState<'default' | 'custom'>('custom');
   
   const { data: heatMapData, isLoading } = useQuery<HeatMapData[]>({
     queryKey: ['/api/social-proof/service-heat-map'],
@@ -28,127 +31,154 @@ export function ServiceHeatMap() {
       const loader = new Loader({
         apiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "",
         version: "weekly",
-        libraries: ["geometry"]
+        libraries: ["visualization", "geometry"]
       });
 
       try {
         const google = await loader.load();
         
-        // Center map on Massachusetts
+        // Center map on Massachusetts with a street view for trust signal
         const map = new google.maps.Map(mapRef.current!, {
-          zoom: 9,
+          zoom: 10,
           center: { lat: 42.3601, lng: -71.0589 }, // Boston center
           mapTypeId: google.maps.MapTypeId.ROADMAP,
           styles: [
             {
-              featureType: "poi",
+              featureType: "poi.business",
               elementType: "labels",
               stylers: [{ visibility: "off" }]
             }
-          ]
+          ],
+          mapTypeControl: true,
+          mapTypeControlOptions: {
+            style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
+            position: google.maps.ControlPosition.TOP_LEFT
+          },
+          zoomControl: true,
+          zoomControlOptions: {
+            position: google.maps.ControlPosition.RIGHT_CENTER
+          },
+          streetViewControl: false,
+          fullscreenControl: false
         });
 
         mapInstanceRef.current = map;
 
-        // Create enhanced heat map effect with multiple layers
-        const maxCustomers = Math.max(...heatMapData.map(city => city.count));
+        // Generate weighted heat map data points
+        // Create multiple points per city based on customer count for better density visualization
+        const heatmapData: any[] = [];
+        const maxCount = Math.max(...heatMapData.map(city => city.count));
         
         heatMapData.forEach(city => {
-          const intensity = city.count / maxCustomers;
-          const baseRadius = Math.max(3000, intensity * 15000);
+          // Add weighted points - more customers = more points in that area
+          const pointCount = Math.max(1, Math.round((city.count / maxCount) * 20));
           
-          // Outer glow effect (largest, most transparent)
-          const outerGlow = new google.maps.Circle({
-            strokeColor: '#3B82F6',
-            strokeOpacity: 0,
-            strokeWeight: 0,
-            fillColor: '#93C5FD', // Light blue
-            fillOpacity: Math.max(0.03, intensity * 0.15),
-            map: map,
-            center: { lat: city.lat, lng: city.lng },
-            radius: baseRadius * 2.5,
-            clickable: false
-          });
-
-          // Middle layer (medium opacity)
-          const middleLayer = new google.maps.Circle({
-            strokeColor: '#3B82F6',
-            strokeOpacity: 0,
-            strokeWeight: 0,
-            fillColor: '#60A5FA', // Medium blue
-            fillOpacity: Math.max(0.08, intensity * 0.25),
-            map: map,
-            center: { lat: city.lat, lng: city.lng },
-            radius: baseRadius * 1.5,
-            clickable: false
-          });
-          
-          // Core area (main clickable circle)
-          const coreCircle = new google.maps.Circle({
-            strokeColor: '#1E40AF', // Dark blue border
-            strokeOpacity: 0.4,
-            strokeWeight: 1,
-            fillColor: '#3B82F6', // Main blue
-            fillOpacity: Math.max(0.2, intensity * 0.5),
-            map: map,
-            center: { lat: city.lat, lng: city.lng },
-            radius: baseRadius,
-            clickable: true
-          });
-
-          // Add pulsing effect for high activity areas
-          if (intensity > 0.7) {
-            const pulseCircle = new google.maps.Circle({
-              strokeColor: '#1D4ED8',
-              strokeOpacity: 0.6,
-              strokeWeight: 2,
-              fillColor: '#3B82F6',
-              fillOpacity: 0.3,
-              map: map,
-              center: { lat: city.lat, lng: city.lng },
-              radius: baseRadius * 0.8,
-              clickable: false
-            });
+          for (let i = 0; i < pointCount; i++) {
+            // Add some random variation to create a more natural heat map
+            const latVariation = (Math.random() - 0.5) * 0.02; // ~1km variation
+            const lngVariation = (Math.random() - 0.5) * 0.02;
             
-            // Animate the pulse effect
-            let scale = 1;
-            let growing = true;
-            setInterval(() => {
-              if (growing) {
-                scale += 0.05;
-                if (scale >= 1.3) growing = false;
-              } else {
-                scale -= 0.05;
-                if (scale <= 1) growing = true;
-              }
-              pulseCircle.setRadius(baseRadius * 0.8 * scale);
-            }, 100);
+            heatmapData.push(
+              new google.maps.LatLng(
+                city.lat + latVariation,
+                city.lng + lngVariation
+              )
+            );
           }
+        });
 
-          // Enhanced info window
+        // Custom gradient for professional appearance (blue to red heat map)
+        const customGradient = [
+          'rgba(0, 255, 255, 0)',
+          'rgba(0, 255, 255, 1)',
+          'rgba(0, 191, 255, 1)',
+          'rgba(0, 127, 255, 1)',
+          'rgba(0, 63, 255, 1)',
+          'rgba(0, 0, 255, 1)',
+          'rgba(0, 0, 223, 1)',
+          'rgba(0, 0, 191, 1)',
+          'rgba(0, 0, 159, 1)',
+          'rgba(0, 0, 127, 1)',
+          'rgba(63, 0, 91, 1)',
+          'rgba(127, 0, 63, 1)',
+          'rgba(191, 0, 31, 1)',
+          'rgba(255, 0, 0, 1)'
+        ];
+
+        // Create the heat map layer
+        const heatmap = new google.maps.visualization.HeatmapLayer({
+          data: heatmapData,
+          map: map,
+          radius: 25,
+          opacity: 0.7,
+          gradient: customGradient,
+          maxIntensity: 5,
+          dissipating: true
+        });
+
+        heatmapRef.current = heatmap;
+
+        // Add markers for top service areas with info windows
+        const topCities = [...heatMapData].sort((a, b) => b.count - a.count).slice(0, 5);
+        
+        topCities.forEach((city, index) => {
+          const marker = new google.maps.Marker({
+            position: { lat: city.lat, lng: city.lng },
+            map: map,
+            title: city.city,
+            icon: {
+              path: google.maps.SymbolPath.CIRCLE,
+              scale: 8,
+              fillColor: index === 0 ? '#EF4444' : '#3B82F6',
+              fillOpacity: 0.8,
+              strokeColor: '#FFFFFF',
+              strokeWeight: 2
+            },
+            animation: index === 0 ? google.maps.Animation.BOUNCE : undefined
+          });
+
           const infoWindow = new google.maps.InfoWindow({
             content: `
-              <div style="padding: 16px; font-family: system-ui; min-width: 200px;">
-                <h3 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 700; color: #1f2937;">${city.city}</h3>
+              <div style="padding: 16px; font-family: system-ui; min-width: 250px;">
+                <h3 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 700; color: #1f2937;">
+                  ${city.city} ${index === 0 ? '🏆' : ''}
+                </h3>
                 <div style="display: flex; align-items: center; margin-bottom: 8px;">
-                  <div style="width: 12px; height: 12px; background: #3B82F6; border-radius: 50%; margin-right: 8px;"></div>
-                  <span style="color: #4b5563; font-size: 14px;">${city.count} customers served</span>
+                  <div style="width: 12px; height: 12px; background: ${index === 0 ? '#EF4444' : '#3B82F6'}; border-radius: 50%; margin-right: 8px;"></div>
+                  <span style="color: #4b5563; font-size: 14px; font-weight: 600;">${city.count} jobs completed</span>
                 </div>
                 <div style="display: flex; align-items: center; margin-bottom: 12px;">
-                  <div style="width: 12px; height: 12px; background: #10b981; border-radius: 50%; margin-right: 8px;"></div>
+                  <div style="width: 12px; height: 12px; background: #10B981; border-radius: 50%; margin-right: 8px;"></div>
                   <span style="color: #4b5563; font-size: 14px;">Active service area</span>
                 </div>
-                <div style="padding: 8px 12px; background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border-radius: 8px; text-align: center; margin-top: 8px;">
-                  <span style="font-size: 13px; color: #1e40af; font-weight: 600;">Johnson Bros Coverage Zone</span>
+                <div style="padding: 8px 12px; background: linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%); border-radius: 8px; text-align: center; margin-top: 8px;">
+                  <span style="font-size: 13px; color: #1E40AF; font-weight: 600;">
+                    ${index === 0 ? 'Top Service Area' : `#${index + 1} Service Area`}
+                  </span>
+                </div>
+                <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #E5E7EB;">
+                  <div style="font-size: 12px; color: #6B7280;">
+                    ⭐⭐⭐⭐⭐ 5.0 Rating
+                  </div>
+                  <div style="font-size: 11px; color: #9CA3AF; margin-top: 4px;">
+                    Trusted by your neighbors
+                  </div>
                 </div>
               </div>
             `,
             position: { lat: city.lat, lng: city.lng }
           });
 
-          coreCircle.addListener('click', () => {
-            infoWindow.open(map);
+          marker.addListener('click', () => {
+            infoWindow.open(map, marker);
           });
+
+          // Auto-open the top city's info window
+          if (index === 0) {
+            setTimeout(() => {
+              infoWindow.open(map, marker);
+            }, 1500);
+          }
         });
 
       } catch (error) {
