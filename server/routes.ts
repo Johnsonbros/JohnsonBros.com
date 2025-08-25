@@ -345,37 +345,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const recentJobs = data.jobs?.filter((job: any) => 
         job.work_timestamps?.completed_at && job.address?.city
       ).map((job: any) => {
-        // Generate a realistic job summary from service type and common plumbing tasks
-        const generateJobSummary = (serviceType: string) => {
-          const summaries = [
-            `Fixed leaking faucet and replaced worn washers`,
-            `Cleared drain blockage and performed pipe inspection`, 
-            `Repaired water heater and replaced heating element`,
-            `Installed new toilet and updated plumbing connections`,
-            `Fixed burst pipe and restored water flow`,
-            `Unclogged kitchen sink and cleaned disposal`,
-            `Replaced old fixtures with modern energy-efficient models`,
-            `Repaired sump pump and tested drainage system`,
-            `Fixed running toilet and replaced flapper valve`,
-            `Cleared main sewer line blockage with hydro-jetting`
-          ];
-          return summaries[Math.floor(Math.random() * summaries.length)];
+        // Extract real job summary from line items and service description
+        const generateJobSummaryFromLineItems = (job: any) => {
+          // Try to get actual line items first
+          let summary = '';
+          
+          if (job.line_items && job.line_items.length > 0) {
+            // Use actual line items from the job
+            const items = job.line_items.slice(0, 2).map((item: any) => item.name || item.description).filter(Boolean);
+            if (items.length > 0) {
+              summary = items.join(' and ');
+            }
+          }
+          
+          // Fall back to job type or description
+          if (!summary) {
+            summary = job.job_fields?.job_type?.name || 
+                     job.description || 
+                     job.work_descriptions?.[0] || 
+                     'Plumbing service completed';
+          }
+          
+          return summary;
         };
 
-        // Generate technician names
-        const technicians = [
-          'Mike Johnson', 'Steve Rodriguez', 'Tom Wilson', 'Dave Martinez',
-          'Chris Thompson', 'Ryan O\'Connor', 'Jake Sullivan', 'Matt DiMaggio'
-        ];
+        // Extract real technician name
+        const getTechnicianName = (job: any) => {
+          if (job.assigned_employees && job.assigned_employees.length > 0) {
+            const employee = job.assigned_employees[0];
+            return `${employee.first_name || ''} ${employee.last_name || ''}`.trim() || 'Our technician';
+          }
+          return 'Our technician';
+        };
 
         return {
           id: job.id,
           serviceType: job.job_fields?.job_type?.name || 'Plumbing Service',
-          jobSummary: generateJobSummary(job.job_fields?.job_type?.name),
+          jobSummary: generateJobSummaryFromLineItems(job),
           completedAt: job.work_timestamps?.completed_at,
           city: job.address?.city || 'Local Area',
           state: job.address?.state || 'MA',
-          technician: technicians[Math.floor(Math.random() * technicians.length)],
+          technician: getTechnicianName(job),
           customerInitial: job.customer?.first_name?.charAt(0) || 'J',
           streetAddress: job.address?.street || 'Residential Area'
         };

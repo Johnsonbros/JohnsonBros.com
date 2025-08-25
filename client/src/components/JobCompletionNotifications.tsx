@@ -33,47 +33,56 @@ export function JobCompletionNotifications() {
   useEffect(() => {
     if (recentJobs.length === 0) return;
 
-    const showNextNotification = () => {
-      const job = recentJobs[currentIndex % recentJobs.length];
-      if (!job) return;
+    let timeoutId: NodeJS.Timeout;
 
-      const newNotification: Notification = {
-        id: `${job.id}-${Date.now()}`,
-        job,
-        show: true,
-      };
+    const scheduleNextNotification = () => {
+      // Random delay between 45 seconds to 3 minutes (more organic)
+      const randomDelay = Math.random() * 135000 + 45000; // 45-180 seconds
+      
+      timeoutId = setTimeout(() => {
+        // Only show if no notification is currently visible
+        if (notifications.length === 0) {
+          const job = recentJobs[currentIndex % recentJobs.length];
+          if (job) {
+            const newNotification: Notification = {
+              id: `${job.id}-${Date.now()}`,
+              job,
+              show: true,
+            };
 
-      setNotifications(prev => [...prev.slice(-2), newNotification]); // Keep only last 3 notifications
+            setNotifications([newNotification]);
 
-      // Hide notification after 6 seconds
-      setTimeout(() => {
-        setNotifications(prev => 
-          prev.map(n => n.id === newNotification.id ? { ...n, show: false } : n)
-        );
-      }, 6000);
+            // Hide notification after 5 seconds
+            setTimeout(() => {
+              setNotifications(prev => 
+                prev.map(n => n.id === newNotification.id ? { ...n, show: false } : n)
+              );
+            }, 5000);
 
-      // Remove notification after animation completes
-      setTimeout(() => {
-        setNotifications(prev => prev.filter(n => n.id !== newNotification.id));
-      }, 6500);
+            // Remove notification after animation completes
+            setTimeout(() => {
+              setNotifications([]);
+            }, 5500);
 
-      setCurrentIndex(prev => prev + 1);
+            setCurrentIndex(prev => prev + 1);
+          }
+        }
+        
+        // Schedule the next notification
+        scheduleNextNotification();
+      }, randomDelay);
     };
 
-    // Show first notification after 2 seconds
-    const initialTimer = setTimeout(showNextNotification, 2000);
-
-    // Then show notifications every 8-15 seconds randomly
-    const interval = setInterval(() => {
-      const randomDelay = Math.random() * 7000 + 8000; // 8-15 seconds
-      setTimeout(showNextNotification, randomDelay);
-    }, 15000);
+    // Initial delay (10-30 seconds after page load)
+    const initialDelay = Math.random() * 20000 + 10000;
+    timeoutId = setTimeout(() => {
+      scheduleNextNotification();
+    }, initialDelay);
 
     return () => {
-      clearTimeout(initialTimer);
-      clearInterval(interval);
+      clearTimeout(timeoutId);
     };
-  }, [recentJobs, currentIndex]);
+  }, [recentJobs]); // Only depend on recentJobs to avoid infinite loops
 
   const dismissNotification = (id: string) => {
     setNotifications(prev => 
@@ -90,8 +99,8 @@ export function JobCompletionNotifications() {
         <div
           key={notification.id}
           className={`
-            pointer-events-auto bg-white rounded-lg shadow-2xl border border-gray-200 p-4 w-80 
-            transition-all duration-500 transform origin-bottom-right
+            pointer-events-auto bg-white rounded-lg shadow-xl border border-gray-200 p-3 w-72 
+            transition-all duration-300 transform origin-bottom-right
             ${notification.show 
               ? 'translate-x-0 opacity-100 scale-100' 
               : 'translate-x-full opacity-0 scale-95'
@@ -100,42 +109,43 @@ export function JobCompletionNotifications() {
           data-testid={`job-notification-${notification.job.id}`}
         >
           <div className="flex items-start justify-between">
-            <div className="flex items-start space-x-3 flex-1">
+            <div className="flex items-start space-x-2 flex-1">
               {/* Success Icon */}
-              <div className="bg-green-100 rounded-full p-2 flex-shrink-0">
-                <CheckCircle className="h-5 w-5 text-green-600" />
+              <div className="bg-green-100 rounded-full p-1.5 flex-shrink-0">
+                <CheckCircle className="h-4 w-4 text-green-600" />
               </div>
 
               <div className="flex-1 min-w-0">
                 {/* Header */}
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-sm font-semibold text-gray-900 truncate">
+                <div className="flex items-center justify-between mb-1">
+                  <h4 className="text-xs font-semibold text-gray-900 truncate">
                     Job Completed! 🎉
                   </h4>
-                  <span className="text-xs text-gray-500 ml-2">
+                  <span className="text-xs text-gray-500 ml-1">
                     Just now
                   </span>
                 </div>
 
                 {/* Job Summary */}
-                <p className="text-sm text-gray-700 mb-3 line-clamp-2">
+                <p className="text-xs text-gray-700 mb-2 line-clamp-2">
                   {notification.job.jobSummary}
                 </p>
 
-                {/* Location */}
-                <div className="flex items-center text-xs text-gray-600 mb-2">
-                  <MapPin className="h-3 w-3 mr-1 flex-shrink-0" />
-                  <span className="truncate">
-                    {notification.job.city}, {notification.job.state}
-                  </span>
-                </div>
-
-                {/* Technician */}
-                <div className="flex items-center text-xs text-gray-600">
-                  <User className="h-3 w-3 mr-1 flex-shrink-0" />
-                  <span className="truncate">
-                    Completed by {notification.job.technician}
-                  </span>
+                {/* Location and Technician in one line */}
+                <div className="flex items-center justify-between text-xs text-gray-600">
+                  <div className="flex items-center truncate">
+                    <MapPin className="h-3 w-3 mr-1 flex-shrink-0" />
+                    <span className="truncate">
+                      {notification.job.city}, {notification.job.state}
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center ml-2 flex-shrink-0">
+                    <User className="h-3 w-3 mr-1" />
+                    <span className="truncate">
+                      {notification.job.technician}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -143,18 +153,18 @@ export function JobCompletionNotifications() {
             {/* Dismiss Button */}
             <button
               onClick={() => dismissNotification(notification.id)}
-              className="ml-2 p-1 hover:bg-gray-100 rounded transition-colors flex-shrink-0"
+              className="ml-1 p-0.5 hover:bg-gray-100 rounded transition-colors flex-shrink-0"
               data-testid={`dismiss-notification-${notification.job.id}`}
             >
-              <X className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+              <X className="h-3 w-3 text-gray-400 hover:text-gray-600" />
             </button>
           </div>
 
           {/* Progress Bar */}
-          <div className="mt-3 w-full bg-gray-200 rounded-full h-1">
+          <div className="mt-2 w-full bg-gray-200 rounded-full h-0.5">
             <div 
-              className="bg-green-500 h-1 rounded-full animate-shrink-width" 
-              style={{ animationDuration: '6s' }}
+              className="bg-green-500 h-0.5 rounded-full animate-shrink-width" 
+              style={{ animationDuration: '5s' }}
             />
           </div>
         </div>
