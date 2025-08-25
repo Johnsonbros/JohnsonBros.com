@@ -50,54 +50,103 @@ export function ServiceHeatMap() {
 
         mapInstanceRef.current = map;
 
-        // Create custom heat map effect with circles
+        // Create enhanced heat map effect with multiple layers
         const maxCustomers = Math.max(...heatMapData.map(city => city.count));
         
         heatMapData.forEach(city => {
           const intensity = city.count / maxCustomers;
-          const radius = Math.max(5000, intensity * 25000); // Radius in meters
+          const baseRadius = Math.max(3000, intensity * 15000);
           
-          // Create glowing circle for customer density
-          const circle = new google.maps.Circle({
-            strokeColor: '#3B82F6', // Blue color
+          // Outer glow effect (largest, most transparent)
+          const outerGlow = new google.maps.Circle({
+            strokeColor: '#3B82F6',
             strokeOpacity: 0,
             strokeWeight: 0,
-            fillColor: '#3B82F6',
-            fillOpacity: Math.max(0.1, intensity * 0.6), // Brighter where more customers
+            fillColor: '#93C5FD', // Light blue
+            fillOpacity: Math.max(0.03, intensity * 0.15),
             map: map,
             center: { lat: city.lat, lng: city.lng },
-            radius: radius,
-            clickable: true
-          });
-
-          // Add glow effect with larger, more transparent circle
-          const glowCircle = new google.maps.Circle({
-            strokeColor: '#60A5FA',
-            strokeOpacity: 0,
-            strokeWeight: 0,
-            fillColor: '#60A5FA',
-            fillOpacity: Math.max(0.05, intensity * 0.3),
-            map: map,
-            center: { lat: city.lat, lng: city.lng },
-            radius: radius * 1.8,
+            radius: baseRadius * 2.5,
             clickable: false
           });
 
-          // Add info window for click interaction
+          // Middle layer (medium opacity)
+          const middleLayer = new google.maps.Circle({
+            strokeColor: '#3B82F6',
+            strokeOpacity: 0,
+            strokeWeight: 0,
+            fillColor: '#60A5FA', // Medium blue
+            fillOpacity: Math.max(0.08, intensity * 0.25),
+            map: map,
+            center: { lat: city.lat, lng: city.lng },
+            radius: baseRadius * 1.5,
+            clickable: false
+          });
+          
+          // Core area (main clickable circle)
+          const coreCircle = new google.maps.Circle({
+            strokeColor: '#1E40AF', // Dark blue border
+            strokeOpacity: 0.4,
+            strokeWeight: 1,
+            fillColor: '#3B82F6', // Main blue
+            fillOpacity: Math.max(0.2, intensity * 0.5),
+            map: map,
+            center: { lat: city.lat, lng: city.lng },
+            radius: baseRadius,
+            clickable: true
+          });
+
+          // Add pulsing effect for high activity areas
+          if (intensity > 0.7) {
+            const pulseCircle = new google.maps.Circle({
+              strokeColor: '#1D4ED8',
+              strokeOpacity: 0.6,
+              strokeWeight: 2,
+              fillColor: '#3B82F6',
+              fillOpacity: 0.3,
+              map: map,
+              center: { lat: city.lat, lng: city.lng },
+              radius: baseRadius * 0.8,
+              clickable: false
+            });
+            
+            // Animate the pulse effect
+            let scale = 1;
+            let growing = true;
+            setInterval(() => {
+              if (growing) {
+                scale += 0.05;
+                if (scale >= 1.3) growing = false;
+              } else {
+                scale -= 0.05;
+                if (scale <= 1) growing = true;
+              }
+              pulseCircle.setRadius(baseRadius * 0.8 * scale);
+            }, 100);
+          }
+
+          // Enhanced info window
           const infoWindow = new google.maps.InfoWindow({
             content: `
-              <div style="padding: 12px; font-family: system-ui;">
-                <h3 style="margin: 0 0 8px 0; font-size: 18px; font-weight: 600; color: #1f2937;">${city.city}</h3>
-                <p style="margin: 0; color: #6b7280; font-size: 14px;">${city.count} customers served</p>
-                <div style="margin-top: 8px; padding: 4px 8px; background: #dbeafe; border-radius: 4px; font-size: 12px; color: #1e40af; display: inline-block;">
-                  Service Area
+              <div style="padding: 16px; font-family: system-ui; min-width: 200px;">
+                <h3 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 700; color: #1f2937;">${city.city}</h3>
+                <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                  <div style="width: 12px; height: 12px; background: #3B82F6; border-radius: 50%; margin-right: 8px;"></div>
+                  <span style="color: #4b5563; font-size: 14px;">${city.count} customers served</span>
+                </div>
+                <div style="display: flex; align-items: center; margin-bottom: 12px;">
+                  <div style="width: 12px; height: 12px; background: #10b981; border-radius: 50%; margin-right: 8px;"></div>
+                  <span style="color: #4b5563; font-size: 14px;">Active service area</span>
+                </div>
+                <div style="padding: 8px 12px; background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border-radius: 8px; text-align: center; margin-top: 8px;">
+                  <span style="font-size: 13px; color: #1e40af; font-weight: 600;">Johnson Bros Coverage Zone</span>
                 </div>
               </div>
             `,
             position: { lat: city.lat, lng: city.lng }
           });
 
-          circle.addListener('click', () => {
+          coreCircle.addListener('click', () => {
             infoWindow.open(map);
           });
         });
@@ -145,74 +194,62 @@ export function ServiceHeatMap() {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg overflow-hidden max-w-4xl mx-auto" data-testid="service-heat-map">
-      {/* Header */}
-      <div className="p-4 border-b border-gray-100">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <MapPin className="h-5 w-5 text-blue-600 mr-2" />
-            <h3 className="text-lg font-semibold text-gray-900">Massachusetts Service Coverage</h3>
-          </div>
-          <div className="flex items-center">
-            <Activity className="h-4 w-4 text-green-500 mr-2 animate-pulse" />
-            <span className="text-sm text-gray-600">Live Data</span>
-          </div>
-        </div>
+    <div className="bg-white w-full max-w-5xl mx-auto" data-testid="service-heat-map">
+      {/* Header - matches your site style */}
+      <div className="text-center py-6 px-4">
+        <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
+          Where Do We Work? Lets see.....
+        </h2>
       </div>
 
       {/* Google Maps Container */}
       <div className="relative">
         <div 
           ref={mapRef}
-          className="h-80 w-full"
+          className="h-96 md:h-[500px] w-full"
           data-testid="google-map-container"
         />
 
-        {/* Service Stats Overlay - Bottom Center */}
-        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
-          <div className="bg-white rounded-2xl p-4 shadow-xl border border-gray-100 min-w-80">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600" data-testid="cities-served">
-                  {heatMapData.length}
-                </div>
-                <div className="text-xs text-gray-600">Cities Served</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600" data-testid="total-jobs">
-                  {heatMapData.reduce((sum, city) => sum + city.count, 0)}
-                </div>
-                <div className="text-xs text-gray-600">Total Jobs</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600" data-testid="most-active">
-                  {Math.max(...heatMapData.map(city => city.count))}
-                </div>
-                <div className="text-xs text-gray-600">Most Active</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-orange-600" data-testid="avg-rating">5.0★</div>
-                <div className="text-xs text-gray-600">Avg Rating</div>
-              </div>
-            </div>
+        {/* Floating info button - top right */}
+        <div className="absolute top-4 right-4 z-10">
+          <div className="bg-white rounded-full p-2 shadow-lg border border-gray-200">
+            <Activity className="h-4 w-4 text-blue-600" />
           </div>
         </div>
-      </div>
 
-      {/* Legend */}
-      <div className="p-4 bg-gray-50 border-t border-gray-100">
-        <div className="flex items-center justify-center space-x-4 text-sm">
-          <div className="flex items-center">
-            <div className="w-3 h-3 bg-red-500 rounded-full mr-1.5"></div>
-            <span className="text-gray-700">High Activity</span>
-          </div>
-          <div className="flex items-center">
-            <div className="w-3 h-3 bg-yellow-500 rounded-full mr-1.5"></div>
-            <span className="text-gray-700">Medium Activity (10-19 jobs)</span>
-          </div>
-          <div className="flex items-center">
-            <div className="w-3 h-3 bg-green-500 rounded-full mr-1.5"></div>
-            <span className="text-gray-700">Regular Service (1-9 jobs)</span>
+        {/* Bottom stats bar */}
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/20 to-transparent">
+          <div className="p-4">
+            <div className="bg-white rounded-xl p-3 shadow-lg mx-4">
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center space-x-4">
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-blue-600" data-testid="cities-served">
+                      {heatMapData.length}
+                    </div>
+                    <div className="text-xs text-gray-600">Cities</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-green-600" data-testid="total-jobs">
+                      {heatMapData.reduce((sum, city) => sum + city.count, 0)}
+                    </div>
+                    <div className="text-xs text-gray-600">Jobs</div>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-4">
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-purple-600" data-testid="most-active">
+                      {Math.max(...heatMapData.map(city => city.count))}
+                    </div>
+                    <div className="text-xs text-gray-600">Peak</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-orange-600" data-testid="avg-rating">5.0★</div>
+                    <div className="text-xs text-gray-600">Rating</div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
