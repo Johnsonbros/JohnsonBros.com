@@ -30,26 +30,28 @@ export default function ReviewsSection() {
   };
 
   return (
-    <section id="reviews" className="py-20 bg-gray-50">
+    <section id="reviews" className="py-12 sm:py-16 lg:py-20 bg-gray-50">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-gray-900 mb-4">What Our Customers Say</h2>
-          <div className="flex justify-center items-center space-x-4 mb-6">
-            <div className="flex text-yellow-400 text-2xl">
+        <div className="text-center mb-12 sm:mb-16">
+          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">What Our Customers Say</h2>
+          <div className="flex flex-col sm:flex-row justify-center items-center space-y-2 sm:space-y-0 sm:space-x-4 mb-6">
+            <div className="flex text-yellow-400 text-xl sm:text-2xl">
               {[...Array(5)].map((_, i) => (
-                <Star key={i} className="h-6 w-6 fill-current" />
+                <Star key={i} className="h-5 w-5 sm:h-6 sm:w-6 fill-current" />
               ))}
             </div>
-            <span className="text-xl font-bold text-gray-900" data-testid="average-rating">
-              {averageRating}/5
-            </span>
-            <span className="text-gray-600" data-testid="review-count">
-              Based on {reviews?.length || 281}+ Google Reviews
-            </span>
+            <div className="flex flex-col sm:flex-row items-center space-y-1 sm:space-y-0 sm:space-x-4">
+              <span className="text-lg sm:text-xl font-bold text-gray-900" data-testid="average-rating">
+                {averageRating}/5
+              </span>
+              <span className="text-sm sm:text-base text-gray-600" data-testid="review-count">
+                Based on {reviews?.length || 281}+ Google Reviews
+              </span>
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
           {isLoading ? (
             Array.from({ length: 3 }).map((_, index) => (
               <div key={index} className="bg-white rounded-xl p-6 shadow-lg">
@@ -76,32 +78,32 @@ export default function ReviewsSection() {
             reviews?.map((review) => (
               <div 
                 key={review.id} 
-                className="bg-white rounded-xl p-6 shadow-lg review-card"
+                className="bg-white rounded-xl p-4 sm:p-6 shadow-lg review-card"
                 data-testid={`review-${review.id}`}
               >
                 <div className="flex items-center mb-4">
-                  <div className="w-12 h-12 bg-johnson-blue rounded-full flex items-center justify-center text-white font-bold">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-johnson-blue rounded-full flex items-center justify-center text-white font-bold text-sm sm:text-base">
                     {review.customerName.charAt(0)}
                   </div>
-                  <div className="ml-4">
-                    <h4 className="font-semibold text-gray-900" data-testid={`review-customer-${review.id}`}>
+                  <div className="ml-3 sm:ml-4">
+                    <h4 className="font-semibold text-gray-900 text-sm sm:text-base" data-testid={`review-customer-${review.id}`}>
                       {review.customerName}
                     </h4>
                     <div className="flex text-yellow-400">
                       {[...Array(5)].map((_, i) => (
                         <Star 
                           key={i} 
-                          className={`h-4 w-4 ${i < parseFloat(review.rating) ? 'fill-current' : ''}`} 
+                          className={`h-3 w-3 sm:h-4 sm:w-4 ${i < parseFloat(review.rating) ? 'fill-current' : ''}`} 
                         />
                       ))}
                     </div>
                   </div>
                 </div>
-                <p className="text-gray-600 mb-4" data-testid={`review-comment-${review.id}`}>
+                <p className="text-gray-600 mb-4 text-sm sm:text-base leading-relaxed" data-testid={`review-comment-${review.id}`}>
                   "{review.comment}"
                 </p>
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-500" data-testid={`review-service-${review.id}`}>
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 text-xs sm:text-sm">
+                  <span className="text-gray-500 font-medium" data-testid={`review-service-${review.id}`}>
                     {review.serviceName}
                   </span>
                   <span className="text-gray-500" data-testid={`review-time-${review.id}`}>

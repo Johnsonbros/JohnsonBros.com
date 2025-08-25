@@ -163,22 +163,57 @@
   backdrop-filter: blur(4px);
 }
 
-.service-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-}
+/* Mobile-optimized hover effects */
+@media (hover: hover) {
+  .service-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  }
 
-.time-slot-button:hover {
-  background-color: var(--johnson-blue);
-  color: white;
-  transform: scale(1.02);
+  .time-slot-button:hover {
+    background-color: var(--johnson-blue);
+    color: white;
+    transform: scale(1.02);
+  }
+
+  .review-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  }
 }
 
 .review-card {
   transition: all 0.3s ease;
 }
 
-.review-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+/* Touch-friendly targets */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+  touch-action: manipulation;
+}
+
+/* Mobile-first responsive adjustments */
+@media (max-width: 640px) {
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+/* Improved mobile spacing */
+.mobile-spacing {
+  padding: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .mobile-spacing {
+    padding: 1rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .mobile-spacing {
+    padding: 1.5rem;
+  }
 }

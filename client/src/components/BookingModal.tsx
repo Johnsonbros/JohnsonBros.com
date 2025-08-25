@@ -220,44 +220,44 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
-        <DialogHeader className="bg-johnson-blue text-white p-6 -m-6 mb-0">
+      <DialogContent className="w-[95vw] max-w-4xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden mx-auto">
+        <DialogHeader className="bg-johnson-blue text-white p-4 sm:p-6 -m-4 sm:-m-6 mb-0">
           <div className="flex justify-between items-center">
             <div>
-              <DialogTitle className="text-2xl font-bold">Book Your Service</DialogTitle>
-              <p className="text-blue-100">Fast, easy scheduling in just a few steps</p>
+              <DialogTitle className="text-xl sm:text-2xl font-bold">Book Your Service</DialogTitle>
+              <p className="text-blue-100 text-sm sm:text-base">Fast, easy scheduling in just a few steps</p>
             </div>
             <Button
               variant="ghost"
               size="icon"
               onClick={onClose}
-              className="text-white hover:text-gray-300 hover:bg-white/10"
+              className="text-white hover:text-gray-300 hover:bg-white/10 touch-target"
               data-testid="close-booking-modal"
             >
-              <X className="h-5 w-5" />
+              <X className="h-6 w-6" />
             </Button>
           </div>
         </DialogHeader>
 
         {/* Progress Indicator */}
-        <div className="bg-gray-50 px-6 py-4 -mx-6">
-          <div className="flex justify-between items-center max-w-md mx-auto">
+        <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:py-4 -mx-4 sm:-mx-6">
+          <div className="flex justify-between items-center max-w-sm sm:max-w-md mx-auto">
             {progressSteps.map((step, index) => (
-              <div key={step.number} className="flex items-center">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+              <div key={step.number} className="flex items-center flex-1">
+                <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold ${
                   step.completed ? 'bg-green-500 text-white' :
                   step.active ? 'bg-johnson-blue text-white' : 
                   'bg-gray-300 text-gray-500'
                 }`}>
                   {step.number}
                 </div>
-                <span className={`ml-2 text-sm font-medium ${
+                <span className={`ml-1 sm:ml-2 text-xs sm:text-sm font-medium ${
                   step.active ? 'text-johnson-blue' : 'text-gray-500'
-                }`}>
+                } hidden sm:inline`}>
                   {step.label}
                 </span>
                 {index < progressSteps.length - 1 && (
-                  <div className={`flex-1 h-1 mx-4 ${
+                  <div className={`flex-1 h-1 mx-2 sm:mx-4 ${
                     step.completed ? 'bg-green-500' : 'bg-gray-300'
                   }`} />
                 )}
@@ -266,12 +266,12 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
           </div>
         </div>
 
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
+        <div className="p-4 sm:p-6 overflow-y-auto max-h-[calc(95vh-180px)] sm:max-h-[calc(90vh-200px)]">
           {/* Step 1: Service Selection */}
           {currentStep === 1 && (
             <div className="step-transition-enter">
-              <h4 className="text-xl font-bold text-gray-900 mb-6">What service do you need?</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <h4 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">What service do you need?</h4>
+              <div className="grid grid-cols-1 gap-3 sm:gap-4">
                 {services?.map((service) => {
                   const IconComponent = serviceIcons[service.category as keyof typeof serviceIcons] || serviceIcons.default;
                   const isSelected = selectedService?.id === service.id;
@@ -291,24 +291,24 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                     <div
                       key={service.id}
                       onClick={() => handleServiceSelect(service)}
-                      className={`border-2 rounded-lg p-4 cursor-pointer transition-colors ${
+                      className={`border-2 rounded-lg p-3 sm:p-4 cursor-pointer transition-colors touch-target ${
                         isSelected 
                           ? 'border-johnson-blue bg-blue-50' 
                           : 'border-gray-200 hover:border-johnson-blue'
                       }`}
                       data-testid={`booking-service-${service.id}`}
                     >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div className={`p-2 rounded-lg ${getIconColor(service.category)}`}>
-                            <IconComponent className="h-5 w-5" />
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-start space-x-3 flex-1">
+                          <div className={`p-2 rounded-lg flex-shrink-0 ${getIconColor(service.category)}`}>
+                            <IconComponent className="h-4 w-4 sm:h-5 sm:w-5" />
                           </div>
-                          <div>
-                            <h5 className="font-semibold text-gray-900">{service.name}</h5>
-                            <p className="text-sm text-gray-600">{service.description.substring(0, 50)}...</p>
+                          <div className="flex-1 min-w-0">
+                            <h5 className="font-semibold text-gray-900 text-sm sm:text-base">{service.name}</h5>
+                            <p className="text-xs sm:text-sm text-gray-600">{service.description.substring(0, 60)}...</p>
                           </div>
                         </div>
-                        <span className="text-johnson-blue font-bold">
+                        <span className="text-johnson-blue font-bold text-sm sm:text-base flex-shrink-0 ml-2">
                           {service.basePrice === "2500.00" ? "Quote" : `$${service.basePrice}+`}
                         </span>
                       </div>
@@ -317,11 +317,11 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                 })}
               </div>
 
-              <div className="mt-8 flex justify-end">
+              <div className="mt-6 sm:mt-8 flex justify-end">
                 <Button
                   onClick={nextStep}
                   disabled={!selectedService}
-                  className="bg-johnson-blue text-white px-6 py-3 rounded-lg font-semibold hover:bg-johnson-teal transition-colors disabled:opacity-50"
+                  className="bg-johnson-blue text-white px-6 py-3 rounded-lg font-semibold hover:bg-johnson-teal transition-colors disabled:opacity-50 w-full sm:w-auto touch-target"
                   data-testid="step1-continue-button"
                 >
                   Continue to Schedule
@@ -333,16 +333,17 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
           {/* Step 2: Schedule Selection */}
           {currentStep === 2 && (
             <div className="step-transition-enter">
-              <h4 className="text-xl font-bold text-gray-900 mb-6">When would you like service?</h4>
+              <h4 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">When would you like service?</h4>
               
-              <div className="grid md:grid-cols-2 gap-8">
+              <div className="space-y-6 md:grid md:grid-cols-2 md:gap-8 md:space-y-0">
                 <div>
-                  <h5 className="font-semibold text-gray-900 mb-4">Select Date</h5>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <div className="grid grid-cols-7 gap-1 mb-4">
-                      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                        <div key={day} className="text-center text-sm font-medium text-gray-500 py-2">
-                          {day}
+                  <h5 className="font-semibold text-gray-900 mb-3 sm:mb-4">Select Date</h5>
+                  <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
+                    <div className="grid grid-cols-7 gap-1 mb-3 sm:mb-4">
+                      {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
+                        <div key={day} className="text-center text-xs sm:text-sm font-medium text-gray-500 py-1 sm:py-2">
+                          <span className="sm:hidden">{day}</span>
+                          <span className="hidden sm:inline">{['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][index]}</span>
                         </div>
                       ))}
                     </div>
@@ -351,7 +352,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                         <div
                           key={day.date}
                           onClick={() => handleDateSelect(day.date)}
-                          className={`text-center py-2 cursor-pointer rounded transition-colors ${
+                          className={`text-center py-2 sm:py-3 cursor-pointer rounded transition-colors touch-target min-h-[40px] sm:min-h-[44px] flex items-center justify-center text-sm sm:text-base ${
                             selectedDate === day.date
                               ? 'bg-johnson-blue text-white'
                               : day.isWeekend
@@ -368,9 +369,9 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                 </div>
 
                 <div>
-                  <h5 className="font-semibold text-gray-900 mb-4">Available Times</h5>
+                  <h5 className="font-semibold text-gray-900 mb-3 sm:mb-4">Available Times</h5>
                   {selectedDate ? (
-                    <div className="space-y-2">
+                    <div className="space-y-2 max-h-64 md:max-h-none overflow-y-auto">
                       {timeSlotsLoading ? (
                         <div className="text-center py-4">
                           <p className="text-gray-500">Loading available times...</p>
@@ -382,7 +383,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                             <div
                               key={slot.id}
                               onClick={() => handleTimeSelect(slot)}
-                              className={`border rounded-lg p-3 cursor-pointer transition-colors time-slot-button ${
+                              className={`border rounded-lg p-3 sm:p-4 cursor-pointer transition-colors time-slot-button touch-target ${
                                 isSelected 
                                   ? 'border-johnson-blue bg-blue-50' 
                                   : 'border-gray-200 hover:border-johnson-blue'
@@ -390,10 +391,10 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                               data-testid={`time-slot-${slot.startTime}`}
                             >
                               <div className="flex justify-between items-center">
-                                <span className="font-medium">
+                                <span className="font-medium text-sm sm:text-base">
                                   {slot.startTime} - {slot.endTime}
                                 </span>
-                                <span className="text-sm text-green-600">Available</span>
+                                <span className="text-xs sm:text-sm text-green-600">Available</span>
                               </div>
                             </div>
                           );
@@ -413,11 +414,11 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                 </div>
               </div>
 
-              <div className="mt-8 flex justify-between">
+              <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row justify-between gap-3 sm:gap-0">
                 <Button
                   onClick={prevStep}
                   variant="outline"
-                  className="px-6 py-3"
+                  className="px-6 py-3 w-full sm:w-auto touch-target order-2 sm:order-1"
                   data-testid="step2-back-button"
                 >
                   Back
@@ -425,7 +426,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                 <Button
                   onClick={nextStep}
                   disabled={!selectedDate || !selectedTimeSlot}
-                  className="bg-johnson-blue text-white px-6 py-3 rounded-lg font-semibold hover:bg-johnson-teal transition-colors disabled:opacity-50"
+                  className="bg-johnson-blue text-white px-6 py-3 rounded-lg font-semibold hover:bg-johnson-teal transition-colors disabled:opacity-50 w-full sm:w-auto touch-target order-1 sm:order-2"
                   data-testid="step2-continue-button"
                 >
                   Continue to Details
@@ -437,11 +438,11 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
           {/* Step 3: Customer Details */}
           {currentStep === 3 && (
             <div className="step-transition-enter">
-              <h4 className="text-xl font-bold text-gray-900 mb-6">Your Information</h4>
+              <h4 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">Your Information</h4>
               
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                  <div className="grid md:grid-cols-2 gap-6">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 sm:space-y-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                     <FormField
                       control={form.control}
                       name="firstName"

@@ -45,16 +45,16 @@ export default function ServicesSection({ onBookService }: ServicesSectionProps)
   }
 
   return (
-    <section id="services" className="py-20 bg-white">
+    <section id="services" className="py-12 sm:py-16 lg:py-20 bg-white">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-gray-900 mb-4">Our Professional Services</h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+        <div className="text-center mb-12 sm:mb-16">
+          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Our Professional Services</h2>
+          <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto">
             From routine maintenance to emergency repairs, we provide comprehensive plumbing solutions for your home and business.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
           {isLoading ? (
             Array.from({ length: 6 }).map((_, index) => (
               <div key={index} className="bg-gray-50 rounded-xl p-8">
@@ -90,30 +90,30 @@ export default function ServicesSection({ onBookService }: ServicesSectionProps)
               return (
                 <div 
                   key={service.id}
-                  className="bg-gray-50 rounded-xl p-8 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 group service-card"
+                  className="bg-gray-50 rounded-xl p-4 sm:p-6 lg:p-8 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 group service-card touch-target"
                   data-testid={`service-card-${service.id}`}
                 >
-                  <div className="mb-6">
+                  <div className="mb-4 sm:mb-6">
                     <img 
                       src={imageUrl}
                       alt={`${service.name} service`}
-                      className="w-full h-48 object-cover rounded-lg group-hover:scale-105 transition-transform duration-300"
+                      className="w-full h-40 sm:h-48 object-cover rounded-lg group-hover:scale-105 transition-transform duration-300"
                     />
                   </div>
-                  <div className="flex items-center mb-4">
-                    <div className={`p-3 rounded-lg mr-4 ${getIconColor(service.category)}`}>
-                      <IconComponent className="h-5 w-5" />
+                  <div className="flex items-start mb-4">
+                    <div className={`p-2 sm:p-3 rounded-lg mr-3 sm:mr-4 flex-shrink-0 ${getIconColor(service.category)}`}>
+                      <IconComponent className="h-4 w-4 sm:h-5 sm:w-5" />
                     </div>
-                    <h3 className="text-xl font-bold text-gray-900">{service.name}</h3>
+                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight">{service.name}</h3>
                   </div>
-                  <p className="text-gray-600 mb-6">{service.description}</p>
-                  <div className="flex justify-between items-center">
-                    <span className="text-johnson-blue font-bold text-lg" data-testid={`service-price-${service.id}`}>
+                  <p className="text-gray-600 mb-4 sm:mb-6 text-sm sm:text-base">{service.description}</p>
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                    <span className="text-johnson-blue font-bold text-base sm:text-lg" data-testid={`service-price-${service.id}`}>
                       {service.basePrice === "2500.00" ? "Custom Quote" : `Starting at $${service.basePrice}`}
                     </span>
                     <Button 
                       onClick={() => onBookService(service.id)}
-                      className="bg-johnson-blue text-white px-4 py-2 rounded-lg hover:bg-johnson-teal transition-colors"
+                      className="bg-johnson-blue text-white px-4 py-3 rounded-lg hover:bg-johnson-teal transition-colors w-full sm:w-auto touch-target"
                       data-testid={`book-service-${service.id}`}
                     >
                       {service.basePrice === "2500.00" ? "Get Quote" : "Book Now"}
