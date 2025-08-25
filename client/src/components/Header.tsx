@@ -10,6 +10,9 @@ export default function Header({ onBookService }: HeaderProps) {
   const [isBusinessHours, setIsBusinessHours] = useState(false);
 
   const checkBusinessHours = () => {
+    // Temporarily forcing after-hours view for demonstration
+    return false;
+    
     const now = new Date();
     // Convert to EST timezone
     const estTime = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
