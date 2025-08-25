@@ -98,7 +98,7 @@ export default function Header({ onBookService }: HeaderProps) {
               <img 
                 src="/JB_logo_New_1756136293648.png" 
                 alt="Johnson Bros. Plumbing & Drain Cleaning" 
-                className="h-14 w-full max-w-[280px] object-contain"
+                className="h-20 w-full max-w-[350px] object-contain"
                 data-testid="company-logo"
               />
             </div>
@@ -129,7 +129,7 @@ export default function Header({ onBookService }: HeaderProps) {
               <img 
                 src="/JB_logo_New_1756136293648.png" 
                 alt="Johnson Bros. Plumbing & Drain Cleaning" 
-                className="h-14 w-auto"
+                className="h-16 w-auto"
                 data-testid="company-logo-desktop"
               />
             </div>
