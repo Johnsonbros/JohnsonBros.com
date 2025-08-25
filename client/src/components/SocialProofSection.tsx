@@ -1,6 +1,5 @@
 import { RecentJobsWidget } from "./RecentJobsWidget";
 import { StatsWidget } from "./StatsWidget";
-import { LiveActivityWidget } from "./LiveActivityWidget";
 import { TestimonialsWidget } from "./TestimonialsWidget";
 import { ServiceHeatMap } from "./ServiceHeatMap";
 
@@ -31,15 +30,12 @@ export function SocialProofSection() {
             </div>
           </div>
 
-          {/* Activity row - Recent Jobs, Live Activity, and Testimonials */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+          {/* Activity row - Recent Jobs and Testimonials */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
             <div className="animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
               <RecentJobsWidget />
             </div>
             <div className="animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
-              <LiveActivityWidget />
-            </div>
-            <div className="animate-fade-in-up" style={{ animationDelay: '0.5s' }}>
               <TestimonialsWidget />
             </div>
           </div>
