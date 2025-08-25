@@ -6,12 +6,10 @@ import { formatDistanceToNow } from "date-fns";
 
 interface RecentJob {
   id: string;
-  customerName: string;
-  service: string;
+  serviceType: string;
   completedAt: string;
-  amount: number;
-  location: string;
-  technician: string;
+  city: string;
+  state: string;
 }
 
 export function RecentJobsWidget() {
@@ -61,21 +59,19 @@ export function RecentJobsWidget() {
               data-testid={`recent-job-${job.id}`}
             >
               <div className="flex justify-between items-start mb-1">
-                <p className="font-medium text-sm text-gray-900" data-testid={`customer-name-${job.id}`}>
-                  {job.customerName}
+                <p className="font-medium text-sm text-gray-900" data-testid={`service-type-${job.id}`}>
+                  {job.serviceType}
                 </p>
-                <Badge variant="outline" className="text-xs bg-green-100" data-testid={`service-badge-${job.id}`}>
-                  {job.service}
+                <Badge variant="outline" className="text-xs bg-green-100" data-testid={`location-badge-${job.id}`}>
+                  {job.city}
                 </Badge>
               </div>
               
               <div className="flex items-center gap-3 text-xs text-gray-600">
-                {job.location && (
-                  <div className="flex items-center gap-1">
-                    <MapPin className="h-3 w-3" />
-                    <span data-testid={`location-${job.id}`}>{job.location}</span>
-                  </div>
-                )}
+                <div className="flex items-center gap-1">
+                  <MapPin className="h-3 w-3" />
+                  <span data-testid={`location-${job.id}`}>{job.city}, {job.state}</span>
+                </div>
                 
                 {job.completedAt && (
                   <div className="flex items-center gap-1">
@@ -87,8 +83,8 @@ export function RecentJobsWidget() {
                 )}
               </div>
               
-              <p className="text-xs text-gray-500 mt-1" data-testid={`technician-${job.id}`}>
-                Completed by {job.technician}
+              <p className="text-xs text-gray-500 mt-1" data-testid={`status-${job.id}`}>
+                Service completed successfully
               </p>
             </div>
           ))}

@@ -6,12 +6,11 @@ import { formatDistanceToNow, format } from "date-fns";
 
 interface LiveActivity {
   id: string;
-  customerName: string;
-  service: string;
+  serviceType: string;
   status: string;
   scheduledTime: string;
-  location: string;
-  technician: string;
+  city: string;
+  state: string;
 }
 
 export function LiveActivityWidget() {
@@ -87,11 +86,11 @@ export function LiveActivityWidget() {
             >
               <div className="flex justify-between items-start mb-2">
                 <div>
-                  <p className="font-medium text-sm text-gray-900" data-testid={`activity-customer-${activity.id}`}>
-                    {activity.customerName}
+                  <p className="font-medium text-sm text-gray-900" data-testid={`activity-service-${activity.id}`}>
+                    {activity.serviceType}
                   </p>
-                  <p className="text-xs text-gray-600" data-testid={`activity-service-${activity.id}`}>
-                    {activity.service}
+                  <p className="text-xs text-gray-600" data-testid={`activity-location-${activity.id}`}>
+                    {activity.city}, {activity.state}
                   </p>
                 </div>
                 <Badge 
@@ -104,26 +103,17 @@ export function LiveActivityWidget() {
               </div>
 
               <div className="space-y-1">
-                {activity.technician && (
-                  <div className="flex items-center gap-1 text-xs text-gray-600">
-                    <User className="h-3 w-3" />
-                    <span data-testid={`activity-tech-${activity.id}`}>{activity.technician}</span>
-                  </div>
-                )}
-                
-                {activity.location && (
-                  <div className="flex items-center gap-1 text-xs text-gray-600">
-                    <MapPin className="h-3 w-3" />
-                    <span data-testid={`activity-location-${activity.id}`}>{activity.location}</span>
-                  </div>
-                )}
+                <div className="flex items-center gap-1 text-xs text-gray-600">
+                  <User className="h-3 w-3" />
+                  <span data-testid={`activity-tech-${activity.id}`}>Our team</span>
+                </div>
                 
                 {activity.scheduledTime && (
                   <div className="flex items-center gap-1 text-xs text-gray-600">
                     <Clock className="h-3 w-3" />
                     <span data-testid={`activity-time-${activity.id}`}>
                       {activity.status === 'in_progress' 
-                        ? 'Started ' + formatDistanceToNow(new Date(activity.scheduledTime), { addSuffix: true })
+                        ? 'In progress now'
                         : format(new Date(activity.scheduledTime), 'MMM d, h:mm a')
                       }
                     </span>

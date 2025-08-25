@@ -262,18 +262,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sort_direction: 'desc'
       });
 
-      const recentJobs = data.jobs?.map((job: any) => ({
+      const recentJobs = data.jobs?.filter((job: any) => 
+        job.work_timestamps?.completed_at && job.address?.city
+      ).map((job: any) => ({
         id: job.id,
-        customerName: job.customer?.first_name && job.customer?.last_name 
-          ? `${job.customer.first_name} ${job.customer.last_name}`
-          : 'Customer',
-        service: job.description || 'Service',
+        serviceType: job.job_fields?.job_type?.name || 'Plumbing Service',
         completedAt: job.work_timestamps?.completed_at,
-        amount: job.total_amount,
-        location: job.address ? `${job.address.city}, ${job.address.state}` : '',
-        technician: job.assigned_employees?.[0] 
-          ? `${job.assigned_employees[0].first_name} ${job.assigned_employees[0].last_name}`
-          : 'Technician'
+        city: job.address?.city || 'Local Area',
+        state: job.address?.state || 'MA'
       })) || [];
 
       res.json(recentJobs);
@@ -327,18 +323,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sort_direction: 'desc'
       });
 
-      const liveActivity = data.jobs?.map((job: any) => ({
+      const liveActivity = data.jobs?.filter((job: any) => 
+        (job.work_status === 'in_progress' || job.work_status === 'scheduled') && job.address?.city
+      ).map((job: any) => ({
         id: job.id,
-        customerName: job.customer?.first_name 
-          ? `${job.customer.first_name} ${job.customer.last_name?.charAt(0) || ''}.`
-          : 'Customer',
-        service: job.description || 'Service',
+        serviceType: job.job_fields?.job_type?.name || 'Service Call',
         status: job.work_status,
         scheduledTime: job.schedule?.scheduled_start,
-        location: job.address ? `${job.address.city}, ${job.address.state}` : '',
-        technician: job.assigned_employees?.[0] 
-          ? job.assigned_employees[0].first_name
-          : 'Technician'
+        city: job.address?.city || 'Local Area',
+        state: job.address?.state || 'MA'
       })) || [];
 
       res.json(liveActivity);
@@ -359,21 +352,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Generate testimonials based on completed jobs data
       const testimonials = data.jobs?.filter((job: any) => 
-        job.customer?.first_name && parseFloat(job.total_amount || '0') > 50
+        job.work_timestamps?.completed_at && parseFloat(job.total_amount || '0') > 50
       ).slice(0, 6).map((job: any) => ({
         id: job.id,
-        customerName: `${job.customer.first_name} ${job.customer.last_name?.charAt(0) || ''}.`,
         rating: 5, // Assume satisfied customers for completed jobs
-        comment: generateTestimonialText(job.description || 'service'),
-        service: job.description || 'Service',
+        comment: generateTestimonialText(job.job_fields?.job_type?.name || job.description || 'service'),
+        serviceType: job.job_fields?.job_type?.name || 'Plumbing Service',
         date: job.work_timestamps?.completed_at,
-        location: job.address?.city || 'Local Area'
+        city: job.address?.city || 'Local Area'
       })) || [];
 
       res.json(testimonials);
     } catch (error) {
       console.error("Error fetching testimonials:", error);
       res.status(500).json({ error: "Failed to fetch testimonials" });
+    }
+  });
+
+  // Get service area heat map data for Massachusetts
+  app.get("/api/social-proof/service-heat-map", async (_req, res) => {
+    try {
+      // Get jobs for heat map
+      const data = await callHousecallAPI('/jobs', {
+        page_size: 100,
+        sort_direction: 'desc'
+      });
+
+      // Group jobs by city and count them
+      const cityData: Record<string, { count: number; lat?: number; lng?: number }> = {};
+      
+      data.jobs?.forEach((job: any) => {
+        if (job.address?.city && job.address?.state === 'MA') {
+          const city = job.address.city;
+          if (!cityData[city]) {
+            cityData[city] = { count: 0 };
+          }
+          cityData[city].count++;
+        }
+      });
+
+      // Add approximate coordinates for major MA cities (for heat map visualization)
+      const cityCoordinates: Record<string, { lat: number; lng: number }> = {
+        'Boston': { lat: 42.3601, lng: -71.0589 },
+        'Quincy': { lat: 42.2529, lng: -71.0023 },
+        'Braintree': { lat: 42.2057, lng: -71.0995 },
+        'Milton': { lat: 42.2496, lng: -71.0662 },
+        'Weymouth': { lat: 42.2180, lng: -70.9395 },
+        'Hingham': { lat: 42.2417, lng: -70.8893 },
+        'Hull': { lat: 42.3084, lng: -70.8967 },
+        'Randolph': { lat: 42.1618, lng: -71.0412 },
+        'Cambridge': { lat: 42.3736, lng: -71.1097 },
+        'Somerville': { lat: 42.3876, lng: -71.0995 },
+        'Brookline': { lat: 42.3318, lng: -71.1211 },
+        'Newton': { lat: 42.3370, lng: -71.2092 },
+        'Watertown': { lat: 42.3668, lng: -71.1834 },
+        'Belmont': { lat: 42.3959, lng: -71.1786 },
+        'Arlington': { lat: 42.4153, lng: -71.1564 },
+        'Medford': { lat: 42.4184, lng: -71.1061 },
+        'Malden': { lat: 42.4251, lng: -71.0662 },
+        'Revere': { lat: 42.4085, lng: -71.0120 },
+        'Chelsea': { lat: 42.3918, lng: -71.0328 },
+        'Everett': { lat: 42.4084, lng: -71.0537 },
+        'Winthrop': { lat: 42.3751, lng: -70.9828 },
+        'Rockland': { lat: 42.1307, lng: -70.9162 }
+      };
+
+      // Merge coordinates with job counts
+      Object.keys(cityData).forEach(city => {
+        if (cityCoordinates[city]) {
+          cityData[city].lat = cityCoordinates[city].lat;
+          cityData[city].lng = cityCoordinates[city].lng;
+        }
+      });
+
+      // Convert to array format for frontend
+      const heatMapData = Object.entries(cityData)
+        .filter(([_, data]) => data.lat && data.lng)
+        .map(([city, data]) => ({
+          city,
+          count: data.count,
+          lat: data.lat!,
+          lng: data.lng!,
+          intensity: Math.min(data.count / 10, 1) // Normalize intensity 0-1
+        }))
+        .sort((a, b) => b.count - a.count);
+
+      res.json(heatMapData);
+    } catch (error) {
+      console.error("Error fetching heat map data:", error);
+      res.status(500).json({ error: "Failed to fetch heat map data" });
     }
   });
 

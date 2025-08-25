@@ -6,12 +6,11 @@ import { formatDistanceToNow } from "date-fns";
 
 interface Testimonial {
   id: string;
-  customerName: string;
   rating: number;
   comment: string;
-  service: string;
+  serviceType: string;
   date: string;
-  location: string;
+  city: string;
 }
 
 export function TestimonialsWidget() {
@@ -75,7 +74,7 @@ export function TestimonialsWidget() {
                   {renderStars(testimonial.rating)}
                 </div>
                 <Badge variant="outline" className="text-xs bg-white" data-testid={`service-${testimonial.id}`}>
-                  {testimonial.service}
+                  {testimonial.serviceType}
                 </Badge>
               </div>
               
@@ -85,15 +84,13 @@ export function TestimonialsWidget() {
               
               <div className="flex items-center justify-between text-xs text-gray-600">
                 <div className="font-medium" data-testid={`customer-${testimonial.id}`}>
-                  — {testimonial.customerName}
+                  — Satisfied Customer
                 </div>
                 <div className="flex items-center gap-2">
-                  {testimonial.location && (
-                    <div className="flex items-center gap-1">
-                      <MapPin className="h-3 w-3" />
-                      <span data-testid={`location-${testimonial.id}`}>{testimonial.location}</span>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-1">
+                    <MapPin className="h-3 w-3" />
+                    <span data-testid={`location-${testimonial.id}`}>{testimonial.city}</span>
+                  </div>
                   {testimonial.date && (
                     <div className="flex items-center gap-1">
                       <Calendar className="h-3 w-3" />
