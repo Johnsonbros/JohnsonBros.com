@@ -43,41 +43,6 @@ export function StatsWidget() {
     return null;
   }
 
-  const statItems = [
-    {
-      label: "Jobs Completed",
-      value: stats.totalJobsCompleted.toLocaleString(),
-      icon: Star,
-      color: "text-yellow-600",
-      bgColor: "bg-yellow-50",
-      testId: "total-jobs"
-    },
-    {
-      label: "Happy Customers",
-      value: stats.totalCustomers.toLocaleString(),
-      icon: Users,
-      color: "text-blue-600",
-      bgColor: "bg-blue-50",
-      testId: "total-customers"
-    },
-    {
-      label: "This Month",
-      value: stats.thisMonthJobs.toLocaleString(),
-      icon: Calendar,
-      color: "text-green-600",
-      bgColor: "bg-green-50",
-      testId: "month-jobs"
-    },
-    {
-      label: "Avg. Job Value",
-      value: `$${Math.round(stats.averageJobValue).toLocaleString()}`,
-      icon: TrendingUp,
-      color: "text-purple-600",
-      bgColor: "bg-purple-50",
-      testId: "avg-value"
-    }
-  ];
-
   return (
     <Card className="w-full max-w-md shadow-lg" data-testid="stats-widget">
       <CardHeader className="pb-3">
@@ -87,32 +52,22 @@ export function StatsWidget() {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 gap-4">
-          {statItems.map((item, index) => {
-            const IconComponent = item.icon;
-            return (
-              <div
-                key={item.testId}
-                className={`${item.bgColor} p-4 rounded-lg text-center animate-fade-in-up`}
-                style={{ animationDelay: `${index * 0.1}s` }}
-                data-testid={`stat-${item.testId}`}
-              >
-                <div className="flex justify-center mb-2">
-                  <IconComponent className={`h-6 w-6 ${item.color}`} />
-                </div>
-                <div className={`text-2xl font-bold ${item.color}`} data-testid={`stat-value-${item.testId}`}>
-                  {item.value}
-                </div>
-                <div className="text-xs text-gray-600 mt-1" data-testid={`stat-label-${item.testId}`}>
-                  {item.label}
-                </div>
-              </div>
-            );
-          })}
+        {/* Jobs Completed Stat */}
+        <div className="bg-yellow-50 p-6 rounded-lg text-center animate-fade-in-up mb-4" data-testid="stat-total-jobs">
+          <div className="flex justify-center mb-3">
+            <Star className="h-8 w-8 text-yellow-600" />
+          </div>
+          <div className="text-3xl font-bold text-yellow-600" data-testid="stat-value-total-jobs">
+            {stats.totalJobsCompleted.toLocaleString()}
+          </div>
+          <div className="text-sm text-gray-600 mt-2" data-testid="stat-label-total-jobs">
+            Jobs Completed
+          </div>
         </div>
         
-        <div className="mt-4 text-center">
-          <Badge variant="outline" className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200" data-testid="trust-badge">
+        {/* Trust Badge */}
+        <div className="text-center">
+          <Badge variant="outline" className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200 px-4 py-2" data-testid="trust-badge">
             ⭐ Trusted by {stats.totalCustomers}+ customers
           </Badge>
         </div>
