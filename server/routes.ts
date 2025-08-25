@@ -198,6 +198,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Google Business Reviews endpoint
+  app.get("/api/google-reviews", async (_req, res) => {
+    try {
+      const apiKey = process.env.GOOGLE_PLACES_API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ error: "Google Places API key not configured" });
+      }
+
+      // Your two business locations
+      const locations = [
+        {
+          placeId: "ChIJTc2fRf_wZU4Ry1Mv_MR3GUc",
+          name: "Johnson Bros. Plumbing & Drain Cleaning - Quincy",
+          address: "75 E Elm Ave, Quincy, MA 02170, USA"
+        },
+        {
+          placeId: "ChIJPePacTlw-kkR8qUHEEuX1bc", 
+          name: "Johnson Bros. Plumbing & Drain Cleaning - Abington",
+          address: "55 Brighton St, Abington, MA 02351, USA"
+        }
+      ];
+
+      const allReviews: any[] = [];
+      let totalRating = 0;
+      let totalReviewCount = 0;
+
+      for (const location of locations) {
+        try {
+          // Fetch place details including reviews
+          const response = await fetch(
+            `https://maps.googleapis.com/maps/api/place/details/json?place_id=${location.placeId}&fields=name,rating,user_ratings_total,reviews,formatted_address,url&key=${apiKey}`
+          );
+          
+          const data = await response.json();
+          
+          if (data.status === 'OK' && data.result) {
+            const place = data.result;
+            
+            totalRating += (place.rating || 0) * (place.user_ratings_total || 0);
+            totalReviewCount += place.user_ratings_total || 0;
+
+            // Process reviews
+            if (place.reviews) {
+              place.reviews.forEach((review: any) => {
+                allReviews.push({
+                  id: `${location.placeId}-${review.time}`,
+                  author: review.author_name,
+                  rating: review.rating,
+                  text: review.text,
+                  time: new Date(review.time * 1000).toISOString(),
+                  location: location.name,
+                  profilePhoto: review.profile_photo_url,
+                  source: 'google'
+                });
+              });
+            }
+          }
+        } catch (error) {
+          console.error(`Error fetching reviews for ${location.name}:`, error);
+        }
+      }
+
+      // Sort reviews by date (newest first)
+      allReviews.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
+
+      const averageRating = totalReviewCount > 0 ? totalRating / totalReviewCount : 0;
+
+      res.json({
+        reviews: allReviews,
+        totalReviews: totalReviewCount,
+        averageRating: Math.round(averageRating * 10) / 10,
+        locations: locations
+      });
+
+    } catch (error) {
+      console.error("Error fetching Google reviews:", error);
+      res.status(500).json({ error: "Failed to fetch Google reviews" });
+    }
+  });
+
   // Get appointment details
   app.get("/api/appointments/:id", async (req, res) => {
     try {
