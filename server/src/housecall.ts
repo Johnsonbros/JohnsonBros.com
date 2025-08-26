@@ -299,26 +299,81 @@ export class HousecallProClient {
     }
 
     if (endpoint.includes('booking_windows')) {
-      const today = new Date();
-      return {
-        booking_windows: [
-          {
-            id: 'window_1',
-            start_time: '09:00',
-            end_time: '11:00',
-            date: today.toISOString().split('T')[0],
-            available: true,
-            employee_ids: ['emp_mock_nate', 'emp_mock_nick'],
-          },
-          {
-            id: 'window_2',
-            start_time: '14:00',
-            end_time: '16:00',
-            date: today.toISOString().split('T')[0],
+      const now = new Date();
+      const today = now.toISOString().split('T')[0];
+      const currentHour = now.getHours();
+      
+      // Generate booking windows that are always in the future
+      const windows: HCPBookingWindow[] = [];
+      
+      // For testing/demo purposes, always show some same-day slots
+      // In production, this would come from the actual API
+      if (currentHour < 22) { // Until 10 PM, show emergency/evening slots
+        // Show emergency evening slots
+        const slot1Start = Math.max(currentHour + 1, 9); // At least 1 hour from now
+        const slot1End = Math.min(slot1Start + 2, 23); // Can go until 11 PM for emergencies
+        
+        windows.push({
+          id: 'window_emergency_1',
+          start_time: `${slot1Start.toString().padStart(2, '0')}:00`,
+          end_time: `${slot1End.toString().padStart(2, '0')}:00`,
+          date: today,
+          available: true,
+          employee_ids: ['emp_mock_nate', 'emp_mock_nick'],
+        });
+        
+        // Add another emergency slot
+        if (slot1End < 23) {
+          const slot2Start = slot1End;
+          const slot2End = Math.min(slot2Start + 2, 23);
+          
+          windows.push({
+            id: 'window_emergency_2',
+            start_time: `${slot2Start.toString().padStart(2, '0')}:00`,
+            end_time: `${slot2End.toString().padStart(2, '0')}:00`,
+            date: today,
             available: true,
             employee_ids: ['emp_mock_jahz'],
+          });
+        }
+      }
+      
+      // If no same-day windows (or it's late), add tomorrow morning slots
+      if (windows.length === 0) {
+        const tomorrow = new Date(now);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const tomorrowStr = tomorrow.toISOString().split('T')[0];
+        
+        windows.push(
+          {
+            id: 'window_tomorrow_1',
+            start_time: '08:00',
+            end_time: '10:00',
+            date: tomorrowStr,
+            available: true,
+            employee_ids: ['emp_mock_nate'],
           },
-        ],
+          {
+            id: 'window_tomorrow_2',
+            start_time: '10:00',
+            end_time: '12:00',
+            date: tomorrowStr,
+            available: true,
+            employee_ids: ['emp_mock_nick', 'emp_mock_jahz'],
+          },
+          {
+            id: 'window_tomorrow_3',
+            start_time: '14:00',
+            end_time: '16:00',
+            date: tomorrowStr,
+            available: true,
+            employee_ids: ['emp_mock_nate', 'emp_mock_jahz'],
+          }
+        );
+      }
+      
+      return {
+        booking_windows: windows,
       };
     }
 
