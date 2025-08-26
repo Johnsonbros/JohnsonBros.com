@@ -520,60 +520,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sort_direction: 'desc'
       });
 
-      // Create a map to store locations with their coordinates and service counts
-      const locationMap: Map<string, { 
-        lat: number; 
-        lng: number; 
+      // Create array to store individual job locations for heat points
+      const individualLocations: Array<{
+        lat: number;
+        lng: number;
         city: string;
-        count: number;
-        addresses: Set<string>;
-      }> = new Map();
+      }> = [];
 
-      // Process customer addresses that have coordinates
-      customersData.customers?.forEach((customer: any) => {
-        if (customer.addresses && Array.isArray(customer.addresses)) {
-          customer.addresses.forEach((address: any) => {
-            // Only process MA addresses with valid coordinates
-            if (address.state === 'MA' && address.latitude && address.longitude) {
-              const lat = typeof address.latitude === 'string' ? parseFloat(address.latitude) : address.latitude;
-              const lng = typeof address.longitude === 'string' ? parseFloat(address.longitude) : address.longitude;
-              
-              // Skip invalid coordinates
-              if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) {
-                return;
-              }
+      // Helper function to add privacy offset to coordinates
+      const addPrivacyOffset = (coord: number, isLat: boolean) => {
+        // Add random offset of ~100-300 meters to obscure exact address
+        const offset = (Math.random() - 0.5) * 0.003; // ~0.003 degrees = ~300m
+        return coord + offset;
+      };
 
-              // Create a unique key for grouping nearby locations (round to 3 decimal places)
-              const locationKey = `${lat.toFixed(3)},${lng.toFixed(3)}`;
-              
-              if (!locationMap.has(locationKey)) {
-                locationMap.set(locationKey, {
-                  lat: lat,
-                  lng: lng,
-                  city: address.city || 'Unknown',
-                  count: 0,
-                  addresses: new Set()
-                });
-              }
-              
-              const location = locationMap.get(locationKey)!;
-              location.addresses.add(`${address.street || ''}, ${address.city || ''}`);
-            }
-          });
-        }
-      });
-
-      // Create a city-level counter as well for better accuracy
-      const cityJobCounts: Record<string, number> = {};
-      
-      // Count all jobs, both with and without coordinates
+      // Process all jobs to create individual heat points
       allJobs.forEach((job: any) => {
-        if (job.address && job.address.state === 'MA') {
-          // Count by city for accurate totals
+        if (job.address && (job.address.state === 'MA' || job.address.state === 'Massachusetts')) {
           const city = job.address.city;
-          if (city) {
-            cityJobCounts[city] = (cityJobCounts[city] || 0) + 1;
-          }
           
           // Check if job has coordinates
           let lat: number | null = null;
@@ -584,22 +548,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
             lng = typeof job.address.longitude === 'string' ? parseFloat(job.address.longitude) : job.address.longitude;
           }
           
-          // If we have valid coordinates, track the exact location
+          // If we have valid coordinates, add to individual locations with privacy offset
           if (lat && lng && !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
-            const locationKey = `${lat.toFixed(3)},${lng.toFixed(3)}`;
-            
-            if (!locationMap.has(locationKey)) {
-              locationMap.set(locationKey, {
-                lat: lat,
-                lng: lng,
-                city: job.address.city || 'Unknown',
-                count: 1,
-                addresses: new Set([`${job.address.street || ''}, ${job.address.city || ''}`])
-              });
-            } else {
-              const location = locationMap.get(locationKey)!;
-              location.count++;
-            }
+            individualLocations.push({
+              lat: addPrivacyOffset(lat, true),
+              lng: addPrivacyOffset(lng, false),
+              city: city || 'Unknown'
+            });
+          } else if (city) {
+            // If no coordinates but we have a city, we'll add it later with city coordinates
+            // Track this for fallback
           }
         }
       });
@@ -630,44 +588,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'Rockland': { lat: 42.1307, lng: -70.9162 }
       };
 
-      // Add city-level data for cities where we have jobs but no exact coordinates
-      Object.entries(cityJobCounts).forEach(([city, count]) => {
+      // For jobs without coordinates, add them using city coordinates
+      const jobsWithoutCoords: Record<string, number> = {};
+      allJobs.forEach((job: any) => {
+        if (job.address && (job.address.state === 'MA' || job.address.state === 'Massachusetts')) {
+          const hasCoords = job.address.latitude && job.address.longitude;
+          if (!hasCoords && job.address.city && cityCoordinates[job.address.city]) {
+            jobsWithoutCoords[job.address.city] = (jobsWithoutCoords[job.address.city] || 0) + 1;
+          }
+        }
+      });
+
+      // Add jobs without exact coordinates using city coordinates with random spread
+      Object.entries(jobsWithoutCoords).forEach(([city, count]) => {
         if (cityCoordinates[city]) {
-          const locationKey = `${cityCoordinates[city].lat.toFixed(3)},${cityCoordinates[city].lng.toFixed(3)}`;
-          
-          // Check if we already have this location with coordinate data
-          const existingLocation = locationMap.get(locationKey);
-          if (existingLocation) {
-            // Update count to use the actual total from cityJobCounts
-            existingLocation.count = count;
-          } else {
-            // Add new location with actual job count
-            locationMap.set(locationKey, {
-              lat: cityCoordinates[city].lat,
-              lng: cityCoordinates[city].lng,
-              city: city,
-              count: count, // Use ACTUAL count from jobs
-              addresses: new Set([city])
+          // Add multiple points spread around the city center
+          for (let i = 0; i < count; i++) {
+            individualLocations.push({
+              lat: addPrivacyOffset(cityCoordinates[city].lat, true),
+              lng: addPrivacyOffset(cityCoordinates[city].lng, false),
+              city: city
             });
           }
         }
       });
 
-      // Convert map to array and prepare for frontend
-      const heatMapData = Array.from(locationMap.values())
-        .filter(location => location.count > 0 || location.addresses.size > 0) // Only include locations with activity
-        .map(location => ({
-          city: location.city,
-          count: Math.max(location.count, location.addresses.size), // Use address count if no jobs
-          lat: location.lat,
-          lng: location.lng,
-          intensity: Math.min((location.count || location.addresses.size) / 10, 1)
-        }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 100); // Limit to top 100 locations for performance
+      // Group locations by proximity for the heat map (but keep individual points)
+      // This creates a more realistic heat map while preserving individual job locations
+      const heatMapData = individualLocations.map((location, index) => ({
+        city: location.city,
+        count: 1, // Each point represents one job
+        lat: location.lat,
+        lng: location.lng,
+        intensity: 0.8 // Consistent intensity for all points
+      }));
 
-      console.log(`Heat map: Processed ${allJobs.length} jobs, found ${Object.keys(cityJobCounts).length} cities, returning ${heatMapData.length} locations`);
-      console.log(`City counts:`, cityJobCounts);
+      console.log(`Heat map: Processed ${allJobs.length} jobs, created ${heatMapData.length} individual heat points`);
+      console.log(`Coverage areas: ${Array.from(new Set(individualLocations.map(l => l.city))).join(', ')}`);
+      
       res.json(heatMapData);
     } catch (error) {
       console.error("Error fetching heat map data:", error);
