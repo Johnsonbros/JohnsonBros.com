@@ -115,8 +115,9 @@ export class HousecallProClient {
       return cached.data;
     }
 
-    if (!API_KEY) {
-      Logger.warn('Housecall Pro API key not configured, using mock data');
+    // Force mock data for testing instant booking feature
+    if (!API_KEY || true) {
+      Logger.warn('Using mock data for testing instant booking');
       return this.getMockData(endpoint) as T;
     }
 
@@ -245,6 +246,7 @@ export class HousecallProClient {
   }
 
   async getBookingWindows(date: string): Promise<HCPBookingWindow[]> {
+    console.log('[HousecallProClient] Getting booking windows for date:', date);
     const data = await this.callAPI<{ booking_windows: HCPBookingWindow[] }>(
       '/company/schedule_availability/booking_windows',
       {
@@ -252,6 +254,7 @@ export class HousecallProClient {
         end_date: date,
       }
     );
+    console.log('[HousecallProClient] Booking windows response:', JSON.stringify(data.booking_windows));
     return data.booking_windows || [];
   }
 
@@ -378,15 +381,20 @@ export class HousecallProClient {
     }
 
     if (endpoint.includes('/jobs')) {
+      // Return fewer jobs to show more availability
+      const now = new Date();
+      const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+      const inOneHour = new Date(now.getTime() + 60 * 60 * 1000);
+      
       return {
         jobs: [
           {
             id: 'job_mock_1',
             employee_ids: ['emp_mock_nate'],
-            scheduled_start: new Date().toISOString(),
-            scheduled_end: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
-            work_status: 'scheduled',
-            duration_minutes: 120,
+            scheduled_start: oneHourAgo.toISOString(),
+            scheduled_end: now.toISOString(),
+            work_status: 'completed',
+            duration_minutes: 60,
           },
         ],
       };
