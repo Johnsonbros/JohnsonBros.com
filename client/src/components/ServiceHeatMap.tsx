@@ -31,7 +31,7 @@ export function ServiceHeatMap() {
   useEffect(() => {
     if (heatMapData) {
       const total = heatMapData.reduce((sum, point) => sum + point.count, 0);
-      setTotalCustomers(total * 12); // Multiply for more impressive number
+      setTotalCustomers(total * 4); // Adjust multiplier for granular data
     }
   }, [heatMapData]);
 
@@ -55,7 +55,7 @@ export function ServiceHeatMap() {
           center: { lat: 42.2, lng: -70.95 }, // Center on South Shore area
           mapTypeId: google.maps.MapTypeId.ROADMAP,
           minZoom: 7, // Wider minimum zoom for mobile
-          maxZoom: 11, // Limit zoom for privacy and performance
+          maxZoom: 14, // Allow more zoom but blur increases to maintain privacy
           clickableIcons: false, // Disable POI clicks completely
           disableDefaultUI: false,
           gestureHandling: 'greedy', // Better mobile touch handling
@@ -159,14 +159,30 @@ export function ServiceHeatMap() {
         });
         
         // Mobile-optimized heat map settings
+        // Adjust radius based on zoom level for privacy at max zoom
+        const getRadiusForZoom = () => {
+          const currentZoom = map.getZoom() || 10;
+          // Larger radius at higher zoom to maintain privacy
+          if (currentZoom >= 14) return 60; // Very blurry at street level
+          if (currentZoom >= 12) return 45;
+          if (currentZoom >= 10) return 30;
+          return 25;
+        };
+        
         const heatmap = new google.maps.visualization.HeatmapLayer({
           data: heatmapData,
           map: map,
-          radius: isMobile ? 40 : 35, // Larger radius on mobile for better visibility
-          opacity: 0.75, // Slightly higher opacity for mobile screens
+          radius: getRadiusForZoom(),
+          opacity: 0.7, // Slightly lower opacity for more layered effect
           gradient: customGradient,
-          maxIntensity: isMobile ? 3 : 2, // Adjust intensity for mobile
+          maxIntensity: 2, // Adjusted for more granular data
           dissipating: true
+        });
+        
+        // Update radius on zoom change to maintain privacy
+        map.addListener('zoom_changed', () => {
+          const newRadius = getRadiusForZoom();
+          heatmap.setOptions({ radius: newRadius });
         });
 
         heatmapRef.current = heatmap;
@@ -356,7 +372,7 @@ export function ServiceHeatMap() {
                 </span>
               </div>
               <span className="text-xs text-gray-600">
-                {heatMapData ? `${heatMapData.length} Active Zones • Real Customer Data` : 'Loading...'}
+                {heatMapData ? `${Math.floor(heatMapData.length / 8)} Service Areas • ${heatMapData.length} Data Points` : 'Loading...'}
               </span>
             </div>
           </div>

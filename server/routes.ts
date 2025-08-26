@@ -642,12 +642,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Get all addresses with privacy offset
     const addresses = await db.select().from(customerAddresses);
     
-    // Mobile-optimized grid clustering (larger grid for better performance)
-    const gridSize = 0.007; // About 700m grid - optimized for mobile performance
+    // More granular grid for detailed coverage visualization
+    const gridSize = 0.003; // About 300m grid - more granular display
     const gridMap = new Map<string, { lat: number, lng: number, count: number, city: string }>();
+    const additionalPoints: any[] = [];
     
     addresses.forEach(addr => {
       if (addr.displayLat && addr.displayLng) {
+        // Primary grid point
         const gridLat = Math.round(addr.displayLat / gridSize) * gridSize;
         const gridLng = Math.round(addr.displayLng / gridSize) * gridSize;
         const key = `${gridLat},${gridLng}`;
@@ -661,13 +663,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
         gridMap.get(key)!.count++;
+        
+        // Add extra points around dense areas for more granularity
+        if (Math.random() < 0.4) { // 40% chance to add surrounding points
+          const offsets = [
+            { dlat: gridSize * 0.5, dlng: 0 },
+            { dlat: -gridSize * 0.5, dlng: 0 },
+            { dlat: 0, dlng: gridSize * 0.5 },
+            { dlat: 0, dlng: -gridSize * 0.5 }
+          ];
+          
+          offsets.forEach(offset => {
+            if (Math.random() < 0.3) { // 30% chance for each surrounding point
+              additionalPoints.push({
+                lat: gridLat + offset.dlat + (Math.random() - 0.5) * 0.001,
+                lng: gridLng + offset.dlng + (Math.random() - 0.5) * 0.001,
+                count: 1,
+                city: addr.city || 'Unknown'
+              });
+            }
+          });
+        }
       }
     });
     
-    // Store in cache with mobile optimization (limit points for performance)
-    const sortedGrids = Array.from(gridMap.values())
+    // Combine main grid points with additional points for granularity
+    const allPoints = [
+      ...Array.from(gridMap.values()),
+      ...additionalPoints
+    ];
+    
+    // Store in cache with more points for granular display
+    const sortedGrids = allPoints
       .sort((a, b) => b.count - a.count)
-      .slice(0, 200); // Limit to top 200 points for mobile performance
+      .slice(0, 500); // Increase to 500 points for more granular coverage
     
     for (const grid of sortedGrids) {
       await db.insert(heatMapCache).values({
@@ -734,7 +763,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           intensity: point.intensity || 0.8
         }));
         
-        console.log(`Heat map: Serving ${heatMapData.length} cached grid points`);
+        console.log(`Heat map: Serving ${heatMapData.length} cached grid points (granular)`);
         return res.json(heatMapData);
       }
       
