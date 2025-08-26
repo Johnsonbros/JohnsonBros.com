@@ -1,8 +1,8 @@
 import { Phone, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
-import emergencyBanner from '@assets/generated_images/24/7_emergency_text_banner_1b514e92.png';
-import businessHoursBanner from '@assets/generated_images/Business_hours_plumbing_banner_f6bfe737.png';
+import emergencyBanner from '@assets/generated_images/Compact_emergency_header_banner_0f85bc3d.png';
+import businessHoursBanner from '@assets/generated_images/Compact_business_hours_banner_60bef257.png';
 
 interface HeaderProps {
   onBookService: () => void;
@@ -50,7 +50,7 @@ export default function Header({ onBookService }: HeaderProps) {
         <img 
           src={isBusinessHours ? businessHoursBanner : emergencyBanner}
           alt={isBusinessHours ? "Expert Plumbers Ready to Help - Click to talk to a real plumber" : "24/7 Emergency Plumbing - Click to talk to a real plumber"}
-          className="w-full h-[80px] sm:h-[100px] object-cover"
+          className="w-full h-auto block"
         />
       </a>
 
