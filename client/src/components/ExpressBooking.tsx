@@ -161,7 +161,7 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
                   <div className="mt-2 flex flex-wrap gap-2">
                     {capacity.express_windows.slice(0, 3).map((window, idx) => (
                       <span key={idx} className="text-sm bg-white/10 px-2 py-1 rounded">
-                        {window}
+                        {window} EST
                       </span>
                     ))}
                     {capacity.express_windows.length > 3 && (

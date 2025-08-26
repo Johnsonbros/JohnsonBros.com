@@ -69,7 +69,7 @@ export default function Footer({ onBookService }: FooterProps) {
                 <Phone className="h-4 w-4 sm:h-5 sm:w-5 text-johnson-blue flex-shrink-0" />
                 <div>
                   <p className="font-semibold text-sm sm:text-base" data-testid="footer-phone">(617) 479-9911</p>
-                  <p className="text-xs sm:text-sm text-gray-400">24/7 Emergency Line</p>
+                  <p className="text-xs sm:text-sm text-gray-400">24/7 Emergency Line (EST)</p>
                 </div>
               </div>
               <div className="flex items-center space-x-3">

@@ -80,7 +80,7 @@ export function RecentJobsWidget() {
                 {job.completedAt && (
                   <div className="flex items-center gap-1">
                     <Clock className="h-3 w-3" />
-                    <span data-testid={`time-${job.id}`}>
+                    <span data-testid={`time-${job.id}`} title={`${new Date(job.completedAt).toLocaleString('en-US', { timeZone: 'America/New_York' })} EST`}>
                       {formatDistanceToNow(new Date(job.completedAt), { addSuffix: true })}
                     </span>
                   </div>

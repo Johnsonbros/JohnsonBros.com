@@ -391,7 +391,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                 </div>
 
                 <div>
-                  <h5 className="font-semibold text-gray-900 mb-3 sm:mb-4">Available Times</h5>
+                  <h5 className="font-semibold text-gray-900 mb-3 sm:mb-4">Available Times (EST)</h5>
                   {selectedDate ? (
                     <div className="space-y-2 max-h-64 md:max-h-none overflow-y-auto">
                       {timeSlotsLoading ? (
@@ -414,7 +414,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                             >
                               <div className="flex justify-between items-center">
                                 <span className="font-medium text-sm sm:text-base">
-                                  {slot.startTime} - {slot.endTime}
+                                  {slot.startTime} - {slot.endTime} EST
                                 </span>
                                 <span className="text-xs sm:text-sm text-green-600">Available</span>
                               </div>

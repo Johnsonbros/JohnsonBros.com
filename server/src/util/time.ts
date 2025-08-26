@@ -1,5 +1,6 @@
 // Time utilities for timezone handling
-export const TIMEZONE = process.env.TZ || 'America/New_York';
+// HARDCODED to Eastern Time for all customer-facing displays
+export const TIMEZONE = 'America/New_York'; // Always use Eastern Time (EST/EDT)
 
 export function getNowInTZ(): Date {
   return new Date();
@@ -43,7 +44,18 @@ export function formatTimeInTZ(date: Date): string {
     timeZone: TIMEZONE,
     hour: '2-digit',
     minute: '2-digit',
-  });
+  }) + ' EST';
+}
+
+export function formatDateTimeInTZ(date: Date): string {
+  return date.toLocaleString('en-US', {
+    timeZone: TIMEZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }) + ' EST';
 }
 
 export function getMinutesFromTimeString(timeStr: string): number {
