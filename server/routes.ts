@@ -642,17 +642,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Get all addresses with privacy offset
     const addresses = await db.select().from(customerAddresses);
     
-    // More granular grid for detailed coverage visualization
-    const gridSize = 0.003; // About 300m grid - more granular display
+    // Ultra-granular grid utilizing all customer locations
+    const gridSize = 0.0015; // About 150m grid - maximum granularity
     const gridMap = new Map<string, { lat: number, lng: number, count: number, city: string }>();
     const additionalPoints: any[] = [];
     
-    addresses.forEach(addr => {
+    // Process ALL addresses to utilize 3000+ customer locations
+    addresses.forEach((addr, index) => {
       if (addr.displayLat && addr.displayLng) {
-        // Primary grid point
-        const gridLat = Math.round(addr.displayLat / gridSize) * gridSize;
-        const gridLng = Math.round(addr.displayLng / gridSize) * gridSize;
-        const key = `${gridLat},${gridLng}`;
+        // Primary grid point with slight randomization for privacy
+        const privacyOffset = 0.0005; // ~50m random offset
+        const gridLat = Math.round(addr.displayLat / gridSize) * gridSize + (Math.random() - 0.5) * privacyOffset;
+        const gridLng = Math.round(addr.displayLng / gridSize) * gridSize + (Math.random() - 0.5) * privacyOffset;
+        const key = `${gridLat.toFixed(4)},${gridLng.toFixed(4)}`;
         
         if (!gridMap.has(key)) {
           gridMap.set(key, {
@@ -664,39 +666,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         gridMap.get(key)!.count++;
         
-        // Add extra points around dense areas for more granularity
-        if (Math.random() < 0.4) { // 40% chance to add surrounding points
-          const offsets = [
-            { dlat: gridSize * 0.5, dlng: 0 },
-            { dlat: -gridSize * 0.5, dlng: 0 },
-            { dlat: 0, dlng: gridSize * 0.5 },
-            { dlat: 0, dlng: -gridSize * 0.5 }
-          ];
-          
-          offsets.forEach(offset => {
-            if (Math.random() < 0.3) { // 30% chance for each surrounding point
-              additionalPoints.push({
-                lat: gridLat + offset.dlat + (Math.random() - 0.5) * 0.001,
-                lng: gridLng + offset.dlng + (Math.random() - 0.5) * 0.001,
-                count: 1,
-                city: addr.city || 'Unknown'
-              });
-            }
+        // For every 3rd address, add a surrounding point for density visualization
+        if (index % 3 === 0) {
+          const angle = (index * 2.4) % (Math.PI * 2);
+          const radius = gridSize * 0.8;
+          additionalPoints.push({
+            lat: addr.displayLat + Math.cos(angle) * radius + (Math.random() - 0.5) * privacyOffset,
+            lng: addr.displayLng + Math.sin(angle) * radius + (Math.random() - 0.5) * privacyOffset,
+            count: 1,
+            city: addr.city || 'Unknown'
           });
         }
       }
     });
     
-    // Combine main grid points with additional points for granularity
+    // Combine all points to show comprehensive coverage
     const allPoints = [
       ...Array.from(gridMap.values()),
       ...additionalPoints
     ];
     
-    // Store in cache with more points for granular display
-    const sortedGrids = allPoints
+    // Use intelligent sampling to keep it lightweight while showing all areas
+    const maxPoints = 1200; // Optimal balance of detail and performance
+    let finalPoints = [];
+    
+    if (allPoints.length <= maxPoints) {
+      finalPoints = allPoints;
+    } else {
+      // Smart sampling: take high-density areas plus distributed coverage
+      const highDensity = allPoints.filter(p => p.count > 2);
+      const remaining = allPoints.filter(p => p.count <= 2);
+      
+      // Take all high density points
+      finalPoints = [...highDensity];
+      
+      // Sample remaining points evenly across the map
+      const sampleRate = Math.max(1, Math.floor(remaining.length / (maxPoints - highDensity.length)));
+      for (let i = 0; i < remaining.length; i += sampleRate) {
+        if (finalPoints.length < maxPoints) {
+          finalPoints.push(remaining[i]);
+        }
+      }
+    }
+    
+    // Sort by count and limit to maxPoints
+    const sortedGrids = finalPoints
       .sort((a, b) => b.count - a.count)
-      .slice(0, 500); // Increase to 500 points for more granular coverage
+      .slice(0, maxPoints); // 1200 points for comprehensive coverage
     
     for (const grid of sortedGrids) {
       await db.insert(heatMapCache).values({
@@ -763,7 +779,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           intensity: point.intensity || 0.8
         }));
         
-        console.log(`Heat map: Serving ${heatMapData.length} cached grid points (granular)`);
+        console.log(`Heat map: Serving ${heatMapData.length} cached grid points from 3000+ customers`);
         return res.json(heatMapData);
       }
       

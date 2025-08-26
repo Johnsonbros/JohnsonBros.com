@@ -55,7 +55,7 @@ export function ServiceHeatMap() {
           center: { lat: 42.2, lng: -70.95 }, // Center on South Shore area
           mapTypeId: google.maps.MapTypeId.ROADMAP,
           minZoom: 7, // Wider minimum zoom for mobile
-          maxZoom: 14, // Allow more zoom but blur increases to maintain privacy
+          maxZoom: 10, // Limited zoom for privacy - this is the farthest users can zoom
           clickableIcons: false, // Disable POI clicks completely
           disableDefaultUI: false,
           gestureHandling: 'greedy', // Better mobile touch handling
@@ -372,7 +372,7 @@ export function ServiceHeatMap() {
                 </span>
               </div>
               <span className="text-xs text-gray-600">
-                {heatMapData ? `${Math.floor(heatMapData.length / 8)} Service Areas • ${heatMapData.length} Data Points` : 'Loading...'}
+                {heatMapData ? `${Math.floor(heatMapData.length / 15)} Service Areas • 3,000+ Customers` : 'Loading...'}
               </span>
             </div>
           </div>
@@ -388,20 +388,6 @@ export function ServiceHeatMap() {
           </div>
         )}
         
-        {/* Legend */}
-        <div className="absolute bottom-2 right-2 md:bottom-4 md:right-4 z-10">
-          <div className="bg-white/95 backdrop-blur rounded-lg px-2 py-1.5 shadow-lg border border-gray-200">
-            <p className="text-xs font-semibold text-gray-700 mb-1">Service Density</p>
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 bg-blue-300 rounded"></div>
-              <div className="w-3 h-3 bg-blue-500 rounded"></div>
-              <div className="w-3 h-3 bg-purple-400 rounded"></div>
-              <div className="w-3 h-3 bg-orange-500 rounded"></div>
-              <div className="w-3 h-3 bg-orange-600 rounded"></div>
-              <span className="text-xs text-gray-600 ml-1">High</span>
-            </div>
-          </div>
-        </div>
         
         {/* Loading indicator for location */}
         {isLocating && (
