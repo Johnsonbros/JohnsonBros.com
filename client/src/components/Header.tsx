@@ -1,24 +1,55 @@
 import { Phone, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import emergencyBanner from '@assets/generated_images/24/7_emergency_plumbing_banner_312a2370.png';
+import { useState, useEffect } from "react";
+import emergencyBanner from '@assets/generated_images/24/7_emergency_text_banner_1b514e92.png';
+import businessHoursBanner from '@assets/generated_images/Business_hours_plumbing_banner_f6bfe737.png';
 
 interface HeaderProps {
   onBookService: () => void;
 }
 
 export default function Header({ onBookService }: HeaderProps) {
+  const [isBusinessHours, setIsBusinessHours] = useState(false);
+
+  const checkBusinessHours = () => {
+    const now = new Date();
+    // Convert to EST timezone
+    const estTime = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
+    const day = estTime.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const hour = estTime.getHours();
+    
+    // Monday (1) to Friday (5), 8am (8) to 5pm (17)
+    const isWeekday = day >= 1 && day <= 5;
+    const isDuringHours = hour >= 8 && hour < 17;
+    
+    return isWeekday && isDuringHours;
+  };
+
+  useEffect(() => {
+    const updateBusinessHours = () => {
+      setIsBusinessHours(checkBusinessHours());
+    };
+    
+    // Check immediately
+    updateBusinessHours();
+    
+    // Check every minute
+    const interval = setInterval(updateBusinessHours, 60000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <>
-      {/* Emergency Plumbing Banner Image */}
+      {/* Dynamic Plumbing Banner Image */}
       <a 
         href="tel:6174799911"
         className="block w-full cursor-pointer hover:opacity-95 transition-opacity"
-        data-testid="emergency-banner-link"
+        data-testid="plumbing-banner-link"
       >
         <img 
-          src={emergencyBanner}
-          alt="24/7 Emergency Plumbing - Click to talk to a real plumber"
+          src={isBusinessHours ? businessHoursBanner : emergencyBanner}
+          alt={isBusinessHours ? "Expert Plumbers Ready to Help - Click to talk to a real plumber" : "24/7 Emergency Plumbing - Click to talk to a real plumber"}
           className="w-full h-auto object-contain"
         />
       </a>
