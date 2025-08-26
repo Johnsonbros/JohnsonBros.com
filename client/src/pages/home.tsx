@@ -3,7 +3,6 @@ import ExpressBooking from "@/components/ExpressBooking";
 import ServicesSection from "@/components/ServicesSection";
 import TruckSection from "@/components/TruckSection";
 import GoogleReviewsSection from "@/components/GoogleReviewsSection";
-import ServiceAreaSection from "@/components/ServiceAreaSection";
 import { SocialProofSection } from "@/components/SocialProofSection";
 import Footer from "@/components/Footer";
 import BookingModal from "@/components/BookingModal";
@@ -32,7 +31,6 @@ export default function Home() {
         <TruckSection />
         <SocialProofSection />
         <GoogleReviewsSection />
-        <ServiceAreaSection />
         <Footer onBookService={() => openBookingModal()} />
       </div>
       
