@@ -1,8 +1,10 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertCustomerSchema, insertAppointmentSchema, type BookingFormData } from "@shared/schema";
+import { insertCustomerSchema, insertAppointmentSchema, type BookingFormData, customerAddresses, serviceAreas, heatMapCache, syncStatus } from "@shared/schema";
 import { z } from "zod";
+import { db } from "./db";
+import { eq, sql, and } from "drizzle-orm";
 
 // Housecall Pro API client
 const HOUSECALL_API_BASE = 'https://api.housecallpro.com';
@@ -488,144 +490,238 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get service area heat map data using real customer addresses from Housecall Pro
-  app.get("/api/social-proof/service-heat-map", async (_req, res) => {
+  // Sync customer addresses from Housecall Pro to database
+  app.post("/api/admin/sync-customer-addresses", async (_req, res) => {
     try {
-      // Fetch multiple pages of jobs to get comprehensive data
-      const allJobs: any[] = [];
+      // Update sync status
+      await db.insert(syncStatus).values({
+        syncType: 'customers',
+        status: 'running',
+        lastSyncAt: new Date(),
+      }).onConflictDoUpdate({
+        target: syncStatus.syncType,
+        set: {
+          status: 'running',
+          lastSyncAt: new Date(),
+          error: null,
+        }
+      });
+
+      // Fetch all customers from Housecall Pro (multiple pages)
+      const allCustomers: any[] = [];
       let page = 1;
       let hasMore = true;
       
-      // Fetch up to 5 pages of jobs (500 jobs total)
-      while (hasMore && page <= 5) {
-        const jobsData = await callHousecallAPI('/jobs', {
+      while (hasMore && page <= 10) { // Fetch up to 10 pages
+        const data = await callHousecallAPI('/customers', {
           page: page,
           page_size: 100,
-          sort_direction: 'desc'
-          // Note: work_status filter removed as it causes API error
         });
         
-        if (jobsData.jobs && jobsData.jobs.length > 0) {
-          allJobs.push(...jobsData.jobs);
+        if (data.customers && data.customers.length > 0) {
+          allCustomers.push(...data.customers);
           page++;
-          hasMore = jobsData.jobs.length === 100; // Check if there might be more
+          hasMore = data.customers.length === 100;
         } else {
           hasMore = false;
         }
       }
 
-      // Get customers with their actual addresses from Housecall Pro
-      const customersData = await callHousecallAPI('/customers', {
-        page_size: 200,
-        sort_direction: 'desc'
-      });
+      // Process and store customer addresses
+      let processedCount = 0;
+      const cityStats: Record<string, { count: number, lat: number, lng: number }> = {};
 
-      // Create array to store individual job locations for heat points
-      const individualLocations: Array<{
-        lat: number;
-        lng: number;
-        city: string;
-      }> = [];
+      for (const customer of allCustomers) {
+        if (customer.addresses && Array.isArray(customer.addresses)) {
+          for (const address of customer.addresses) {
+            if (address.state === 'MA' || address.state === 'Massachusetts') {
+              // Calculate privacy offset for display
+              const privacyOffsetLat = (Math.random() - 0.5) * 0.002;
+              const privacyOffsetLng = (Math.random() - 0.5) * 0.002;
+              
+              // Get coordinates
+              let lat = null, lng = null;
+              if (address.latitude && address.longitude) {
+                lat = typeof address.latitude === 'string' ? parseFloat(address.latitude) : address.latitude;
+                lng = typeof address.longitude === 'string' ? parseFloat(address.longitude) : address.longitude;
+              }
 
-      // Helper function to add privacy offset to coordinates
-      const addPrivacyOffset = (coord: number, isLat: boolean) => {
-        // Add random offset of ~100-300 meters to obscure exact address
-        const offset = (Math.random() - 0.5) * 0.003; // ~0.003 degrees = ~300m
-        return coord + offset;
-      };
+              // Only store if we have valid data
+              if (address.city && !isNaN(lat!) && !isNaN(lng!)) {
+                await db.insert(customerAddresses).values({
+                  customerId: customer.id,
+                  street: address.street,
+                  city: address.city,
+                  state: address.state,
+                  zip: address.zip,
+                  latitude: lat,
+                  longitude: lng,
+                  displayLat: lat ? lat + privacyOffsetLat : null,
+                  displayLng: lng ? lng + privacyOffsetLng : null,
+                }).onConflictDoNothing();
+                
+                processedCount++;
 
-      // Process all jobs to create individual heat points
-      allJobs.forEach((job: any) => {
-        if (job.address && (job.address.state === 'MA' || job.address.state === 'Massachusetts')) {
-          const city = job.address.city;
-          
-          // Check if job has coordinates
-          let lat: number | null = null;
-          let lng: number | null = null;
-          
-          if (job.address.latitude && job.address.longitude) {
-            lat = typeof job.address.latitude === 'string' ? parseFloat(job.address.latitude) : job.address.latitude;
-            lng = typeof job.address.longitude === 'string' ? parseFloat(job.address.longitude) : job.address.longitude;
-          }
-          
-          // If we have valid coordinates, add to individual locations with privacy offset
-          if (lat && lng && !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
-            individualLocations.push({
-              lat: addPrivacyOffset(lat, true),
-              lng: addPrivacyOffset(lng, false),
-              city: city || 'Unknown'
-            });
-          } else if (city) {
-            // If no coordinates but we have a city, we'll add it later with city coordinates
-            // Track this for fallback
-          }
-        }
-      });
-
-      // City coordinates for Massachusetts cities (used when we don't have exact coordinates)
-      const cityCoordinates: Record<string, { lat: number; lng: number }> = {
-        'Quincy': { lat: 42.2529, lng: -71.0023 },
-        'Boston': { lat: 42.3601, lng: -71.0589 },
-        'Braintree': { lat: 42.2057, lng: -71.0995 },
-        'Weymouth': { lat: 42.2180, lng: -70.9395 },
-        'Milton': { lat: 42.2496, lng: -71.0662 },
-        'Hingham': { lat: 42.2417, lng: -70.8893 },
-        'Hull': { lat: 42.3084, lng: -70.8967 },
-        'Randolph': { lat: 42.1618, lng: -71.0412 },
-        'Cambridge': { lat: 42.3736, lng: -71.1097 },
-        'Somerville': { lat: 42.3876, lng: -71.0995 },
-        'Brookline': { lat: 42.3318, lng: -71.1211 },
-        'Newton': { lat: 42.3370, lng: -71.2092 },
-        'Watertown': { lat: 42.3668, lng: -71.1834 },
-        'Belmont': { lat: 42.3959, lng: -71.1786 },
-        'Arlington': { lat: 42.4153, lng: -71.1564 },
-        'Medford': { lat: 42.4184, lng: -71.1061 },
-        'Malden': { lat: 42.4251, lng: -71.0662 },
-        'Revere': { lat: 42.4085, lng: -71.0120 },
-        'Chelsea': { lat: 42.3918, lng: -71.0328 },
-        'Everett': { lat: 42.4084, lng: -71.0537 },
-        'Winthrop': { lat: 42.3751, lng: -70.9828 },
-        'Rockland': { lat: 42.1307, lng: -70.9162 }
-      };
-
-      // For jobs without coordinates, add them using city coordinates
-      const jobsWithoutCoords: Record<string, number> = {};
-      allJobs.forEach((job: any) => {
-        if (job.address && (job.address.state === 'MA' || job.address.state === 'Massachusetts')) {
-          const hasCoords = job.address.latitude && job.address.longitude;
-          if (!hasCoords && job.address.city && cityCoordinates[job.address.city]) {
-            jobsWithoutCoords[job.address.city] = (jobsWithoutCoords[job.address.city] || 0) + 1;
+                // Track city statistics
+                if (!cityStats[address.city]) {
+                  cityStats[address.city] = { count: 0, lat: 0, lng: 0 };
+                }
+                cityStats[address.city].count++;
+                if (lat && lng) {
+                  cityStats[address.city].lat += lat;
+                  cityStats[address.city].lng += lng;
+                }
+              }
+            }
           }
         }
-      });
+      }
 
-      // Add jobs without exact coordinates using city coordinates with random spread
-      Object.entries(jobsWithoutCoords).forEach(([city, count]) => {
-        if (cityCoordinates[city]) {
-          // Add multiple points spread around the city center
-          for (let i = 0; i < count; i++) {
-            individualLocations.push({
-              lat: addPrivacyOffset(cityCoordinates[city].lat, true),
-              lng: addPrivacyOffset(cityCoordinates[city].lng, false),
-              city: city
-            });
+      // Update service areas table
+      for (const [city, stats] of Object.entries(cityStats)) {
+        const avgLat = stats.lat / stats.count;
+        const avgLng = stats.lng / stats.count;
+        
+        await db.insert(serviceAreas).values({
+          city: city,
+          state: 'MA',
+          centerLat: avgLat || 0,
+          centerLng: avgLng || 0,
+          totalCustomers: stats.count,
+        }).onConflictDoUpdate({
+          target: serviceAreas.city,
+          set: {
+            totalCustomers: stats.count,
+            centerLat: avgLat || 0,
+            centerLng: avgLng || 0,
+            lastUpdated: new Date(),
           }
-        }
+        });
+      }
+
+      // Rebuild heat map cache
+      await rebuildHeatMapCache();
+
+      // Update sync status
+      await db.update(syncStatus)
+        .set({
+          status: 'completed',
+          recordsProcessed: processedCount,
+          error: null,
+        })
+        .where(eq(syncStatus.syncType, 'customers'));
+
+      res.json({
+        success: true,
+        customersProcessed: allCustomers.length,
+        addressesStored: processedCount,
+        cities: Object.keys(cityStats).length,
       });
-
-      // Group locations by proximity for the heat map (but keep individual points)
-      // This creates a more realistic heat map while preserving individual job locations
-      const heatMapData = individualLocations.map((location, index) => ({
-        city: location.city,
-        count: 1, // Each point represents one job
-        lat: location.lat,
-        lng: location.lng,
-        intensity: 0.8 // Consistent intensity for all points
-      }));
-
-      console.log(`Heat map: Processed ${allJobs.length} jobs, created ${heatMapData.length} individual heat points`);
-      console.log(`Coverage areas: ${Array.from(new Set(individualLocations.map(l => l.city))).join(', ')}`);
+    } catch (error: any) {
+      console.error("Sync error:", error);
       
+      await db.update(syncStatus)
+        .set({
+          status: 'failed',
+          error: error.message,
+        })
+        .where(eq(syncStatus.syncType, 'customers'));
+      
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Helper function to rebuild heat map cache
+  async function rebuildHeatMapCache() {
+    // Clear existing cache
+    await db.delete(heatMapCache);
+    
+    // Get all addresses with privacy offset
+    const addresses = await db.select().from(customerAddresses);
+    
+    // Create grid-based clustering for better visualization
+    const gridSize = 0.005; // About 500m grid
+    const gridMap = new Map<string, { lat: number, lng: number, count: number, city: string }>();
+    
+    addresses.forEach(addr => {
+      if (addr.displayLat && addr.displayLng) {
+        const gridLat = Math.round(addr.displayLat / gridSize) * gridSize;
+        const gridLng = Math.round(addr.displayLng / gridSize) * gridSize;
+        const key = `${gridLat},${gridLng}`;
+        
+        if (!gridMap.has(key)) {
+          gridMap.set(key, {
+            lat: gridLat,
+            lng: gridLng,
+            count: 0,
+            city: addr.city || 'Unknown'
+          });
+        }
+        gridMap.get(key)!.count++;
+      }
+    });
+    
+    // Store in cache
+    for (const grid of gridMap.values()) {
+      await db.insert(heatMapCache).values({
+        gridLat: grid.lat,
+        gridLng: grid.lng,
+        pointCount: grid.count,
+        intensity: Math.min(grid.count / 5, 1), // Normalize intensity
+        cityName: grid.city,
+      });
+    }
+  }
+
+  // Get optimized heat map data from database
+  app.get("/api/social-proof/service-heat-map", async (_req, res) => {
+    try {
+      // First check if we have cached data
+      const cachedData = await db.select().from(heatMapCache);
+      
+      if (cachedData.length > 0) {
+        // Use cached data for instant response
+        const heatMapData = cachedData.map(point => ({
+          city: point.cityName || 'Unknown',
+          count: point.pointCount || 1,
+          lat: point.gridLat!,
+          lng: point.gridLng!,
+          intensity: point.intensity || 0.8
+        }));
+        
+        console.log(`Heat map: Serving ${heatMapData.length} cached grid points`);
+        return res.json(heatMapData);
+      }
+      
+      // Fallback: Generate from customer addresses if no cache
+      const addresses = await db.select().from(customerAddresses);
+      
+      if (addresses.length === 0) {
+        // If no database data, fetch from API and sync
+        console.log("No cached data, syncing from Housecall Pro...");
+        
+        // Trigger sync in background
+        fetch('http://localhost:5000/api/admin/sync-customer-addresses', { 
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        }).catch(err => console.error("Background sync failed:", err));
+        
+        // Return empty for now
+        return res.json([]);
+      }
+      
+      // Generate heat map data from addresses
+      const heatMapData = addresses
+        .filter(addr => addr.displayLat && addr.displayLng)
+        .map(addr => ({
+          city: addr.city || 'Unknown',
+          count: 1,
+          lat: addr.displayLat!,
+          lng: addr.displayLng!,
+          intensity: 0.8
+        }));
+      
+      console.log(`Heat map: Generated ${heatMapData.length} points from database`);
       res.json(heatMapData);
     } catch (error) {
       console.error("Error fetching heat map data:", error);
