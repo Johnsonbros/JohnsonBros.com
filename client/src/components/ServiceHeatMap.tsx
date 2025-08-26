@@ -108,7 +108,7 @@ export function ServiceHeatMap() {
           weight: location.intensity || 1 // Use consistent weight for trust signal
         }));
 
-        // Soft blue gradient matching the original's cloud-like appearance
+        // Blue to orange gradient matching company color scheme
         const customGradient = [
           'rgba(0, 0, 0, 0)',
           'rgba(200, 230, 255, 0.1)',
@@ -116,14 +116,14 @@ export function ServiceHeatMap() {
           'rgba(100, 180, 255, 0.5)',
           'rgba(80, 160, 255, 0.6)',
           'rgba(60, 140, 255, 0.7)',
-          'rgba(40, 120, 255, 0.8)',
-          'rgba(30, 100, 255, 0.85)',
-          'rgba(20, 80, 255, 0.9)',
-          'rgba(10, 60, 255, 0.95)',
-          'rgba(0, 40, 255, 1)',
-          'rgba(0, 30, 230, 1)',
-          'rgba(0, 20, 200, 1)',
-          'rgba(0, 10, 180, 1)'
+          'rgba(100, 130, 255, 0.75)',
+          'rgba(140, 120, 230, 0.8)',
+          'rgba(180, 110, 200, 0.85)',
+          'rgba(220, 100, 170, 0.9)',
+          'rgba(251, 146, 60, 0.95)',
+          'rgba(249, 115, 22, 1)',
+          'rgba(234, 88, 12, 1)',
+          'rgba(220, 60, 5, 1)'
         ];
 
         // Add pulsing markers for top service areas
@@ -377,10 +377,11 @@ export function ServiceHeatMap() {
           <div className="bg-white/95 backdrop-blur rounded-lg px-2 py-1.5 shadow-lg border border-gray-200">
             <p className="text-xs font-semibold text-gray-700 mb-1">Service Density</p>
             <div className="flex items-center gap-1">
-              <div className="w-3 h-3 bg-blue-200 rounded"></div>
-              <div className="w-3 h-3 bg-blue-400 rounded"></div>
-              <div className="w-3 h-3 bg-blue-600 rounded"></div>
-              <div className="w-3 h-3 bg-blue-800 rounded"></div>
+              <div className="w-3 h-3 bg-blue-300 rounded"></div>
+              <div className="w-3 h-3 bg-blue-500 rounded"></div>
+              <div className="w-3 h-3 bg-purple-400 rounded"></div>
+              <div className="w-3 h-3 bg-orange-500 rounded"></div>
+              <div className="w-3 h-3 bg-orange-600 rounded"></div>
               <span className="text-xs text-gray-600 ml-1">High</span>
             </div>
           </div>
