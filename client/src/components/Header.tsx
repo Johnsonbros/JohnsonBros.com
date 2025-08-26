@@ -50,7 +50,7 @@ export default function Header({ onBookService }: HeaderProps) {
         <img 
           src={isBusinessHours ? businessHoursBanner : emergencyBanner}
           alt={isBusinessHours ? "Expert Plumbers Ready to Help - Click to talk to a real plumber" : "24/7 Emergency Plumbing - Click to talk to a real plumber"}
-          className="w-full h-auto object-contain"
+          className="w-full h-[80px] sm:h-[100px] object-cover"
         />
       </a>
 
