@@ -507,12 +507,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
 
-      // Fetch all customers from Housecall Pro (multiple pages)
+      // Fetch ALL customers from Housecall Pro (no limit on pages)
       const allCustomers: any[] = [];
       let page = 1;
       let hasMore = true;
       
-      while (hasMore && page <= 10) { // Fetch up to 10 pages
+      console.log(`Starting comprehensive customer sync at ${new Date().toISOString()}`);
+      
+      while (hasMore) { // Fetch ALL pages
         const data = await callHousecallAPI('/customers', {
           page: page,
           page_size: 100,
@@ -616,6 +618,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         customersProcessed: allCustomers.length,
         addressesStored: processedCount,
         cities: Object.keys(cityStats).length,
+        syncedAt: new Date().toISOString(),
       });
     } catch (error: any) {
       console.error("Sync error:", error);
@@ -639,8 +642,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Get all addresses with privacy offset
     const addresses = await db.select().from(customerAddresses);
     
-    // Create grid-based clustering for better visualization
-    const gridSize = 0.005; // About 500m grid
+    // Mobile-optimized grid clustering (larger grid for better performance)
+    const gridSize = 0.007; // About 700m grid - optimized for mobile performance
     const gridMap = new Map<string, { lat: number, lng: number, count: number, city: string }>();
     
     addresses.forEach(addr => {
@@ -661,17 +664,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     });
     
-    // Store in cache
-    for (const grid of gridMap.values()) {
+    // Store in cache with mobile optimization (limit points for performance)
+    const sortedGrids = Array.from(gridMap.values())
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 200); // Limit to top 200 points for mobile performance
+    
+    for (const grid of sortedGrids) {
       await db.insert(heatMapCache).values({
         gridLat: grid.lat,
         gridLng: grid.lng,
         pointCount: grid.count,
-        intensity: Math.min(grid.count / 5, 1), // Normalize intensity
+        intensity: Math.min(grid.count / 3, 1), // Adjusted intensity for visibility
         cityName: grid.city,
       });
     }
   }
+
+  // Daily sync endpoint - can be called by a cron job or scheduler
+  app.post("/api/admin/daily-sync", async (_req, res) => {
+    try {
+      console.log(`Running daily sync at ${new Date().toISOString()}`);
+      
+      // Call the sync endpoint internally
+      const response = await fetch('http://localhost:5000/api/admin/sync-customer-addresses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      const result = await response.json();
+      
+      res.json({
+        success: true,
+        message: 'Daily sync completed',
+        ...result
+      });
+    } catch (error: any) {
+      console.error("Daily sync failed:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Auto-sync on server start (runs once when server starts)
+  setTimeout(async () => {
+    try {
+      console.log("Running initial data sync on server start...");
+      await fetch('http://localhost:5000/api/admin/sync-customer-addresses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      console.log("Initial sync completed");
+    } catch (error) {
+      console.error("Initial sync failed:", error);
+    }
+  }, 5000); // Wait 5 seconds after server start
 
   // Get optimized heat map data from database
   app.get("/api/social-proof/service-heat-map", async (_req, res) => {

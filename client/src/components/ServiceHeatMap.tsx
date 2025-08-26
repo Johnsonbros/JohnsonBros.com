@@ -37,15 +37,17 @@ export function ServiceHeatMap() {
       try {
         const google = await loader.load();
         
-        // Center map on Massachusetts with zoom limits for privacy
+        // Mobile-optimized map settings
+        const isMobile = window.innerWidth <= 768;
         const map = new google.maps.Map(mapRef.current!, {
-          zoom: 9, // Start with broader view of south shore
+          zoom: isMobile ? 8 : 9, // Wider view on mobile
           center: { lat: 42.2, lng: -70.95 }, // Center on South Shore area
           mapTypeId: google.maps.MapTypeId.ROADMAP,
-          minZoom: 8, // Prevent zooming in too close for privacy
-          maxZoom: 12, // Maximum zoom level to protect customer addresses
+          minZoom: 7, // Wider minimum zoom for mobile
+          maxZoom: 11, // Limit zoom for privacy and performance
           clickableIcons: false, // Disable POI clicks completely
           disableDefaultUI: false,
+          gestureHandling: 'greedy', // Better mobile touch handling
           styles: [
             {
               featureType: "poi",
@@ -63,17 +65,18 @@ export function ServiceHeatMap() {
               stylers: [{ visibility: "off" }] // Hide transit stations
             }
           ],
-          mapTypeControl: true,
-          mapTypeControlOptions: {
-            style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
-            position: google.maps.ControlPosition.TOP_LEFT
-          },
+          mapTypeControl: false, // Hide on mobile for cleaner UI
           zoomControl: true,
           zoomControlOptions: {
-            position: google.maps.ControlPosition.RIGHT_CENTER
+            position: isMobile ? 
+              google.maps.ControlPosition.RIGHT_BOTTOM : 
+              google.maps.ControlPosition.RIGHT_CENTER
           },
           streetViewControl: false,
-          fullscreenControl: false,
+          fullscreenControl: true,
+          fullscreenControlOptions: {
+            position: google.maps.ControlPosition.RIGHT_TOP
+          },
           restriction: {
             // Restrict map bounds to Massachusetts area
             latLngBounds: {
@@ -112,14 +115,14 @@ export function ServiceHeatMap() {
           'rgba(0, 10, 180, 1)'
         ];
 
-        // Create the heat map layer optimized for individual job points
+        // Mobile-optimized heat map settings
         const heatmap = new google.maps.visualization.HeatmapLayer({
           data: heatmapData,
           map: map,
-          radius: 35, // Medium radius to show coverage without revealing exact addresses
-          opacity: 0.7, // Good visibility while maintaining soft appearance
+          radius: isMobile ? 40 : 35, // Larger radius on mobile for better visibility
+          opacity: 0.75, // Slightly higher opacity for mobile screens
           gradient: customGradient,
-          maxIntensity: 2, // Lower intensity to spread the heat effect
+          maxIntensity: isMobile ? 3 : 2, // Adjust intensity for mobile
           dissipating: true
         });
 
@@ -170,29 +173,39 @@ export function ServiceHeatMap() {
   }
 
   return (
-    <div className="bg-white w-full max-w-5xl mx-auto" data-testid="service-heat-map">
-      {/* Header - matches your site style */}
-      <div className="text-center py-6 px-4">
-        <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
+    <div className="bg-white w-full" data-testid="service-heat-map">
+      {/* Mobile-optimized header */}
+      <div className="text-center py-4 md:py-6 px-3 md:px-4">
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-1 md:mb-2">
           Where Do We Work? Lets see.....
         </h2>
+        <p className="text-sm text-gray-600 md:hidden">Tap map to explore our service areas</p>
       </div>
 
-      {/* Google Maps Container */}
+      {/* Mobile-optimized map container */}
       <div className="relative">
         <div 
           ref={mapRef}
-          className="h-96 md:h-[500px] w-full"
+          className="h-[400px] sm:h-[450px] md:h-[500px] w-full"
           data-testid="google-map-container"
+          style={{ touchAction: 'none' }} // Better mobile touch handling
         />
 
-        {/* Floating info button - top right */}
-        <div className="absolute top-4 right-4 z-10">
-          <div className="bg-white rounded-full p-2 shadow-lg border border-gray-200">
-            <Activity className="h-4 w-4 text-blue-600" />
+        {/* Mobile-optimized floating badge */}
+        <div className="absolute top-2 right-2 md:top-4 md:right-4 z-10">
+          <div className="bg-white/90 backdrop-blur rounded-full p-1.5 md:p-2 shadow-lg border border-gray-200">
+            <Activity className="h-3 w-3 md:h-4 md:w-4 text-blue-600" />
           </div>
         </div>
 
+        {/* Mobile coverage stats */}
+        <div className="absolute bottom-2 left-2 md:bottom-4 md:left-4 z-10">
+          <div className="bg-white/90 backdrop-blur rounded-lg px-2 py-1 md:px-3 md:py-2 shadow-lg border border-gray-200">
+            <span className="text-xs md:text-sm font-medium text-gray-700">
+              {heatMapData ? `${heatMapData.length} Service Areas` : 'Loading...'}
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   );
