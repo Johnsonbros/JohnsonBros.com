@@ -71,12 +71,21 @@ export function ServiceHeatMap() {
         
         heatMapData.forEach(city => {
           // Add weighted points - more customers = more points in that area
-          const pointCount = Math.max(1, Math.round((city.count / maxCount) * 20));
+          const pointCount = Math.max(1, Math.round((city.count / maxCount) * 35));
           
           for (let i = 0; i < pointCount; i++) {
             // Add some random variation to create a more natural heat map
-            const latVariation = (Math.random() - 0.5) * 0.02; // ~1km variation
-            const lngVariation = (Math.random() - 0.5) * 0.02;
+            // Use Gaussian distribution for more realistic clustering
+            const gaussianRandom = () => {
+              let u = 0, v = 0;
+              while(u === 0) u = Math.random(); // Converting [0,1) to (0,1)
+              while(v === 0) v = Math.random();
+              return Math.sqrt( -2.0 * Math.log( u ) ) * Math.cos( 2.0 * Math.PI * v );
+            };
+            
+            // Smaller variation for denser clustering (about 500m spread)
+            const latVariation = gaussianRandom() * 0.008;
+            const lngVariation = gaussianRandom() * 0.008;
             
             heatmapData.push(
               new google.maps.LatLng(
@@ -87,32 +96,32 @@ export function ServiceHeatMap() {
           }
         });
 
-        // Custom gradient for professional appearance (blue to red heat map)
+        // Custom gradient matching the original design - blue gradient only
         const customGradient = [
-          'rgba(0, 255, 255, 0)',
-          'rgba(0, 255, 255, 1)',
-          'rgba(0, 191, 255, 1)',
-          'rgba(0, 127, 255, 1)',
-          'rgba(0, 63, 255, 1)',
-          'rgba(0, 0, 255, 1)',
-          'rgba(0, 0, 223, 1)',
-          'rgba(0, 0, 191, 1)',
-          'rgba(0, 0, 159, 1)',
-          'rgba(0, 0, 127, 1)',
-          'rgba(63, 0, 91, 1)',
-          'rgba(127, 0, 63, 1)',
-          'rgba(191, 0, 31, 1)',
-          'rgba(255, 0, 0, 1)'
+          'rgba(0, 0, 0, 0)',
+          'rgba(102, 225, 255, 0.2)',
+          'rgba(102, 200, 255, 0.4)',
+          'rgba(70, 150, 255, 0.6)',
+          'rgba(50, 120, 255, 0.8)',
+          'rgba(30, 90, 255, 0.9)',
+          'rgba(20, 70, 255, 1)',
+          'rgba(10, 50, 255, 1)',
+          'rgba(0, 30, 255, 1)',
+          'rgba(0, 20, 200, 1)',
+          'rgba(0, 10, 150, 1)',
+          'rgba(0, 5, 120, 1)',
+          'rgba(0, 0, 100, 1)',
+          'rgba(0, 0, 80, 1)'
         ];
 
-        // Create the heat map layer
+        // Create the heat map layer with settings matching the original
         const heatmap = new google.maps.visualization.HeatmapLayer({
           data: heatmapData,
           map: map,
-          radius: 25,
-          opacity: 0.7,
+          radius: 40,
+          opacity: 0.85,
           gradient: customGradient,
-          maxIntensity: 5,
+          maxIntensity: 8,
           dissipating: true
         });
 
@@ -128,11 +137,11 @@ export function ServiceHeatMap() {
             title: city.city,
             icon: {
               path: google.maps.SymbolPath.CIRCLE,
-              scale: 8,
-              fillColor: index === 0 ? '#EF4444' : '#3B82F6',
-              fillOpacity: 0.8,
+              scale: 6,
+              fillColor: index === 0 ? '#FFD700' : '#3B82F6',
+              fillOpacity: 0.6,
               strokeColor: '#FFFFFF',
-              strokeWeight: 2
+              strokeWeight: 1.5
             },
             animation: index === 0 ? google.maps.Animation.BOUNCE : undefined
           });
