@@ -1,0 +1,342 @@
+import { Logger } from './logger';
+
+const HCP_API_BASE = process.env.HCP_API_BASE || 'https://api.housecallpro.com';
+const API_KEY = process.env.HCP_COMPANY_API_KEY || process.env.HOUSECALL_PRO_API_KEY;
+
+interface RetryOptions {
+  maxRetries?: number;
+  initialDelay?: number;
+  maxDelay?: number;
+  backoffFactor?: number;
+}
+
+interface HCPEmployee {
+  id: string;
+  first_name: string;
+  last_name: string;
+  can_be_booked_online: boolean;
+  is_active: boolean;
+}
+
+interface HCPBookingWindow {
+  id: string;
+  start_time: string;
+  end_time: string;
+  date: string;
+  available: boolean;
+  employee_ids: string[];
+}
+
+interface HCPJob {
+  id: string;
+  employee_ids: string[];
+  scheduled_start: string;
+  scheduled_end: string;
+  work_status: string;
+  duration_minutes?: number;
+}
+
+export class HousecallProClient {
+  private static instance: HousecallProClient;
+  private cache: Map<string, { data: any; expires: number }> = new Map();
+  private circuitBreakerState: 'closed' | 'open' | 'half-open' = 'closed';
+  private failureCount = 0;
+  private lastFailureTime = 0;
+  private readonly CIRCUIT_BREAKER_THRESHOLD = 5;
+  private readonly CIRCUIT_BREAKER_TIMEOUT = 60000; // 1 minute
+
+  private constructor() {}
+
+  static getInstance(): HousecallProClient {
+    if (!this.instance) {
+      this.instance = new HousecallProClient();
+    }
+    return this.instance;
+  }
+
+  private async sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  private addJitter(delay: number): number {
+    return delay + Math.random() * delay * 0.1;
+  }
+
+  private checkCircuitBreaker(): void {
+    if (this.circuitBreakerState === 'open') {
+      const timeSinceLastFailure = Date.now() - this.lastFailureTime;
+      if (timeSinceLastFailure > this.CIRCUIT_BREAKER_TIMEOUT) {
+        this.circuitBreakerState = 'half-open';
+        Logger.info('Circuit breaker entering half-open state');
+      } else {
+        throw new Error('Circuit breaker is open - service unavailable');
+      }
+    }
+  }
+
+  private recordSuccess(): void {
+    if (this.circuitBreakerState === 'half-open') {
+      this.circuitBreakerState = 'closed';
+      this.failureCount = 0;
+      Logger.info('Circuit breaker closed - service recovered');
+    }
+  }
+
+  private recordFailure(): void {
+    this.failureCount++;
+    this.lastFailureTime = Date.now();
+
+    if (this.failureCount >= this.CIRCUIT_BREAKER_THRESHOLD) {
+      this.circuitBreakerState = 'open';
+      Logger.error('Circuit breaker opened - too many failures', { failureCount: this.failureCount });
+    }
+  }
+
+  async callAPI<T>(
+    endpoint: string,
+    params: Record<string, any> = {},
+    options: RetryOptions = {}
+  ): Promise<T> {
+    const {
+      maxRetries = 3,
+      initialDelay = 1000,
+      maxDelay = 10000,
+      backoffFactor = 2,
+    } = options;
+
+    // Check circuit breaker
+    this.checkCircuitBreaker();
+
+    // Check cache
+    const cacheKey = `${endpoint}:${JSON.stringify(params)}`;
+    const cached = this.cache.get(cacheKey);
+    if (cached && cached.expires > Date.now()) {
+      Logger.debug('Cache hit', { endpoint, cacheHit: true });
+      return cached.data;
+    }
+
+    if (!API_KEY) {
+      Logger.warn('Housecall Pro API key not configured, using mock data');
+      return this.getMockData(endpoint) as T;
+    }
+
+    let lastError: Error | null = null;
+    let delay = initialDelay;
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      const requestId = Logger.generateRequestId();
+      const startTime = Date.now();
+
+      try {
+        const url = new URL(endpoint, HCP_API_BASE);
+        Object.keys(params).forEach(key => {
+          if (params[key] !== undefined && params[key] !== null) {
+            if (Array.isArray(params[key])) {
+              params[key].forEach((item: string) => url.searchParams.append(key, item));
+            } else {
+              url.searchParams.append(key, params[key].toString());
+            }
+          }
+        });
+
+        const authHeader = API_KEY.startsWith('Token ') ? API_KEY : `Bearer ${API_KEY}`;
+
+        const response = await fetch(url.toString(), {
+          headers: {
+            'Authorization': authHeader,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        const latency = Date.now() - startTime;
+
+        if (response.status === 429) {
+          // Rate limit - extract retry-after header
+          const retryAfter = response.headers.get('Retry-After');
+          const retryDelay = retryAfter ? parseInt(retryAfter) * 1000 : delay;
+          
+          Logger.warn(`Rate limited, retrying after ${retryDelay}ms`, {
+            requestId,
+            attempt,
+            endpoint,
+            status: 429,
+            retryAfter,
+          });
+
+          if (attempt < maxRetries) {
+            await this.sleep(this.addJitter(retryDelay));
+            delay = Math.min(delay * backoffFactor, maxDelay);
+            continue;
+          }
+        }
+
+        if (response.status >= 500) {
+          // Server error - retry with backoff
+          Logger.warn(`Server error, retrying`, {
+            requestId,
+            attempt,
+            endpoint,
+            status: response.status,
+            latency,
+          });
+
+          if (attempt < maxRetries) {
+            await this.sleep(this.addJitter(delay));
+            delay = Math.min(delay * backoffFactor, maxDelay);
+            continue;
+          }
+        }
+
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+
+        // Cache successful responses for 60-90 seconds
+        const cacheTime = 60000 + Math.random() * 30000;
+        this.cache.set(cacheKey, {
+          data,
+          expires: Date.now() + cacheTime,
+        });
+
+        Logger.info('API call successful', {
+          requestId,
+          endpoint,
+          latency,
+          cacheHit: false,
+        });
+
+        this.recordSuccess();
+        return data;
+
+      } catch (error) {
+        lastError = error as Error;
+        
+        Logger.error(`API call failed (attempt ${attempt + 1}/${maxRetries + 1})`, {
+          requestId,
+          endpoint,
+          error: lastError.message,
+          attempt,
+        });
+
+        if (attempt < maxRetries) {
+          await this.sleep(this.addJitter(delay));
+          delay = Math.min(delay * backoffFactor, maxDelay);
+        }
+      }
+    }
+
+    this.recordFailure();
+    Logger.error('All API call attempts failed', {
+      endpoint,
+      error: lastError?.message,
+    });
+
+    // Return mock data as fallback
+    return this.getMockData(endpoint) as T;
+  }
+
+  async getEmployees(): Promise<HCPEmployee[]> {
+    const data = await this.callAPI<{ employees: HCPEmployee[] }>('/employees', {
+      page_size: 100,
+    });
+    return data.employees || [];
+  }
+
+  async getBookingWindows(date: string): Promise<HCPBookingWindow[]> {
+    const data = await this.callAPI<{ booking_windows: HCPBookingWindow[] }>(
+      '/company/schedule_availability/booking_windows',
+      {
+        start_date: date,
+        end_date: date,
+      }
+    );
+    return data.booking_windows || [];
+  }
+
+  async getJobs(params: {
+    scheduled_start_min?: string;
+    scheduled_start_max?: string;
+    employee_ids?: string[];
+  }): Promise<HCPJob[]> {
+    const data = await this.callAPI<{ jobs: HCPJob[] }>('/jobs', {
+      ...params,
+      page_size: 100,
+    });
+    return data.jobs || [];
+  }
+
+  private getMockData(endpoint: string): any {
+    Logger.warn('Using mock data', { endpoint });
+
+    if (endpoint.includes('/employees')) {
+      return {
+        employees: [
+          {
+            id: 'emp_mock_nate',
+            first_name: 'Nate',
+            last_name: 'Johnson',
+            can_be_booked_online: true,
+            is_active: true,
+          },
+          {
+            id: 'emp_mock_nick',
+            first_name: 'Nick',
+            last_name: 'Johnson',
+            can_be_booked_online: true,
+            is_active: true,
+          },
+          {
+            id: 'emp_mock_jahz',
+            first_name: 'Jahz',
+            last_name: 'Tech',
+            can_be_booked_online: true,
+            is_active: true,
+          },
+        ],
+      };
+    }
+
+    if (endpoint.includes('booking_windows')) {
+      const today = new Date();
+      return {
+        booking_windows: [
+          {
+            id: 'window_1',
+            start_time: '09:00',
+            end_time: '11:00',
+            date: today.toISOString().split('T')[0],
+            available: true,
+            employee_ids: ['emp_mock_nate', 'emp_mock_nick'],
+          },
+          {
+            id: 'window_2',
+            start_time: '14:00',
+            end_time: '16:00',
+            date: today.toISOString().split('T')[0],
+            available: true,
+            employee_ids: ['emp_mock_jahz'],
+          },
+        ],
+      };
+    }
+
+    if (endpoint.includes('/jobs')) {
+      return {
+        jobs: [
+          {
+            id: 'job_mock_1',
+            employee_ids: ['emp_mock_nate'],
+            scheduled_start: new Date().toISOString(),
+            scheduled_end: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
+            work_status: 'scheduled',
+            duration_minutes: 120,
+          },
+        ],
+      };
+    }
+
+    return {};
+  }
+}

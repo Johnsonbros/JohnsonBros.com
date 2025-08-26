@@ -1,0 +1,66 @@
+# Capacity Hero Configuration
+thresholds:
+  same_day_fee_waived: 0.35  # Capacity score >= 35% triggers fee waiver
+  limited_same_day: 0.10      # Capacity score >= 10% allows limited same-day
+
+# Tech employee mapping (will be updated with actual IDs)
+tech_map:
+  nate: "emp_nate_placeholder"
+  nick: "emp_nick_placeholder"
+  jahz: "emp_jahz_placeholder"
+
+# Service area ZIP codes
+geos:
+  - "02170"  # Quincy
+  - "02169"  # Quincy
+  - "02171"  # Quincy
+  - "02351"  # Abington
+  - "02184"  # Braintree
+  - "02186"  # Milton
+  - "02188"  # Weymouth
+  - "02043"  # Hingham
+  - "02045"  # Hull
+
+# Google Ads rules
+ads_rules:
+  brand_min_daily: 50
+  discovery_min_daily: 25
+  same_day_boost_pct: 50
+  limited_same_day_boost_pct: 25
+  next_day_cut_pct: 30
+  never_pause_brand: true
+
+# Brand colors
+colors:
+  primary_navy: "#0b2a6f"
+  secondary_silver: "#c0c7d1"
+  background_white: "#ffffff"
+  accent_red: "#d32f2f"
+
+# UI copy for each state
+ui_copy:
+  SAME_DAY_FEE_WAIVED:
+    headline: "Same-Day Service Available!"
+    subhead: "Book now and we'll waive the emergency fee"
+    cta: "Book Same-Day Service"
+    badge: "Fee Waived"
+    urgent: true
+  LIMITED_SAME_DAY:
+    headline: "Limited Same-Day Availability"
+    subhead: "We have a few spots left today"
+    cta: "Check Availability"
+    badge: "Today"
+    urgent: false
+  NEXT_DAY:
+    headline: "Schedule for Tomorrow"
+    subhead: "Fast, reliable service at your convenience"
+    cta: "Book for Tomorrow"
+    badge: "Next Day"
+    urgent: false
+
+# Fee waiver configuration
+fee_waive:
+  promo_tag: "FEEWAIVED_SAMEDAY"
+  discount_amount: 99
+  utm_source: "site"
+  utm_campaign: "capacity"

@@ -37,6 +37,27 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Run initial capacity check and ads sync
+  setTimeout(async () => {
+    try {
+      const { GoogleAdsBridge } = await import('./src/ads/bridge');
+      const adsBridge = GoogleAdsBridge.getInstance();
+      await adsBridge.applyCapacityRules();
+      console.log('Initial capacity check and ads sync completed');
+      
+      // Schedule periodic ads sync (every 5 minutes)
+      setInterval(async () => {
+        try {
+          await adsBridge.applyCapacityRules();
+        } catch (error) {
+          console.error('Error applying ads rules:', error);
+        }
+      }, 5 * 60 * 1000);
+    } catch (error) {
+      console.error('Error initializing capacity system:', error);
+    }
+  }, 5000);
+
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

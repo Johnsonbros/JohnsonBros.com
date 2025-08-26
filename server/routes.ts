@@ -5,6 +5,8 @@ import { insertCustomerSchema, insertAppointmentSchema, type BookingFormData, cu
 import { z } from "zod";
 import { db } from "./db";
 import { eq, sql, and } from "drizzle-orm";
+import { CapacityCalculator } from "./src/capacity";
+import { GoogleAdsBridge } from "./src/ads/bridge";
 
 // Housecall Pro API client
 const HOUSECALL_API_BASE = 'https://api.housecallpro.com';
@@ -198,6 +200,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch reviews" });
     }
+  });
+
+  // Capacity API Routes
+  app.get("/api/capacity/today", async (req, res) => {
+    try {
+      const calculator = CapacityCalculator.getInstance();
+      const capacity = await calculator.getTodayCapacity();
+      res.json(capacity);
+    } catch (error) {
+      console.error("Error fetching today's capacity:", error);
+      res.status(500).json({ 
+        error: "Failed to fetch capacity",
+        overall: { score: 0, state: 'NEXT_DAY' },
+        ui_copy: {
+          headline: 'Schedule Your Service',
+          subhead: 'Professional plumbing services',
+          cta: 'Book Service',
+          badge: null,
+          urgent: false
+        }
+      });
+    }
+  });
+
+  app.get("/api/capacity/tomorrow", async (req, res) => {
+    try {
+      const calculator = CapacityCalculator.getInstance();
+      const capacity = await calculator.getTomorrowCapacity();
+      res.json(capacity);
+    } catch (error) {
+      console.error("Error fetching tomorrow's capacity:", error);
+      res.status(500).json({ 
+        error: "Failed to fetch capacity",
+        overall: { score: 0, state: 'NEXT_DAY' },
+        ui_copy: {
+          headline: 'Schedule for Tomorrow',
+          subhead: 'Professional plumbing services',
+          cta: 'Book Tomorrow',
+          badge: null,
+          urgent: false
+        }
+      });
+    }
+  });
+
+  // Health check
+  app.get("/healthz", async (_req, res) => {
+    res.json({ 
+      ok: true, 
+      time: new Date().toISOString(),
+      version: process.env.npm_package_version || '1.0.0'
+    });
   });
 
   // Google Business Reviews endpoint
