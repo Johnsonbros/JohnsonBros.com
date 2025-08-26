@@ -1,92 +1,27 @@
-import { Phone, Star, PhoneCall, AlertCircle } from "lucide-react";
+import { Phone, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
+import emergencyBanner from '@assets/generated_images/24/7_emergency_plumbing_banner_312a2370.png';
 
 interface HeaderProps {
   onBookService: () => void;
 }
 
 export default function Header({ onBookService }: HeaderProps) {
-  const [isBusinessHours, setIsBusinessHours] = useState(false);
-
-  const checkBusinessHours = () => {
-    const now = new Date();
-    // Convert to EST timezone
-    const estTime = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
-    const day = estTime.getDay(); // 0 = Sunday, 1 = Monday, etc.
-    const hour = estTime.getHours();
-    
-    // Monday (1) to Friday (5), 8am (8) to 5pm (17)
-    const isWeekday = day >= 1 && day <= 5;
-    const isDuringHours = hour >= 8 && hour < 17;
-    
-    return isWeekday && isDuringHours;
-  };
-
-  useEffect(() => {
-    const updateBusinessHours = () => {
-      setIsBusinessHours(checkBusinessHours());
-    };
-    
-    // Check immediately
-    updateBusinessHours();
-    
-    // Check every minute
-    const interval = setInterval(updateBusinessHours, 60000);
-    
-    return () => clearInterval(interval);
-  }, []);
 
   return (
     <>
-      {/* Dynamic Business Hours Banner - Integrated Design */}
-      <div className={`relative overflow-hidden transition-all duration-500 ${
-        isBusinessHours 
-          ? 'bg-gradient-to-r from-johnson-blue/95 to-blue-700/95' 
-          : 'bg-gradient-to-r from-red-600/95 to-red-700/95'
-      }`}
-        style={{
-          backgroundImage: isBusinessHours ? 'url(/banner-bg.png)' : 'url(/banner-bg-emergency.png)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundBlendMode: 'overlay'
-        }}
+      {/* Emergency Plumbing Banner Image */}
+      <a 
+        href="tel:6174799911"
+        className="block w-full cursor-pointer hover:opacity-95 transition-opacity"
+        data-testid="emergency-banner-link"
       >
-        {/* Subtle animated overlay */}
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer"></div>
-        
-        <div className="container mx-auto py-3 px-4 relative z-10">
-          <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-between gap-2">
-            {/* Message Section */}
-            <div className="flex items-center gap-2 text-black">
-              <PhoneCall className={`h-6 w-6 ${isBusinessHours ? 'animate-pulse' : 'animate-pulse-slow'}`} />
-              <div className="text-center sm:text-left">
-                <p className="text-base sm:text-lg font-bold">
-                  {isBusinessHours 
-                    ? 'Real Plumbers Answer • No Call Centers'
-                    : '24/7 Emergency • Real Plumbers On-Call'
-                  }
-                </p>
-              </div>
-            </div>
-            
-            {/* Call Button */}
-            <a 
-              href="tel:6174799911" 
-              className={`group flex items-center justify-center px-8 py-3 rounded-full font-semibold transition-all transform hover:scale-105 shadow-md touch-target ${
-                isBusinessHours
-                  ? 'bg-white/95 text-johnson-blue hover:bg-johnson-orange hover:text-white'
-                  : 'bg-johnson-orange text-white hover:bg-orange-500 animate-pulse-slow'
-              }`}
-              data-testid="call-now-button"
-            >
-              <span className="text-base sm:text-lg">
-                Tap to Call
-              </span>
-            </a>
-          </div>
-        </div>
-      </div>
+        <img 
+          src={emergencyBanner}
+          alt="24/7 Emergency Plumbing - Click to talk to a real plumber"
+          className="w-full h-auto object-contain"
+        />
+      </a>
 
       {/* Main Header */}
       <header className="bg-johnson-blue shadow-lg sticky top-0 z-50 border-t-2 border-johnson-blue">
