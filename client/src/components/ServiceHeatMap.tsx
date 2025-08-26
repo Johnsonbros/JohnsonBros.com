@@ -260,41 +260,6 @@ export function ServiceHeatMap() {
           </div>
         </div>
 
-        {/* Bottom stats bar */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/20 to-transparent">
-          <div className="p-4">
-            <div className="bg-white rounded-xl p-3 shadow-lg mx-4">
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center space-x-4">
-                  <div className="text-center">
-                    <div className="text-lg font-bold text-blue-600" data-testid="cities-served">
-                      {heatMapData.length}
-                    </div>
-                    <div className="text-xs text-gray-600">Cities</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-lg font-bold text-green-600" data-testid="total-jobs">
-                      {heatMapData.reduce((sum, city) => sum + city.count, 0)}
-                    </div>
-                    <div className="text-xs text-gray-600">Jobs</div>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-4">
-                  <div className="text-center">
-                    <div className="text-lg font-bold text-purple-600" data-testid="most-active">
-                      {Math.max(...heatMapData.map(city => city.count))}
-                    </div>
-                    <div className="text-xs text-gray-600">Peak</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-lg font-bold text-orange-600" data-testid="avg-rating">5.0★</div>
-                    <div className="text-xs text-gray-600">Rating</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );
