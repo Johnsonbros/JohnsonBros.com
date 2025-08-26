@@ -44,11 +44,23 @@ export function ServiceHeatMap() {
           mapTypeId: google.maps.MapTypeId.ROADMAP,
           minZoom: 8, // Prevent zooming in too close for privacy
           maxZoom: 12, // Maximum zoom level to protect customer addresses
+          clickableIcons: false, // Disable POI clicks completely
+          disableDefaultUI: false,
           styles: [
             {
+              featureType: "poi",
+              elementType: "all",
+              stylers: [{ visibility: "off" }] // Hide all POIs
+            },
+            {
               featureType: "poi.business",
-              elementType: "labels",
+              elementType: "all",
               stylers: [{ visibility: "off" }]
+            },
+            {
+              featureType: "transit",
+              elementType: "all", 
+              stylers: [{ visibility: "off" }] // Hide transit stations
             }
           ],
           mapTypeControl: true,
