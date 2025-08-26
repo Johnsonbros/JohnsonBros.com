@@ -491,14 +491,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get service area heat map data using real customer addresses from Housecall Pro
   app.get("/api/social-proof/service-heat-map", async (_req, res) => {
     try {
+      // Fetch multiple pages of jobs to get comprehensive data
+      const allJobs: any[] = [];
+      let page = 1;
+      let hasMore = true;
+      
+      // Fetch up to 5 pages of jobs (500 jobs total)
+      while (hasMore && page <= 5) {
+        const jobsData = await callHousecallAPI('/jobs', {
+          page: page,
+          page_size: 100,
+          sort_direction: 'desc'
+          // Note: work_status filter removed as it causes API error
+        });
+        
+        if (jobsData.jobs && jobsData.jobs.length > 0) {
+          allJobs.push(...jobsData.jobs);
+          page++;
+          hasMore = jobsData.jobs.length === 100; // Check if there might be more
+        } else {
+          hasMore = false;
+        }
+      }
+
       // Get customers with their actual addresses from Housecall Pro
       const customersData = await callHousecallAPI('/customers', {
-        page_size: 200,
-        sort_direction: 'desc'
-      });
-
-      // Also get jobs to count service frequency at each location
-      const jobsData = await callHousecallAPI('/jobs', {
         page_size: 200,
         sort_direction: 'desc'
       });
@@ -546,9 +563,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
 
-      // Count jobs at each location
-      jobsData.jobs?.forEach((job: any) => {
+      // Create a city-level counter as well for better accuracy
+      const cityJobCounts: Record<string, number> = {};
+      
+      // Count all jobs, both with and without coordinates
+      allJobs.forEach((job: any) => {
         if (job.address && job.address.state === 'MA') {
+          // Count by city for accurate totals
+          const city = job.address.city;
+          if (city) {
+            cityJobCounts[city] = (cityJobCounts[city] || 0) + 1;
+          }
+          
           // Check if job has coordinates
           let lat: number | null = null;
           let lng: number | null = null;
@@ -558,7 +584,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             lng = typeof job.address.longitude === 'string' ? parseFloat(job.address.longitude) : job.address.longitude;
           }
           
-          // If we have valid coordinates, find the matching location
+          // If we have valid coordinates, track the exact location
           if (lat && lng && !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
             const locationKey = `${lat.toFixed(3)},${lng.toFixed(3)}`;
             
@@ -578,30 +604,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
 
-      // Fallback: If we don't have enough data with coordinates, include some city-level data
-      const fallbackCities: Record<string, { lat: number; lng: number }> = {
+      // City coordinates for Massachusetts cities (used when we don't have exact coordinates)
+      const cityCoordinates: Record<string, { lat: number; lng: number }> = {
         'Quincy': { lat: 42.2529, lng: -71.0023 },
         'Boston': { lat: 42.3601, lng: -71.0589 },
         'Braintree': { lat: 42.2057, lng: -71.0995 },
         'Weymouth': { lat: 42.2180, lng: -70.9395 },
-        'Milton': { lat: 42.2496, lng: -71.0662 }
+        'Milton': { lat: 42.2496, lng: -71.0662 },
+        'Hingham': { lat: 42.2417, lng: -70.8893 },
+        'Hull': { lat: 42.3084, lng: -70.8967 },
+        'Randolph': { lat: 42.1618, lng: -71.0412 },
+        'Cambridge': { lat: 42.3736, lng: -71.1097 },
+        'Somerville': { lat: 42.3876, lng: -71.0995 },
+        'Brookline': { lat: 42.3318, lng: -71.1211 },
+        'Newton': { lat: 42.3370, lng: -71.2092 },
+        'Watertown': { lat: 42.3668, lng: -71.1834 },
+        'Belmont': { lat: 42.3959, lng: -71.1786 },
+        'Arlington': { lat: 42.4153, lng: -71.1564 },
+        'Medford': { lat: 42.4184, lng: -71.1061 },
+        'Malden': { lat: 42.4251, lng: -71.0662 },
+        'Revere': { lat: 42.4085, lng: -71.0120 },
+        'Chelsea': { lat: 42.3918, lng: -71.0328 },
+        'Everett': { lat: 42.4084, lng: -71.0537 },
+        'Winthrop': { lat: 42.3751, lng: -70.9828 },
+        'Rockland': { lat: 42.1307, lng: -70.9162 }
       };
 
-      // Add fallback cities if we have less than 10 locations with real coordinates
-      if (locationMap.size < 10) {
-        Object.entries(fallbackCities).forEach(([city, coords]) => {
-          const locationKey = `${coords.lat.toFixed(3)},${coords.lng.toFixed(3)}`;
-          if (!locationMap.has(locationKey)) {
+      // Add city-level data for cities where we have jobs but no exact coordinates
+      Object.entries(cityJobCounts).forEach(([city, count]) => {
+        if (cityCoordinates[city]) {
+          const locationKey = `${cityCoordinates[city].lat.toFixed(3)},${cityCoordinates[city].lng.toFixed(3)}`;
+          
+          // Check if we already have this location with coordinate data
+          const existingLocation = locationMap.get(locationKey);
+          if (existingLocation) {
+            // Update count to use the actual total from cityJobCounts
+            existingLocation.count = count;
+          } else {
+            // Add new location with actual job count
             locationMap.set(locationKey, {
-              lat: coords.lat,
-              lng: coords.lng,
+              lat: cityCoordinates[city].lat,
+              lng: cityCoordinates[city].lng,
               city: city,
-              count: Math.floor(Math.random() * 10) + 5, // Random count for demo purposes
+              count: count, // Use ACTUAL count from jobs
               addresses: new Set([city])
             });
           }
-        });
-      }
+        }
+      });
 
       // Convert map to array and prepare for frontend
       const heatMapData = Array.from(locationMap.values())
@@ -616,7 +666,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .sort((a, b) => b.count - a.count)
         .slice(0, 100); // Limit to top 100 locations for performance
 
-      console.log(`Heat map: Using ${heatMapData.length} real customer locations from Housecall Pro`);
+      console.log(`Heat map: Processed ${allJobs.length} jobs, found ${Object.keys(cityJobCounts).length} cities, returning ${heatMapData.length} locations`);
+      console.log(`City counts:`, cityJobCounts);
       res.json(heatMapData);
     } catch (error) {
       console.error("Error fetching heat map data:", error);
