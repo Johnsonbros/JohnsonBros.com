@@ -1,8 +1,6 @@
 import { Phone, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
-import emergencyBanner from '@assets/generated_images/Compact_emergency_header_banner_0f85bc3d.png';
-import businessHoursBanner from '@assets/generated_images/Compact_business_hours_banner_60bef257.png';
 
 interface HeaderProps {
   onBookService: () => void;
@@ -41,17 +39,21 @@ export default function Header({ onBookService }: HeaderProps) {
 
   return (
     <>
-      {/* Dynamic Plumbing Banner Image */}
+      {/* Dynamic Plumbing Banner */}
       <a 
         href="tel:6174799911"
-        className="block w-full cursor-pointer hover:opacity-95 transition-opacity"
+        className="block w-full cursor-pointer hover:opacity-95 transition-opacity bg-gradient-to-r from-blue-900 to-blue-800 py-3 sm:py-4"
         data-testid="plumbing-banner-link"
       >
-        <img 
-          src={isBusinessHours ? businessHoursBanner : emergencyBanner}
-          alt={isBusinessHours ? "Expert Plumbers Ready to Help - Click to talk to a real plumber" : "24/7 Emergency Plumbing - Click to talk to a real plumber"}
-          className="w-full h-auto block"
-        />
+        <div className="text-center">
+          <h2 className="text-white font-bold text-lg sm:text-xl mb-1">
+            {isBusinessHours ? "EXPERT PLUMBERS READY TO HELP" : "24/7 EMERGENCY PLUMBING"}
+          </h2>
+          <p className="text-yellow-400 font-semibold text-sm sm:text-base flex items-center justify-center gap-2">
+            <Phone className="h-4 w-4 sm:h-5 sm:w-5" />
+            CLICK HERE TO TALK TO A REAL PLUMBER
+          </p>
+        </div>
       </a>
 
       {/* Main Header */}
