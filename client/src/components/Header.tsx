@@ -42,14 +42,18 @@ export default function Header({ onBookService }: HeaderProps) {
       {/* Dynamic Plumbing Banner */}
       <a 
         href="tel:6174799911"
-        className="block w-full cursor-pointer hover:opacity-95 transition-opacity bg-gradient-to-r from-blue-900 to-blue-800 py-3 sm:py-4"
+        className={`block w-full cursor-pointer hover:opacity-95 transition-opacity py-3 sm:py-4 ${
+          isBusinessHours 
+            ? "bg-gradient-to-r from-green-600 to-green-500" 
+            : "bg-gradient-to-r from-red-600 to-red-500"
+        }`}
         data-testid="plumbing-banner-link"
       >
         <div className="text-center">
           <h2 className="text-white font-bold text-lg sm:text-xl mb-1">
             {isBusinessHours ? "EXPERT PLUMBERS READY TO HELP" : "24/7 EMERGENCY PLUMBING"}
           </h2>
-          <p className="text-yellow-400 font-semibold text-sm sm:text-base flex items-center justify-center gap-2">
+          <p className="text-white font-semibold text-sm sm:text-base flex items-center justify-center gap-2">
             <Phone className="h-4 w-4 sm:h-5 sm:w-5" />
             CLICK HERE TO TALK TO A REAL PLUMBER
           </p>
