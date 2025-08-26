@@ -65,85 +65,84 @@ export function ServiceHeatMap() {
         mapInstanceRef.current = map;
 
         // Generate weighted heat map data points
-        // Create multiple points per city based on customer count for better density visualization
+        // Create a soft, cloud-like effect similar to the original
         const heatmapData: any[] = [];
         const maxCount = Math.max(...heatMapData.map(city => city.count));
         
         heatMapData.forEach(city => {
-          // Add weighted points - more customers = more points in that area
-          const pointCount = Math.max(1, Math.round((city.count / maxCount) * 35));
+          // Create fewer but more weighted points for softer effect
+          const basePoints = Math.max(3, Math.round((city.count / maxCount) * 15));
+          const weight = city.count / maxCount;
           
-          for (let i = 0; i < pointCount; i++) {
-            // Add some random variation to create a more natural heat map
-            // Use Gaussian distribution for more realistic clustering
-            const gaussianRandom = () => {
-              let u = 0, v = 0;
-              while(u === 0) u = Math.random(); // Converting [0,1) to (0,1)
-              while(v === 0) v = Math.random();
-              return Math.sqrt( -2.0 * Math.log( u ) ) * Math.cos( 2.0 * Math.PI * v );
-            };
+          // Add core points with weight
+          for (let i = 0; i < basePoints; i++) {
+            const angle = (i / basePoints) * 2 * Math.PI;
+            const radius = Math.random() * 0.03 * (1 - weight * 0.5); // Tighter for higher weight areas
             
-            // Smaller variation for denser clustering (about 500m spread)
-            const latVariation = gaussianRandom() * 0.008;
-            const lngVariation = gaussianRandom() * 0.008;
+            heatmapData.push({
+              location: new google.maps.LatLng(
+                city.lat + radius * Math.cos(angle),
+                city.lng + radius * Math.sin(angle)
+              ),
+              weight: weight * 2 // Double weight for intensity
+            });
+          }
+          
+          // Add surrounding softer points for cloud effect
+          for (let i = 0; i < basePoints * 2; i++) {
+            const angle = Math.random() * 2 * Math.PI;
+            const distance = Math.random() * 0.05;
             
-            heatmapData.push(
-              new google.maps.LatLng(
-                city.lat + latVariation,
-                city.lng + lngVariation
-              )
-            );
+            heatmapData.push({
+              location: new google.maps.LatLng(
+                city.lat + distance * Math.cos(angle),
+                city.lng + distance * Math.sin(angle)
+              ),
+              weight: weight * 0.5
+            });
           }
         });
 
-        // Custom gradient matching the original design - blue gradient only
+        // Soft blue gradient matching the original's cloud-like appearance
         const customGradient = [
           'rgba(0, 0, 0, 0)',
-          'rgba(102, 225, 255, 0.2)',
-          'rgba(102, 200, 255, 0.4)',
-          'rgba(70, 150, 255, 0.6)',
-          'rgba(50, 120, 255, 0.8)',
-          'rgba(30, 90, 255, 0.9)',
-          'rgba(20, 70, 255, 1)',
-          'rgba(10, 50, 255, 1)',
-          'rgba(0, 30, 255, 1)',
+          'rgba(200, 230, 255, 0.1)',
+          'rgba(150, 210, 255, 0.3)',
+          'rgba(100, 180, 255, 0.5)',
+          'rgba(80, 160, 255, 0.6)',
+          'rgba(60, 140, 255, 0.7)',
+          'rgba(40, 120, 255, 0.8)',
+          'rgba(30, 100, 255, 0.85)',
+          'rgba(20, 80, 255, 0.9)',
+          'rgba(10, 60, 255, 0.95)',
+          'rgba(0, 40, 255, 1)',
+          'rgba(0, 30, 230, 1)',
           'rgba(0, 20, 200, 1)',
-          'rgba(0, 10, 150, 1)',
-          'rgba(0, 5, 120, 1)',
-          'rgba(0, 0, 100, 1)',
-          'rgba(0, 0, 80, 1)'
+          'rgba(0, 10, 180, 1)'
         ];
 
-        // Create the heat map layer with settings matching the original
+        // Create the heat map layer with soft, cloud-like settings
         const heatmap = new google.maps.visualization.HeatmapLayer({
           data: heatmapData,
           map: map,
-          radius: 40,
-          opacity: 0.85,
+          radius: 60, // Larger radius for softer effect
+          opacity: 0.6, // Lower opacity for softer appearance
           gradient: customGradient,
-          maxIntensity: 8,
+          maxIntensity: 3, // Lower intensity for more spread
           dissipating: true
         });
 
         heatmapRef.current = heatmap;
 
-        // Add markers for top service areas with info windows
-        const topCities = [...heatMapData].sort((a, b) => b.count - a.count).slice(0, 5);
+        // Add subtle markers for top service areas
+        const topCities = [...heatMapData].sort((a, b) => b.count - a.count).slice(0, 3); // Show only top 3
         
         topCities.forEach((city, index) => {
           const marker = new google.maps.Marker({
             position: { lat: city.lat, lng: city.lng },
             map: map,
             title: city.city,
-            icon: {
-              path: google.maps.SymbolPath.CIRCLE,
-              scale: 6,
-              fillColor: index === 0 ? '#FFD700' : '#3B82F6',
-              fillOpacity: 0.6,
-              strokeColor: '#FFFFFF',
-              strokeWeight: 1.5
-            },
-            animation: index === 0 ? google.maps.Animation.BOUNCE : undefined
+            visible: false // Hide markers by default, only show on click
           });
 
           const infoWindow = new google.maps.InfoWindow({
@@ -182,12 +181,17 @@ export function ServiceHeatMap() {
             infoWindow.open(map, marker);
           });
 
-          // Auto-open the top city's info window
-          if (index === 0) {
-            setTimeout(() => {
-              infoWindow.open(map, marker);
-            }, 1500);
-          }
+          // Show info window on map click near the marker
+          map.addListener('click', (event: any) => {
+            const distance = google.maps.geometry.spherical.computeDistanceBetween(
+              event.latLng,
+              new google.maps.LatLng(city.lat, city.lng)
+            );
+            if (distance < 5000) { // Within 5km
+              infoWindow.open(map);
+              infoWindow.setPosition(event.latLng);
+            }
+          });
         });
 
       } catch (error) {
