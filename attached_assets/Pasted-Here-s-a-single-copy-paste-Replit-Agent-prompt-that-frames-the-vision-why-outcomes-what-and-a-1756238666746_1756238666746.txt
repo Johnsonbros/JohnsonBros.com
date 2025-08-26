@@ -1,0 +1,177 @@
+Here’s a single, copy-paste Replit Agent prompt that frames the vision (why), outcomes (what), and an initial, buildable scope (how). It’s structured so the agent moves from strategy → specification → implementation without wandering.
+
+⸻
+
+PASTE INTO REPLIT AGENT
+
+TITLE: JBros Capacity Hero — capacity-aware website module + ads autopilot (Replit-hosted)
+
+ROLE: You are the coding agent. Ship a small, reliable web app that calculates real-time scheduling capacity from Housecall Pro and exposes an embeddable “hero” widget for www.thejohnsonbros.com. The same capacity signal will also drive a Google Ads bridge (stubbed first, wire later). Build production-ready code, tests, and docs.
+
+WHY WE’RE DOING THIS
+	•	Business reality: plumbing demand is spiky. When our schedule is light we need to fill same-day slots fast; when it’s full we must stop over-promising and protect crews.
+	•	Goal: align marketing promises (“Same-Day, fee waived”) and ad spend with actual capacity so we increase bookings when it helps and stop wasting ad dollars when it doesn’t.
+	•	Outcome: more profitable jobs, fewer angry customers, better tech utilization, clear brand promise that matches the truth in the schedule.
+
+WHAT SUCCESS LOOKS LIKE (measurable)
+	•	Website hero updates itself in under 2 minutes when capacity changes.
+	•	Same-day windows never get advertised if none actually remain today.
+	•	Ads bridge prints the exact campaign toggles/budget moves per state (safe stub), ready to switch to live API keys.
+	•	End-to-end traceability: a booking made during “fee-waived” hours carries a promo flag/tag into Housecall Pro.
+
+SCOPE (MVP YOU WILL BUILD NOW)
+	1.	Capacity API (truth source)
+	•	Compute per-tech and overall capacity for today (and tomorrow).
+	•	Derive one of three states:
+	•	SAME_DAY_FEE_WAIVED
+	•	LIMITED_SAME_DAY
+	•	NEXT_DAY
+	•	Cache upstream responses 60–90s; return expires_at ~120s ahead.
+	2.	Embeddable Hero Widget
+	•	A single <script> that injects a styled hero block into any page.
+	•	Reads /capacity/today, swaps headline/subhead/CTA/badge accordingly.
+	•	If SAME_DAY_FEE_WAIVED, append ?promo=FEEWAIVED_SAMEDAY&utm_source=site&utm_campaign=capacity to the booking URL.
+	3.	Google Ads Bridge (stub, idempotent)
+	•	A module that, given the state, logs the exact Ads actions we’d take: enable/pause specific campaign sets, adjust budgets by configured percentages, keep brand always on, apply geo/daypart hints.
+	•	No real Ads mutations until keys are present; just structured logs.
+	•	Run every 5 minutes and only act when state changes.
+
+NON-GOALS (for later)
+	•	Actual Google Ads API mutations.
+	•	Auto tagging invoices/line items in HCP (provide helper only).
+	•	Databases; in-memory cache is fine.
+
+PRIMARY INTEGRATIONS (Housecall Pro — use our OpenAPI file housecall.v1.yaml)
+	•	GET /employees → map Nate, Nick, Jahz to IDs; honor can_be_booked_online.
+	•	GET /company/schedule_availability/booking_windows → the truth for “same-day”.
+	•	GET /jobs with scheduled_start_min/max and employee_ids[] → booked minutes.
+	•	Auth header: Authorization: Token {api-key}.
+	•	Add retry/backoff on 429/5xx with jitter; respect rate limits.
+
+CAPACITY MODEL (deterministic)
+	•	Per tech:
+booked_minutes_today = Σ (scheduled_end - scheduled_start)
+total_bookable_minutes_today = Σ (today’s booking window minutes)
+capacity_score = 1 - (booked_minutes_today / max(total_bookable_minutes_today, 1))
+	•	Overall = mean of bookable tech scores (nate, nick, jahz).
+	•	State rules (America/New_York):
+	•	If overall ≥ 0.35 and at least one window remains today and now < last window end → SAME_DAY_FEE_WAIVED.
+	•	Else if overall ≥ 0.10 and a window remains today → LIMITED_SAME_DAY.
+	•	Else → NEXT_DAY.
+	•	Never claim same-day if no windows remain today, regardless of score. After last window end, force NEXT_DAY.
+
+TECH & DELIVERABLES
+	•	Server: Node.js 20, TypeScript, Express.
+	•	Widget: Vanilla TS built with esbuild; zero dependency on host site.
+	•	Config: YAML; hot-reloaded on SIGHUP.
+	•	Time: use native Date/Intl for TZ conversion (America/New_York).
+	•	Logging: structured logs with request id; log upstream latency and cache hit/miss.
+	•	Tests: vitest (capacity math, window logic, route schema).
+	•	Deployment: Replit run + Dockerfile.
+
+ENV & CONFIG
+.env.example
+
+PORT=8080
+TZ=America/New_York
+HCP_API_BASE=https://api.housecallpro.com
+HCP_COMPANY_API_KEY=Token REPLACE_ME
+MOCK=0
+# Google Ads placeholders (no-ops if unset)
+GOOGLE_ADS_DEV_TOKEN=
+GOOGLE_ADS_CLIENT_ID=
+GOOGLE_ADS_CLIENT_SECRET=
+GOOGLE_ADS_REFRESH_TOKEN=
+GOOGLE_ADS_MANAGER_ID=
+GOOGLE_ADS_ACCOUNT_ID=
+
+config/capacity.yml (seed defaults)
+	•	thresholds: same_day_fee_waived: 0.35, limited_same_day: 0.10
+	•	tech_map: { nate: EMPLOYEE_ID_NATE, nick: EMPLOYEE_ID_NICK, jahz: EMPLOYEE_ID_JAHZ }
+	•	geos: [02170,02169,02171,02351,02184]
+	•	ads_rules: brand_min_daily, discovery_min_daily, same_day_boost_pct, limited_same_day_boost_pct, next_day_cut_pct, never_pause_brand
+	•	brand colors: navy #0b2a6f, silver #c0c7d1, white #ffffff, red accent #d32f2f
+	•	ui_copy for each state (headline, subhead, cta, badge)
+	•	fee_waive: promo_tag: FEEWAIVED_SAMEDAY
+
+HTTP API (must be stable)
+	•	GET /healthz → { ok, time, version }
+	•	GET /capacity/today →
+
+{
+  overall: { score:number, state:string },
+  tech: {
+    nate: { score:number, open_windows:string[] },
+    nick: { score:number, open_windows:string[] },
+    jahz: { score:number, open_windows:string[] }
+  },
+  ui_copy: object,
+  expires_at: iso8601
+}
+
+
+	•	GET /capacity/tomorrow → same shape.
+	•	GET /embed/hero.js and GET /embed/hero.css → the widget bundle.
+
+EMBED SNIPPET (document in README)
+
+<div id="jbros-hero"></div>
+<script defer src="https://<APP_DOMAIN>/embed/hero.js"
+        data-target="#jbros-hero"
+        data-api="https://<APP_DOMAIN>/capacity/today"
+        data-book-url="https://thejohnsonbros.com/book"
+        data-refresh="120"></script>
+
+FILE TREE
+
+/src
+  index.ts        # express bootstrap
+  routes.ts       # API routes + validation
+  capacity.ts     # scoring + state derivation
+  housecall.ts    # axios client + retry/backoff + pagination
+  ads/bridge.ts   # stubbed Ads applier (idempotent)
+  config.ts       # YAML+env loader, hot-reload
+  logger.ts       # structured logs
+  util/time.ts
+/embed
+  hero.ts         # widget source
+  hero.css
+/config
+  capacity.yml
+/test
+  capacity.spec.ts
+  housecall.spec.ts
+  routes.spec.ts
+.env.example
+package.json
+tsconfig.json
+Dockerfile
+README.md
+
+TESTS (vital)
+	•	Edge thresholds: exactly 0.35 and 0.10 behave as specified.
+	•	No window remaining today ⇒ NEXT_DAY even with high score.
+	•	After last window end ⇒ NEXT_DAY.
+	•	Routes return schema-compliant JSON and fresh expires_at.
+
+ACCEPTANCE CRITERIA
+	•	/capacity/today responds under 500ms warm, with correct state and expires_at.
+	•	Widget renders and swaps copy; only adds the promo param for SAME_DAY_FEE_WAIVED.
+	•	Ads bridge prints exactly which campaigns/budgets would change; acts only on state changes.
+	•	README includes Replit run steps and the embed snippet for www.thejohnsonbros.com.
+
+SECURITY & RESILIENCE
+	•	Keep API keys in env; never log secrets.
+	•	Backoff on 429/5xx; circuit-break for repeated failures; return 503 with state: "NEXT_DAY" and short cache on upstream error.
+	•	Add a ?force_state=NEXT_DAY header/flag for manual override in emergencies (document it).
+
+DELIVERABLES
+	•	Full repo, runnable with npm i && npm run dev.
+	•	Sample console output demonstrating capacity state from mocked data if HCP is unreachable.
+	•	README with one-page ops guide.
+
+START BUILD. If a required value is missing, use mock data and print a warning—but don’t block the server from starting.
+
+⸻
+
+Once that’s kicked off, we’ll plug in the booking URL you want and map Nate/Nick/Jahz to their actual employee IDs.
