@@ -10,7 +10,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { getServices, getTimeSlots, createBooking, checkServiceArea } from "@/lib/housecallApi";
 import { useToast } from "@/hooks/use-toast";
-import { Calendar, X, AlertTriangle, Droplets, Flame, Wrench, Settings, Home } from "lucide-react";
+import { Calendar, X, AlertTriangle, Droplets, Flame, Wrench, Settings, Home, Zap } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { z } from "zod";
 import type { Service, AvailableTimeSlot, BookingFormData } from "@shared/schema";
 
@@ -48,6 +49,8 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<AvailableTimeSlot | null>(null);
+  const [isExpressBooking, setIsExpressBooking] = useState(false);
+  const [expressWindows, setExpressWindows] = useState<string[]>([]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -112,11 +115,30 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
   });
 
   useEffect(() => {
-    if (isOpen && preSelectedService && services) {
-      const service = services.find(s => s.id === preSelectedService);
-      if (service) {
-        setSelectedService(service);
-        form.setValue("service", service.id);
+    if (isOpen) {
+      // Check if this is an express booking
+      const bookingType = sessionStorage.getItem('booking_type');
+      const storedExpressWindows = sessionStorage.getItem('express_windows');
+      
+      if (bookingType === 'express') {
+        setIsExpressBooking(true);
+        if (storedExpressWindows) {
+          setExpressWindows(JSON.parse(storedExpressWindows));
+        }
+        // For express bookings, auto-select today's date
+        const today = new Date().toISOString().split('T')[0];
+        setSelectedDate(today);
+        form.setValue('selectedDate', today);
+      } else {
+        setIsExpressBooking(false);
+      }
+      
+      if (preSelectedService && services) {
+        const service = services.find(s => s.id === preSelectedService);
+        if (service) {
+          setSelectedService(service);
+          form.setValue("service", service.id);
+        }
       }
     }
   }, [isOpen, preSelectedService, services, form]);

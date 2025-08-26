@@ -30,6 +30,8 @@ export interface CapacityResponse {
   };
   ui_copy: any;
   expires_at: string;
+  express_eligible?: boolean;
+  express_windows?: string[];
 }
 
 export class CapacityCalculator {
@@ -48,7 +50,7 @@ export class CapacityCalculator {
     return this.instance;
   }
 
-  async calculateCapacity(date: Date = new Date()): Promise<CapacityResponse> {
+  async calculateCapacity(date: Date = new Date(), userZip?: string): Promise<CapacityResponse> {
     const cacheKey = `capacity:${date.toISOString().split('T')[0]}`;
     const cached = this.cache.get(cacheKey);
     
@@ -91,6 +93,23 @@ export class CapacityCalculator {
     // Get UI copy based on state
     const uiCopy = config.ui_copy[overall.state] || config.ui_copy.NEXT_DAY;
 
+    // Calculate express eligibility based on user ZIP
+    let expressEligible = true;
+    if (userZip && config.express_zones) {
+      const tier1Eligible = config.express_zones.tier1?.includes(userZip);
+      const tier2Eligible = config.express_zones.tier2?.includes(userZip) && overall.score >= 0.5;
+      const tier3Eligible = config.express_zones.tier3?.includes(userZip) && overall.score >= 0.7;
+      expressEligible = tier1Eligible || tier2Eligible || tier3Eligible;
+    }
+
+    // Get available express windows
+    const expressWindows = bookingWindows
+      .filter(window => {
+        const windowEnd = this.parseWindowTime(window.end_time, new Date(window.date));
+        return window.available && windowEnd > now;
+      })
+      .map(window => `${window.start_time} - ${window.end_time}`);
+
     // Calculate expiration time (2 minutes from now)
     const expiresAt = new Date(Date.now() + 120000);
 
@@ -99,6 +118,8 @@ export class CapacityCalculator {
       tech: techCapacities,
       ui_copy: uiCopy,
       expires_at: expiresAt.toISOString(),
+      express_eligible: overall.state !== 'NEXT_DAY' ? expressEligible : false,
+      express_windows: overall.state !== 'NEXT_DAY' ? expressWindows : [],
     };
 
     // Cache for 90 seconds
@@ -258,8 +279,8 @@ export class CapacityCalculator {
     return result;
   }
 
-  async getTodayCapacity(): Promise<CapacityResponse> {
-    return this.calculateCapacity(new Date());
+  async getTodayCapacity(userZip?: string): Promise<CapacityResponse> {
+    return this.calculateCapacity(new Date(), userZip);
   }
 
   async getTomorrowCapacity(): Promise<CapacityResponse> {

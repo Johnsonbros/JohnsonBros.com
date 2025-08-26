@@ -13,6 +13,11 @@ export interface CapacityConfig {
     jahz: string;
   };
   geos: string[];
+  express_zones?: {
+    tier1?: string[];
+    tier2?: string[];
+    tier3?: string[];
+  };
   ads_rules: {
     brand_min_daily: number;
     discovery_min_daily: number;

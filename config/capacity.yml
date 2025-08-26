@@ -10,6 +10,23 @@ tech_map:
   jahz: "emp_jahz_placeholder"
 
 # Service area ZIP codes
+# Express booking eligibility tiers based on distance
+express_zones:
+  tier1:  # Immediate area - always eligible for express
+    - "02170"  # Quincy
+    - "02169"  # Quincy 
+    - "02171"  # Quincy
+    - "02351"  # Abington
+  tier2:  # Secondary area - eligible when capacity > 50%
+    - "02184"  # Braintree
+    - "02186"  # Milton
+    - "02188"  # Weymouth
+  tier3:  # Extended area - eligible when capacity > 70%
+    - "02043"  # Hingham
+    - "02045"  # Hull
+    - "02269"  # Quincy
+
+# Legacy geo list for backward compatibility  
 geos:
   - "02170"  # Quincy
   - "02169"  # Quincy
@@ -40,22 +57,22 @@ colors:
 # UI copy for each state
 ui_copy:
   SAME_DAY_FEE_WAIVED:
-    headline: "Same-Day Service Available!"
-    subhead: "Book now and we'll waive the emergency fee"
-    cta: "Book Same-Day Service"
-    badge: "Fee Waived"
+    headline: "Express Booking Available!"
+    subhead: "Book now for same-day service - emergency fee waived"
+    cta: "Book Express Service"
+    badge: "Express - Fee Waived"
     urgent: true
   LIMITED_SAME_DAY:
-    headline: "Limited Same-Day Availability"
-    subhead: "We have a few spots left today"
-    cta: "Check Availability"
-    badge: "Today"
+    headline: "Express Slots Available Today"
+    subhead: "Limited same-day appointments remaining"
+    cta: "Book Express Service"
+    badge: "Express Available"
     urgent: false
   NEXT_DAY:
-    headline: "Schedule for Tomorrow"
+    headline: "Schedule Your Service"
     subhead: "Fast, reliable service at your convenience"
-    cta: "Book for Tomorrow"
-    badge: "Next Day"
+    cta: "Book Service"
+    badge: null
     urgent: false
 
 # Fee waiver configuration

@@ -205,8 +205,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Capacity API Routes
   app.get("/api/capacity/today", async (req, res) => {
     try {
+      const userZip = req.query.zip as string | undefined;
       const calculator = CapacityCalculator.getInstance();
-      const capacity = await calculator.getTodayCapacity();
+      const capacity = await calculator.getTodayCapacity(userZip);
       res.json(capacity);
     } catch (error) {
       console.error("Error fetching today's capacity:", error);
