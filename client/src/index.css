@@ -87,6 +87,54 @@
   animation: pulse-slow 3s ease-in-out infinite;
 }
 
+/* Background Pattern Styles */
+.bg-pipes-orange {
+  position: relative;
+}
+
+.bg-pipes-orange::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url('/orange-pipes-bg.png');
+  background-size: 600px 600px;
+  background-repeat: repeat;
+  background-position: center;
+  opacity: 0.03;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.bg-pipes-blue {
+  position: relative;
+}
+
+.bg-pipes-blue::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url('/blue-pipes-bg.png');
+  background-size: 600px 600px;
+  background-repeat: repeat;
+  background-position: center;
+  opacity: 0.05;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Ensure content is above the background pattern */
+.bg-pipes-orange > *,
+.bg-pipes-blue > * {
+  position: relative;
+  z-index: 1;
+}
+
 /* Banner Integration Styles */
 .banner-integrated {
   backdrop-filter: blur(2px);
