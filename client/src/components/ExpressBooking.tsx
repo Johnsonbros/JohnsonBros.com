@@ -128,8 +128,10 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
                 </>
               ) : (
                 <>
-                  Expert Plumbing Services in 
-                  <span className="text-johnson-orange"> Abington & Quincy, MA</span>
+                  Schedule Your Service
+                  <span className="text-johnson-orange block text-2xl sm:text-3xl lg:text-4xl mt-2">
+                    Abington & Quincy, MA
+                  </span>
                 </>
               )}
             </h2>
