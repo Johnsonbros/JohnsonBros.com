@@ -21,11 +21,19 @@ export function VideoCallPopup() {
       || (navigator.userAgent.includes("Mac") && "ontouchend" in document);
     };
 
+    // Check for test mode in URL params
+    const urlParams = new URLSearchParams(window.location.search);
+    const testMode = urlParams.get('test-popup') === 'true';
+    
     // Check if popup has already been shown this session
     const popupShown = sessionStorage.getItem('video-call-popup-shown');
     
-    if (!popupShown && isIOS() && !hasShown) {
-      // Set timer for 38 seconds
+    if (testMode && !hasShown) {
+      // Test mode: show immediately
+      setIsOpen(true);
+      setHasShown(true);
+    } else if (!popupShown && isIOS() && !hasShown) {
+      // Production mode: Set timer for 38 seconds for iOS users
       const timer = setTimeout(() => {
         setIsOpen(true);
         setHasShown(true);
@@ -37,8 +45,18 @@ export function VideoCallPopup() {
   }, [hasShown]);
 
   const handleStartVideoCall = () => {
-    // This would typically open FaceTime or initiate video call
-    window.location.href = 'facetime://+14022058866'; // Replace with actual number
+    // Try FaceTime first for iOS devices
+    const phoneNumber = '+16176868763';
+    
+    // Check if device supports FaceTime URL scheme
+    if (navigator.userAgent.match(/iPhone|iPad|iPod/)) {
+      // For iOS devices, try FaceTime
+      window.location.href = `facetime://${phoneNumber}`;
+    } else {
+      // Fallback to regular phone call for non-iOS or if FaceTime fails
+      window.location.href = `tel:${phoneNumber}`;
+    }
+    
     setIsOpen(false);
   };
 

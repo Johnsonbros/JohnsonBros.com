@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Home from "@/pages/home";
 import NotFound from "@/pages/not-found";
 import { JobCompletionNotifications } from "@/components/JobCompletionNotifications";
+import { VideoCallPopup } from "@/components/VideoCallPopup";
 
 function Router() {
   return (
@@ -23,6 +24,7 @@ function App() {
         <Toaster />
         <Router />
         <JobCompletionNotifications />
+        <VideoCallPopup />
       </TooltipProvider>
     </QueryClientProvider>
   );
