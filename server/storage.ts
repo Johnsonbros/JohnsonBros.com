@@ -113,7 +113,10 @@ export class MemStorage implements IStorage {
       this.services.set(service.id, service);
     });
 
-    // Default time slots for next 30 days
+    // DISABLED: Don't generate fake time slots - use real Housecall Pro API data
+    // The system should only show real availability from the API
+    // Commenting out fake data generation to prevent showing incorrect availability
+    /*
     const today = new Date();
     for (let i = 0; i < 30; i++) {
       const date = new Date(today);
@@ -139,6 +142,7 @@ export class MemStorage implements IStorage {
         });
       });
     }
+    */
 
     // Default reviews
     const defaultReviews: Review[] = [

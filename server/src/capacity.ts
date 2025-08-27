@@ -83,6 +83,26 @@ export class CapacityCalculator {
         scheduled_start_max: endOfDay.toISOString(),
       }),
     ]);
+    
+    // Debug: Check if we got real windows
+    console.log(`[Capacity] Booking windows received: ${bookingWindows.length}`);
+    
+    // CRITICAL FIX: The API returns windows with ISO timestamps like "2025-08-27T12:00:00.000Z"
+    // We need to check if the date part matches today, not if date is missing
+    const todayDateStr = date.toISOString().split('T')[0];
+    const availableToday = bookingWindows.filter(w => {
+      // Check if this window is for today
+      const windowDateStr = w.start_time ? w.start_time.split('T')[0] : (w.date ? w.date.split('T')[0] : '');
+      const isToday = windowDateStr === todayDateStr;
+      const isAvailable = w.available === true;
+      
+      if (isToday && !isAvailable) {
+        console.log(`[Capacity] Window for today but NOT available: ${w.start_time} - ${w.end_time}`);
+      }
+      
+      return isToday && isAvailable;
+    });
+    console.log(`[Capacity] REAL available windows today: ${availableToday.length}`);
 
     // Map employees to our tech names
     const techEmployeeMap = this.mapEmployeesToTechs(employees, config);
@@ -214,6 +234,11 @@ export class CapacityCalculator {
                window.available && 
                (!window.employee_ids || window.employee_ids.includes(employeeId));
       });
+      
+      // Debug: Log if no windows found
+      if (techWindows.length === 0) {
+        console.log(`[Capacity] No available windows for ${techName} on ${todayStr}`);
+      }
 
       // Get open windows (not yet passed)
       const openWindows = techWindows.filter(window => {
@@ -269,12 +294,23 @@ export class CapacityCalculator {
         ? 1 - (bookedMinutes / totalBookableMinutes)
         : 0;
 
-      capacities[techName] = {
-        score: Math.max(0, Math.min(1, score)),
-        open_windows: openWindows,
-        booked_minutes: bookedMinutes,
-        total_bookable_minutes: totalBookableMinutes,
-      };
+      // IMPORTANT: Don't create fake availability when no real windows exist
+      // If there are no tech windows from the API, don't show fake availability
+      if (techWindows.length === 0 && openWindows.length === 0) {
+        capacities[techName] = {
+          score: 0,
+          open_windows: [],
+          booked_minutes: 0,
+          total_bookable_minutes: 0,
+        };
+      } else {
+        capacities[techName] = {
+          score: Math.max(0, Math.min(1, score)),
+          open_windows: openWindows,
+          booked_minutes: bookedMinutes,
+          total_bookable_minutes: totalBookableMinutes,
+        };
+      }
     }
 
     return capacities;
