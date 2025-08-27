@@ -75,7 +75,7 @@ export default function Header({ onBookService }: HeaderProps) {
           </div>
           
           {/* Mobile Buttons Underneath Logo - Full Width */}
-          <div className="flex px-2 pb-2 gap-1">
+          <div className="flex px-2 gap-1">
             <Button 
               onClick={onBookService}
               className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2.5 rounded-md font-bold transition-all duration-300 shadow-lg text-sm touch-target"
