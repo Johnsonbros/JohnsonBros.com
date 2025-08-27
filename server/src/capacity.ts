@@ -102,10 +102,15 @@ export class CapacityCalculator {
       expressEligible = tier1Eligible || tier2Eligible || tier3Eligible;
     }
 
-    // Get available express windows
+    // Get available express windows for TODAY only
+    const todayStr = date.toISOString().split('T')[0];
     const expressWindows = bookingWindows
       .filter(window => {
-        const windowEnd = this.parseWindowTime(window.end_time, new Date(window.date));
+        // Check if window is for today
+        const windowDate = window.date ? window.date.split('T')[0] : todayStr;
+        if (windowDate !== todayStr) return false;
+        
+        const windowEnd = this.parseWindowTime(window.end_time, new Date(window.date || date));
         return window.available && windowEnd > now;
       })
       .map(window => {
@@ -186,14 +191,17 @@ export class CapacityCalculator {
     now: Date
   ): any {
     const capacities: any = {};
+    const todayStr = now.toISOString().split('T')[0];
 
     const techEntries = Array.from(techEmployeeMap.entries());
     for (const [techName, employeeId] of techEntries) {
-      // Get windows for this tech
-      const techWindows = bookingWindows.filter(window =>
-        window.available && 
-        (!window.employee_ids || window.employee_ids.includes(employeeId))
-      );
+      // Get windows for this tech - TODAY ONLY
+      const techWindows = bookingWindows.filter(window => {
+        const windowDate = window.date ? window.date.split('T')[0] : todayStr;
+        return windowDate === todayStr && 
+               window.available && 
+               (!window.employee_ids || window.employee_ids.includes(employeeId));
+      });
 
       // Get open windows (not yet passed)
       const openWindows = techWindows.filter(window => {
@@ -266,6 +274,7 @@ export class CapacityCalculator {
     now: Date
   ): OverallCapacity {
     const config = loadConfig();
+    const todayStr = now.toISOString().split('T')[0];
 
     // Calculate average score of bookable techs
     const bookableTechs = ['nate', 'nick', 'jahz'];
@@ -277,17 +286,24 @@ export class CapacityCalculator {
       ? scores.reduce((sum, score) => sum + score, 0) / scores.length
       : 0;
 
-    // Check if any windows remain today
+    // Check if any windows remain TODAY
     const hasWindowsToday = bookingWindows.some(window => {
-      const windowEnd = this.parseWindowTime(window.end_time, new Date(window.date));
+      const windowDate = window.date ? window.date.split('T')[0] : todayStr;
+      if (windowDate !== todayStr) return false;
+      const windowEnd = this.parseWindowTime(window.end_time, new Date(window.date || now));
       return window.available && windowEnd > now;
     });
 
-    // Check if we're past the last window
-    const lastWindowEnd = bookingWindows.reduce((latest, window) => {
-      const windowEnd = this.parseWindowTime(window.end_time, new Date(window.date));
-      return windowEnd > latest ? windowEnd : latest;
-    }, new Date(0));
+    // Check if we're past the last window TODAY
+    const lastWindowEnd = bookingWindows
+      .filter(window => {
+        const windowDate = window.date ? window.date.split('T')[0] : todayStr;
+        return windowDate === todayStr;
+      })
+      .reduce((latest, window) => {
+        const windowEnd = this.parseWindowTime(window.end_time, new Date(window.date || now));
+        return windowEnd > latest ? windowEnd : latest;
+      }, new Date(0));
 
     const isPastLastWindow = now > lastWindowEnd;
 
