@@ -63,19 +63,19 @@ export default function Header({ onBookService }: HeaderProps) {
       {/* Main Header */}
       <header className="bg-johnson-blue shadow-lg sticky top-0 z-50 border-t-2 border-johnson-blue">
         {/* Mobile Layout - Full Width */}
-        <div className="lg:hidden px-2 py-1">
+        <div className="lg:hidden">
           {/* Logo - Full Width on Mobile */}
-          <div className="flex justify-center">
+          <div className="px-2 pt-2">
             <img 
               src="/JB_logo_New_1756136293648.png" 
               alt="Johnson Bros. Plumbing & Drain Cleaning" 
-              className="h-20 w-full max-w-[400px] object-contain"
+              className="h-auto w-full object-contain"
               data-testid="company-logo"
             />
           </div>
           
           {/* Mobile Buttons Underneath Logo - Full Width */}
-          <div className="flex gap-1">
+          <div className="flex px-2 pb-2 gap-1">
             <Button 
               onClick={onBookService}
               className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2.5 rounded-md font-bold transition-all duration-300 shadow-lg text-sm touch-target"
