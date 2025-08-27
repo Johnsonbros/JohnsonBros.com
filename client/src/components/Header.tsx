@@ -63,13 +63,13 @@ export default function Header({ onBookService }: HeaderProps) {
       {/* Main Header */}
       <header className="bg-johnson-blue shadow-lg sticky top-0 z-50 border-t-2 border-johnson-blue">
         {/* Mobile Layout - Full Width */}
-        <div className="lg:hidden px-2 py-2">
+        <div className="lg:hidden px-2 py-1">
           {/* Logo - Full Width on Mobile */}
           <div className="flex justify-center">
             <img 
               src="/JB_logo_New_1756136293648.png" 
               alt="Johnson Bros. Plumbing & Drain Cleaning" 
-              className="h-24 w-full max-w-[400px] object-contain"
+              className="h-20 w-full max-w-[400px] object-contain"
               data-testid="company-logo"
             />
           </div>
