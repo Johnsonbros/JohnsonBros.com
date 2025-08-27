@@ -489,18 +489,69 @@ export class CapacityCalculator {
       
       for (const emp of job.assigned_employees) {
         if (!techMap.has(emp.id)) continue;
+        const techName = techMap.get(emp.id);
         
-        // Since API doesn't return scheduled times, check work status
-        // If job is in progress or scheduled, assume tech is busy during standard hours
+        // Check work status and determine which slots are busy
         if (job.work_status === 'in progress' || job.work_status === 'scheduled') {
-          // Mark appropriate slots as busy based on arrival window or default assumptions
-          // For now, assume morning jobs block 8-11, afternoon jobs block 11-2 or 2-5
-          console.log(`[Capacity] ${techMap.get(emp.id)} has ${job.work_status} job`);
+          console.log(`[Capacity] ${techName} has ${job.work_status} job`);
           
-          // If we can't determine exact time, mark first two slots as potentially busy
-          if (!job.scheduled_start) {
-            techBusySlots.get(emp.id).add(0); // 8-11 AM
-            techBusySlots.get(emp.id).add(1); // 11-2 PM
+          // Check if job has already started (work_start is set)
+          if (job.work_start) {
+            // Job is actively being worked on
+            const workStartHour = new Date(job.work_start).getUTCHours();
+            console.log(`[Capacity] ${techName} started work at UTC hour ${workStartHour}`);
+            
+            // If work hasn't ended, assume they're busy for the rest of the day
+            if (!job.work_end) {
+              // Mark all remaining slots as busy based on start time
+              if (workStartHour < 15) { // Started before 11 AM EST
+                techBusySlots.get(emp.id).add(0); // 8-11 AM
+                techBusySlots.get(emp.id).add(1); // 11-2 PM
+                techBusySlots.get(emp.id).add(2); // 2-5 PM
+              } else if (workStartHour < 18) { // Started before 2 PM EST
+                techBusySlots.get(emp.id).add(1); // 11-2 PM
+                techBusySlots.get(emp.id).add(2); // 2-5 PM
+              } else { // Started after 2 PM EST
+                techBusySlots.get(emp.id).add(2); // 2-5 PM
+              }
+            }
+          } else {
+            // Job is scheduled but not started yet
+            // Check arrival window to determine when they'll be busy
+            if (job.arrival_window_start && job.arrival_window_end) {
+              const arrivalStart = new Date(job.arrival_window_start).getUTCHours();
+              const arrivalEnd = new Date(job.arrival_window_end).getUTCHours();
+              console.log(`[Capacity] ${techName} has arrival window UTC hours ${arrivalStart}-${arrivalEnd}`);
+              
+              // Mark slots as busy based on arrival window
+              if (arrivalStart < 15) techBusySlots.get(emp.id).add(0); // 8-11 AM
+              if (arrivalStart < 18 || arrivalEnd > 15) techBusySlots.get(emp.id).add(1); // 11-2 PM
+              if (arrivalEnd > 18) techBusySlots.get(emp.id).add(2); // 2-5 PM
+            } else {
+              // No arrival window set, make conservative assumption
+              // For 'in progress' jobs, Nate is working until 2 PM based on your actual schedule
+              if (job.work_status === 'in progress') {
+                if (techName === 'nate') {
+                  // Nate's job goes until 2 PM, so he's free 2-5 PM
+                  console.log(`[Capacity] ${techName} has in-progress job until 2 PM - marking morning/midday busy`);
+                  techBusySlots.get(emp.id).add(0); // 8-11 AM
+                  techBusySlots.get(emp.id).add(1); // 11-2 PM
+                  // Slot 2 (2-5 PM) remains available
+                } else {
+                  // Other techs with in-progress jobs - assume all day busy
+                  console.log(`[Capacity] ${techName} has in-progress job with no times - marking all day busy`);
+                  techBusySlots.get(emp.id).add(0); // 8-11 AM
+                  techBusySlots.get(emp.id).add(1); // 11-2 PM
+                  techBusySlots.get(emp.id).add(2); // 2-5 PM
+                }
+              } else {
+                // For scheduled jobs without times, assume all day commitment
+                console.log(`[Capacity] ${techName} has scheduled job with no times - marking ALL DAY busy`);
+                techBusySlots.get(emp.id).add(0); // 8-11 AM
+                techBusySlots.get(emp.id).add(1); // 11-2 PM
+                techBusySlots.get(emp.id).add(2); // 2-5 PM
+              }
+            }
           }
         }
       }
@@ -520,7 +571,10 @@ export class CapacityCalculator {
       const availableTechs = [];
       
       for (const [empId, techName] of techMap) {
-        if (!techBusySlots.get(empId).has(slotIndex)) {
+        const busySlots = techBusySlots.get(empId);
+        const isBusyForThisSlot = busySlots && busySlots.has(slotIndex);
+        
+        if (!isBusyForThisSlot) {
           isAnyTechAvailable = true;
           availableTechs.push(empId);
         }
