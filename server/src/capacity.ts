@@ -108,7 +108,29 @@ export class CapacityCalculator {
         const windowEnd = this.parseWindowTime(window.end_time, new Date(window.date));
         return window.available && windowEnd > now;
       })
-      .map(window => `${window.start_time} - ${window.end_time}`);
+      .map(window => {
+        // Convert UTC timestamps to EST time strings for display
+        if (window.start_time.includes('T') && window.start_time.includes('Z')) {
+          const startDate = new Date(window.start_time);
+          const endDate = new Date(window.end_time);
+          const startTimeEST = startDate.toLocaleTimeString('en-US', { 
+            timeZone: 'America/New_York', 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: false 
+          });
+          const endTimeEST = endDate.toLocaleTimeString('en-US', { 
+            timeZone: 'America/New_York', 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: false 
+          });
+          return `${startTimeEST} - ${endTimeEST}`;
+        } else {
+          // Simple time strings from mock data
+          return `${window.start_time} - ${window.end_time}`;
+        }
+      });
 
     // Calculate expiration time (2 minutes from now)
     const expiresAt = new Date(Date.now() + 120000);
@@ -177,7 +199,29 @@ export class CapacityCalculator {
       const openWindows = techWindows.filter(window => {
         const windowEnd = this.parseWindowTime(window.end_time, new Date(window.date));
         return windowEnd > now;
-      }).map(window => `${window.start_time} - ${window.end_time}`);
+      }).map(window => {
+        // Convert UTC timestamps to EST time strings for display
+        if (window.start_time.includes('T') && window.start_time.includes('Z')) {
+          const startDate = new Date(window.start_time);
+          const endDate = new Date(window.end_time);
+          const startTimeEST = startDate.toLocaleTimeString('en-US', { 
+            timeZone: 'America/New_York', 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: false 
+          });
+          const endTimeEST = endDate.toLocaleTimeString('en-US', { 
+            timeZone: 'America/New_York', 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: false 
+          });
+          return `${startTimeEST} - ${endTimeEST}`;
+        } else {
+          // Simple time strings from mock data
+          return `${window.start_time} - ${window.end_time}`;
+        }
+      });
 
       // Calculate total bookable minutes for today
       const totalBookableMinutes = techWindows.reduce((sum, window) => {
@@ -273,10 +317,17 @@ export class CapacityCalculator {
   }
 
   private parseWindowTime(timeStr: string, date: Date): Date {
-    const [hours, minutes] = timeStr.split(':').map(Number);
-    const result = new Date(date);
-    result.setHours(hours, minutes, 0, 0);
-    return result;
+    // Handle both ISO timestamps and simple time strings
+    if (timeStr.includes('T') && timeStr.includes('Z')) {
+      // Full ISO timestamp from real API - convert from UTC to EST
+      return new Date(timeStr);
+    } else {
+      // Simple time string from mock data
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      const result = new Date(date);
+      result.setHours(hours, minutes, 0, 0);
+      return result;
+    }
   }
 
   async getTodayCapacity(userZip?: string): Promise<CapacityResponse> {
