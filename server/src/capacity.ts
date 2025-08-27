@@ -149,10 +149,15 @@ export class CapacityCalculator {
         const windowEnd = this.parseWindowTime(window.end_time, new Date(window.date || date));
         const windowStart = this.parseWindowTime(window.start_time, new Date(window.date || date));
         
-        // Filter out expired windows - window must not have started yet or be currently active
-        // Add 30 minute buffer for booking before slot starts
+        // Filter out expired windows - must be bookable 30 minutes before start
+        // If current time is past (start time - 30 minutes), hide the slot
         const bookingCutoff = new Date(windowStart.getTime() - 30 * 60000);
-        return window.available && bookingCutoff > now;
+        const isBookable = now < bookingCutoff; // Changed from bookingCutoff > now
+        
+        // Also hide if window has already ended
+        const isNotExpired = now < windowEnd;
+        
+        return window.available && isBookable && isNotExpired;
       })
       .map(window => {
         // Convert UTC timestamps to EST time strings for display
@@ -607,6 +612,23 @@ export class CapacityCalculator {
       const slot = standardSlots[slotIndex];
       const windowStartTime = `${dateStr}T${slot.start}Z`;
       const windowEndTime = `${dateStr}T${slot.end}Z`;
+      
+      // Check if this slot has expired (30 min booking buffer before start)
+      const now = new Date();
+      const slotStartDate = new Date(windowStartTime);
+      const bookingCutoff = new Date(slotStartDate.getTime() - 30 * 60000);
+      
+      // Skip expired slots for today
+      const todayStr = now.toISOString().split('T')[0];
+      const isToday = dateStr === todayStr;
+      const isPastCutoff = now > bookingCutoff;
+      
+      if (isToday && isPastCutoff) {
+        const estCutoff = bookingCutoff.toLocaleTimeString('en-US', {timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit'});
+        const estNow = now.toLocaleTimeString('en-US', {timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit'});
+        console.log(`[Capacity] SKIPPED: ${slot.label} - expired (cutoff ${estCutoff} EST, now ${estNow} EST)`);
+        continue;
+      }
       
       // Check if any tech is available for this slot
       let isAnyTechAvailable = false;
