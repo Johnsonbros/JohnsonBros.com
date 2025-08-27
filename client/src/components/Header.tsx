@@ -63,29 +63,29 @@ export default function Header({ onBookService }: HeaderProps) {
       {/* Main Header */}
       <header className="bg-johnson-blue shadow-lg sticky top-0 z-50 border-t-2 border-johnson-blue">
         {/* Mobile Layout - Full Width */}
-        <div className="lg:hidden px-2 pt-1">
+        <div className="lg:hidden px-2 py-2">
           {/* Logo - Full Width on Mobile */}
-          <div>
+          <div className="flex justify-center mb-2">
             <img 
               src="/JB_logo_New_1756136293648.png" 
               alt="Johnson Bros. Plumbing & Drain Cleaning" 
-              className="h-12 w-full object-contain"
+              className="h-24 w-full max-w-[400px] object-contain"
               data-testid="company-logo"
             />
           </div>
           
           {/* Mobile Buttons Underneath Logo - Full Width */}
-          <div className="flex gap-1 -mx-2 px-2">
+          <div className="flex gap-1">
             <Button 
               onClick={onBookService}
-              className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-md font-bold transition-all duration-300 shadow-lg text-xs touch-target"
+              className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2.5 rounded-md font-bold transition-all duration-300 shadow-lg text-sm touch-target"
               data-testid="header-book-service-button"
             >
               BOOK SERVICE
             </Button>
             <a 
               href="tel:6174799911" 
-              className="flex-1 bg-gradient-to-r from-johnson-orange to-orange-500 hover:from-orange-500 hover:to-johnson-orange text-white py-2 rounded-md font-bold transition-all duration-300 shadow-lg text-xs touch-target text-center flex items-center justify-center"
+              className="flex-1 bg-gradient-to-r from-johnson-orange to-orange-500 hover:from-orange-500 hover:to-johnson-orange text-white py-2.5 rounded-md font-bold transition-all duration-300 shadow-lg text-sm touch-target text-center flex items-center justify-center"
               data-testid="mobile-call-button"
             >
               TAP HERE TO CALL
