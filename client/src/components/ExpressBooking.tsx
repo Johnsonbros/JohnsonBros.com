@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/queryClient";
 import { useState, useEffect } from "react";
+import { formatTimeWindowEST } from "@/lib/timeUtils";
 
 interface HeroSectionProps {
   onBookService: () => void;
@@ -159,11 +160,15 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
                 </div>
                 {capacity.express_windows && capacity.express_windows.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-2">
-                    {capacity.express_windows.slice(0, 3).map((window, idx) => (
-                      <span key={idx} className="text-sm bg-white/10 px-2 py-1 rounded">
-                        {window} EST
-                      </span>
-                    ))}
+                    {capacity.express_windows.slice(0, 3).map((window, idx) => {
+                      // Parse the window string like "15:00 - 17:00"
+                      const [startTime, endTime] = window.split(' - ');
+                      return (
+                        <span key={idx} className="text-sm bg-white/10 px-2 py-1 rounded">
+                          {formatTimeWindowEST(startTime, endTime)}
+                        </span>
+                      );
+                    })}
                     {capacity.express_windows.length > 3 && (
                       <span className="text-sm text-blue-200">
                         +{capacity.express_windows.length - 3} more

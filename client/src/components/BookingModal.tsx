@@ -14,6 +14,7 @@ import { Calendar, X, AlertTriangle, Droplets, Flame, Wrench, Settings, Home, Za
 import { Badge } from "@/components/ui/badge";
 import { z } from "zod";
 import type { Service, AvailableTimeSlot, BookingFormData } from "@shared/schema";
+import { formatTimeWindowEST, convert24to12Hour } from "@/lib/timeUtils";
 
 const bookingFormSchema = z.object({
   service: z.string().min(1, "Please select a service"),
@@ -414,7 +415,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                             >
                               <div className="flex justify-between items-center">
                                 <span className="font-medium text-sm sm:text-base">
-                                  {slot.startTime} - {slot.endTime} EST
+                                  {formatTimeWindowEST(slot.startTime, slot.endTime)}
                                 </span>
                                 <span className="text-xs sm:text-sm text-green-600">Available</span>
                               </div>
@@ -588,7 +589,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                         <span>Date & Time:</span>
                         <span data-testid="booking-summary-datetime">
                           {selectedDate && selectedTimeSlot 
-                            ? `${new Date(selectedDate).toLocaleDateString()} at ${selectedTimeSlot.startTime}`
+                            ? `${new Date(selectedDate).toLocaleDateString()} at ${convert24to12Hour(selectedTimeSlot.startTime)}`
                             : 'Not selected'
                           }
                         </span>

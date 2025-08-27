@@ -37,7 +37,18 @@ export function getCurrentTimeEST(): string {
   return formatTimeEST(new Date());
 }
 
+// Convert 24-hour time to 12-hour format with AM/PM
+export function convert24to12Hour(time24: string): string {
+  // Handle time strings like "15:00" or "9:00"
+  const [hours, minutes] = time24.split(':').map(num => parseInt(num, 10));
+  const period = hours >= 12 ? 'PM' : 'AM';
+  const hours12 = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+  return `${hours12}:${minutes.toString().padStart(2, '0')} ${period}`;
+}
+
 // Format time window like "9:00 AM - 11:00 AM EST"
 export function formatTimeWindowEST(startTime: string, endTime: string): string {
-  return `${startTime} - ${endTime} EST`;
+  const start12 = convert24to12Hour(startTime);
+  const end12 = convert24to12Hour(endTime);
+  return `${start12} - ${end12} EST`;
 }
