@@ -115,9 +115,9 @@ export class HousecallProClient {
       return cached.data;
     }
 
-    // Force mock data for testing instant booking feature
-    if (!API_KEY || true) {
-      Logger.warn('Using mock data for testing instant booking');
+    // Use mock data if no API key is configured
+    if (!API_KEY) {
+      Logger.warn('Using mock data - no API key configured');
       return this.getMockData(endpoint) as T;
     }
 
