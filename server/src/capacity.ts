@@ -124,9 +124,9 @@ export class CapacityCalculator {
     // Calculate express eligibility based on user ZIP
     let expressEligible = true;
     if (userZip && config.express_zones) {
-      const tier1Eligible = config.express_zones.tier1?.includes(userZip);
-      const tier2Eligible = config.express_zones.tier2?.includes(userZip) && overall.score >= 0.5;
-      const tier3Eligible = config.express_zones.tier3?.includes(userZip) && overall.score >= 0.7;
+      const tier1Eligible = config.express_zones.tier1?.includes(userZip) || false;
+      const tier2Eligible = (config.express_zones.tier2?.includes(userZip) || false) && overall.score >= 0.5;
+      const tier3Eligible = (config.express_zones.tier3?.includes(userZip) || false) && overall.score >= 0.7;
       expressEligible = tier1Eligible || tier2Eligible || tier3Eligible;
     }
 
@@ -226,13 +226,25 @@ export class CapacityCalculator {
     const todayStr = now.toISOString().split('T')[0];
 
     const techEntries = Array.from(techEmployeeMap.entries());
+    
+    // DEBUG: Check the actual booking windows we got from API
+    const availableWindowsToday = bookingWindows.filter(w => {
+      const windowDateStr = w.start_time ? w.start_time.split('T')[0] : '';
+      return windowDateStr === todayStr && w.available === true;
+    });
+    console.log(`[Capacity] calculateTechCapacities: ${availableWindowsToday.length} available windows for ${todayStr}`);
+    
     for (const [techName, employeeId] of techEntries) {
       // Get windows for this tech - TODAY ONLY
       const techWindows = bookingWindows.filter(window => {
-        const windowDate = window.date ? window.date.split('T')[0] : todayStr;
-        return windowDate === todayStr && 
-               window.available && 
-               (!window.employee_ids || window.employee_ids.includes(employeeId));
+        // Check if window is for today
+        const windowDateStr = window.start_time ? window.start_time.split('T')[0] : 
+                             (window.date ? window.date.split('T')[0] : todayStr);
+        const isToday = windowDateStr === todayStr;
+        const isAvailable = window.available === true;
+        const isTechAssigned = !window.employee_ids || window.employee_ids.includes(employeeId);
+        
+        return isToday && isAvailable && isTechAssigned;
       });
       
       // Debug: Log if no windows found
@@ -294,23 +306,13 @@ export class CapacityCalculator {
         ? 1 - (bookedMinutes / totalBookableMinutes)
         : 0;
 
-      // IMPORTANT: Don't create fake availability when no real windows exist
-      // If there are no tech windows from the API, don't show fake availability
-      if (techWindows.length === 0 && openWindows.length === 0) {
-        capacities[techName] = {
-          score: 0,
-          open_windows: [],
-          booked_minutes: 0,
-          total_bookable_minutes: 0,
-        };
-      } else {
-        capacities[techName] = {
-          score: Math.max(0, Math.min(1, score)),
-          open_windows: openWindows,
-          booked_minutes: bookedMinutes,
-          total_bookable_minutes: totalBookableMinutes,
-        };
-      }
+      // Only show real availability from API, no fake data
+      capacities[techName] = {
+        score: techWindows.length > 0 ? Math.max(0, Math.min(1, score)) : 0,
+        open_windows: openWindows,
+        booked_minutes: bookedMinutes,
+        total_bookable_minutes: totalBookableMinutes,
+      };
     }
 
     return capacities;
