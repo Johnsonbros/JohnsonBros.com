@@ -255,7 +255,16 @@ export class HousecallProClient {
       }
     );
     console.log('[HousecallProClient] Booking windows response:', JSON.stringify(data.booking_windows));
-    return data.booking_windows || [];
+    console.log('[HousecallProClient] First window available?', data.booking_windows?.[0]?.available);
+    
+    // Check if this is mock data (repeating patterns)
+    const windows = data.booking_windows || [];
+    const isMockData = windows.length > 10 && windows.filter(w => w.available).length === windows.length;
+    if (isMockData) {
+      console.log('[HousecallProClient] WARNING: Detected mock data pattern, returning real API response');
+    }
+    
+    return windows;
   }
 
   async getJobs(params: {
@@ -309,9 +318,9 @@ export class HousecallProClient {
       // Generate booking windows that are always in the future
       const windows: HCPBookingWindow[] = [];
       
-      // For testing/demo purposes, always show some same-day slots
-      // In production, this would come from the actual API
-      if (currentHour < 17) { // Until 5 PM, show business hour slots
+      // DISABLED: Don't generate fake same-day slots in production
+      // Only return empty windows to properly show "Next Day Guarantee"
+      if (false && currentHour < 17) { // Disabled mock same-day slots
         // Business hours: 8 AM - 5 PM for plumbing service
         const businessHourEnd = 17; // 5 PM
         
