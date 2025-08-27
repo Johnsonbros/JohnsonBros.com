@@ -84,13 +84,21 @@ export class CapacityCalculator {
       }),
     ]);
     
+    // Override booking windows with calculated real availability
+    const realBookingWindows = this.calculateRealAvailability(
+      bookingWindows,
+      jobs,
+      employees,
+      date
+    );
+    
     // Debug: Check if we got real windows
-    console.log(`[Capacity] Booking windows received: ${bookingWindows.length}`);
+    console.log(`[Capacity] Booking windows received: ${realBookingWindows.length}`);
     
     // CRITICAL FIX: The API returns windows with ISO timestamps like "2025-08-27T12:00:00.000Z"
     // We need to check if the date part matches today, not if date is missing
     const todayDateStr = date.toISOString().split('T')[0];
-    const availableToday = bookingWindows.filter(w => {
+    const availableToday = realBookingWindows.filter(w => {
       // Check if this window is for today
       const windowDateStr = w.start_time ? w.start_time.split('T')[0] : (w.date ? w.date.split('T')[0] : '');
       const isToday = windowDateStr === todayDateStr;
@@ -107,16 +115,16 @@ export class CapacityCalculator {
     // Map employees to our tech names
     const techEmployeeMap = this.mapEmployeesToTechs(employees, config);
     
-    // Calculate per-tech capacity
+    // Calculate per-tech capacity with real availability
     const techCapacities = this.calculateTechCapacities(
       techEmployeeMap,
-      bookingWindows,
+      realBookingWindows,
       jobs,
       now
     );
 
-    // Calculate overall capacity and state
-    const overall = this.calculateOverallCapacity(techCapacities, bookingWindows, now);
+    // Calculate overall capacity and state with real availability
+    const overall = this.calculateOverallCapacity(techCapacities, realBookingWindows, now);
 
     // Get UI copy based on state
     const uiCopy = config.ui_copy[overall.state] || config.ui_copy.NEXT_DAY;
@@ -132,7 +140,7 @@ export class CapacityCalculator {
 
     // Get available express windows for TODAY only
     const todayStr = date.toISOString().split('T')[0];
-    const expressWindows = bookingWindows
+    const expressWindows = realBookingWindows
       .filter(window => {
         // Check if window is for today
         const windowDate = window.date ? window.date.split('T')[0] : todayStr;
@@ -438,6 +446,131 @@ export class CapacityCalculator {
           techPriority.indexOf(a) - techPriority.indexOf(b)
         )
       }));
+  }
+
+  /**
+   * Calculate real availability based on actual jobs scheduled
+   * This overrides the HousecallPro API availability with actual free slots
+   */
+  private calculateRealAvailability(
+    bookingWindows: any[],
+    jobs: any[],
+    employees: any[],
+    date: Date
+  ): any[] {
+    const dateStr = date.toISOString().split('T')[0];
+    console.log(`[Capacity] Calculating real availability for ${dateStr}`);
+    
+    // Define our standard time slots (8-11 AM, 11-2 PM, 2-5 PM EST)
+    const standardSlots = [
+      { start: '12:00:00', end: '15:00:00', label: '8-11 AM EST' },  // 8-11 AM EST = 12-15 UTC
+      { start: '15:00:00', end: '18:00:00', label: '11-2 PM EST' },  // 11-2 PM EST = 15-18 UTC
+      { start: '18:00:00', end: '21:00:00', label: '2-5 PM EST' }    // 2-5 PM EST = 18-21 UTC
+    ];
+    
+    // Map employees to check their availability
+    const techMap = new Map();
+    techMap.set('pro_19f45ddb23864f13ba5ffb20710e77e8', 'nate');  // Nate
+    techMap.set('pro_784bb427ee27422f892b2db87dbdaf03', 'nick');  // Nick
+    techMap.set('pro_b0a7d40a10dc4477908cc808f62054ff', 'jahz');  // Jahz
+    
+    // Create a map of busy times for each tech
+    const techBusySlots = new Map();
+    
+    // Initialize all techs as available for all slots
+    for (const [empId, techName] of techMap) {
+      techBusySlots.set(empId, new Set());
+    }
+    
+    // Mark busy slots based on jobs
+    console.log(`[Capacity] Checking ${jobs.length} jobs for busy slots`);
+    for (const job of jobs) {
+      if (!job.assigned_employees) continue;
+      
+      for (const emp of job.assigned_employees) {
+        if (!techMap.has(emp.id)) continue;
+        
+        // Since API doesn't return scheduled times, check work status
+        // If job is in progress or scheduled, assume tech is busy during standard hours
+        if (job.work_status === 'in progress' || job.work_status === 'scheduled') {
+          // Mark appropriate slots as busy based on arrival window or default assumptions
+          // For now, assume morning jobs block 8-11, afternoon jobs block 11-2 or 2-5
+          console.log(`[Capacity] ${techMap.get(emp.id)} has ${job.work_status} job`);
+          
+          // If we can't determine exact time, mark first two slots as potentially busy
+          if (!job.scheduled_start) {
+            techBusySlots.get(emp.id).add(0); // 8-11 AM
+            techBusySlots.get(emp.id).add(1); // 11-2 PM
+          }
+        }
+      }
+    }
+    
+    // Now create corrected booking windows
+    const correctedWindows = [];
+    
+    // Check each standard slot
+    for (let slotIndex = 0; slotIndex < standardSlots.length; slotIndex++) {
+      const slot = standardSlots[slotIndex];
+      const windowStartTime = `${dateStr}T${slot.start}Z`;
+      const windowEndTime = `${dateStr}T${slot.end}Z`;
+      
+      // Check if any tech is available for this slot
+      let isAnyTechAvailable = false;
+      const availableTechs = [];
+      
+      for (const [empId, techName] of techMap) {
+        if (!techBusySlots.get(empId).has(slotIndex)) {
+          isAnyTechAvailable = true;
+          availableTechs.push(empId);
+        }
+      }
+      
+      // Find the original window if it exists
+      const originalWindow = bookingWindows.find(w => 
+        w.start_time === windowStartTime && w.end_time === windowEndTime
+      );
+      
+      if (originalWindow) {
+        // Override the availability based on our calculation
+        correctedWindows.push({
+          ...originalWindow,
+          available: isAnyTechAvailable,
+          employee_ids: availableTechs,
+          calculated_availability: true,
+          label: slot.label
+        });
+        
+        if (isAnyTechAvailable && !originalWindow.available) {
+          console.log(`[Capacity] CORRECTED: ${slot.label} marked as AVAILABLE (was unavailable)`);
+        }
+      } else {
+        // Create a new window if it doesn't exist
+        correctedWindows.push({
+          start_time: windowStartTime,
+          end_time: windowEndTime,
+          available: isAnyTechAvailable,
+          employee_ids: availableTechs,
+          date: dateStr,
+          calculated_availability: true,
+          label: slot.label
+        });
+        console.log(`[Capacity] CREATED: ${slot.label} window with availability: ${isAnyTechAvailable}`);
+      }
+    }
+    
+    // Add any other windows from the original response that aren't in our standard slots
+    for (const window of bookingWindows) {
+      const isStandardSlot = correctedWindows.some(w => 
+        w.start_time === window.start_time && w.end_time === window.end_time
+      );
+      if (!isStandardSlot) {
+        correctedWindows.push(window);
+      }
+    }
+    
+    console.log(`[Capacity] Corrected windows: ${correctedWindows.filter(w => w.available).length} available of ${correctedWindows.length} total`);
+    return correctedWindows;
   }
 
   async getTodayCapacity(userZip?: string): Promise<CapacityResponse> {
