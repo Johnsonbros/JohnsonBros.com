@@ -311,32 +311,58 @@ export class HousecallProClient {
       
       // For testing/demo purposes, always show some same-day slots
       // In production, this would come from the actual API
-      if (currentHour < 22) { // Until 10 PM, show emergency/evening slots
-        // Show emergency evening slots
-        const slot1Start = Math.max(currentHour + 1, 9); // At least 1 hour from now
-        const slot1End = Math.min(slot1Start + 2, 23); // Can go until 11 PM for emergencies
+      if (currentHour < 17) { // Until 5 PM, show business hour slots
+        // Business hours: 8 AM - 5 PM for plumbing service
+        const businessHourEnd = 17; // 5 PM
         
-        windows.push({
-          id: 'window_emergency_1',
-          start_time: `${slot1Start.toString().padStart(2, '0')}:00`,
-          end_time: `${slot1End.toString().padStart(2, '0')}:00`,
-          date: today,
-          available: true,
-          employee_ids: ['emp_mock_nate', 'emp_mock_nick'],
-        });
-        
-        // Add another emergency slot
-        if (slot1End < 23) {
-          const slot2Start = slot1End;
-          const slot2End = Math.min(slot2Start + 2, 23);
+        // Generate realistic morning/afternoon slots
+        if (currentHour < 11) {
+          // Morning slots
+          windows.push({
+            id: 'window_morning_1',
+            start_time: '09:00',
+            end_time: '11:00',
+            date: today,
+            available: true,
+            employee_ids: ['emp_mock_nate', 'emp_mock_nick'],
+          });
           
           windows.push({
-            id: 'window_emergency_2',
-            start_time: `${slot2Start.toString().padStart(2, '0')}:00`,
-            end_time: `${slot2End.toString().padStart(2, '0')}:00`,
+            id: 'window_morning_2',
+            start_time: '11:00',
+            end_time: '13:00',
             date: today,
             available: true,
             employee_ids: ['emp_mock_jahz'],
+          });
+        } else if (currentHour < 15) {
+          // Afternoon slots
+          windows.push({
+            id: 'window_afternoon_1',
+            start_time: '13:00',
+            end_time: '15:00',
+            date: today,
+            available: true,
+            employee_ids: ['emp_mock_nate', 'emp_mock_nick'],
+          });
+          
+          windows.push({
+            id: 'window_afternoon_2',
+            start_time: '15:00',
+            end_time: '17:00',
+            date: today,
+            available: true,
+            employee_ids: ['emp_mock_jahz'],
+          });
+        } else {
+          // Late afternoon slot (last chance for same day)
+          windows.push({
+            id: 'window_late_afternoon',
+            start_time: '15:00',
+            end_time: '17:00',
+            date: today,
+            available: true,
+            employee_ids: ['emp_mock_nate', 'emp_mock_nick', 'emp_mock_jahz'],
           });
         }
       }
