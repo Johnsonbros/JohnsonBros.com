@@ -69,11 +69,17 @@ ui_copy:
     badge: "Express Available"
     urgent: false
   NEXT_DAY:
-    headline: "Schedule Your Service"
-    subhead: "Fast, reliable service at your convenience"
-    cta: "Book Service"
-    badge: null
+    headline: "Next Day Guarantee Available"
+    subhead: "Book now for guaranteed service tomorrow - $99 fee waived"
+    cta: "Book Tomorrow"
+    badge: "Next Day - Fee Waived"
     urgent: false
+  EMERGENCY_ONLY:
+    headline: "24/7 Emergency Service"
+    subhead: "Call now for immediate emergency plumbing assistance"
+    cta: "Call (617) 479-9911"
+    badge: "Emergency Service"
+    urgent: true
 
 # Fee waiver configuration
 fee_waive:

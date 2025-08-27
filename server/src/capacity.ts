@@ -18,7 +18,7 @@ export interface TechCapacity {
 
 export interface OverallCapacity {
   score: number;
-  state: 'SAME_DAY_FEE_WAIVED' | 'LIMITED_SAME_DAY' | 'NEXT_DAY';
+  state: 'SAME_DAY_FEE_WAIVED' | 'LIMITED_SAME_DAY' | 'NEXT_DAY' | 'EMERGENCY_ONLY';
 }
 
 export interface ExpressWindow {
@@ -376,11 +376,33 @@ export class CapacityCalculator {
       (tech: any) => tech.open_windows && tech.open_windows.length > 0
     );
     
-    // Determine state based on rules
+    // Get current EST time details for time-based rules
+    const estNow = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
+    const dayOfWeek = estNow.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+    const currentHour = estNow.getHours();
+    const currentTime = currentHour + (estNow.getMinutes() / 60);
+    
+    // Determine if we're in express booking hours (Mon-Fri before 3pm)
+    const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
+    const isBeforeExpressCutoff = currentTime < 15; // Before 3 PM
+    const isExpressAvailable = isWeekday && isBeforeExpressCutoff;
+    
+    // Determine if we're in emergency hours (Friday after 3pm or weekend)
+    const isFridayAfternoon = dayOfWeek === 5 && currentTime >= 15; // Friday after 3 PM
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6; // Saturday or Sunday
+    const isEmergencyTime = isFridayAfternoon || isWeekend;
+    
+    // Determine state based on time-based rules
     let state: OverallCapacity['state'];
 
-    // Must have both available windows AND available techs
-    if (!hasWindowsToday || isPastLastWindow || !hasAvailableTechs) {
+    if (isEmergencyTime) {
+      // Friday after 3pm or weekend - emergency service
+      state = 'EMERGENCY_ONLY';
+    } else if (!isExpressAvailable) {
+      // Monday-Thursday after 3pm - next day service
+      state = 'NEXT_DAY';
+    } else if (!hasWindowsToday || isPastLastWindow || !hasAvailableTechs) {
+      // No slots available during express hours
       state = 'NEXT_DAY';
     } else if (overallScore >= config.thresholds.same_day_fee_waived) {
       state = 'SAME_DAY_FEE_WAIVED';

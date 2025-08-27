@@ -20,7 +20,7 @@ interface ExpressWindow {
 interface CapacityData {
   overall: {
     score: number;
-    state: 'SAME_DAY_FEE_WAIVED' | 'LIMITED_SAME_DAY' | 'NEXT_DAY';
+    state: 'SAME_DAY_FEE_WAIVED' | 'LIMITED_SAME_DAY' | 'NEXT_DAY' | 'EMERGENCY_ONLY';
   };
   tech: {
     nate: { score: number; open_windows: string[] };
@@ -97,19 +97,24 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
   };
 
   // Determine which capacity to use and booking type
-  const hasToday = todayCapacity && todayCapacity.overall.state !== 'NEXT_DAY' && 
-                    todayCapacity.unique_express_windows && todayCapacity.unique_express_windows.length > 0;
-  const hasTomorrow = !hasToday && tomorrowCapacity && 
-                       tomorrowCapacity.unique_express_windows && tomorrowCapacity.unique_express_windows.length > 0;
+  const isEmergency = todayCapacity?.overall.state === 'EMERGENCY_ONLY';
+  const hasToday = todayCapacity && 
+                    todayCapacity.overall.state !== 'NEXT_DAY' && 
+                    todayCapacity.overall.state !== 'EMERGENCY_ONLY' &&
+                    todayCapacity.unique_express_windows && 
+                    todayCapacity.unique_express_windows.length > 0;
+  const hasTomorrow = !hasToday && !isEmergency && tomorrowCapacity && 
+                       tomorrowCapacity.unique_express_windows && 
+                       tomorrowCapacity.unique_express_windows.length > 0;
   
-  const activeCapacity = hasToday ? todayCapacity : hasTomorrow ? tomorrowCapacity : null;
-  const uniqueSlots = activeCapacity?.unique_express_windows || [];
-  const isNextDay = hasTomorrow && !hasToday;
+  const activeCapacity = hasToday ? todayCapacity : hasTomorrow ? tomorrowCapacity : todayCapacity;
+  const uniqueSlots = !isEmergency ? (activeCapacity?.unique_express_windows || []) : [];
+  const isNextDay = hasTomorrow && !hasToday && !isEmergency;
 
   return (
     <section className="bg-gradient-to-br from-johnson-blue to-johnson-teal text-white py-12 sm:py-16 lg:py-20 bg-pipes-blue relative overflow-hidden" style={{ backgroundBlendMode: 'overlay' }}>
       {/* Animated background for express availability */}
-      {(hasToday || hasTomorrow) && (
+      {(hasToday || hasTomorrow || isEmergency) && (
         <div className="absolute inset-0 opacity-20">
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent animate-shimmer" />
         </div>
@@ -118,7 +123,7 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
       <div className="container mx-auto px-4 relative z-10">
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
           <div>
-            {/* Express or Next Day Badge */}
+            {/* Express, Next Day, or Emergency Badge */}
             {activeCapacity && (
               <div className="mb-4">
                 <Badge 
@@ -128,7 +133,9 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
                       ? 'bg-green-500 text-white animate-pulse shadow-lg shadow-green-500/50' 
                       : hasTomorrow
                         ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/50'
-                        : 'bg-orange-500 text-white'}
+                        : isEmergency
+                          ? 'bg-red-500 text-white animate-pulse shadow-lg shadow-red-500/50'
+                          : 'bg-orange-500 text-white'}
                   `}
                   data-testid="express-badge"
                 >
@@ -141,6 +148,11 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
                     <>
                       <Calendar className="mr-2 h-4 w-4" />
                       Next Day Guarantee - $99 Fee Waived
+                    </>
+                  ) : isEmergency ? (
+                    <>
+                      <Phone className="mr-2 h-4 w-4 animate-bounce" />
+                      24/7 Emergency Service
                     </>
                   ) : (
                     'Schedule Service'
@@ -165,6 +177,13 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
                     Abington & Quincy, MA
                   </span>
                 </>
+              ) : isEmergency ? (
+                <>
+                  24/7 Emergency Service Available
+                  <span className="text-johnson-orange block text-2xl sm:text-3xl lg:text-4xl mt-2">
+                    Call Now: (617) 479-9911
+                  </span>
+                </>
               ) : (
                 <>
                   Schedule Your Service
@@ -181,7 +200,9 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
                 ? "Book now for same-day service - emergency fee waived!"
                 : hasTomorrow
                   ? "Guaranteed appointment tomorrow with $99 service fee waived!"
-                  : "Fast, reliable, and professional plumbing solutions. Licensed, insured, and available 24/7 for emergencies."}
+                  : isEmergency
+                    ? "Weekend and after-hours emergency plumbing service available. Our expert technicians are ready to help!"
+                    : "Fast, reliable, and professional plumbing solutions. Licensed, insured, and available 24/7 for emergencies."}
             </p>
 
             {/* Time Slot Selection */}
@@ -250,9 +271,9 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
             {/* Key Benefits */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
               <div className="flex items-center space-x-2 bg-white/10 rounded-lg p-2 sm:p-0 sm:bg-transparent">
-                <Clock className={`h-5 w-5 flex-shrink-0 ${hasToday ? 'text-green-400 animate-pulse' : 'text-johnson-orange'}`} />
+                <Clock className={`h-5 w-5 flex-shrink-0 ${hasToday ? 'text-green-400 animate-pulse' : isEmergency ? 'text-red-400 animate-pulse' : 'text-johnson-orange'}`} />
                 <span className="font-medium text-sm sm:text-base">
-                  {hasToday ? 'Express Same-Day' : hasTomorrow ? 'Next Day Guarantee' : 'Same Day Service'}
+                  {hasToday ? 'Express Same-Day' : hasTomorrow ? 'Next Day Guarantee' : isEmergency ? '24/7 Emergency' : 'Same Day Service'}
                 </span>
               </div>
               <div className="flex items-center space-x-2 bg-white/10 rounded-lg p-2 sm:p-0 sm:bg-transparent">
@@ -261,12 +282,35 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
               </div>
               <div className="flex items-center space-x-2 bg-white/10 rounded-lg p-2 sm:p-0 sm:bg-transparent">
                 <DollarSign className="h-5 w-5 text-johnson-orange flex-shrink-0" />
-                <span className="font-medium text-sm sm:text-base">$99 Fee Waived</span>
+                <span className="font-medium text-sm sm:text-base">{isEmergency ? 'Emergency Rates Apply' : '$99 Fee Waived'}</span>
               </div>
             </div>
 
-            {/* CTA Buttons (shown when no time slots or as backup) */}
-            {uniqueSlots.length === 0 && (
+            {/* CTA Buttons - Emergency call prompt or booking */}
+            {isEmergency ? (
+              <div className="flex flex-col space-y-3 sm:space-y-4">
+                <div className="bg-red-500/20 border-2 border-red-500 rounded-lg p-4 mb-4">
+                  <div className="flex items-center mb-2">
+                    <Phone className="h-6 w-6 text-red-400 animate-bounce mr-2" />
+                    <span className="font-bold text-lg text-red-100">Emergency Service Available</span>
+                  </div>
+                  <p className="text-sm text-blue-200">
+                    Our emergency plumbers are standing by to help with your urgent plumbing needs.
+                  </p>
+                </div>
+                <a 
+                  href="tel:6174799911" 
+                  className="bg-red-500 text-white px-6 py-4 sm:px-8 rounded-lg font-bold text-lg hover:bg-red-600 transition-all duration-300 transform hover:scale-105 shadow-xl text-center inline-flex items-center justify-center w-full sm:w-auto touch-target animate-pulse"
+                  data-testid="emergency-call-button"
+                >
+                  <Phone className="mr-2 h-5 w-5" />
+                  Call Now: (617) 479-9911
+                </a>
+                <div className="text-sm text-blue-200 text-center">
+                  Available 24/7 for emergency plumbing services
+                </div>
+              </div>
+            ) : uniqueSlots.length === 0 && (
               <div className="flex flex-col space-y-3 sm:space-y-4">
                 <Button 
                   onClick={onBookService}
@@ -287,8 +331,8 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
               </div>
             )}
 
-            {/* Call Option (always shown) */}
-            {uniqueSlots.length > 0 && (
+            {/* Call Option (shown for express/next day bookings) */}
+            {uniqueSlots.length > 0 && !isEmergency && (
               <div className="mt-4">
                 <div className="text-sm text-blue-200 mb-2">Prefer to book by phone?</div>
                 <a 
