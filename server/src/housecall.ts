@@ -234,8 +234,8 @@ export class HousecallProClient {
       error: lastError?.message,
     });
 
-    // Return mock data as fallback
-    return this.getMockData(endpoint) as T;
+    // NO FAKE DATA - Throw error instead of returning mock data
+    throw new Error(`API call failed after ${maxRetries} retries: ${lastError?.message}`);
   }
 
   async getEmployees(): Promise<HCPEmployee[]> {
@@ -257,27 +257,13 @@ export class HousecallProClient {
     console.log('[HousecallProClient] Booking windows response:', JSON.stringify(data.booking_windows));
     console.log('[HousecallProClient] First window available?', data.booking_windows?.[0]?.available);
     
-    // Check if this is mock data (repeating patterns)
-    let windows = data.booking_windows || [];
-    const isMockData = windows.length > 10 && windows.filter(w => w.available).length === windows.length;
-    if (isMockData) {
-      console.log('[HousecallProClient] WARNING: Detected mock data pattern, returning real API response');
-    }
+    const windows = data.booking_windows || [];
     
-    // TEMPORARY FIX: Override availability for today's 2-5 PM slot since the actual availability
-    // doesn't match what the API returns. There IS availability for Nate from 2-5 PM.
-    const today = new Date().toISOString().split('T')[0];
-    if (date === today || date === '2025-08-27') {
-      windows = windows.map(w => {
-        // The 2-5 PM EST slot is 18:00-21:00 UTC
-        if (w.start_time === '2025-08-27T18:00:00.000Z' && w.end_time === '2025-08-27T21:00:00.000Z') {
-          console.log('[HousecallProClient] Correcting availability for 2-5 PM slot (Nate is available)');
-          return { ...w, available: true, employee_ids: ['pro_nate'] };
-        }
-        return w;
-      });
-    }
+    // Log availability summary
+    const availableCount = windows.filter(w => w.available).length;
+    console.log(`[HousecallProClient] ${availableCount} of ${windows.length} windows are available`);
     
+    // NO FAKE DATA - Return exactly what the API gives us
     return windows;
   }
 
