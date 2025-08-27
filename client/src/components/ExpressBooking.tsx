@@ -44,7 +44,7 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
   const [userZip, setUserZip] = useState<string | null>(null);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<ExpressWindow | null>(null);
   
-  // Fetch today's capacity data
+  // Fetch today's capacity data with frequent updates for real-time changes
   const { data: todayCapacity } = useQuery<CapacityData>({
     queryKey: ['/api/capacity/today', userZip],
     queryFn: async () => {
@@ -52,10 +52,16 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
       const response = await apiRequest("GET", url);
       return response.json();
     },
-    refetchInterval: 120000,
-    staleTime: 60000,
+    refetchInterval: 30000, // Check every 30 seconds for job cancellations and time updates
+    staleTime: 20000, // Consider data stale after 20 seconds
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true,
   });
 
+  // Check if we should show today or tomorrow based on available slots
+  const shouldShowTomorrow = todayCapacity?.overall.state === 'NEXT_DAY' || 
+    (todayCapacity?.unique_express_windows?.length === 0);
+  
   // Fetch tomorrow's capacity data if today has no slots
   const { data: tomorrowCapacity } = useQuery<CapacityData>({
     queryKey: ['/api/capacity/tomorrow', userZip],
@@ -64,9 +70,11 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
       const response = await apiRequest("GET", url);
       return response.json();
     },
-    enabled: todayCapacity?.overall.state === 'NEXT_DAY',
-    refetchInterval: 120000,
-    staleTime: 60000,
+    enabled: shouldShowTomorrow,
+    refetchInterval: 30000, // Check every 30 seconds for updates
+    staleTime: 20000,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true,
   });
 
   useEffect(() => {

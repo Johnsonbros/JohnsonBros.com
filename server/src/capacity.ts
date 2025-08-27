@@ -147,7 +147,12 @@ export class CapacityCalculator {
         if (windowDate !== todayStr) return false;
         
         const windowEnd = this.parseWindowTime(window.end_time, new Date(window.date || date));
-        return window.available && windowEnd > now;
+        const windowStart = this.parseWindowTime(window.start_time, new Date(window.date || date));
+        
+        // Filter out expired windows - window must not have started yet or be currently active
+        // Add 30 minute buffer for booking before slot starts
+        const bookingCutoff = new Date(windowStart.getTime() - 30 * 60000);
+        return window.available && bookingCutoff > now;
       })
       .map(window => {
         // Convert UTC timestamps to EST time strings for display
@@ -176,8 +181,8 @@ export class CapacityCalculator {
     // Create unique express windows with tech availability
     const uniqueExpressWindows = this.consolidateTimeSlots(expressWindows, techCapacities);
 
-    // Calculate expiration time (2 minutes from now)
-    const expiresAt = new Date(Date.now() + 120000);
+    // Calculate expiration time (30 seconds for real-time updates)
+    const expiresAt = new Date(Date.now() + 30000);
 
     const response: CapacityResponse = {
       overall,
@@ -189,10 +194,10 @@ export class CapacityCalculator {
       unique_express_windows: overall.state !== 'NEXT_DAY' ? uniqueExpressWindows : [],
     };
 
-    // Cache for 90 seconds
+    // Cache for 20 seconds to allow quick updates when jobs change
     this.cache.set(cacheKey, {
       data: response,
-      expires: Date.now() + 90000,
+      expires: Date.now() + 20000,
     });
 
     return response;
@@ -344,12 +349,13 @@ export class CapacityCalculator {
       ? scores.reduce((sum, score) => sum + score, 0) / scores.length
       : 0;
 
-    // Check if any windows remain TODAY
+    // Check if any windows remain TODAY (with 30 min booking buffer)
     const hasWindowsToday = bookingWindows.some(window => {
       const windowDate = window.date ? window.date.split('T')[0] : todayStr;
       if (windowDate !== todayStr) return false;
-      const windowEnd = this.parseWindowTime(window.end_time, new Date(window.date || now));
-      return window.available && windowEnd > now;
+      const windowStart = this.parseWindowTime(window.start_time, new Date(window.date || now));
+      const bookingCutoff = new Date(windowStart.getTime() - 30 * 60000);
+      return window.available && bookingCutoff > now;
     });
 
     // Check if we're past the last window TODAY
@@ -365,10 +371,16 @@ export class CapacityCalculator {
 
     const isPastLastWindow = now > lastWindowEnd;
 
+    // Check if any techs actually have open windows
+    const hasAvailableTechs = Object.values(techCapacities).some(
+      (tech: any) => tech.open_windows && tech.open_windows.length > 0
+    );
+    
     // Determine state based on rules
     let state: OverallCapacity['state'];
 
-    if (!hasWindowsToday || isPastLastWindow) {
+    // Must have both available windows AND available techs
+    if (!hasWindowsToday || isPastLastWindow || !hasAvailableTechs) {
       state = 'NEXT_DAY';
     } else if (overallScore >= config.thresholds.same_day_fee_waived) {
       state = 'SAME_DAY_FEE_WAIVED';
