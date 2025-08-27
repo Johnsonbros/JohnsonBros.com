@@ -21,6 +21,13 @@ export interface OverallCapacity {
   state: 'SAME_DAY_FEE_WAIVED' | 'LIMITED_SAME_DAY' | 'NEXT_DAY';
 }
 
+export interface ExpressWindow {
+  time_slot: string;
+  available_techs: string[];
+  start_time: string;
+  end_time: string;
+}
+
 export interface CapacityResponse {
   overall: OverallCapacity;
   tech: {
@@ -32,6 +39,7 @@ export interface CapacityResponse {
   expires_at: string;
   express_eligible?: boolean;
   express_windows?: string[];
+  unique_express_windows?: ExpressWindow[];
 }
 
 export class CapacityCalculator {
@@ -137,6 +145,9 @@ export class CapacityCalculator {
         }
       });
 
+    // Create unique express windows with tech availability
+    const uniqueExpressWindows = this.consolidateTimeSlots(expressWindows, techCapacities);
+
     // Calculate expiration time (2 minutes from now)
     const expiresAt = new Date(Date.now() + 120000);
 
@@ -147,6 +158,7 @@ export class CapacityCalculator {
       expires_at: expiresAt.toISOString(),
       express_eligible: overall.state !== 'NEXT_DAY' ? expressEligible : false,
       express_windows: overall.state !== 'NEXT_DAY' ? expressWindows : [],
+      unique_express_windows: overall.state !== 'NEXT_DAY' ? uniqueExpressWindows : [],
     };
 
     // Cache for 90 seconds
@@ -346,11 +358,55 @@ export class CapacityCalculator {
     }
   }
 
+  private consolidateTimeSlots(expressWindows: string[], techCapacities: any): ExpressWindow[] {
+    const slotMap = new Map<string, ExpressWindow>();
+    
+    // Priority order for tech assignment (Jahz first)
+    const techPriority = ['jahz', 'nate', 'nick'];
+    
+    // First, create entries for all available express windows
+    for (const window of expressWindows) {
+      const [startTime, endTime] = window.split(' - ');
+      slotMap.set(window, {
+        time_slot: window,
+        available_techs: [],
+        start_time: startTime,
+        end_time: endTime,
+      });
+    }
+    
+    // Then add techs who have these windows available
+    for (const tech of techPriority) {
+      const capacity = techCapacities[tech];
+      if (!capacity || !capacity.open_windows) continue;
+      
+      for (const window of capacity.open_windows) {
+        if (slotMap.has(window)) {
+          const slot = slotMap.get(window)!;
+          if (!slot.available_techs.includes(tech)) {
+            slot.available_techs.push(tech);
+          }
+        }
+      }
+    }
+    
+    // Filter out slots with no available techs and sort
+    return Array.from(slotMap.values())
+      .filter(slot => slot.available_techs.length > 0)
+      .sort((a, b) => a.start_time.localeCompare(b.start_time))
+      .map(slot => ({
+        ...slot,
+        available_techs: slot.available_techs.sort((a, b) => 
+          techPriority.indexOf(a) - techPriority.indexOf(b)
+        )
+      }));
+  }
+
   async getTodayCapacity(userZip?: string): Promise<CapacityResponse> {
     return this.calculateCapacity(new Date(), userZip);
   }
 
-  async getTomorrowCapacity(): Promise<CapacityResponse> {
-    return this.calculateCapacity(getTomorrowInTZ());
+  async getTomorrowCapacity(userZip?: string): Promise<CapacityResponse> {
+    return this.calculateCapacity(getTomorrowInTZ(), userZip);
   }
 }

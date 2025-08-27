@@ -227,8 +227,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/capacity/tomorrow", async (req, res) => {
     try {
+      const userZip = req.query.zip as string | undefined;
       const calculator = CapacityCalculator.getInstance();
-      const capacity = await calculator.getTomorrowCapacity();
+      const capacity = await calculator.getTomorrowCapacity(userZip);
       res.json(capacity);
     } catch (error) {
       console.error("Error fetching tomorrow's capacity:", error);

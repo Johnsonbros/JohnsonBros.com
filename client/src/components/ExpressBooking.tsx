@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Clock, Shield, DollarSign, Calendar, Phone, AlertCircle, MapPin, Zap } from "lucide-react";
+import { Clock, Shield, DollarSign, Calendar, Phone, MapPin, Zap, ChevronRight, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/queryClient";
@@ -8,6 +8,13 @@ import { formatTimeWindowEST } from "@/lib/timeUtils";
 
 interface HeroSectionProps {
   onBookService: () => void;
+}
+
+interface ExpressWindow {
+  time_slot: string;
+  available_techs: string[];
+  start_time: string;
+  end_time: string;
 }
 
 interface CapacityData {
@@ -30,66 +37,71 @@ interface CapacityData {
   expires_at: string;
   express_eligible?: boolean;
   express_windows?: string[];
+  unique_express_windows?: ExpressWindow[];
 }
 
 export default function ExpressBooking({ onBookService }: HeroSectionProps) {
   const [userZip, setUserZip] = useState<string | null>(null);
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<ExpressWindow | null>(null);
   
-  // Fetch capacity data
-  const { data: capacity, isLoading } = useQuery<CapacityData>({
+  // Fetch today's capacity data
+  const { data: todayCapacity } = useQuery<CapacityData>({
     queryKey: ['/api/capacity/today', userZip],
     queryFn: async () => {
       const url = userZip ? `/api/capacity/today?zip=${userZip}` : '/api/capacity/today';
       const response = await apiRequest("GET", url);
       return response.json();
     },
-    refetchInterval: 120000, // Refresh every 2 minutes
-    staleTime: 60000, // Consider data stale after 1 minute
+    refetchInterval: 120000,
+    staleTime: 60000,
   });
 
-  // Check if user's location makes them eligible for express booking
+  // Fetch tomorrow's capacity data if today has no slots
+  const { data: tomorrowCapacity } = useQuery<CapacityData>({
+    queryKey: ['/api/capacity/tomorrow', userZip],
+    queryFn: async () => {
+      const url = userZip ? `/api/capacity/tomorrow?zip=${userZip}` : '/api/capacity/tomorrow';
+      const response = await apiRequest("GET", url);
+      return response.json();
+    },
+    enabled: todayCapacity?.overall.state === 'NEXT_DAY',
+    refetchInterval: 120000,
+    staleTime: 60000,
+  });
+
   useEffect(() => {
-    // Try to get ZIP from browser geolocation or stored preference
     const storedZip = localStorage.getItem('user_zip');
     if (storedZip) {
       setUserZip(storedZip);
     }
   }, []);
 
-  const handleExpressBooking = () => {
-    // Store express booking intent
-    if (capacity?.overall.state === 'SAME_DAY_FEE_WAIVED' || capacity?.overall.state === 'LIMITED_SAME_DAY') {
-      sessionStorage.setItem('booking_type', 'express');
-      sessionStorage.setItem('booking_promo', capacity.overall.state === 'SAME_DAY_FEE_WAIVED' ? 'FEEWAIVED_SAMEDAY' : '');
-      sessionStorage.setItem('booking_utm_source', 'site');
-      sessionStorage.setItem('booking_utm_campaign', 'express_booking');
-      
-      // Store available express windows
-      if (capacity.express_windows) {
-        sessionStorage.setItem('express_windows', JSON.stringify(capacity.express_windows));
-      }
-    } else {
-      sessionStorage.setItem('booking_type', 'standard');
-      sessionStorage.removeItem('booking_promo');
-      sessionStorage.removeItem('express_windows');
-    }
+  const handleTimeSlotBooking = (slot: ExpressWindow, isNextDay: boolean = false) => {
+    sessionStorage.setItem('booking_type', isNextDay ? 'next_day' : 'express');
+    sessionStorage.setItem('booking_time_slot', slot.time_slot);
+    sessionStorage.setItem('booking_available_techs', JSON.stringify(slot.available_techs));
+    sessionStorage.setItem('booking_promo', 'FEEWAIVED_SAMEDAY');
+    sessionStorage.setItem('booking_utm_source', 'site');
+    sessionStorage.setItem('booking_utm_campaign', isNextDay ? 'next_day_guarantee' : 'express_booking');
+    sessionStorage.setItem('booking_date', isNextDay ? 'tomorrow' : 'today');
+    
     onBookService();
   };
 
-  // Determine if express booking is available
-  const hasExpressSlots = capacity?.overall.state !== 'NEXT_DAY';
-  const isExpressEligible = capacity?.express_eligible !== false; // Default to true if not specified
-  const showExpressBooking = hasExpressSlots && isExpressEligible;
-  const showFeeWaived = capacity?.overall.state === 'SAME_DAY_FEE_WAIVED';
-  const isUrgent = capacity?.ui_copy?.urgent || showFeeWaived;
-
-  // Count available express windows
-  const expressWindowCount = capacity?.express_windows?.length || 0;
+  // Determine which capacity to use and booking type
+  const hasToday = todayCapacity && todayCapacity.overall.state !== 'NEXT_DAY' && 
+                    todayCapacity.unique_express_windows && todayCapacity.unique_express_windows.length > 0;
+  const hasTomorrow = !hasToday && tomorrowCapacity && 
+                       tomorrowCapacity.unique_express_windows && tomorrowCapacity.unique_express_windows.length > 0;
+  
+  const activeCapacity = hasToday ? todayCapacity : hasTomorrow ? tomorrowCapacity : null;
+  const uniqueSlots = activeCapacity?.unique_express_windows || [];
+  const isNextDay = hasTomorrow && !hasToday;
 
   return (
     <section className="bg-gradient-to-br from-johnson-blue to-johnson-teal text-white py-12 sm:py-16 lg:py-20 bg-pipes-blue relative overflow-hidden" style={{ backgroundBlendMode: 'overlay' }}>
       {/* Animated background for express availability */}
-      {showExpressBooking && (
+      {(hasToday || hasTomorrow) && (
         <div className="absolute inset-0 opacity-20">
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent animate-shimmer" />
         </div>
@@ -98,31 +110,49 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
       <div className="container mx-auto px-4 relative z-10">
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
           <div>
-            {/* Express Badge */}
-            {capacity?.ui_copy?.badge && (
+            {/* Express or Next Day Badge */}
+            {activeCapacity && (
               <div className="mb-4">
                 <Badge 
                   className={`
                     inline-flex items-center px-4 py-2 text-sm font-bold
-                    ${isUrgent 
-                      ? 'bg-red-500 text-white animate-pulse shadow-lg shadow-red-500/50' 
-                      : showExpressBooking
-                        ? 'bg-green-500 text-white shadow-lg shadow-green-500/50'
+                    ${hasToday 
+                      ? 'bg-green-500 text-white animate-pulse shadow-lg shadow-green-500/50' 
+                      : hasTomorrow
+                        ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/50'
                         : 'bg-orange-500 text-white'}
                   `}
                   data-testid="express-badge"
                 >
-                  {showExpressBooking && <Zap className="mr-2 h-4 w-4 animate-bounce" />}
-                  {capacity.ui_copy.badge}
+                  {hasToday ? (
+                    <>
+                      <Zap className="mr-2 h-4 w-4 animate-bounce" />
+                      Express - $99 Fee Waived
+                    </>
+                  ) : hasTomorrow ? (
+                    <>
+                      <Calendar className="mr-2 h-4 w-4" />
+                      Next Day Guarantee - $99 Fee Waived
+                    </>
+                  ) : (
+                    'Schedule Service'
+                  )}
                 </Badge>
               </div>
             )}
 
             {/* Dynamic Headline */}
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 leading-tight">
-              {capacity ? (
+              {hasToday ? (
                 <>
-                  {capacity.ui_copy.headline}
+                  Express Booking Available!
+                  <span className="text-johnson-orange block text-2xl sm:text-3xl lg:text-4xl mt-2">
+                    Abington & Quincy, MA
+                  </span>
+                </>
+              ) : hasTomorrow ? (
+                <>
+                  Next Day Appointment Guarantee
                   <span className="text-johnson-orange block text-2xl sm:text-3xl lg:text-4xl mt-2">
                     Abington & Quincy, MA
                   </span>
@@ -139,52 +169,82 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
 
             {/* Dynamic Subhead */}
             <p className="text-base sm:text-lg lg:text-xl mb-6 sm:mb-8 text-blue-100">
-              {capacity?.ui_copy?.subhead || "Fast, reliable, and professional plumbing solutions. Licensed, insured, and available 24/7 for emergencies."}
+              {hasToday 
+                ? "Book now for same-day service - emergency fee waived!"
+                : hasTomorrow
+                  ? "Guaranteed appointment tomorrow with $99 service fee waived!"
+                  : "Fast, reliable, and professional plumbing solutions. Licensed, insured, and available 24/7 for emergencies."}
             </p>
 
-            {/* Express Availability Indicator */}
-            {showExpressBooking && expressWindowCount > 0 && capacity && (
+            {/* Time Slot Selection */}
+            {uniqueSlots.length > 0 && (
               <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 mb-6 border border-white/20">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center">
                     <Clock className="h-5 w-5 text-green-400 animate-pulse mr-2" />
                     <span className="font-semibold text-green-100">
-                      {expressWindowCount} Express Slot{expressWindowCount > 1 ? 's' : ''} Available Today
+                      {uniqueSlots.length} Time Slot{uniqueSlots.length > 1 ? 's' : ''} Available {isNextDay ? 'Tomorrow' : 'Today'}
                     </span>
                   </div>
-                  {showFeeWaived && (
-                    <Badge className="bg-green-500 text-white">
-                      $99 Fee Waived
-                    </Badge>
-                  )}
+                  <Badge className="bg-green-500 text-white">
+                    $99 Fee Waived
+                  </Badge>
                 </div>
-                {capacity.express_windows && capacity.express_windows.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {capacity.express_windows.slice(0, 3).map((window, idx) => {
-                      // Parse the window string like "15:00 - 17:00"
-                      const [startTime, endTime] = window.split(' - ');
-                      return (
-                        <span key={idx} className="text-sm bg-white/10 px-2 py-1 rounded">
-                          {formatTimeWindowEST(startTime, endTime)}
-                        </span>
-                      );
-                    })}
-                    {capacity.express_windows.length > 3 && (
-                      <span className="text-sm text-blue-200">
-                        +{capacity.express_windows.length - 3} more
-                      </span>
-                    )}
-                  </div>
-                )}
+                
+                {/* Time Slot Buttons */}
+                <div className="space-y-2">
+                  {uniqueSlots.map((slot, idx) => {
+                    const [startTime, endTime] = slot.time_slot.split(' - ');
+                    const techCount = slot.available_techs.length;
+                    
+                    return (
+                      <button
+                        key={idx}
+                        onClick={() => handleTimeSlotBooking(slot, isNextDay)}
+                        className={`w-full p-4 rounded-lg border-2 transition-all duration-300 transform hover:scale-102 
+                          ${selectedTimeSlot?.time_slot === slot.time_slot 
+                            ? 'bg-green-500 border-green-400 text-white shadow-lg' 
+                            : 'bg-white/20 border-white/30 hover:bg-white/30 hover:border-white/50'}`}
+                        data-testid={`time-slot-${idx}`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <Clock className="h-5 w-5" />
+                            <div className="text-left">
+                              <div className="font-bold text-lg">
+                                {formatTimeWindowEST(startTime, endTime)}
+                              </div>
+                              <div className="text-sm opacity-90">
+                                {techCount} technician{techCount > 1 ? 's' : ''} available
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Badge className="bg-green-600 text-white">
+                              Book Now
+                            </Badge>
+                            <ChevronRight className="h-5 w-5" />
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Priority Assignment Notice */}
+                <div className="mt-3 flex items-start text-xs text-blue-200">
+                  <Star className="h-4 w-4 mr-1 flex-shrink-0 mt-0.5" />
+                  <span>Our expert technicians will be assigned based on expertise and availability</span>
+                </div>
               </div>
             )}
             
             {/* Key Benefits */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
               <div className="flex items-center space-x-2 bg-white/10 rounded-lg p-2 sm:p-0 sm:bg-transparent">
-                <Clock className={`h-5 w-5 flex-shrink-0 ${showExpressBooking ? 'text-green-400 animate-pulse' : 'text-johnson-orange'}`} />
+                <Clock className={`h-5 w-5 flex-shrink-0 ${hasToday ? 'text-green-400 animate-pulse' : 'text-johnson-orange'}`} />
                 <span className="font-medium text-sm sm:text-base">
-                  {showExpressBooking ? 'Express Same-Day' : 'Same Day Service'}
+                  {hasToday ? 'Express Same-Day' : hasTomorrow ? 'Next Day Guarantee' : 'Same Day Service'}
                 </span>
               </div>
               <div className="flex items-center space-x-2 bg-white/10 rounded-lg p-2 sm:p-0 sm:bg-transparent">
@@ -193,76 +253,43 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
               </div>
               <div className="flex items-center space-x-2 bg-white/10 rounded-lg p-2 sm:p-0 sm:bg-transparent">
                 <DollarSign className="h-5 w-5 text-johnson-orange flex-shrink-0" />
-                <span className="font-medium text-sm sm:text-base">Upfront Pricing</span>
+                <span className="font-medium text-sm sm:text-base">$99 Fee Waived</span>
               </div>
             </div>
 
-            {/* CTA Buttons */}
-            <div className="flex flex-col space-y-3 sm:space-y-4">
-              <Button 
-                onClick={handleExpressBooking}
-                className={`
-                  px-6 py-4 sm:px-8 rounded-lg font-bold text-lg 
-                  transition-all duration-300 transform hover:scale-105 shadow-xl 
-                  w-full sm:w-auto touch-target relative overflow-hidden
-                  ${showExpressBooking 
-                    ? 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700' 
-                    : 'bg-gradient-to-r from-johnson-orange to-orange-500 hover:from-orange-500 hover:to-johnson-orange'}
-                `}
-                data-testid="express-booking-button"
-                disabled={isLoading}
-              >
-                {showExpressBooking && (
-                  <span className="absolute inset-0 bg-white opacity-20 animate-shimmer" />
-                )}
-                <span className="relative flex items-center">
-                  {showExpressBooking ? (
-                    <>
-                      <Zap className="mr-2 h-5 w-5" />
-                      {isLoading ? 'Checking...' : capacity?.ui_copy?.cta || 'Book Express Service'}
-                    </>
-                  ) : (
-                    <>
-                      <Calendar className="mr-2 h-5 w-5" />
-                      {isLoading ? 'Checking...' : capacity?.ui_copy?.cta || 'Book Service'}
-                    </>
-                  )}
-                </span>
-              </Button>
-              <a 
-                href="tel:6174799911" 
-                className="bg-white text-johnson-blue px-6 py-4 sm:px-8 rounded-lg font-bold text-lg hover:bg-gray-50 transition-all duration-300 transform hover:scale-105 shadow-lg text-center inline-flex items-center justify-center w-full sm:w-auto touch-target border-2 border-johnson-blue hover:border-johnson-teal"
-                data-testid="hero-call-button"
-              >
-                <Phone className="mr-2 h-5 w-5" />
-                Call (617) 479-9911
-              </a>
-            </div>
+            {/* CTA Buttons (shown when no time slots or as backup) */}
+            {uniqueSlots.length === 0 && (
+              <div className="flex flex-col space-y-3 sm:space-y-4">
+                <Button 
+                  onClick={onBookService}
+                  className="px-6 py-4 sm:px-8 rounded-lg font-bold text-lg transition-all duration-300 transform hover:scale-105 shadow-xl w-full sm:w-auto touch-target bg-gradient-to-r from-johnson-orange to-orange-500 hover:from-orange-500 hover:to-johnson-orange"
+                  data-testid="express-booking-button"
+                >
+                  <Calendar className="mr-2 h-5 w-5" />
+                  Book Service
+                </Button>
+                <a 
+                  href="tel:6174799911" 
+                  className="bg-white text-johnson-blue px-6 py-4 sm:px-8 rounded-lg font-bold text-lg hover:bg-gray-50 transition-all duration-300 transform hover:scale-105 shadow-lg text-center inline-flex items-center justify-center w-full sm:w-auto touch-target border-2 border-johnson-blue hover:border-johnson-teal"
+                  data-testid="hero-call-button"
+                >
+                  <Phone className="mr-2 h-5 w-5" />
+                  Call (617) 479-9911
+                </a>
+              </div>
+            )}
 
-            {/* Location eligibility notice */}
-            {!isExpressEligible && hasExpressSlots && (
-              <div className="mt-4 bg-yellow-500/20 border border-yellow-500/50 rounded-lg p-3">
-                <div className="flex items-start">
-                  <MapPin className="h-5 w-5 text-yellow-400 mr-2 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-sm text-yellow-100">
-                      Express booking is available for customers in our immediate service area.
-                    </p>
-                    <Button
-                      variant="link"
-                      className="text-yellow-300 hover:text-yellow-100 p-0 h-auto text-sm"
-                      onClick={() => {
-                        const zip = prompt("Enter your ZIP code to check express eligibility:");
-                        if (zip) {
-                          localStorage.setItem('user_zip', zip);
-                          setUserZip(zip);
-                        }
-                      }}
-                    >
-                      Check your ZIP code
-                    </Button>
-                  </div>
-                </div>
+            {/* Call Option (always shown) */}
+            {uniqueSlots.length > 0 && (
+              <div className="mt-4">
+                <div className="text-sm text-blue-200 mb-2">Prefer to book by phone?</div>
+                <a 
+                  href="tel:6174799911" 
+                  className="bg-white/20 text-white px-4 py-2 rounded-lg font-bold hover:bg-white/30 transition-all duration-300 inline-flex items-center border border-white/30"
+                >
+                  <Phone className="mr-2 h-4 w-4" />
+                  Call (617) 479-9911
+                </a>
               </div>
             )}
           </div>
@@ -275,17 +302,22 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
               className="rounded-xl shadow-2xl w-full"
             />
             
-            {/* Floating Service Badge - Dynamic based on express availability */}
-            <div className={`absolute -bottom-3 -left-3 sm:-bottom-6 sm:-left-6 bg-white p-3 sm:p-6 rounded-xl shadow-lg ${showExpressBooking ? 'ring-4 ring-green-400 ring-opacity-50' : ''}`}>
+            {/* Floating Service Badge */}
+            <div className={`absolute -bottom-3 -left-3 sm:-bottom-6 sm:-left-6 bg-white p-3 sm:p-6 rounded-xl shadow-lg ${hasToday || hasTomorrow ? 'ring-4 ring-green-400 ring-opacity-50' : ''}`}>
               <div className="text-center">
-                {showExpressBooking ? (
+                {hasToday ? (
                   <>
                     <Zap className="h-8 w-8 text-green-500 mx-auto mb-2 animate-bounce" />
                     <div className="text-xl sm:text-2xl font-bold text-green-600">EXPRESS</div>
                     <div className="text-xs sm:text-sm text-gray-600">Same-Day Service</div>
-                    {showFeeWaived && (
-                      <div className="text-xs text-green-600 font-medium mt-1">Fee Waived!</div>
-                    )}
+                    <div className="text-xs text-green-600 font-medium mt-1">$99 Fee Waived!</div>
+                  </>
+                ) : hasTomorrow ? (
+                  <>
+                    <Calendar className="h-8 w-8 text-blue-500 mx-auto mb-2" />
+                    <div className="text-xl sm:text-2xl font-bold text-blue-600">NEXT DAY</div>
+                    <div className="text-xs sm:text-sm text-gray-600">Guaranteed</div>
+                    <div className="text-xs text-green-600 font-medium mt-1">$99 Fee Waived!</div>
                   </>
                 ) : (
                   <>
@@ -301,7 +333,6 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
           </div>
         </div>
       </div>
-
     </section>
   );
 }
