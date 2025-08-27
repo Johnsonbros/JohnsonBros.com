@@ -377,10 +377,20 @@ export class CapacityCalculator {
     );
     
     // Get current EST time details for time-based rules
-    const estNow = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
-    const dayOfWeek = estNow.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
-    const currentHour = estNow.getHours();
-    const currentTime = currentHour + (estNow.getMinutes() / 60);
+    const estString = now.toLocaleString("en-US", {timeZone: "America/New_York"});
+    const estNow = new Date(estString);
+    const dayOfWeek = now.getDay(); // Use original date for day of week
+    const estHours = parseInt(now.toLocaleTimeString('en-US', { 
+      timeZone: 'America/New_York', 
+      hour12: false,
+      hour: '2-digit' 
+    }));
+    const estMinutes = parseInt(now.toLocaleTimeString('en-US', { 
+      timeZone: 'America/New_York', 
+      hour12: false,
+      minute: '2-digit' 
+    }));
+    const currentTime = estHours + (estMinutes / 60);
     
     // Determine if we're in express booking hours (Mon-Fri before 3pm)
     const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
@@ -412,11 +422,9 @@ export class CapacityCalculator {
       state = 'NEXT_DAY';
     }
 
-    // Handle force_state override
-    if (process.env.FORCE_CAPACITY_STATE) {
-      state = process.env.FORCE_CAPACITY_STATE as OverallCapacity['state'];
-      Logger.warn('Using forced capacity state', { forcedState: state });
-    }
+    // Handle force_state override (removed - we'll use actual time-based logic)
+    // Logging for debugging time-based states
+    console.log(`[Capacity] Time check: ${estHours}:${estMinutes} EST, Day: ${dayOfWeek}, State: ${state}`);
 
     return {
       score: overallScore,
