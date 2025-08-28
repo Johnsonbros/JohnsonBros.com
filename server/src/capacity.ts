@@ -83,11 +83,18 @@ export class CapacityCalculator {
         scheduled_start_max: endOfDay.toISOString(),
       }),
     ]);
+
+    // Filter jobs by status after fetching (since API doesn't support status filtering)
+    const relevantJobs = jobs.filter(job => 
+      job.work_status === 'scheduled' || job.work_status === 'in_progress'
+    );
+    
+    console.log(`[Capacity] Fetched ${jobs.length} jobs, filtered to ${relevantJobs.length} scheduled/in_progress jobs for ${date.toISOString().split('T')[0]}`);
     
     // Override booking windows with calculated real availability
     const realBookingWindows = this.calculateRealAvailability(
       bookingWindows,
-      jobs,
+      relevantJobs, // Use filtered jobs
       employees,
       date
     );
@@ -114,6 +121,13 @@ export class CapacityCalculator {
 
     // Map employees to our tech names
     const techEmployeeMap = this.mapEmployeesToTechs(employees, config);
+    
+    // DEBUG: Log employee mapping
+    console.log(`[Capacity] Employee mapping:`);
+    for (const [techName, employeeId] of techEmployeeMap) {
+      const employee = employees.find(e => e.id === employeeId);
+      console.log(`[Capacity]   ${techName} -> ${employeeId} (${employee?.first_name} ${employee?.last_name})`);
+    }
     
     // Calculate per-tech capacity with real availability
     const techCapacities = this.calculateTechCapacities(
@@ -555,7 +569,7 @@ export class CapacityCalculator {
         const techName = techMap.get(emp.id);
         
         // Check work status and determine which slots are busy
-        if (job.work_status === 'in progress' || job.work_status === 'scheduled') {
+        if (job.work_status === 'in_progress' || job.work_status === 'scheduled') {
           console.log(`[Capacity] ${techName} has ${job.work_status} job`);
           
           // Check if job has already started (work_start is set)
@@ -593,7 +607,7 @@ export class CapacityCalculator {
             } else {
               // No arrival window set, make conservative assumption
               // For 'in progress' jobs, Nate is working until 2 PM based on your actual schedule
-              if (job.work_status === 'in progress') {
+              if (job.work_status === 'in_progress') {
                 if (techName === 'nate') {
                   // Nate's job goes until 2 PM, so he's free 2-5 PM
                   console.log(`[Capacity] ${techName} has in-progress job until 2 PM - marking morning/midday busy`);

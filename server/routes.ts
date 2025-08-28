@@ -875,6 +875,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Debug endpoint to see raw HCP job data
+  app.get('/api/debug/jobs/:date', async (req, res) => {
+    try {
+      const { date } = req.params;
+      const targetDate = new Date(date);
+      
+      // Calculate date range
+      const startOfDay = new Date(targetDate);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(targetDate);
+      endOfDay.setHours(23, 59, 59, 999);
+      
+      const hcpClient = HousecallProClient.getInstance();
+      
+      // Get jobs with status filters
+      const jobs = await hcpClient.getJobs({
+        scheduled_start_min: startOfDay.toISOString(),
+        scheduled_start_max: endOfDay.toISOString(),
+        work_status: ['scheduled', 'in_progress'],
+      });
+      
+      res.json({
+        date: date,
+        dateRange: {
+          start: startOfDay.toISOString(),
+          end: endOfDay.toISOString()
+        },
+        jobCount: jobs.length,
+        jobs: jobs.map(job => ({
+          id: job.id,
+          work_status: job.work_status,
+          scheduled_start: job.scheduled_start,
+          scheduled_end: job.scheduled_end,
+          assigned_employees: job.assigned_employees || [],
+          full_job: job
+        }))
+      });
+      
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

@@ -271,12 +271,21 @@ export class HousecallProClient {
     scheduled_start_min?: string;
     scheduled_start_max?: string;
     employee_ids?: string[];
+    work_status?: string[];
   }): Promise<HCPJob[]> {
-    const data = await this.callAPI<{ jobs: HCPJob[] }>('/jobs', {
-      ...params,
-      page_size: 100,
-    });
-    return data.jobs || [];
+    console.log('[HCP] Jobs API call with params:', JSON.stringify(params, null, 2));
+    try {
+      const data = await this.callAPI<{ jobs: HCPJob[] }>('/jobs', {
+        ...params,
+        page_size: 100,
+      });
+      console.log('[HCP] Jobs API success:', data.jobs?.length || 0, 'jobs returned');
+      return data.jobs || [];
+    } catch (error) {
+      console.error('[HCP] Jobs API failed:', error.message);
+      console.log('[HCP] Full params that failed:', JSON.stringify({ ...params, page_size: 100 }, null, 2));
+      throw error;
+    }
   }
 
   private getMockData(endpoint: string): any {
