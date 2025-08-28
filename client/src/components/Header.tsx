@@ -1,4 +1,4 @@
-import { Phone, Star } from "lucide-react";
+import { Phone, Star, Menu, X, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 
@@ -8,6 +8,7 @@ interface HeaderProps {
 
 export default function Header({ onBookService }: HeaderProps) {
   const [isBusinessHours, setIsBusinessHours] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const checkBusinessHours = () => {
     const now = new Date();
@@ -37,12 +38,26 @@ export default function Header({ onBookService }: HeaderProps) {
     return () => clearInterval(interval);
   }, []);
 
+  // Prevent body scroll when mobile menu is open
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    
+    // Cleanup function to reset overflow when component unmounts
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isMobileMenuOpen]);
+
   return (
     <>
-      {/* Dynamic Plumbing Banner */}
+      {/* Dynamic Plumbing Banner - Thinner on Mobile */}
       <a 
         href="tel:6174799911"
-        className={`block w-full cursor-pointer hover:opacity-95 transition-opacity py-3 sm:py-4 ${
+        className={`block w-full cursor-pointer hover:opacity-95 transition-opacity py-2 sm:py-3 lg:py-4 ${
           isBusinessHours 
             ? "bg-gradient-to-r from-green-600 to-green-500" 
             : "bg-gradient-to-r from-red-600 to-red-500"
@@ -50,45 +65,106 @@ export default function Header({ onBookService }: HeaderProps) {
         data-testid="plumbing-banner-link"
       >
         <div className="text-center">
-          <h2 className="text-white font-bold text-lg sm:text-xl mb-1">
+          <h2 className="text-white font-bold text-sm sm:text-lg lg:text-xl lg:mb-1">
             {isBusinessHours ? "EXPERT PLUMBERS READY TO HELP" : "24/7 EMERGENCY PLUMBING"}
           </h2>
-          <p className="text-white font-semibold text-sm sm:text-base flex items-center justify-center gap-2">
-            <Phone className="h-4 w-4 sm:h-5 sm:w-5" />
-            CLICK HERE TO TALK TO A REAL PLUMBER
+          <p className="text-white font-semibold text-xs sm:text-sm lg:text-base flex items-center justify-center gap-2 lg:mt-0">
+            <Phone className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
+            <span className="hidden sm:inline">CLICK HERE TO TALK TO A REAL PLUMBER</span>
+            <span className="sm:hidden">TAP TO CALL NOW</span>
           </p>
         </div>
       </a>
 
       {/* Main Header */}
       <header className="bg-johnson-blue shadow-lg sticky top-0 z-50 border-t-2 border-johnson-blue">
-        {/* Mobile Layout - Full Width */}
-        <div className="lg:hidden px-2 py-2">
-          {/* Logo - Full Width on Mobile */}
-          <div className="flex justify-center mb-2">
-            <img 
-              src="/JB_logo_New_1756136293648.png" 
-              alt="Johnson Bros. Plumbing & Drain Cleaning" 
-              className="h-24 w-full max-w-[400px] object-contain"
-              data-testid="company-logo"
-            />
-          </div>
+        {/* Mobile Layout - Simplified */}
+        <div className="lg:hidden px-4 py-2 flex justify-between items-center">
+          {/* Logo - Smaller on Mobile */}
+          <img 
+            src="/JB_logo_New_1756136293648.png" 
+            alt="Johnson Bros. Plumbing & Drain Cleaning" 
+            className="h-12 w-auto max-w-[200px] object-contain"
+            data-testid="company-logo"
+          />
           
-          {/* Mobile Buttons Underneath Logo - Full Width */}
-          <div className="flex gap-1">
-            <Button 
+          {/* Hamburger Menu Button */}
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="text-white p-2 hover:bg-white/10 rounded-lg transition-colors"
+            aria-label="Toggle menu"
+            data-testid="mobile-menu-toggle"
+          >
+            {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
+        </div>
+
+        {/* Mobile Menu Overlay */}
+        {isMobileMenuOpen && (
+          <div className="lg:hidden fixed inset-0 top-[104px] bg-johnson-blue z-40" style={{ height: 'calc(100vh - 104px - 70px)' }}>
+            <nav className="flex flex-col p-6 space-y-4">
+              <a 
+                href="#services" 
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="text-white text-lg font-medium py-3 px-4 hover:bg-white/10 rounded-lg transition-colors"
+              >
+                Services
+              </a>
+              <a 
+                href="#about" 
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="text-white text-lg font-medium py-3 px-4 hover:bg-white/10 rounded-lg transition-colors"
+              >
+                About Us
+              </a>
+              <a 
+                href="#reviews" 
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="text-white text-lg font-medium py-3 px-4 hover:bg-white/10 rounded-lg transition-colors"
+              >
+                Reviews
+              </a>
+              <a 
+                href="#contact" 
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="text-white text-lg font-medium py-3 px-4 hover:bg-white/10 rounded-lg transition-colors"
+              >
+                Contact
+              </a>
+              <div className="pt-4 border-t border-white/20">
+                <div className="flex items-center justify-center space-x-2 bg-white/10 px-4 py-3 rounded-lg">
+                  <div className="flex text-yellow-400">
+                    <Star className="h-4 w-4 fill-current" />
+                    <Star className="h-4 w-4 fill-current" />
+                    <Star className="h-4 w-4 fill-current" />
+                    <Star className="h-4 w-4 fill-current" />
+                    <Star className="h-4 w-4 fill-current" />
+                  </div>
+                  <span className="text-white text-sm font-medium">4.8/5 (281 reviews)</span>
+                </div>
+              </div>
+            </nav>
+          </div>
+        )}
+
+        {/* Mobile Sticky Bottom Action Bar */}
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-50 px-4 py-3">
+          <div className="flex gap-3">
+            <button 
               onClick={onBookService}
-              className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2.5 rounded-md font-bold transition-all duration-300 shadow-lg text-sm touch-target"
-              data-testid="header-book-service-button"
+              className="flex-1 bg-johnson-blue hover:bg-blue-700 text-white py-3 rounded-lg font-bold transition-all duration-300 shadow-md text-base touch-target flex items-center justify-center gap-2"
+              data-testid="bottom-book-service-button"
             >
-              BOOK SERVICE
-            </Button>
+              <Calendar className="h-5 w-5" />
+              <span>BOOK SERVICE</span>
+            </button>
             <a 
               href="tel:6174799911" 
-              className="flex-1 bg-gradient-to-r from-johnson-orange to-orange-500 hover:from-orange-500 hover:to-johnson-orange text-white py-2.5 rounded-md font-bold transition-all duration-300 shadow-lg text-sm touch-target text-center flex items-center justify-center"
-              data-testid="mobile-call-button"
+              className="flex-1 bg-gradient-to-r from-johnson-orange to-orange-500 hover:from-orange-500 hover:to-johnson-orange text-white py-3 rounded-lg font-bold transition-all duration-300 shadow-md text-base touch-target flex items-center justify-center gap-2"
+              data-testid="bottom-call-button"
             >
-              TAP HERE TO CALL
+              <Phone className="h-5 w-5" />
+              <span>CALL NOW</span>
             </a>
           </div>
         </div>

@@ -24,7 +24,7 @@ export default function Home() {
 
   return (
     <>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 pb-20 lg:pb-0">
         <Header onBookService={() => openBookingModal()} />
         <ExpressBooking onBookService={() => openBookingModal()} />
         <ServicesSection onBookService={openBookingModal} />
