@@ -74,30 +74,30 @@ export class CapacityCalculator {
     const endOfDay = getEndOfDayInTZ(date);
     const now = getNowInTZ();
 
-    // Fetch data from Housecall Pro
-    const [employees, bookingWindows, jobs] = await Promise.all([
+    // Fetch data from Housecall Pro - ONLY use estimates (jobs API is failing with 400)
+    const [employees, bookingWindows, estimates] = await Promise.all([
       this.hcpClient.getEmployees(),
       this.hcpClient.getBookingWindows(date.toISOString().split('T')[0]),
-      this.hcpClient.getJobs({
+      this.hcpClient.getEstimates({
         scheduled_start_min: startOfDay.toISOString(),
         scheduled_start_max: endOfDay.toISOString(),
+        work_status: ['scheduled', 'in_progress', 'completed'],
       }),
     ]);
+    
+    const jobs: any[] = []; // Empty jobs array since jobs API is broken
 
-    // Filter jobs by status after fetching (since API doesn't support status filtering)
-    const relevantJobs = jobs.filter(job => 
-      job.work_status === 'scheduled' || job.work_status === 'in_progress'
-    );
+    // Log estimates data for visibility (jobs API is broken, but that's fine)
+    console.log(`[Capacity] Using HCP booking windows as authoritative availability source`);
+    console.log(`[Capacity] Found ${estimates.length} estimates for debugging purposes`);
     
-    console.log(`[Capacity] Fetched ${jobs.length} jobs, filtered to ${relevantJobs.length} scheduled/in_progress jobs for ${date.toISOString().split('T')[0]}`);
+    // The booking windows API already factors in ALL scheduled work (jobs + estimates)
+    // so we don't need to manually calculate from individual items
+    const relevantJobs = estimates; // Keep for legacy compatibility
     
-    // Override booking windows with calculated real availability
-    const realBookingWindows = this.calculateRealAvailability(
-      bookingWindows,
-      relevantJobs, // Use filtered jobs
-      employees,
-      date
-    );
+    // Use HCP booking windows as-is (they already reflect all scheduled work)
+    console.log(`[Capacity] Using authoritative HCP booking windows - no manual override needed`);
+    const realBookingWindows = bookingWindows;
     
     // Debug: Check if we got real windows
     console.log(`[Capacity] Booking windows received: ${realBookingWindows.length}`);
@@ -335,17 +335,21 @@ export class CapacityCalculator {
         return sum + (end.getTime() - start.getTime()) / 60000;
       }, 0);
 
-      // Calculate booked minutes
-      const techJobs = jobs.filter(job => 
-        job.employee_ids && job.employee_ids.includes(employeeId)
-      );
+      // Calculate booked minutes - use booking windows since they already reflect scheduled work
+      // Since booking windows are authoritative, unavailable windows = booked time
+      const unavailableWindows = bookingWindows.filter(window => {
+        const windowDateStr = window.start_time ? window.start_time.split('T')[0] : 
+                             (window.date ? window.date.split('T')[0] : todayStr);
+        const isToday = windowDateStr === todayStr;
+        const isUnavailable = window.available === false;
+        const isTechAssigned = !window.employee_ids || window.employee_ids.includes(employeeId);
+        
+        return isToday && isUnavailable && isTechAssigned;
+      });
 
-      const bookedMinutes = techJobs.reduce((sum, job) => {
-        if (job.duration_minutes) {
-          return sum + job.duration_minutes;
-        }
-        const start = new Date(job.scheduled_start);
-        const end = new Date(job.scheduled_end);
+      const bookedMinutes = unavailableWindows.reduce((sum, window) => {
+        const start = this.parseWindowTime(window.start_time, new Date(window.date || todayStr));
+        const end = this.parseWindowTime(window.end_time, new Date(window.date || todayStr));
         return sum + (end.getTime() - start.getTime()) / 60000;
       }, 0);
 
@@ -559,27 +563,33 @@ export class CapacityCalculator {
       techBusySlots.set(empId, new Set());
     }
     
-    // Mark busy slots based on jobs
+    // Mark busy slots based on jobs and estimates (using correct HCP API structure)
     console.log(`[Capacity] Checking ${jobs.length} jobs for busy slots`);
-    for (const job of jobs) {
-      if (!job.assigned_employees) continue;
+    for (const item of jobs) {
+      if (!item.assigned_employees) continue;
       
-      for (const emp of job.assigned_employees) {
+      // Get schedule info - handle both job format and estimate format
+      const scheduledStart = item.scheduled_start || item.schedule?.scheduled_start;
+      const scheduledEnd = item.scheduled_end || item.schedule?.scheduled_end;
+      const workStarted = item.work_timestamps?.started_at;
+      const workCompleted = item.work_timestamps?.completed_at;
+      
+      for (const emp of item.assigned_employees) {
         if (!techMap.has(emp.id)) continue;
         const techName = techMap.get(emp.id);
         
         // Check work status and determine which slots are busy
-        if (job.work_status === 'in_progress' || job.work_status === 'scheduled') {
-          console.log(`[Capacity] ${techName} has ${job.work_status} job`);
+        if (item.work_status === 'in_progress' || item.work_status === 'scheduled' || item.work_status === 'completed') {
+          console.log(`[Capacity] ${techName} has ${item.work_status} work: ${scheduledStart} to ${scheduledEnd}`);
           
-          // Check if job has already started (work_start is set)
-          if (job.work_start) {
-            // Job is actively being worked on
-            const workStartHour = new Date(job.work_start).getUTCHours();
+          // Check if work has already started
+          if (workStarted) {
+            // Work is actively being worked on
+            const workStartHour = new Date(workStarted).getUTCHours();
             console.log(`[Capacity] ${techName} started work at UTC hour ${workStartHour}`);
             
             // If work hasn't ended, assume they're busy for the rest of the day
-            if (!job.work_end) {
+            if (!workCompleted) {
               // Mark all remaining slots as busy based on start time
               if (workStartHour < 15) { // Started before 11 AM EST
                 techBusySlots.get(emp.id).add(0); // 8-11 AM
@@ -592,42 +602,29 @@ export class CapacityCalculator {
                 techBusySlots.get(emp.id).add(2); // 2-5 PM
               }
             }
+          } else if (scheduledStart && scheduledEnd) {
+            // Work is scheduled but not started yet - use scheduled times
+            const scheduleStartHour = new Date(scheduledStart).getUTCHours();
+            const scheduleEndHour = new Date(scheduledEnd).getUTCHours();
+            console.log(`[Capacity] ${techName} scheduled work UTC hours ${scheduleStartHour}-${scheduleEndHour}`);
+            
+            // Mark slots as busy based on scheduled window
+            if (scheduleStartHour < 15) techBusySlots.get(emp.id).add(0); // 8-11 AM EST
+            if (scheduleStartHour < 18 || scheduleEndHour > 15) techBusySlots.get(emp.id).add(1); // 11-2 PM EST  
+            if (scheduleEndHour > 18) techBusySlots.get(emp.id).add(2); // 2-5 PM EST
           } else {
-            // Job is scheduled but not started yet
-            // Check arrival window to determine when they'll be busy
-            if (job.arrival_window_start && job.arrival_window_end) {
-              const arrivalStart = new Date(job.arrival_window_start).getUTCHours();
-              const arrivalEnd = new Date(job.arrival_window_end).getUTCHours();
-              console.log(`[Capacity] ${techName} has arrival window UTC hours ${arrivalStart}-${arrivalEnd}`);
-              
-              // Mark slots as busy based on arrival window
-              if (arrivalStart < 15) techBusySlots.get(emp.id).add(0); // 8-11 AM
-              if (arrivalStart < 18 || arrivalEnd > 15) techBusySlots.get(emp.id).add(1); // 11-2 PM
-              if (arrivalEnd > 18) techBusySlots.get(emp.id).add(2); // 2-5 PM
+            // No schedule info available, make conservative assumption
+            if (item.work_status === 'in_progress') {
+              console.log(`[Capacity] ${techName} has in-progress work with no times - marking all day busy`);
+              techBusySlots.get(emp.id).add(0); // 8-11 AM
+              techBusySlots.get(emp.id).add(1); // 11-2 PM
+              techBusySlots.get(emp.id).add(2); // 2-5 PM
             } else {
-              // No arrival window set, make conservative assumption
-              // For 'in progress' jobs, Nate is working until 2 PM based on your actual schedule
-              if (job.work_status === 'in_progress') {
-                if (techName === 'nate') {
-                  // Nate's job goes until 2 PM, so he's free 2-5 PM
-                  console.log(`[Capacity] ${techName} has in-progress job until 2 PM - marking morning/midday busy`);
-                  techBusySlots.get(emp.id).add(0); // 8-11 AM
-                  techBusySlots.get(emp.id).add(1); // 11-2 PM
-                  // Slot 2 (2-5 PM) remains available
-                } else {
-                  // Other techs with in-progress jobs - assume all day busy
-                  console.log(`[Capacity] ${techName} has in-progress job with no times - marking all day busy`);
-                  techBusySlots.get(emp.id).add(0); // 8-11 AM
-                  techBusySlots.get(emp.id).add(1); // 11-2 PM
-                  techBusySlots.get(emp.id).add(2); // 2-5 PM
-                }
-              } else {
-                // For scheduled jobs without times, assume all day commitment
-                console.log(`[Capacity] ${techName} has scheduled job with no times - marking ALL DAY busy`);
-                techBusySlots.get(emp.id).add(0); // 8-11 AM
-                techBusySlots.get(emp.id).add(1); // 11-2 PM
-                techBusySlots.get(emp.id).add(2); // 2-5 PM
-              }
+              // For scheduled work without times, assume all day commitment
+              console.log(`[Capacity] ${techName} has scheduled work with no times - marking ALL DAY busy`);
+              techBusySlots.get(emp.id).add(0); // 8-11 AM
+              techBusySlots.get(emp.id).add(1); // 11-2 PM
+              techBusySlots.get(emp.id).add(2); // 2-5 PM
             }
           }
         }

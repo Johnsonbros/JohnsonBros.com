@@ -247,6 +247,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // DEBUG: Raw HCP API responses
+  app.get('/api/debug/hcp-data/:date', async (req, res) => {
+    try {
+      const { date } = req.params; // Format: YYYY-MM-DD
+      const targetDate = new Date(date + 'T00:00:00.000Z');
+      const startOfDay = new Date(targetDate);
+      startOfDay.setUTCHours(0, 0, 0, 0);
+      const endOfDay = new Date(targetDate);
+      endOfDay.setUTCHours(23, 59, 59, 999);
+
+      const calculator = CapacityCalculator.getInstance();
+      const hcpClient = (calculator as any).hcpClient;
+      
+      // Skip jobs API since it's failing with 400 - focus on estimates
+      const estimates = await hcpClient.getEstimates({
+        scheduled_start_min: startOfDay.toISOString(),
+        scheduled_start_max: endOfDay.toISOString(),
+        work_status: ['scheduled', 'in_progress', 'completed'],
+      });
+
+      res.json({
+        date,
+        query: {
+          start: startOfDay.toISOString(),
+          end: endOfDay.toISOString(),
+          work_status: ['scheduled', 'in_progress', 'completed']
+        },
+        estimates: {
+          count: estimates.length,
+          data: estimates // Show all estimates for inspection
+        }
+      });
+    } catch (error) {
+      console.error('Debug HCP data error:', error);
+      res.status(500).json({ error: 'Failed to fetch HCP data', details: error.message });
+    }
+  });
+
   // Health check
   app.get("/healthz", async (_req, res) => {
     res.json({ 
