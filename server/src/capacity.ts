@@ -440,13 +440,13 @@ export class CapacityCalculator {
   private parseWindowTime(timeStr: string, date: Date): Date {
     // Handle both ISO timestamps and simple time strings
     if (timeStr.includes('T') && timeStr.includes('Z')) {
-      // Full ISO timestamp from real API - convert from UTC to EST
+      // Full ISO timestamp from real API
       return new Date(timeStr);
     } else {
-      // Simple time string from mock data
+      // Simple time string in UTC (e.g., "18:00:00" for 2 PM EST)
       const [hours, minutes] = timeStr.split(':').map(Number);
       const result = new Date(date);
-      result.setHours(hours, minutes, 0, 0);
+      result.setUTCHours(hours, minutes || 0, 0, 0);
       return result;
     }
   }
