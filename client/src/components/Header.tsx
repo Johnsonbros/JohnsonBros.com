@@ -79,19 +79,19 @@ export default function Header({ onBookService }: HeaderProps) {
       {/* Main Header */}
       <header className="bg-johnson-blue shadow-lg sticky top-0 z-50 border-t-2 border-johnson-blue">
         {/* Mobile Layout - Simplified */}
-        <div className="lg:hidden px-4 py-2 flex justify-between items-center">
-          {/* Logo - Smaller on Mobile */}
+        <div className="lg:hidden px-3 py-2 flex justify-between items-center gap-2">
+          {/* Logo - Larger and extends across available space */}
           <img 
             src="/JB_logo_New_1756136293648.png" 
             alt="Johnson Bros. Plumbing & Drain Cleaning" 
-            className="h-12 w-auto max-w-[200px] object-contain"
+            className="h-16 flex-grow max-w-none object-contain object-left"
             data-testid="company-logo"
           />
           
           {/* Hamburger Menu Button */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="text-white p-2 hover:bg-white/10 rounded-lg transition-colors"
+            className="text-white p-2 hover:bg-white/10 rounded-lg transition-colors flex-shrink-0"
             aria-label="Toggle menu"
             data-testid="mobile-menu-toggle"
           >
