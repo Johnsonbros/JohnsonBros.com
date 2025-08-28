@@ -309,7 +309,6 @@ export function ServiceHeatMap() {
         <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-1 md:mb-2">
           Where Do We Work? Lets see.....
         </h2>
-        <p className="text-sm text-gray-600 mb-2">Tap map to explore • Darker blue = more customers served</p>
         
         {/* Live statistics bar */}
         <div className="flex flex-wrap justify-center gap-4 mt-3 mb-2">
