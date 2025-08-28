@@ -120,7 +120,8 @@ export class CapacityCalculator {
       techEmployeeMap,
       realBookingWindows,
       jobs,
-      now
+      now,
+      date
     );
 
     // Calculate overall capacity and state with real availability
@@ -140,22 +141,33 @@ export class CapacityCalculator {
 
     // Get available express windows for TODAY only
     const todayStr = date.toISOString().split('T')[0];
+    console.log(`[Express] Starting express windows filtering for ${todayStr}. RealBookingWindows count: ${realBookingWindows.length}`);
     const expressWindows = realBookingWindows
       .filter(window => {
-        // Check if window is for today
-        const windowDate = window.date ? window.date.split('T')[0] : todayStr;
-        if (windowDate !== todayStr) return false;
+        // Check if window is for the target date
+        const windowDate = window.start_time ? window.start_time.split('T')[0] : 
+                          (window.date ? window.date.split('T')[0] : todayStr);
+        if (windowDate !== todayStr) {
+          console.log(`[Express] Window ${window.start_time} filtered out - wrong date. Window: ${windowDate}, Target: ${todayStr}`);
+          return false;
+        }
         
-        const windowEnd = this.parseWindowTime(window.end_time, new Date(window.date || date));
-        const windowStart = this.parseWindowTime(window.start_time, new Date(window.date || date));
+        // For UTC timestamps, parse them directly instead of using parseWindowTime
+        let windowStart, windowEnd;
+        if (window.start_time.includes('T') && window.start_time.includes('Z')) {
+          windowStart = new Date(window.start_time);
+          windowEnd = new Date(window.end_time);
+        } else {
+          windowStart = this.parseWindowTime(window.start_time, new Date(window.date || date));
+          windowEnd = this.parseWindowTime(window.end_time, new Date(window.date || date));
+        }
         
         // Filter out expired windows - must be bookable 30 minutes before start
-        // If current time is past (start time - 30 minutes), hide the slot
         const bookingCutoff = new Date(windowStart.getTime() - 30 * 60000);
-        const isBookable = now < bookingCutoff; // Changed from bookingCutoff > now
-        
-        // Also hide if window has already ended
+        const isBookable = now < bookingCutoff;
         const isNotExpired = now < windowEnd;
+        
+        console.log(`[Express] Window ${window.start_time}: available=${window.available}, isBookable=${isBookable} (now: ${now.toISOString()}, cutoff: ${bookingCutoff.toISOString()}), isNotExpired=${isNotExpired}`);
         
         return window.available && isBookable && isNotExpired;
       })
@@ -183,8 +195,11 @@ export class CapacityCalculator {
         }
       });
 
+    console.log(`[Express] Filtered express windows count: ${expressWindows.length}`, expressWindows);
+
     // Create unique express windows with tech availability
     const uniqueExpressWindows = this.consolidateTimeSlots(expressWindows, techCapacities);
+    console.log(`[Express] Unique express windows count: ${uniqueExpressWindows.length}`, uniqueExpressWindows);
 
     // Calculate expiration time (30 seconds for real-time updates)
     const expiresAt = new Date(Date.now() + 30000);
@@ -238,10 +253,11 @@ export class CapacityCalculator {
     techEmployeeMap: Map<string, string>,
     bookingWindows: any[],
     jobs: any[],
-    now: Date
+    now: Date,
+    targetDate: Date
   ): any {
     const capacities: any = {};
-    const todayStr = now.toISOString().split('T')[0];
+    const todayStr = targetDate.toISOString().split('T')[0];
 
     const techEntries = Array.from(techEmployeeMap.entries());
     
