@@ -209,9 +209,9 @@ export class CapacityCalculator {
       tech: techCapacities,
       ui_copy: uiCopy,
       expires_at: expiresAt.toISOString(),
-      express_eligible: overall.state !== 'NEXT_DAY' ? expressEligible : false,
-      express_windows: overall.state !== 'NEXT_DAY' ? expressWindows : [],
-      unique_express_windows: overall.state !== 'NEXT_DAY' ? uniqueExpressWindows : [],
+      express_eligible: expressEligible,
+      express_windows: expressWindows,
+      unique_express_windows: uniqueExpressWindows,
     };
 
     // Cache for 20 seconds to allow quick updates when jobs change
