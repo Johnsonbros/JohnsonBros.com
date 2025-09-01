@@ -101,7 +101,7 @@ export default function ServicesSection({ onBookService }: ServicesSectionProps)
                     />
                   </div>
                   <div className="flex items-start mb-4">
-                    <div className={`p-2 sm:p-3 rounded-lg mr-3 sm:mr-4 flex-shrink-0 ${getIconColor(service.category)}`}>
+                    <div className={`p-2 sm:p-3 rounded-lg mr-3 sm:mr-4 flex-shrink-0 ${getIconColor(service.category || 'default')}`}>
                       <IconComponent className="h-4 w-4 sm:h-5 sm:w-5" />
                     </div>
                     <h3 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight">{service.name}</h3>

@@ -145,6 +145,39 @@ export type InsertCustomer = z.infer<typeof insertCustomerSchema>;
 export type Appointment = typeof appointments.$inferSelect;
 export type InsertAppointment = z.infer<typeof insertAppointmentSchema>;
 
+// Service type for API responses
+export type Service = {
+  id: string;
+  name: string;
+  price: number;
+  type: string;
+  source?: string;
+  description?: string;
+  category?: string;
+};
+
+// Available time slot type
+export type AvailableTimeSlot = {
+  id: string;
+  startTime: string;
+  endTime: string;
+  date: string;
+  available: boolean;
+  isAvailable: boolean;
+  employeeIds?: string[];
+};
+
+// Review type for testimonials
+export type Review = {
+  id: string;
+  customerName: string;
+  rating: number;
+  text: string;
+  serviceType: string;
+  date: string;
+  verified?: boolean;
+};
+
 // BookingFormData type
 export type BookingFormData = {
   name: string;

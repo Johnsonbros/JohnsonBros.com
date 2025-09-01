@@ -3,7 +3,8 @@ import type { Service, AvailableTimeSlot, Review, BookingFormData } from "@share
 
 export async function getServices(): Promise<Service[]> {
   const response = await apiRequest("GET", "/api/services");
-  return response.json();
+  const data = await response.json();
+  return data.services || [];
 }
 
 export async function getTimeSlots(date: string): Promise<AvailableTimeSlot[]> {

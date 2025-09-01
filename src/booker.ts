@@ -191,7 +191,16 @@ async function createJob(customerId: string, addressId: string, window: { start_
     },
     notes,
     lead_source,
-    tags
+    tags,
+    line_items: [
+      {
+        type: "service",
+        description: "Service Fee",
+        price: 125.00,
+        quantity: 1,
+        notes: "Standard service call fee"
+      }
+    ]
   }) as any;
 
   return { job, arrival_window };

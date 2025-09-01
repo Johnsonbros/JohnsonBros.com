@@ -111,15 +111,6 @@ const customerLookupLimiter = rateLimit({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Get all services
-  app.get("/api/services", async (_req, res) => {
-    try {
-      const services = await storage.getAllServices();
-      res.json(services);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch services" });
-    }
-  });
 
   // Get available time slots for a specific date
   app.get("/api/timeslots/:date", async (req, res) => {
@@ -281,36 +272,103 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const bookingData = req.body;
       
-      console.log(`[Booking] Creating booking:`, JSON.stringify(bookingData, null, 2));
+      console.log(`[Booking] Creating real booking in Housecall Pro:`, JSON.stringify(bookingData, null, 2));
       
-      // Extract customer information
       const customerInfo = bookingData.customer;
+      const housecallClient = HousecallProClient.getInstance();
       
-      // Create appointment with the service type and problem description
-      const appointment = {
-        customerId: null, // We'll handle this in a simplified way
-        serviceType: bookingData.problemDescription || "Clogged kitchen sink", // Use the problem description as service type
-        date: new Date(`${bookingData.selectedDate}T${bookingData.selectedTime}:00`),
-        timeSlot: `${bookingData.selectedTime}:00`,
-        address: customerInfo.address,
-        notes: bookingData.problemDescription,
-        status: "scheduled"
+      // Step 1: Find or create customer
+      let customer;
+      try {
+        const existingCustomers = await housecallClient.searchCustomers({
+          phone: customerInfo.phone,
+          name: `${customerInfo.firstName} ${customerInfo.lastName}`
+        });
+        
+        if (existingCustomers.length > 0) {
+          customer = existingCustomers[0];
+          console.log(`[Booking] Found existing customer: ${customer.first_name} ${customer.last_name}`);
+        } else {
+          customer = await housecallClient.createCustomer({
+            first_name: customerInfo.firstName,
+            last_name: customerInfo.lastName,
+            email: customerInfo.email,
+            mobile_number: customerInfo.phone,
+            addresses: [{
+              street: customerInfo.address,
+              city: "Quincy", // Default city
+              state: "MA",
+              zip: "02169"
+            }]
+          });
+          console.log(`[Booking] Created new customer: ${customer.first_name} ${customer.last_name}`);
+        }
+      } catch (error) {
+        console.error("[Booking] Customer lookup/creation failed:", error);
+        return res.status(500).json({ error: "Failed to find or create customer" });
+      }
+      
+      // Step 2: Get customer address
+      const addressId = customer.addresses?.[0]?.id || await housecallClient.createCustomerAddress(customer.id, {
+        street: customerInfo.address,
+        city: "Quincy",
+        state: "MA", 
+        zip: "02169"
+      });
+      
+      // Step 3: Create job with Service Fee line item
+      const jobData = {
+        customer_id: customer.id,
+        address_id: addressId,
+        schedule: {
+          scheduled_start: bookingData.selectedDate,
+          scheduled_end: bookingData.selectedDate,
+          arrival_window: 120 // 2 hour window
+        },
+        notes: bookingData.problemDescription || "Plumbing service call",
+        lead_source: "Website Booking",
+        tags: ["website", "online_booking"],
+        line_items: [
+          {
+            type: "service",
+            description: "Service Fee",
+            price: 125.00,
+            quantity: 1,
+            notes: "Standard service call fee"
+          }
+        ]
       };
-
-      console.log(`[Booking] Creating appointment in database:`, appointment);
       
-      // For now, just return success since we're using Housecall Pro as the source of truth
-      // The real booking will be created via Housecall Pro API integration
+      const job = await housecallClient.createJob(jobData);
+      console.log(`[Booking] Created job in Housecall Pro: ${job.id}`);
+      
+      // Step 4: Create appointment for the job
+      const appointmentStartTime = new Date(`${bookingData.selectedDate}T${bookingData.selectedTime}:00`);
+      const appointmentEndTime = new Date(appointmentStartTime.getTime() + 2 * 60 * 60 * 1000); // 2 hours later
+      
+      let appointment = null;
+      try {
+        appointment = await housecallClient.createAppointment(job.id, {
+          start_time: appointmentStartTime.toISOString(),
+          end_time: appointmentEndTime.toISOString(),
+          arrival_window_minutes: 120,
+          dispatched_employees_ids: [] // Let Housecall Pro assign employees
+        });
+        console.log(`[Booking] Created appointment: ${appointment.id}`);
+      } catch (error) {
+        console.log(`[Booking] Appointment creation failed, but job created successfully: ${error}`);
+      }
       
       res.json({
         success: true,
-        appointmentId: `apt_${Date.now()}`,
+        jobId: job.id,
+        appointmentId: appointment?.id || null,
         message: "Booking confirmed successfully",
         appointment: {
-          id: `apt_${Date.now()}`,
-          service: bookingData.problemDescription || "Plumbing Service",
-          scheduledDate: appointment.date,
-          estimatedPrice: "$99.00",
+          id: job.id,
+          service: "Service Fee",
+          scheduledDate: appointmentStartTime,
+          estimatedPrice: "$125.00",
           customer: {
             name: `${customerInfo.firstName} ${customerInfo.lastName}`,
             email: customerInfo.email,
@@ -327,11 +385,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get customer reviews
+  // Test simple route
+  app.get("/api/test", (_req, res) => {
+    console.log("TEST ROUTE CALLED");
+    res.json({ message: "Test route working" });
+  });
+
+  // Get services from Housecall Pro
+  app.get("/api/services", async (_req, res) => {
+    console.log("[Services API] Route handler called");
+    try {
+      console.log("[Services API] Starting services fetch...");
+      const housecallClient = HousecallProClient.getInstance();
+      console.log("[Services API] Got client instance");
+      
+      const services = await housecallClient.getServices();
+      console.log(`[Services API] Found ${services.length} services`);
+      
+      // Look for Service Fee service specifically
+      const serviceFeeService = services.find(service => 
+        service.name && service.name.toLowerCase().includes('service fee')
+      );
+      
+      if (serviceFeeService) {
+        console.log(`[Services API] Found Service Fee service: ${serviceFeeService.name} (ID: ${serviceFeeService.id}) - Price: ${serviceFeeService.price}`);
+      } else {
+        console.log("[Services API] Service Fee service not found");
+      }
+      
+      services.forEach(service => {
+        console.log(`[Services API] Service: ${service.name} (ID: ${service.id}) - Price: ${service.price || 'N/A'}`);
+      });
+      
+      res.json({
+        services,
+        serviceFeeService,
+        totalCount: services.length
+      });
+    } catch (error) {
+      console.error("Services fetch error:", error);
+      res.status(500).json({ error: "Failed to fetch services", details: error.message });
+    }
+  });
+
+  // Get customer reviews (from Google Reviews API)
   app.get("/api/reviews", async (_req, res) => {
     try {
-      const reviews = await storage.getAllReviews();
-      res.json(reviews);
+      // Reviews come from Google API - return empty array for now
+      res.json([]);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch reviews" });
     }

@@ -25,8 +25,9 @@ export class MemStorage implements IStorage {
   }
 
   private initializeDefaultData() {
-    // Default services
-    const defaultServices: Service[] = [
+    // Default services - commented out since we're using Housecall Pro services
+    /*
+    const defaultServices = [
       {
         id: "emergency-repair",
         name: "Emergency Repair",
@@ -89,9 +90,8 @@ export class MemStorage implements IStorage {
       },
     ];
 
-    defaultServices.forEach(service => {
-      this.services.set(service.id, service);
-    });
+    // Services now come from Housecall Pro API
+    */
 
     // DISABLED: Don't generate fake time slots - use real Housecall Pro API data
     // The system should only show real availability from the API
@@ -124,43 +124,7 @@ export class MemStorage implements IStorage {
     }
     */
 
-    // Default reviews
-    const defaultReviews: Review[] = [
-      {
-        id: randomUUID(),
-        customerId: null,
-        appointmentId: null,
-        rating: "5.0",
-        comment: "Johnson Bros came out the same day I called for an emergency leak. The technician was professional, clean, and fixed the issue quickly. Highly recommend!",
-        customerName: "Sarah M.",
-        serviceName: "Emergency Repair",
-        createdAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000), // 2 weeks ago
-      },
-      {
-        id: randomUUID(),
-        customerId: null,
-        appointmentId: null,
-        rating: "5.0",
-        comment: "Excellent service! They replaced my water heater and the whole process was smooth. Fair pricing and quality work. Will definitely call them again.",
-        customerName: "Michael R.",
-        serviceName: "Water Heater Service",
-        createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 1 month ago
-      },
-      {
-        id: randomUUID(),
-        customerId: null,
-        appointmentId: null,
-        rating: "5.0",
-        comment: "Fast response time and excellent customer service. The online booking system made it so easy to schedule. The plumber arrived exactly on time!",
-        customerName: "Jennifer L.",
-        serviceName: "Drain Cleaning",
-        createdAt: new Date(Date.now() - 21 * 24 * 60 * 60 * 1000), // 3 weeks ago
-      },
-    ];
-
-    defaultReviews.forEach(review => {
-      this.reviews.set(review.id, review);
-    });
+    // Reviews now come from Google Reviews API - no local storage needed
   }
 
   // Customer methods
@@ -194,26 +158,7 @@ export class MemStorage implements IStorage {
     return customer;
   }
 
-  // Service methods
-  async getAllServices(): Promise<Service[]> {
-    return Array.from(this.services.values());
-  }
-
-  async getService(id: string): Promise<Service | undefined> {
-    return this.services.get(id);
-  }
-
-  async createService(insertService: InsertService): Promise<Service> {
-    const id = randomUUID();
-    const service: Service = {
-      ...insertService,
-      id,
-      housecallProServiceId: null,
-      isEmergency: insertService.isEmergency ?? false,
-    };
-    this.services.set(id, service);
-    return service;
-  }
+  // Services now come from Housecall Pro API - no local storage needed
 
   // Appointment methods
   async getAppointment(id: string): Promise<Appointment | undefined> {
@@ -258,23 +203,7 @@ export class MemStorage implements IStorage {
     );
   }
 
-  // Reviews methods
-  async getAllReviews(): Promise<Review[]> {
-    return Array.from(this.reviews.values()).sort(
-      (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
-    );
-  }
-
-  async createReview(reviewData: Omit<Review, 'id' | 'createdAt'>): Promise<Review> {
-    const id = randomUUID();
-    const review: Review = {
-      ...reviewData,
-      id,
-      createdAt: new Date(),
-    };
-    this.reviews.set(id, review);
-    return review;
-  }
+  // Reviews now come from Google Reviews API - no local storage needed
 }
 
 export const storage = new MemStorage();

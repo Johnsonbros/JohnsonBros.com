@@ -95,24 +95,28 @@ export class HousecallProClient {
   async callAPI<T>(
     endpoint: string,
     params: Record<string, any> = {},
-    options: RetryOptions = {}
+    options: RetryOptions & { method?: string; body?: any } = {}
   ): Promise<T> {
     const {
       maxRetries = 3,
       initialDelay = 1000,
       maxDelay = 10000,
       backoffFactor = 2,
+      method = 'GET',
+      body
     } = options;
 
     // Check circuit breaker
     this.checkCircuitBreaker();
 
-    // Check cache
-    const cacheKey = `${endpoint}:${JSON.stringify(params)}`;
-    const cached = this.cache.get(cacheKey);
-    if (cached && cached.expires > Date.now()) {
-      Logger.debug('Cache hit', { endpoint, cacheHit: true });
-      return cached.data;
+    // Only cache GET requests
+    const cacheKey = `${method}:${endpoint}:${JSON.stringify(params)}`;
+    if (method === 'GET') {
+      const cached = this.cache.get(cacheKey);
+      if (cached && cached.expires > Date.now()) {
+        Logger.debug('Cache hit', { endpoint, cacheHit: true });
+        return cached.data;
+      }
     }
 
     // Use mock data if no API key is configured
@@ -130,24 +134,36 @@ export class HousecallProClient {
 
       try {
         const url = new URL(endpoint, HCP_API_BASE);
-        Object.keys(params).forEach(key => {
-          if (params[key] !== undefined && params[key] !== null) {
-            if (Array.isArray(params[key])) {
-              params[key].forEach((item: string) => url.searchParams.append(key, item));
-            } else {
-              url.searchParams.append(key, params[key].toString());
+        
+        // For GET requests, add params to query string
+        if (method === 'GET') {
+          Object.keys(params).forEach(key => {
+            if (params[key] !== undefined && params[key] !== null) {
+              if (Array.isArray(params[key])) {
+                params[key].forEach((item: string) => url.searchParams.append(key, item));
+              } else {
+                url.searchParams.append(key, params[key].toString());
+              }
             }
-          }
-        });
+          });
+        }
 
         const authHeader = API_KEY.startsWith('Token ') ? API_KEY : `Bearer ${API_KEY}`;
 
-        const response = await fetch(url.toString(), {
+        const fetchOptions: RequestInit = {
+          method,
           headers: {
             'Authorization': authHeader,
             'Content-Type': 'application/json',
           },
-        });
+        };
+
+        // For POST/PUT/PATCH requests, add body
+        if (method !== 'GET' && body) {
+          fetchOptions.body = JSON.stringify(body);
+        }
+
+        const response = await fetch(url.toString(), fetchOptions);
 
         const latency = Date.now() - startTime;
 
@@ -194,16 +210,19 @@ export class HousecallProClient {
 
         const data = await response.json();
 
-        // Cache successful responses for 60-90 seconds
-        const cacheTime = 60000 + Math.random() * 30000;
-        this.cache.set(cacheKey, {
-          data,
-          expires: Date.now() + cacheTime,
-        });
+        // Only cache GET requests
+        if (method === 'GET') {
+          const cacheTime = 60000 + Math.random() * 30000;
+          this.cache.set(cacheKey, {
+            data,
+            expires: Date.now() + cacheTime,
+          });
+        }
 
         Logger.info('API call successful', {
           requestId,
           endpoint,
+          method,
           latency,
           cacheHit: false,
         });
@@ -517,5 +536,116 @@ export class HousecallProClient {
 
 
     return {};
+  }
+
+  async getServices(): Promise<any[]> {
+    try {
+      // Try to get line items from recent jobs first (when circuit breaker allows)
+      try {
+        console.log('[HousecallProClient] Trying to extract line items from recent jobs...');
+        const jobsData = await this.callAPI<{ jobs?: any[] }>('/jobs', {
+          page_size: 20,
+          created_after: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString() // Last 90 days
+        });
+        const jobs = jobsData.jobs || [];
+        
+        const lineItems = new Set();
+        jobs.forEach(job => {
+          if (job.line_items) {
+            job.line_items.forEach((item: any) => {
+              if (item.type === 'service' && item.description) {
+                lineItems.add(JSON.stringify({
+                  id: item.id || `service_${item.description.replace(/\s+/g, '_').toLowerCase()}`,
+                  name: item.description,
+                  price: item.price || item.total || 0,
+                  type: 'service',
+                  source: 'housecall_pro'
+                }));
+              }
+            });
+          }
+        });
+        
+        const uniqueServices = Array.from(lineItems).map(item => JSON.parse(item as string));
+        console.log(`[HousecallProClient] Extracted ${uniqueServices.length} unique services from jobs`);
+        
+        if (uniqueServices.length > 0) {
+          return uniqueServices;
+        }
+      } catch (error: any) {
+        console.log(`[HousecallProClient] Jobs extraction failed:`, error.message);
+      }
+      
+      // Fallback to common plumbing services including Service Fee
+      console.log('[HousecallProClient] Using fallback service definitions');
+      const fallbackServices = [
+        {
+          id: 'service_fee',
+          name: 'Service Fee',
+          price: 125.00,
+          type: 'service',
+          source: 'fallback',
+          description: 'Standard service call fee'
+        },
+        {
+          id: 'drain_cleaning',
+          name: 'Drain Cleaning',
+          price: 150.00,
+          type: 'service',
+          source: 'fallback',
+          description: 'Professional drain cleaning service'
+        },
+        {
+          id: 'emergency_repair',
+          name: 'Emergency Plumbing Repair',
+          price: 200.00,
+          type: 'service',
+          source: 'fallback',
+          description: '24/7 emergency plumbing repair'
+        },
+        {
+          id: 'water_heater_service',
+          name: 'Water Heater Service',
+          price: 175.00,
+          type: 'service',
+          source: 'fallback',
+          description: 'Water heater repair and maintenance'
+        },
+        {
+          id: 'pipe_repair',
+          name: 'Pipe Repair',
+          price: 150.00,
+          type: 'service',
+          source: 'fallback',
+          description: 'Professional pipe repair service'
+        }
+      ];
+      
+      return fallbackServices;
+    } catch (error) {
+      console.error('[HousecallProClient] Error fetching services:', error);
+      throw error;
+    }
+  }
+
+  async createJob(jobData: any): Promise<any> {
+    console.log('[HousecallProClient] Creating job with data:', JSON.stringify(jobData, null, 2));
+    const job = await this.callAPI('/jobs', {}, { method: 'POST', body: jobData });
+    console.log('[HousecallProClient] Job created:', job);
+    return job;
+  }
+
+  async createAppointment(jobId: string, appointmentData: any): Promise<any> {
+    console.log(`[HousecallProClient] Creating appointment for job ${jobId}:`, JSON.stringify(appointmentData, null, 2));
+    const appointment = await this.callAPI(`/jobs/${jobId}/appointments`, {}, { method: 'POST', body: appointmentData });
+    console.log('[HousecallProClient] Appointment created:', appointment);
+    return appointment;
+  }
+
+  async createCustomerAddress(customerId: string, addressData: any): Promise<string> {
+    console.log(`[HousecallProClient] Creating address for customer ${customerId}:`, JSON.stringify(addressData, null, 2));
+    const address = await this.callAPI(`/customers/${customerId}/addresses`, {}, { method: 'POST', body: addressData });
+    console.log('[HousecallProClient] Address created:', address);
+    return address.id;
   }
 }
