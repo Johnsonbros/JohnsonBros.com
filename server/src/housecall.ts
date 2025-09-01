@@ -499,41 +499,6 @@ export class HousecallProClient {
       };
     }
 
-    if (endpoint.includes('/customers')) {
-      console.log('[HousecallProClient] Returning mock customer data - API key may not be working');
-      return {
-        customers: [
-          {
-            id: 'cust_mock_nate',
-            first_name: 'Nate',
-            last_name: 'Johnson',
-            email: 'nate@johnsonbros.com',
-            mobile_number: '6176868763',
-            addresses: [{
-              street: '123 Main St',
-              city: 'Quincy',
-              state: 'MA',
-              zip: '02170'
-            }],
-            created_at: new Date().toISOString(),
-          },
-          {
-            id: 'cust_mock_sarah',
-            first_name: 'Sarah',
-            last_name: 'Davis',
-            email: 'sarah.davis@email.com',
-            mobile_number: '6175551234',
-            addresses: [{
-              street: '456 Oak Ave',
-              city: 'Braintree',
-              state: 'MA',
-              zip: '02184'
-            }],
-            created_at: new Date().toISOString(),
-          },
-        ],
-      };
-    }
 
     return {};
   }
