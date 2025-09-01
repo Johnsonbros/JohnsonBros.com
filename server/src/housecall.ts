@@ -580,12 +580,12 @@ export class HousecallProClient {
       console.log('[HousecallProClient] Using fallback service definitions');
       const fallbackServices = [
         {
-          id: 'service_fee',
-          name: 'Service Fee',
-          price: 125.00,
+          id: 'service_call',
+          name: 'Service call',
+          price: 99.00,
           type: 'service',
           source: 'fallback',
-          description: 'Standard service call fee'
+          description: 'A service call is your first step to resolving any plumbing concerns. Our professional plumber will assess your situation and provide expert solutions.'
         },
         {
           id: 'drain_cleaning',
@@ -646,6 +646,24 @@ export class HousecallProClient {
     console.log(`[HousecallProClient] Creating address for customer ${customerId}:`, JSON.stringify(addressData, null, 2));
     const address = await this.callAPI(`/customers/${customerId}/addresses`, {}, { method: 'POST', body: addressData });
     console.log('[HousecallProClient] Address created:', address);
-    return address.id;
+    return (address as any).id;
+  }
+
+  async createCustomer(customerData: any): Promise<any> {
+    console.log('[HousecallProClient] Creating customer:', JSON.stringify(customerData, null, 2));
+    const customer = await this.callAPI('/customers', {}, { method: 'POST', body: customerData });
+    console.log('[HousecallProClient] Customer created:', customer);
+    return customer;
+  }
+
+  async addJobNote(jobId: string, note: string): Promise<void> {
+    console.log(`[HousecallProClient] Adding note to job ${jobId}:`, note);
+    try {
+      await this.callAPI(`/jobs/${jobId}/notes`, {}, { method: 'POST', body: { content: note } });
+      console.log('[HousecallProClient] Note added successfully');
+    } catch (error) {
+      console.error('[HousecallProClient] Failed to add job note:', error);
+      throw error;
+    }
   }
 }

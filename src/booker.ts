@@ -3,6 +3,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod";
 import { fetch } from "undici";
 import pino from "pino";
+import { getNotificationService } from "../server/src/notifications.js";
 
 const log = pino({ name: "jb-booker", level: process.env.LOG_LEVEL || "info" });
 
@@ -195,10 +196,10 @@ async function createJob(customerId: string, addressId: string, window: { start_
     line_items: [
       {
         type: "service",
-        description: "Service Fee",
-        price: 125.00,
+        description: "Service call",
+        price: 99.00,
         quantity: 1,
-        notes: "Standard service call fee"
+        notes: "A service call is your first step to resolving any plumbing concerns. Our professional plumber will assess your situation and provide expert solutions."
       }
     ]
   }) as any;
@@ -300,6 +301,37 @@ server.registerTool(
       log.error({ err: err?.message, jobId: (job as any).id }, "Failed to create appointment for job");
       // Continue execution - job is still created, just without specific appointment
       // This is better than failing the entire booking
+    }
+
+    // Step 7: Send booking notifications to customer and technicians
+    try {
+      const notificationService = getNotificationService();
+      await notificationService.sendBookingAlerts({
+        customer: {
+          id: customer.id,
+          first_name: customer.first_name,
+          last_name: customer.last_name,
+          email: customer.email,
+          mobile_number: customer.mobile_number
+        },
+        job: {
+          id: (job as any).id,
+          service_type: "Service call",
+          scheduled_start: chosen.start_time,
+          address: `${input.street}, ${input.city}, ${input.state} ${input.zip}`,
+          notes: input.description
+        },
+        appointment: appointmentCreated ? {
+          id: appointmentCreated.id,
+          start_time: chosen.start_time,
+          end_time: chosen.end_time
+        } : undefined,
+        booking_source: "AI Assistant"
+      });
+      log.info({ jobId: (job as any).id }, "MCP booking notifications sent successfully");
+    } catch (notificationError) {
+      log.error({ error: notificationError, jobId: (job as any).id }, "Failed to send MCP booking notifications");
+      // Don't fail the booking if notifications fail
     }
 
     const result = {

@@ -45,7 +45,7 @@ export class NotificationService {
 
       log.info({ jobId: data.job.id }, "All booking notifications sent successfully");
     } catch (error) {
-      log.error({ error: error.message, jobId: data.job.id }, "Failed to send some booking notifications");
+      log.error({ error: error instanceof Error ? error.message : String(error), jobId: data.job.id }, "Failed to send some booking notifications");
       // Don't throw - we don't want notification failures to break booking flow
     }
   }
@@ -93,7 +93,7 @@ Customer has been notified of their appointment details.
       }, "Customer notification logged in job notes");
 
     } catch (error) {
-      log.error({ error: error.message, customerId: data.customer.id }, "Failed to send customer notification");
+      log.error({ error: error instanceof Error ? error.message : String(error), customerId: data.customer.id }, "Failed to send customer notification");
     }
   }
 
@@ -146,7 +146,7 @@ Available technicians: ${activeEmployees.map((emp: any) => emp.first_name + ' ' 
       }, "Technician notification logged in job notes");
 
     } catch (error) {
-      log.error({ error: error.message, jobId: data.job.id }, "Failed to send technician notification");
+      log.error({ error: error instanceof Error ? error.message : String(error), jobId: data.job.id }, "Failed to send technician notification");
     }
   }
 }

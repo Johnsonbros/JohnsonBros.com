@@ -8,6 +8,7 @@ import { eq, sql, and } from "drizzle-orm";
 import { CapacityCalculator } from "./src/capacity";
 import { GoogleAdsBridge } from "./src/ads/bridge";
 import { HousecallProClient } from "./src/housecall";
+import { getNotificationService } from "./src/notifications";
 import rateLimit from "express-rate-limit";
 
 // Housecall Pro API client
@@ -186,17 +187,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              first_name: customer.firstName,
-              last_name: customer.lastName,
+              first_name: customer.name.split(' ')[0] || customer.name,
+              last_name: customer.name.split(' ').slice(1).join(' ') || '',
               email: customer.email,
               mobile_number: customer.phone,
-              addresses: customer.address ? [{
-                street: customer.address,
-                city: 'Quincy',
-                state: 'MA',
-                zip: '02169',
-                country: 'US'
-              }] : []
+              addresses: []
             })
           });
           
@@ -331,10 +326,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         line_items: [
           {
             type: "service",
-            description: "Service Fee",
-            price: 125.00,
+            description: "Service call",
+            price: 99.00,
             quantity: 1,
-            notes: "Standard service call fee"
+            notes: "A service call is your first step to resolving any plumbing concerns. Our professional plumber will assess your situation and provide expert solutions."
           }
         ]
       };
@@ -359,6 +354,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`[Booking] Appointment creation failed, but job created successfully: ${error}`);
       }
       
+      // Step 5: Send booking notifications to customer and technicians
+      try {
+        const notificationService = getNotificationService();
+        await notificationService.sendBookingAlerts({
+          customer: {
+            id: customer.id,
+            first_name: customer.first_name,
+            last_name: customer.last_name,
+            email: customer.email,
+            mobile_number: customer.mobile_number
+          },
+          job: {
+            id: job.id,
+            service_type: "Service call",
+            scheduled_start: appointmentStartTime.toISOString(),
+            address: customerInfo.address,
+            notes: bookingData.problemDescription || "Plumbing service call"
+          },
+          appointment: appointment ? {
+            id: appointment.id,
+            start_time: appointmentStartTime.toISOString(),
+            end_time: appointmentEndTime.toISOString()
+          } : undefined,
+          booking_source: "Website"
+        });
+        console.log(`[Booking] Notifications sent successfully for job ${job.id}`);
+      } catch (notificationError) {
+        console.log(`[Booking] Failed to send notifications: ${notificationError}`);
+        // Don't fail the booking if notifications fail
+      }
+      
       res.json({
         success: true,
         jobId: job.id,
@@ -366,9 +392,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "Booking confirmed successfully",
         appointment: {
           id: job.id,
-          service: "Service Fee",
+          service: "Service call",
           scheduledDate: appointmentStartTime,
-          estimatedPrice: "$125.00",
+          estimatedPrice: "$99.00",
           customer: {
             name: `${customerInfo.firstName} ${customerInfo.lastName}`,
             email: customerInfo.email,
@@ -424,7 +450,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("Services fetch error:", error);
-      res.status(500).json({ error: "Failed to fetch services", details: error.message });
+      res.status(500).json({ error: "Failed to fetch services", details: error instanceof Error ? error.message : String(error) });
     }
   });
 
@@ -517,7 +543,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error('Debug HCP data error:', error);
-      res.status(500).json({ error: 'Failed to fetch HCP data', details: error.message });
+      res.status(500).json({ error: 'Failed to fetch HCP data', details: error instanceof Error ? error.message : String(error) });
     }
   });
 
@@ -649,8 +675,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Appointment not found" });
       }
 
-      const customer = await storage.getCustomer(appointment.customerId);
-      const service = await storage.getService(appointment.serviceId);
+      const customer = appointment.customerId ? await storage.getCustomer(appointment.customerId.toString()) : null;
+      // Service info is stored in serviceType, no separate service table
+      const service = { name: appointment.serviceType, type: appointment.serviceType };
 
       res.json({
         ...appointment,
@@ -1211,13 +1238,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           work_status: job.work_status,
           scheduled_start: job.scheduled_start,
           scheduled_end: job.scheduled_end,
-          assigned_employees: job.assigned_employees || [],
+          assigned_employees: (job as any).assigned_employees || [],
           full_job: job
         }))
       });
       
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: error instanceof Error ? error.message : String(error) });
     }
   });
 

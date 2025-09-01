@@ -1,0 +1,348 @@
+PHP Ai Functions 
+
+Current date and time
+
+PHP script injection 
+
+<?php
+
+// Let's add the current date and time to the bottom of our chatbot's instructions
+add_filter('mwai_ai_query', function ($query) {
+    if (!($query instanceof Meow_MWAI_Query_Text) || $query->scope != 'chatbot') {
+        return $query;
+    }
+    $date_string = current_time('Y-m-d H:i:s',true);
+    $string = "# **The current date and time is $date_string.**";
+    if (isset($query->assistantId) && !empty($query->assistantId)) {
+        if (!isset($query->context) || empty($query->context)) {
+            $query->context = $string;
+        } else {
+            $query->context .= "\n\n".$string;
+        }
+    } else {
+        $query->instructions .= "\n\n".$string;
+    }
+    return $query;
+}, 10, 1);
+
+Create job
+
+Description- books jobs into Housecall pro using knowledge from the conversation
+
+function create_job($api_key, $customer_id, $address_id, $scheduled_start, $scheduled_end, $notes) {
+    // Prepare the URL for the API request
+    $url = "https://api.housecallpro.com/jobs";
+
+    // Prepare the body of the POST request with the job data
+    $body = json_encode([
+        'customer_id' => $customer_id,
+        'address_id' => $address_id,
+        'schedule' => [
+            'scheduled_start' => $scheduled_start,
+            'scheduled_end' => $scheduled_end,
+        ],
+        'total_amount' => 9900,  // Hardcoded total amount (in cents, e.g., $99.00)
+        'lead_source' => 'ZEKE',  // Hardcoded lead source
+        'assigned_employees' => [
+            [
+                'id' => 'Pro_19f45ddb23864f13ba5ffb20710e77e8'  // Hardcoded employee ID
+            ]
+        ],
+        'line_items' => [
+            [
+                'id' => 'olit_9412353009f546e28a0b0fb7c9a96fe2',  // Hardcoded line item ID
+                'name' => 'Service Call - Plumbing Repair',
+                'quantity' => 1,
+                'unit_price' => 9900
+            ]
+        ],
+        'notes' => $notes, // Dynamic private notes
+        'notify_customer' => true,  // Automatically notify the customer
+        'notify_pro' => true        // Automatically notify the technician
+    ]);
+
+    // Output the request body for debugging
+    echo "Request Body: " . $body . "\n";
+
+    // Set up the headers with the API key
+    $args = array(
+        'headers' => array(
+            'Authorization' => 'Bearer ' . $api_key,
+            'Content-Type' => 'application/json'
+        ),
+        'body' => $body,
+        'method' => 'POST'
+    );
+
+    // Make a POST request to the API
+    $response = wp_remote_post($url, $args);
+
+    // Check for any errors in the response
+    if (is_wp_error($response)) {
+        echo "cURL Error: " . $response->get_error_message() . "\n";
+        return array(
+            'error' => true,
+            'message' => $response->get_error_message()
+        );
+    }
+
+    // Retrieve the body of the response
+    $body = wp_remote_retrieve_body($response);
+    $data = json_decode($body, true);
+
+    // Output the response body for debugging
+    echo "Response Body: " . $body . "\n";
+
+    // Check if the job was successfully created
+    if (isset($data['id'])) {
+        return array(
+            'error' => false,
+            'job' => $data
+        );
+    } else {
+        return array(
+            'error' => true,
+            'message' => isset($data['message']) ? $data['message'] : 'An error occurred while creating the job.'
+        );
+    }
+}
+
+Find customer by name or address
+
+Description- this tool fill find a customers information based off full name or address
+
+<?php
+
+function find_customer_by_name_or_address($query, $api_key) {     
+    // Prepare the URL for the API request with the encoded query
+    $url = "https://api.housecallpro.com/customers?q=" . urlencode($query);     
+    $args = array(         
+        'headers' => array(             
+            'Authorization' => 'Bearer ' . $api_key,             
+            'Content-Type' => 'application/json'         
+        )     
+    );      
+
+    // Make a GET request to the API
+    $response = wp_remote_get($url, $args);      
+
+    // Check for any errors in the response
+    if (is_wp_error($response)) {         
+        return array(             
+            'error' => true,             
+            'message' => $response->get_error_message()         
+        );     
+    }      
+
+    // Retrieve the body of the response
+    $body = wp_remote_retrieve_body($response);     
+    $data = json_decode($body, true);      
+
+    // Check if customers were found in the response data
+    if (isset($data['customers']) && count($data['customers']) > 0) {         
+        return array(             
+            'error' => false,             
+            'customers' => $data['customers']         
+        );     
+    } else {         
+        return array(             
+            'error' => false,             
+            'message' => 'No customers found'         
+        );     
+    } 
+}  
+
+// Example usage
+$api_key = 'YOUR_API_KEY_HERE'; 
+$query = 'John Doe'; // or an address like '123 Main St, Quincy, MA' 
+$result = find_customer_by_name_or_address($query, $api_key);  
+
+// Handle the result of the API call
+if ($result['error']) {     
+    // Display error message if an error occurred
+    echo 'Error: ' . $result['message']; 
+} else {     
+    // If customers were found, print them
+    if (isset($result['customers'])) {         
+        echo 'Customers found:';         
+        print_r($result['customers']);     
+    } else {         
+        // If no customers were found, print the message
+        echo 'Message: ' . $result['message'];     
+    } 
+} 
+
+Notes:
+
+// Additional considerations: 
+// 1. Ensure that the API key is kept secure and not hard-coded in production code. 
+// 2. If needed, add more error handling or logging to capture issues that may arise. 
+// 3. Consider implementing pagination or handling rate limits depending on API usage and response size.
+
+
+Fetch current booking window 
+
+Description- this will locate the day and times in a booking window for customers
+Booking windows are from: (8:00am- 11:00am)(11:00am- 2:00pm)(2:00pm- 5:00pm)
+
+<?php
+function fetch_booking_windows($date, $api_key) {
+    $url = "https://api.housecallpro.com/website_builder/schedule_availability?show_for_days=1&start_date=$date";
+
+    $headers = array(
+        "Authorization: Token " . $api_key,
+        "Content-Type: application/json"
+    );
+
+    $ch = curl_init();
+
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+
+    $response = curl_exec($ch);
+
+    if (curl_errno($ch)) {
+        return array(
+            'error' => true,
+            'message' => 'Curl error: ' . curl_error($ch),
+            'available_slots' => []
+        );
+    }
+
+    $data = json_decode($response, true);
+    curl_close($ch);
+
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        return array(
+            'error' => true,
+            'message' => 'Invalid JSON response: ' . json_last_error_msg(),
+            'available_slots' => []
+        );
+    }
+
+    $available_slots = [];
+    if (isset($data['booking_windows']['data']) && is_array($data['booking_windows']['data'])) {
+        foreach ($data['booking_windows']['data'] as $slot) {
+            $available_slots[] = [
+                'start_time' => $slot['start_time'],
+                'end_time' => $slot['end_time'],
+                'available' => $slot['available']
+            ];
+        }
+    }
+
+    if (empty($available_slots)) {
+        return array(
+            'error' => false,
+            'available_slots' => [],
+            'message' => 'No available slots for the selected date. Please try another date or contact us directly at 617-479-9911.'
+        );
+    }
+
+    return array(
+        'error' => false,
+        'available_slots' => $available_slots,
+        'message' => 'Available slots retrieved successfully.'
+    );
+}
+
+$api_key = '9a9ddb62c6234e9ea8b4247c987e3663';
+$date = '2024-08-12';
+
+$result = fetch_booking_windows($date, $api_key);
+
+if ($result['error']) {
+    echo 'Error: ' . $result['message'];
+} else {
+    echo 'Available Slots: ';
+    print_r($result['available_slots']);
+}
+
+
+
+
+
+Create customer 
+Discretion- this tool will create a customer profile in the Housecall pro database
+
+
+
+
+
+
+
+
+
+
+<?php
+
+function create_customer($api_key, $first_name, $last_name, $email, $mobile_number, $street, $city, $zip_code) {
+    // Prepare the URL for the API request
+    $url = "https://api.housecallpro.com/customers";
+
+    // Prepare the body of the POST request with the customer data
+    $body = json_encode([
+        'first_name' => $first_name,
+        'last_name' => $last_name,
+        'email' => $email,
+        'mobile_number' => $mobile_number,
+        'lead_source' => 'ZEKE',  // Set the lead source to "ZEKE"
+        'addresses' => [
+            [
+                'street' => $street,
+                'city' => $city,
+                'state' => 'MA',  // Assuming all addresses are in MA
+                'zip' => $zip_code,
+                'country' => 'USA'  // Assuming all addresses are in the USA
+            ]
+        ]
+    ]);
+
+    // Output the request body for debugging
+    echo "Request Body: " . $body . "\n";
+
+    // Set up the headers with the API key
+    $args = array(
+        'headers' => array(
+            'Authorization' => 'Bearer ' . $api_key,
+            'Content-Type' => 'application/json'
+        ),
+        'body' => $body,
+        'method' => 'POST'
+    );
+
+    // Make a POST request to the API
+    $response = wp_remote_post($url, $args);
+
+    // Check for any errors in the response
+    if (is_wp_error($response)) {
+        echo "cURL Error: " . $response->get_error_message() . "\n";
+        return array(
+            'error' => true,
+            'message' => $response->get_error_message()
+        );
+    }
+
+    // Retrieve the body of the response
+    $body = wp_remote_retrieve_body($response);
+    $data = json_decode($body, true);
+
+    // Output the response body for debugging
+    echo "Response Body: " . $body . "\n";
+
+    // Check if the customer was successfully created
+    if (isset($data['id'])) {
+        return array(
+            'error' => false,
+            'customer' => $data
+        );
+    } else {
+        return array(
+            'error' => true,
+            'message' => isset($data['message']) ? $data['message'] : 'An error occurred while creating the customer.'
+        );
+    }
+}
+
+
