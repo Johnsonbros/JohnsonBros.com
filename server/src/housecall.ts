@@ -301,82 +301,56 @@ export class HousecallProClient {
     try {
       console.log(`[HousecallProClient] Searching for customer:`, searchParams);
       
-      // Clear cache to ensure fresh data
-      this.cache.clear();
+      // Build search query using the 'q' parameter as per API docs
+      // The 'q' parameter searches across name, email, mobile number and address
+      // Try searching by phone first, as it's most unique
+      const params: Record<string, any> = {
+        page_size: 50,
+        page: 1,
+      };
       
-      // Get customers with pagination to ensure we find all customers
-      let allCustomers: any[] = [];
-      let page = 1;
-      let hasMorePages = true;
-      
-      while (hasMorePages && page <= 5) { // Limit to 5 pages for now
-        console.log(`[HousecallProClient] Fetching page ${page} of customers...`);
-        const data = await this.callAPI<{ customers: any[] }>('/customers', {
-          page: page,
-          page_size: 50 // Get more customers per page
-        });
-        
-        const pageCustomers = data.customers || [];
-        allCustomers.push(...pageCustomers);
-        
-        console.log(`[HousecallProClient] Page ${page}: Got ${pageCustomers.length} customers (total: ${allCustomers.length})`);
-        
-        // If we got fewer customers than page_size, we've reached the end
-        hasMorePages = pageCustomers.length === 50;
-        page++;
-        
-        // Small delay between API calls to be respectful
-        if (hasMorePages) {
-          await new Promise(resolve => setTimeout(resolve, 200));
-        }
-      }
-      
-      console.log(`[HousecallProClient] Retrieved ${allCustomers.length} customers from API`);
-      
-      if (allCustomers.length === 0) {
-        console.log('[HousecallProClient] No customers returned from API');
-        return [];
-      }
-      
-      // Filter locally to find matching customers
-      let matches = allCustomers;
-      
-      // Filter by phone if provided
       if (searchParams.phone) {
+        // Search by phone - the API seems to work better with just the phone number
+        const cleanPhone = searchParams.phone.replace(/\D/g, '');
+        params.q = cleanPhone;
+        console.log(`[HousecallProClient] Searching by phone: "${cleanPhone}"`);
+      } else if (searchParams.name) {
+        // Fall back to name search if no phone
+        params.q = searchParams.name;
+        console.log(`[HousecallProClient] Searching by name: "${searchParams.name}"`);
+      }
+      
+      const data = await this.callAPI<{ customers: any[] }>('/customers', params);
+      const customers = data.customers || [];
+      
+      console.log(`[HousecallProClient] API returned ${customers.length} customers`);
+      
+      // If we have both phone and name, filter results to ensure exact match
+      if (searchParams.phone && searchParams.name && customers.length > 0) {
         const searchPhone = searchParams.phone.replace(/\D/g, '');
-        console.log(`[HousecallProClient] Filtering by phone: ${searchPhone}`);
-        
-        matches = matches.filter(customer => {
-          const customerPhone = (customer.mobile_number || '').replace(/\D/g, '');
-          const match = customerPhone === searchPhone;
-          if (match) {
-            console.log(`[HousecallProClient] Phone match found for ${customer.first_name} ${customer.last_name}: ${customer.mobile_number}`);
-          }
-          return match;
-        });
-      }
-      
-      // Filter by name if provided  
-      if (searchParams.name) {
         const searchName = searchParams.name.toLowerCase().trim();
-        console.log(`[HousecallProClient] Filtering by name: "${searchName}"`);
         
-        matches = matches.filter(customer => {
+        const exactMatches = customers.filter(customer => {
+          const customerPhone = (customer.mobile_number || '').replace(/\D/g, '');
           const fullName = `${customer.first_name || ''} ${customer.last_name || ''}`.toLowerCase().trim();
-          const firstNameMatch = (customer.first_name || '').toLowerCase() === searchName.split(' ')[0]?.toLowerCase();
-          const lastNameMatch = (customer.last_name || '').toLowerCase() === searchName.split(' ').slice(1).join(' ').toLowerCase();
-          const fullNameMatch = fullName === searchName;
           
-          const match = fullNameMatch || (firstNameMatch && lastNameMatch);
-          if (match) {
-            console.log(`[HousecallProClient] Name match found: "${fullName}" matches "${searchName}"`);
+          const phoneMatch = customerPhone === searchPhone;
+          const nameMatch = fullName === searchName || 
+                           fullName.includes(searchName) || 
+                           searchName.includes(fullName);
+          
+          if (phoneMatch && nameMatch) {
+            console.log(`[HousecallProClient] Exact match found: ${customer.first_name} ${customer.last_name} (${customer.mobile_number})`);
           }
-          return match;
+          
+          return phoneMatch && nameMatch;
         });
+        
+        console.log(`[HousecallProClient] Filtered to ${exactMatches.length} exact matches`);
+        return exactMatches;
       }
       
-      console.log(`[HousecallProClient] Final filtered results: ${matches.length} customers`);
-      return matches;
+      return customers;
       
     } catch (error) {
       console.error('[HousecallProClient] Customer search failed:', (error as Error).message);
