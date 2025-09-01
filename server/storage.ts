@@ -1,4 +1,4 @@
-import { type Customer, type InsertCustomer, type Service, type InsertService, type Appointment, type InsertAppointment, type AvailableTimeSlot, type Review } from "@shared/schema";
+import { type Customer, type InsertCustomer, type Appointment, type InsertAppointment } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -8,41 +8,20 @@ export interface IStorage {
   getCustomerByPhone(phone: string): Promise<Customer | undefined>;
   createCustomer(customer: InsertCustomer): Promise<Customer>;
   
-  // Service methods
-  getAllServices(): Promise<Service[]>;
-  getService(id: string): Promise<Service | undefined>;
-  createService(service: InsertService): Promise<Service>;
-  
   // Appointment methods
   getAppointment(id: string): Promise<Appointment | undefined>;
   getAppointmentsByCustomer(customerId: string): Promise<Appointment[]>;
-  createAppointment(appointment: Omit<InsertAppointment, 'selectedDate' | 'selectedTime'> & { scheduledDate: Date }): Promise<Appointment>;
+  createAppointment(appointment: InsertAppointment): Promise<Appointment>;
   updateAppointmentStatus(id: string, status: string): Promise<Appointment | undefined>;
-  
-  // Time slots methods
-  getAvailableTimeSlots(date: string): Promise<AvailableTimeSlot[]>;
-  
-  // Reviews methods
-  getAllReviews(): Promise<Review[]>;
-  createReview(review: Omit<Review, 'id' | 'createdAt'>): Promise<Review>;
 }
 
 export class MemStorage implements IStorage {
   private customers: Map<string, Customer>;
-  private services: Map<string, Service>;
   private appointments: Map<string, Appointment>;
-  private timeSlots: Map<string, AvailableTimeSlot>;
-  private reviews: Map<string, Review>;
 
   constructor() {
     this.customers = new Map();
-    this.services = new Map();
     this.appointments = new Map();
-    this.timeSlots = new Map();
-    this.reviews = new Map();
-    
-    // Initialize with default services
-    this.initializeDefaultData();
   }
 
   private initializeDefaultData() {
