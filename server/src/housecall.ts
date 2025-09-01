@@ -314,9 +314,30 @@ export class HousecallProClient {
     }
 
     try {
+      console.log(`[HousecallProClient] Searching customers with params:`, params);
+      
+      // Clear ALL cache to force fresh API calls
+      this.cache.clear();
+      console.log(`[HousecallProClient] Cache cleared, forcing fresh API call`);
+      
       const data = await this.callAPI<{ customers: any[] }>('/customers', params);
+      console.log(`[HousecallProClient] Raw API response:`, JSON.stringify(data, null, 2));
+      console.log(`[HousecallProClient] Found ${data.customers?.length || 0} customers`);
+      
+      if (data.customers && data.customers.length > 0) {
+        data.customers.forEach((customer, index) => {
+          console.log(`[HousecallProClient] Customer ${index + 1}:`, {
+            id: customer.id,
+            name: `${customer.first_name} ${customer.last_name}`,
+            phone: customer.mobile_number,
+            email: customer.email
+          });
+        });
+      }
+      
       return data.customers || [];
     } catch (error) {
+      console.error('[HousecallProClient] Customer search failed:', (error as Error).message);
       Logger.error('Customer search failed', { error: (error as Error).message, searchParams });
       return [];
     }
@@ -473,6 +494,42 @@ export class HousecallProClient {
             scheduled_end: now.toISOString(),
             work_status: 'completed',
             duration_minutes: 60,
+          },
+        ],
+      };
+    }
+
+    if (endpoint.includes('/customers')) {
+      console.log('[HousecallProClient] Returning mock customer data - API key may not be working');
+      return {
+        customers: [
+          {
+            id: 'cust_mock_nate',
+            first_name: 'Nate',
+            last_name: 'Johnson',
+            email: 'nate@johnsonbros.com',
+            mobile_number: '6176868763',
+            addresses: [{
+              street: '123 Main St',
+              city: 'Quincy',
+              state: 'MA',
+              zip: '02170'
+            }],
+            created_at: new Date().toISOString(),
+          },
+          {
+            id: 'cust_mock_sarah',
+            first_name: 'Sarah',
+            last_name: 'Davis',
+            email: 'sarah.davis@email.com',
+            mobile_number: '6175551234',
+            addresses: [{
+              street: '456 Oak Ave',
+              city: 'Braintree',
+              state: 'MA',
+              zip: '02184'
+            }],
+            created_at: new Date().toISOString(),
           },
         ],
       };

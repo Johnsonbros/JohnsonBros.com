@@ -240,11 +240,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Look up customer using Housecall Pro API
+      console.log(`[Customer Lookup] Searching for customer - Name: "${name}", Phone: "${phone}"`);
       const housecallClient = HousecallProClient.getInstance();
       const customers = await housecallClient.searchCustomers({
         phone: phone,
         name: name
       });
+      console.log(`[Customer Lookup] API returned ${customers.length} customers:`, customers.map(c => ({ id: c.id, name: `${c.first_name} ${c.last_name}`, phone: c.mobile_number })));
       
       if (customers.length > 0) {
         // Find best match for phone number
