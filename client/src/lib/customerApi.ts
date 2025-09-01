@@ -14,15 +14,11 @@ export interface LookupCustomerData {
 }
 
 export async function createCustomer(data: CreateCustomerData) {
-  return apiRequest("/api/customers", {
-    method: "POST",
-    body: JSON.stringify(data),
-  });
+  const response = await apiRequest("POST", "/api/customers", data);
+  return response.json();
 }
 
 export async function lookupCustomer(data: LookupCustomerData) {
-  return apiRequest("/api/customers/lookup", {
-    method: "POST",
-    body: JSON.stringify(data),
-  });
+  const response = await apiRequest("POST", "/api/customers/lookup", data);
+  return response.json();
 }
