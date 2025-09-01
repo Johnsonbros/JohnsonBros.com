@@ -231,7 +231,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Lookup existing customer with rate limiting
-  app.post("/api/customers/lookup", customerLookupLimiter, async (req, res) => {
+  app.post("/api/customers/lookup", async (req, res) => {
     try {
       const { phone, name } = req.body;
       

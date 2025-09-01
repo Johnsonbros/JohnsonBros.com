@@ -298,44 +298,86 @@ export class HousecallProClient {
     email?: string;
     name?: string;
   }): Promise<any[]> {
-    const params: Record<string, any> = {
-      page_size: 100,
-    };
-
-    // Add search parameters that Housecall Pro supports
-    if (searchParams.phone) {
-      params.mobile_number = searchParams.phone.replace(/\D/g, ''); // Remove non-digits
-    }
-    if (searchParams.email) {
-      params.email = searchParams.email;
-    }
-    if (searchParams.name) {
-      params.search = searchParams.name; // General search parameter
-    }
-
     try {
-      console.log(`[HousecallProClient] Searching customers with params:`, params);
+      console.log(`[HousecallProClient] Searching for customer:`, searchParams);
       
-      // Clear ALL cache to force fresh API calls
+      // Clear cache to ensure fresh data
       this.cache.clear();
-      console.log(`[HousecallProClient] Cache cleared, forcing fresh API call`);
       
-      const data = await this.callAPI<{ customers: any[] }>('/customers', params);
-      console.log(`[HousecallProClient] Raw API response:`, JSON.stringify(data, null, 2));
-      console.log(`[HousecallProClient] Found ${data.customers?.length || 0} customers`);
+      // Get customers with pagination to ensure we find all customers
+      let allCustomers: any[] = [];
+      let page = 1;
+      let hasMorePages = true;
       
-      if (data.customers && data.customers.length > 0) {
-        data.customers.forEach((customer, index) => {
-          console.log(`[HousecallProClient] Customer ${index + 1}:`, {
-            id: customer.id,
-            name: `${customer.first_name} ${customer.last_name}`,
-            phone: customer.mobile_number,
-            email: customer.email
-          });
+      while (hasMorePages && page <= 5) { // Limit to 5 pages for now
+        console.log(`[HousecallProClient] Fetching page ${page} of customers...`);
+        const data = await this.callAPI<{ customers: any[] }>('/customers', {
+          page: page,
+          page_size: 50 // Get more customers per page
+        });
+        
+        const pageCustomers = data.customers || [];
+        allCustomers.push(...pageCustomers);
+        
+        console.log(`[HousecallProClient] Page ${page}: Got ${pageCustomers.length} customers (total: ${allCustomers.length})`);
+        
+        // If we got fewer customers than page_size, we've reached the end
+        hasMorePages = pageCustomers.length === 50;
+        page++;
+        
+        // Small delay between API calls to be respectful
+        if (hasMorePages) {
+          await new Promise(resolve => setTimeout(resolve, 200));
+        }
+      }
+      
+      console.log(`[HousecallProClient] Retrieved ${allCustomers.length} customers from API`);
+      
+      if (allCustomers.length === 0) {
+        console.log('[HousecallProClient] No customers returned from API');
+        return [];
+      }
+      
+      // Filter locally to find matching customers
+      let matches = allCustomers;
+      
+      // Filter by phone if provided
+      if (searchParams.phone) {
+        const searchPhone = searchParams.phone.replace(/\D/g, '');
+        console.log(`[HousecallProClient] Filtering by phone: ${searchPhone}`);
+        
+        matches = matches.filter(customer => {
+          const customerPhone = (customer.mobile_number || '').replace(/\D/g, '');
+          const match = customerPhone === searchPhone;
+          if (match) {
+            console.log(`[HousecallProClient] Phone match found for ${customer.first_name} ${customer.last_name}: ${customer.mobile_number}`);
+          }
+          return match;
         });
       }
       
-      return data.customers || [];
+      // Filter by name if provided  
+      if (searchParams.name) {
+        const searchName = searchParams.name.toLowerCase().trim();
+        console.log(`[HousecallProClient] Filtering by name: "${searchName}"`);
+        
+        matches = matches.filter(customer => {
+          const fullName = `${customer.first_name || ''} ${customer.last_name || ''}`.toLowerCase().trim();
+          const firstNameMatch = (customer.first_name || '').toLowerCase() === searchName.split(' ')[0]?.toLowerCase();
+          const lastNameMatch = (customer.last_name || '').toLowerCase() === searchName.split(' ').slice(1).join(' ').toLowerCase();
+          const fullNameMatch = fullName === searchName;
+          
+          const match = fullNameMatch || (firstNameMatch && lastNameMatch);
+          if (match) {
+            console.log(`[HousecallProClient] Name match found: "${fullName}" matches "${searchName}"`);
+          }
+          return match;
+        });
+      }
+      
+      console.log(`[HousecallProClient] Final filtered results: ${matches.length} customers`);
+      return matches;
+      
     } catch (error) {
       console.error('[HousecallProClient] Customer search failed:', (error as Error).message);
       Logger.error('Customer search failed', { error: (error as Error).message, searchParams });
