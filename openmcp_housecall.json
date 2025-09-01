@@ -1,13 +1,4 @@
 {
-  "configs": {
-    "housecall": {
-      "HOUSECALL_API_KEY": "YOUR_HOUSECALL_API_KEY"
-    },
-    "jb": {
-      "DEFAULT_DISPATCH_EMPLOYEE_IDS": "",
-      "COMPANY_TZ": "America/New_York"
-    }
-  },
   "servers": {
     "housecall": {
       "type": "openapi",
@@ -28,6 +19,7 @@
       ]
     },
     "jb-booker": {
+      "type": "stdio",
       "command": "npx",
       "args": ["tsx", "src/booker.ts"],
       "env": {
@@ -36,6 +28,11 @@
         "COMPANY_TZ": "{{COMPANY_TZ}}"
       },
       "tools": ["book_service_call"]
+    }
+  },
+  "configs": {
+    "johnson-bros-booking": {
+      "servers": ["housecall", "jb-booker"]
     }
   }
 }
