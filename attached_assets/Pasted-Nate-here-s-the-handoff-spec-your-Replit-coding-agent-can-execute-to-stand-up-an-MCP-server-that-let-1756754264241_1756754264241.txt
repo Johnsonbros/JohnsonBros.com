@@ -1,0 +1,589 @@
+Nate—here’s the handoff spec your Replit coding agent can execute to stand up an MCP server that lets AI assistants (Claude, ChatGPT, Cursor, etc.) book Johnson Bros. service calls directly into Housecall Pro.
+
+⸻
+
+0) Big picture (what we’re building)
+
+We’re deploying a remote MCP server that exposes two layers of tools:
+	1.	Low-level Housecall Pro tools (search customers, create customers, create jobs, list booking windows, create appointments). These come straight from our Housecall v1 OpenAPI spec.  ￼
+	2.	A safe “one-shot” wrapper tool book_service_call that:
+	•	finds the next good booking window (respecting user time preference),
+	•	creates/updates the customer & address,
+	•	creates a job,
+	•	adds a time‑specific appointment,
+	•	returns a confirmation payload for chat UIs.
+
+We’ll compose both with OpenMCP so tools appear as one server. OpenMCP supports mixing OpenAPI‑derived tools with our own stdio server and can run remotely (SSE) or alongside other transports supported by the MCP spec.  ￼
+
+Why this architecture?
+	•	OpenMCP handles the OpenAPI→MCP glue and lets us “remix” multiple servers into one.  ￼
+	•	Our wrapper adds business rules and guardrails so assistants don’t fat‑finger the calendar.
+
+Transports & clients
+	•	MCP officially supports stdio and Streamable HTTP transports; SSE remains widely used and OpenMCP supports it. We’ll run as a remote server for Claude/ChatGPT connectors.  ￼ ￼
+	•	Claude: add as Custom Connector (remote MCP) in Settings.  ￼ ￼
+	•	ChatGPT/OpenAI: “Remote MCP” via Tools/Connectors in the Responses/Agents stack.  ￼ ￼
+
+⸻
+
+1) Repo layout (Replit project)
+
+.
+├─ housecall.v1.yaml                      # Housecall Pro API spec (from Nate)
+├─ openmcp_housecall.json                 # OpenMCP config (augmented below)
+├─ src/
+│  └─ booker.ts                           # Our wrapper MCP tool (stdio)
+├─ package.json
+├─ tsconfig.json
+├─ .replit                                # Replit run command
+└─ README.md
+
+Use the provided files as sources of truth for endpoints, auth headers, and the initial OpenMCP config.
+
+⸻
+
+2) Environment & secrets
+
+Create these Replit Secrets:
+	•	HOUSECALL_API_KEY — Company API Key from Housecall Pro (Authorization header uses the Token prefix).  ￼
+	•	COMPANY_TZ — e.g., America/New_York (used to map “morning/afternoon” correctly).
+	•	DEFAULT_DISPATCH_EMPLOYEE_IDS — optional CSV (e.g., emp_abc,emp_def) to steer which tech(s) we dispatch when creating appointments.
+	•	ALLOW_CONNECT_FROM_ORIGINS — CSV allowed origins (e.g., https://claude.ai,https://chat.openai.com) for CORS when we later enable HTTP transport.
+
+Housecall auth format (header) is Authorization: Token <api-key> per the spec & docs.  ￼  ￼
+
+⸻
+
+3) Install dependencies
+
+npm init -y
+npm install @modelcontextprotocol/sdk zod undici pino
+npm i -D typescript tsx @types/node
+
+The official MCP TS SDK implements servers, tools, and both stdio & Streamable HTTP transports.  ￼ ￼
+
+⸻
+
+4) Config files
+
+package.json
+
+{
+  "name": "jb-mcp-housecall",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "tsx src/booker.ts",
+    "build": "tsc",
+    "start": "node ./dist/booker.js",
+    "openmcp": "npx -y openmcp run --config ./openmcp_housecall.json"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.17.4",
+    "pino": "^9.0.0",
+    "undici": "^6.19.8",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.5.0",
+    "tsx": "^4.16.2",
+    "typescript": "^5.6.3"
+  }
+}
+
+tsconfig.json
+
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM"],
+    "module": "ES2022",
+    "moduleResolution": "Bundler",
+    "outDir": "dist",
+    "rootDir": "src",
+    "esModuleInterop": true,
+    "strict": true,
+    "skipLibCheck": true
+  },
+  "include": ["src"]
+}
+
+.replit
+
+run = "npm run openmcp"
+
+
+⸻
+
+5) OpenMCP config (augmented)
+
+Start from the uploaded config and add our stdio wrapper server (jb-booker). This exposes both the raw Housecall endpoints (cleanly whitelisted) and the single safe book_service_call tool.
+
+Base file you uploaded already maps the Housecall spec + auth & limits the tools to exactly what we need.  ￼
+
+openmcp_housecall.json
+
+{
+  "configs": {
+    "housecall": {
+      "HOUSECALL_API_KEY": "YOUR_HOUSECALL_API_KEY"
+    },
+    "jb": {
+      "DEFAULT_DISPATCH_EMPLOYEE_IDS": "",
+      "COMPANY_TZ": "America/New_York"
+    }
+  },
+  "servers": {
+    "housecall": {
+      "type": "openapi",
+      "openapi": "./housecall.v1.yaml",
+      "serverUrl": "https://api.housecallpro.com",
+      "headers": {
+        "Authorization": "Token {{HOUSECALL_API_KEY}}",
+        "Content-Type": "application/json"
+      },
+      "tools": [
+        "get-company-schedule-availability",
+        "get-company-schedule-booking-windows-availability",
+        "get-v1-customers",
+        "post-customers",
+        "post-jobs",
+        "post-jobs-job_id-appointments"
+      ]
+    },
+    "jb-booker": {
+      "command": "node",
+      "args": ["./dist/booker.js"],
+      "env": {
+        "HOUSECALL_API_KEY": "{{HOUSECALL_API_KEY}}",
+        "DEFAULT_DISPATCH_EMPLOYEE_IDS": "{{DEFAULT_DISPATCH_EMPLOYEE_IDS}}",
+        "COMPANY_TZ": "{{COMPANY_TZ}}"
+      },
+      "tools": ["book_service_call"]
+    }
+  }
+}
+
+OpenMCP supports mixing an OpenAPI server and a stdio server in one openmcp.json, presenting them as one MCP server to clients. Run with npx -y openmcp run --config ....  ￼
+
+⸻
+
+6) Wrapper tool implementation
+
+src/booker.ts
+
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { z } from "zod";
+import { fetch } from "undici";
+import pino from "pino";
+
+const log = pino({ name: "jb-booker", level: process.env.LOG_LEVEL || "info" });
+
+const HOUSECALL_API_KEY = process.env.HOUSECALL_API_KEY;
+if (!HOUSECALL_API_KEY) {
+  throw new Error("HOUSECALL_API_KEY is required");
+}
+const COMPANY_TZ = process.env.COMPANY_TZ || "America/New_York";
+const DEFAULT_DISPATCH_EMPLOYEE_IDS = (process.env.DEFAULT_DISPATCH_EMPLOYEE_IDS || "")
+  .split(",")
+  .map(s => s.trim())
+  .filter(Boolean);
+
+const HCP_BASE = "https://api.housecallpro.com";
+
+const BookInput = z.object({
+  first_name: z.string().min(1),
+  last_name: z.string().min(1),
+  phone: z.string().min(7),
+  email: z.string().email().optional(),
+  street: z.string().min(1),
+  street_line_2: z.string().optional(),
+  city: z.string().min(1),
+  state: z.string().min(2),
+  zip: z.string().min(3),
+  country: z.string().default("USA"),
+  description: z.string().min(3),
+  lead_source: z.string().default("AI Assistant"),
+  time_preference: z.enum(["any", "morning", "afternoon", "evening"]).default("any"),
+  earliest_date: z.string().optional(),   // YYYY-MM-DD
+  latest_date: z.string().optional(),     // YYYY-MM-DD
+  show_for_days: z.number().int().min(1).max(30).default(7),
+  tags: z.array(z.string()).default(["AI booking"])
+});
+
+type BookInput = z.infer<typeof BookInput>;
+
+function hcpHeaders() {
+  return {
+    "Authorization": `Token ${HOUSECALL_API_KEY}`,
+    "Content-Type": "application/json"
+  };
+}
+
+async function hcpGet(path: string, query?: Record<string, string | number | boolean | undefined>) {
+  const url = new URL(path, HCP_BASE);
+  if (query) Object.entries(query).forEach(([k, v]) => {
+    if (v !== undefined) url.searchParams.set(k, String(v));
+  });
+  const res = await fetch(url, { headers: hcpHeaders() });
+  if (!res.ok) throw new Error(`GET ${url} -> ${res.status} ${await res.text()}`);
+  return res.json();
+}
+
+async function hcpPost(path: string, body: unknown) {
+  const url = new URL(path, HCP_BASE);
+  const res = await fetch(url, {
+    method: "POST",
+    headers: hcpHeaders(),
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) throw new Error(`POST ${url} -> ${res.status} ${await res.text()}`);
+  return res.json();
+}
+
+/** Choose a booking window by time-of-day preference in COMPANY_TZ */
+function chooseWindow(windows: Array<{ start_time: string; end_time: string; available: boolean }>,
+                      pref: "any" | "morning" | "afternoon" | "evening") {
+  const fmt = new Intl.DateTimeFormat("en-US", {
+    hour: "2-digit", hour12: false, timeZone: COMPANY_TZ
+  });
+
+  function hourLocal(iso: string) {
+    const d = new Date(iso);
+    const parts = fmt.formatToParts(d);
+    const hh = Number(parts.find(p => p.type === "hour")?.value ?? "0");
+    return hh;
+  }
+
+  const inPref = (startIso: string) => {
+    const h = hourLocal(startIso);
+    if (pref === "any") return true;
+    if (pref === "morning") return h >= 7 && h < 12;
+    if (pref === "afternoon") return h >= 12 && h < 17;
+    if (pref === "evening") return h >= 17 && h < 21;
+    return true;
+  };
+
+  const candidates = windows.filter(w => w.available && inPref(w.start_time));
+  return candidates[0] || windows.find(w => w.available);
+}
+
+async function findOrCreateCustomer(input: BookInput) {
+  // Try to find by phone/email using ?q
+  const q = input.email || input.phone;
+  const search = await hcpGet("/customers", { q, page_size: 1 });
+  const existing = (search.customers || [])[0];
+  if (existing?.id) return existing;
+
+  // Create new customer with address
+  const created = await hcpPost("/customers", {
+    first_name: input.first_name,
+    last_name: input.last_name,
+    email: input.email,
+    mobile_number: input.phone,
+    notifications_enabled: true,
+    lead_source: input.lead_source,
+    tags: input.tags,
+    addresses: [{
+      street: input.street,
+      street_line_2: input.street_line_2 || null,
+      city: input.city,
+      state: input.state,
+      zip: input.zip,
+      country: input.country
+    }]
+  });
+  return created;
+}
+
+function toYmd(dateIso: string) {
+  return new Date(dateIso).toISOString().slice(0, 10);
+}
+
+function minutesBetween(aIso: string, bIso: string) {
+  const diffMs = +new Date(bIso) - +new Date(aIso);
+  return Math.max(30, Math.round(diffMs / 60000)); // minimum 30 min
+}
+
+async function getPrimaryAddressId(customer: any, input: BookInput) {
+  // Prefer the one we just created (if present)
+  const fromCreate = customer?.addresses?.[0]?.id;
+  if (fromCreate) return fromCreate;
+
+  // Otherwise try to look up addresses for the customer (fallback)
+  // (The spec provides GET /customers/{id}/addresses; some tenants may need it.)
+  // If not available, re-create:
+  const addr = await hcpPost(`/customers/${customer.id}/addresses`, {
+    street: input.street,
+    street_line_2: input.street_line_2 || null,
+    city: input.city,
+    state: input.state,
+    zip: input.zip,
+    country: input.country
+  });
+  return addr.id;
+}
+
+async function createJob(customerId: string, addressId: string, window: { start_time: string; end_time: string }, notes: string, lead_source: string, tags: string[]) {
+  const scheduled_start = toYmd(window.start_time);
+  const scheduled_end = toYmd(window.end_time);
+  const arrival_window = minutesBetween(window.start_time, window.end_time);
+
+  const job = await hcpPost("/jobs", {
+    customer_id: customerId,
+    address_id: addressId,
+    schedule: {
+      scheduled_start,
+      scheduled_end,
+      arrival_window
+    },
+    notes,
+    lead_source,
+    tags
+  });
+
+  return { job, arrival_window };
+}
+
+async function createAppointment(jobId: string, window: { start_time: string; end_time: string }, arrivalWindowMinutes: number) {
+  // Housecall requires dispatched_employees_ids in the request schema.
+  // We either use explicit IDs from env or try to proceed with an empty list (tenant-dependent).
+  const dispatched_employees_ids = DEFAULT_DISPATCH_EMPLOYEE_IDS.length > 0 ? DEFAULT_DISPATCH_EMPLOYEE_IDS : [];
+
+  const appt = await hcpPost(`/jobs/${jobId}/appointments`, {
+    start_time: window.start_time,
+    end_time: window.end_time,
+    arrival_window_minutes: arrivalWindowMinutes,
+    dispatched_employees_ids
+  });
+  return appt;
+}
+
+const server = new McpServer({
+  name: "jb-booker",
+  version: "1.0.0"
+});
+
+server.registerTool(
+  "book_service_call",
+  {
+    title: "Book a Johnson Bros. Plumbing service visit",
+    description: "Creates/updates a customer, finds an available window, creates a job and appointment in Housecall Pro.",
+    inputSchema: BookInput
+  },
+  async (raw) => {
+    const input = BookInput.parse(raw);
+    log.info({ input }, "book_service_call: start");
+
+    // Step 1: fetch booking windows
+    const params: Record<string, string> = {};
+    if (input.earliest_date) params.start_date = input.earliest_date;
+    if (input.show_for_days) params.show_for_days = String(input.show_for_days);
+
+    const bw = await hcpGet("/company/schedule_availability/booking_windows", params);
+    const windows: Array<{ start_time: string; end_time: string; available: boolean }> = bw.booking_windows || [];
+
+    if (!windows.length) {
+      return {
+        content: [{
+          type: "text",
+          text: "No available booking windows were returned by Housecall Pro. Try expanding the date range."
+        }]
+      };
+    }
+
+    // Step 2: choose a window by time-of-day preference
+    const chosen = chooseWindow(windows, input.time_preference);
+    if (!chosen) {
+      return {
+        content: [{ type: "text", text: "No booking window matched the time preference. Please try a different preference or date range." }]
+      };
+    }
+
+    // Step 3: find or create customer
+    const customer = await findOrCreateCustomer(input);
+
+    // Step 4: get address id (create if needed)
+    const addressId = await getPrimaryAddressId(customer, input);
+
+    // Step 5: create job with day + arrival window
+    const { job, arrival_window } = await createJob(customer.id, addressId, chosen, input.description, input.lead_source, input.tags);
+
+    // Step 6: add appointment with concrete start/end (time on the day)
+    let appointmentCreated: any = null;
+    try {
+      appointmentCreated = await createAppointment(job.id, chosen, arrival_window);
+    } catch (err: any) {
+      log.warn({ err: err?.message }, "createAppointment failed; job created without a specific appointment");
+    }
+
+    const result = {
+      job_id: job.id,
+      appointment_id: appointmentCreated?.id || null,
+      scheduled_start: chosen.start_time,
+      scheduled_end: chosen.end_time,
+      arrival_window_minutes: arrival_window,
+      summary: `Booked for ${toYmd(chosen.start_time)} (${input.time_preference})`,
+      customer_id: customer.id
+    };
+
+    log.info({ result }, "book_service_call: success");
+
+    return {
+      content: [
+        { type: "text", text: JSON.stringify(result, null, 2) }
+      ]
+    };
+  }
+);
+
+const transport = new StdioServerTransport();
+await server.connect(transport);
+
+Notes for the reviewer (important details tied to the official spec/features):
+	•	Low-level endpoints & schemas (customers, jobs, appointments, booking windows) are from Housecall v1. The Authorization: Token ... header and the availability endpoints are defined in the uploaded OpenAPI.  ￼
+	•	OpenMCP’s config format permits a mixed server (OpenAPI + stdio). That’s what openmcp_housecall.json does above.  ￼
+	•	MCP TypeScript SDK usage (McpServer, StdioServerTransport) follows the official Quickstart.  ￼
+
+⸻
+
+7) Build & run (Replit)
+	1.	Drop both uploaded files into repo root:
+	•	housecall.v1.yaml (exactly as provided)  ￼
+	•	openmcp_housecall.json (replace with the augmented version above)  ￼
+	2.	Install & build:
+
+npm install
+npm run build
+
+	3.	Start OpenMCP (which launches our stdio server and exposes Housecall tools):
+
+npm run openmcp
+
+OpenMCP exposes a remote MCP server (SSE) appropriate for Claude/other MCP clients per its README.  ￼
+
+⸻
+
+8) Connect clients (Claude & ChatGPT)
+
+Claude (Custom Connector → Remote MCP)
+	•	Claude > Settings → Connectors → Add custom connector
+	•	Enter your Replit HTTPS URL (or custom domain) to the OpenMCP endpoint.
+	•	Save. You’ll then see tools such as:
+	•	book_service_call
+	•	get-company-schedule-booking-windows-availability
+	•	post-customers, post-jobs, post-jobs-job_id-appointments, etc.
+
+Anthropic’s docs: remote MCP custom connectors in Claude Desktop/Web and mobile.  ￼
+
+ChatGPT / OpenAI
+	•	In the OpenAI Responses/Agents stack, add a Remote MCP connector with the server URL.  ￼ ￼
+
+The MCP spec currently supports stdio and Streamable HTTP transports; OpenMCP offers SSE compatibility widely supported by clients. We can upgrade to Streamable HTTP later with a small Express wrapper if needed.  ￼ ￼
+
+⸻
+
+9) Verification tools (dev-only)
+
+Use the MCP Inspector to test this server end‑to‑end:
+	•	npx @modelcontextprotocol/inspector and connect to the remote URL to list/call tools.  ￼ ￼
+
+⸻
+
+10) Business rules baked into book_service_call
+	•	Lead source defaults to AI Assistant; admin can filter these jobs cleanly. (Field exists on Jobs/Customers in the spec.)  ￼
+	•	Auto‑tag as AI booking.
+	•	Time windows obey “morning/afternoon/evening” in our company time zone (env var).
+	•	Address handling: if the customer has no address, we create one; if we just created the customer, we reuse the new address.  ￼
+	•	Appointment dispatch: provide dispatched_employees_ids if configured. Schema requires it; if omitted and tenant rejects, the job is still created (handlers return a clear message).  ￼
+
+⸻
+
+11) Operational hardening (minimum viable guardrails)
+	•	Secrets: never log HOUSECALL_API_KEY. Keep request/response logs redacted.
+	•	Rate limits: Housecall imposes practical limits; avoid loops; batch reads conservatively. (Use page_size=1 for search.)  ￼
+	•	Monitoring: use Replit logs; add LOG_LEVEL=debug temporarily during testing.
+	•	Rollback plan: if appointment creation fails (e.g., missing dispatch IDs), wrapper returns success for the Job + “needs dispatch” note so your dispatcher can assign a tech manually.
+
+⸻
+
+12) (Optional) Upgrade to Streamable HTTP transport
+
+For maximum forward‑compatibility with the newest MCP clients, we can run our own Express server using Streamable HTTP transport from the TS SDK (supports stateless sessions & modern clients), with fallback SSE if you need legacy support.  ￼
+
+Skeleton (future enhancement):
+
+// src/httpServer.ts (not required today)
+// import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+// const transport = new StreamableHTTPServerTransport({ /* cors, sessions */ });
+// await server.connect(transport);
+// app.all("/mcp", (req, res) => transport.handle(req, res));
+
+The SDK docs show both Streamable HTTP and a legacy SSE fallback pattern if needed.  ￼
+
+⸻
+
+13) QA script (what the agent should test)
+	1.	List booking windows
+	•	Call get-company-schedule-booking-windows-availability with { "show_for_days": 7 }.
+	2.	Wrapper dry run
+	•	Call book_service_call with:
+
+{
+  "first_name":"Carolina",
+  "last_name":"Johnson",
+  "phone":"617-555-0101",
+  "email":"carolina@example.com",
+  "street":"55 Brighton St",
+  "city":"Abington",
+  "state":"MA",
+  "zip":"02351",
+  "description":"Kitchen sink slow drain. Possible clog.",
+  "time_preference":"morning"
+}
+
+
+	•	Expect JSON containing job_id, scheduled_start/end, and possibly appointment_id.
+
+	3.	Housecall back-check
+	•	In HCP, confirm the customer & job exist for that date and (if dispatch IDs provided) an appointment block exists.
+
+⸻
+
+14) Acceptance criteria (what “done” looks like)
+	•	OpenMCP server is reachable over HTTPS from Replit (or your custom domain) and shows both:
+	•	Housecall tools (get-company-schedule-booking-windows-availability, post-customers, post-jobs, post-jobs-job_id-appointments).
+	•	book_service_call wrapper.
+	•	book_service_call successfully creates a job and, when dispatch IDs are configured, also creates an appointment.
+	•	Claude can call the tools through Custom Connector (remote MCP).  ￼
+	•	Logs omit secrets and include useful trace (request id, tool name, result summary).
+
+⸻
+
+15) Notes the agent must honor (from our sources)
+	•	Auth header must use the “Token” prefix (not Bearer) per Housecall’s security scheme & docs.  ￼  ￼
+	•	Booking windows endpoint semantics and payload shape match the spec (start_time, end_time, available).  ￼
+	•	OpenMCP config format allows mixing OpenAPI and stdio servers in one openmcp.json.  ￼
+	•	MCP transports: stdio + Streamable HTTP are current standards; SSE remains in common use and is supported in OpenMCP.  ￼ ￼
+
+⸻
+
+Final operational tip (wearing our co‑owner hat)
+
+Flag all AI‑booked jobs with a visible tag and lead source so we can track conversion and NPS. Then, every Friday, pull a small report on:
+	•	Jobs scheduled via book_service_call vs. total online bookings,
+	•	Reschedules/cancellations,
+	•	Internal re-dispatches (proxy for mismatch between window selection and real tech availability).
+
+If those metrics drift, we tune: time‑of‑day bias, employee dispatch IDs, or expand show_for_days to smooth peak loads.
+
+⸻
+
+When you’re ready for iteration 2, we can add:
+	•	Tech matching by job type + proximity (use HCP employees & calendar to avoid conflicts),
+	•	Geo-fencing by service area,
+	•	“Emergency” fast track that compresses to the very next available window within the next 24 hours.
+
+This plan is buildable today with the files you provided and the references above.

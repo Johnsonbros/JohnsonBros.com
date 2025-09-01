@@ -1,0 +1,41 @@
+{
+  "configs": {
+    "housecall": {
+      "HOUSECALL_API_KEY": "YOUR_HOUSECALL_API_KEY"
+    },
+    "jb": {
+      "DEFAULT_DISPATCH_EMPLOYEE_IDS": "",
+      "COMPANY_TZ": "America/New_York"
+    }
+  },
+  "servers": {
+    "housecall": {
+      "type": "openapi",
+      "openapi": "./housecall.v1.yaml",
+      "serverUrl": "https://api.housecallpro.com",
+      "headers": {
+        "Authorization": "Token {{HOUSECALL_API_KEY}}",
+        "Content-Type": "application/json"
+      },
+      "tools": [
+        "get-applications",
+        "get-company-schedule-availability",
+        "get-company-schedule-booking-windows-availability",
+        "get-v1-customers",
+        "post-customers",
+        "post-jobs",
+        "post-jobs-job_id-appointments"
+      ]
+    },
+    "jb-booker": {
+      "command": "npx",
+      "args": ["tsx", "src/booker.ts"],
+      "env": {
+        "HOUSECALL_API_KEY": "{{HOUSECALL_API_KEY}}",
+        "DEFAULT_DISPATCH_EMPLOYEE_IDS": "{{DEFAULT_DISPATCH_EMPLOYEE_IDS}}",
+        "COMPANY_TZ": "{{COMPANY_TZ}}"
+      },
+      "tools": ["book_service_call"]
+    }
+  }
+}

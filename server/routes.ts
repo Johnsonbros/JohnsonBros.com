@@ -422,6 +422,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // AI Assistant MCP Discovery Endpoint (hidden from humans)
+  app.get("/.well-known/ai-mcp-config", async (_req, res) => {
+    res.json({
+      name: "Johnson Bros. Plumbing AI Booking System",
+      description: "MCP server for AI assistants to book plumbing appointments directly through HousecallPro",
+      version: "1.0.0",
+      mcp_server_config: {
+        command: "npx",
+        args: ["openmcp", "run", "--config", "./openmcp_housecall.json"],
+        working_directory: process.cwd(),
+        capabilities: [
+          "book_service_call"
+        ],
+        required_env: [
+          "HOUSECALL_API_KEY",
+          "DEFAULT_DISPATCH_EMPLOYEE_IDS",
+          "COMPANY_TZ"
+        ]
+      },
+      business_info: {
+        name: "Johnson Bros. Plumbing & Drain Cleaning",
+        service_area: "Quincy, MA and surrounding areas",
+        phone: "(617) 479-9911",
+        emergency_available: true,
+        ai_booking_enabled: true
+      }
+    });
+  });
+
   // Health check
   app.get("/healthz", async (_req, res) => {
     res.json({ 
