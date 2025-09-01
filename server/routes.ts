@@ -8,7 +8,6 @@ import { eq, sql, and } from "drizzle-orm";
 import { CapacityCalculator } from "./src/capacity";
 import { GoogleAdsBridge } from "./src/ads/bridge";
 import { HousecallProClient } from "./src/housecall";
-import { getNotificationService } from "./src/notifications";
 import rateLimit from "express-rate-limit";
 
 // Housecall Pro API client
@@ -311,7 +310,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         zip: "02169"
       });
       
-      // Step 3: Create job with Service Fee line item
+      // Step 3: Create job with hardcoded line item and employee assignment
       const jobData = {
         customer_id: customer.id,
         address_id: addressId,
@@ -321,21 +320,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
           arrival_window: 120 // 2 hour window
         },
         notes: bookingData.problemDescription || "Plumbing service call",
-        lead_source: "Website Booking",
+        lead_source: "ZEKE",
         tags: ["website", "online_booking"],
+        assigned_employees: [
+          {
+            id: 'pro_19f45ddb23864f13ba5ffb20710e77e8'  // Nate Johnson
+          }
+        ],
         line_items: [
           {
-            type: "service",
-            description: "Service call",
-            price: 99.00,
+            id: 'olit_9412353009f546e28a0b0fb7c9a96fe2',
+            name: 'Service Call - Plumbing Repair',
             quantity: 1,
-            notes: "A service call is your first step to resolving any plumbing concerns. Our professional plumber will assess your situation and provide expert solutions."
+            unit_price: 9900 // $99.00 in cents
           }
-        ]
+        ],
+        notify_customer: true,  // Use built-in Housecall Pro customer notifications
+        notify_pro: true        // Use built-in Housecall Pro technician notifications
       };
       
       const job = await housecallClient.createJob(jobData);
-      console.log(`[Booking] Created job in Housecall Pro: ${job.id}`);
+      console.log(`[Booking] Created job in Housecall Pro: ${job.id} with built-in notifications enabled`);
       
       // Step 4: Create appointment for the job
       const appointmentStartTime = new Date(`${bookingData.selectedDate}T${bookingData.selectedTime}:00`);
@@ -354,36 +359,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`[Booking] Appointment creation failed, but job created successfully: ${error}`);
       }
       
-      // Step 5: Send booking notifications to customer and technicians
-      try {
-        const notificationService = getNotificationService();
-        await notificationService.sendBookingAlerts({
-          customer: {
-            id: customer.id,
-            first_name: customer.first_name,
-            last_name: customer.last_name,
-            email: customer.email,
-            mobile_number: customer.mobile_number
-          },
-          job: {
-            id: job.id,
-            service_type: "Service call",
-            scheduled_start: appointmentStartTime.toISOString(),
-            address: customerInfo.address,
-            notes: bookingData.problemDescription || "Plumbing service call"
-          },
-          appointment: appointment ? {
-            id: appointment.id,
-            start_time: appointmentStartTime.toISOString(),
-            end_time: appointmentEndTime.toISOString()
-          } : undefined,
-          booking_source: "Website"
-        });
-        console.log(`[Booking] Notifications sent successfully for job ${job.id}`);
-      } catch (notificationError) {
-        console.log(`[Booking] Failed to send notifications: ${notificationError}`);
-        // Don't fail the booking if notifications fail
-      }
       
       res.json({
         success: true,

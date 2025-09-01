@@ -3,7 +3,6 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod";
 import { fetch } from "undici";
 import pino from "pino";
-import { getNotificationService } from "../server/src/notifications.js";
 
 const log = pino({ name: "jb-booker", level: process.env.LOG_LEVEL || "info" });
 
@@ -191,17 +190,23 @@ async function createJob(customerId: string, addressId: string, window: { start_
       arrival_window
     },
     notes,
-    lead_source,
+    lead_source: "ZEKE",
     tags,
+    assigned_employees: [
+      {
+        id: 'pro_19f45ddb23864f13ba5ffb20710e77e8'  // Nate Johnson
+      }
+    ],
     line_items: [
       {
-        type: "service",
-        description: "Service call",
-        price: 99.00,
+        id: 'olit_9412353009f546e28a0b0fb7c9a96fe2',
+        name: 'Service Call - Plumbing Repair',
         quantity: 1,
-        notes: "A service call is your first step to resolving any plumbing concerns. Our professional plumber will assess your situation and provide expert solutions."
+        unit_price: 9900 // $99.00 in cents
       }
-    ]
+    ],
+    notify_customer: true,  // Use built-in Housecall Pro customer notifications
+    notify_pro: true        // Use built-in Housecall Pro technician notifications
   }) as any;
 
   return { job, arrival_window };
@@ -303,36 +308,7 @@ server.registerTool(
       // This is better than failing the entire booking
     }
 
-    // Step 7: Send booking notifications to customer and technicians
-    try {
-      const notificationService = getNotificationService();
-      await notificationService.sendBookingAlerts({
-        customer: {
-          id: customer.id,
-          first_name: customer.first_name,
-          last_name: customer.last_name,
-          email: customer.email,
-          mobile_number: customer.mobile_number
-        },
-        job: {
-          id: (job as any).id,
-          service_type: "Service call",
-          scheduled_start: chosen.start_time,
-          address: `${input.street}, ${input.city}, ${input.state} ${input.zip}`,
-          notes: input.description
-        },
-        appointment: appointmentCreated ? {
-          id: appointmentCreated.id,
-          start_time: chosen.start_time,
-          end_time: chosen.end_time
-        } : undefined,
-        booking_source: "AI Assistant"
-      });
-      log.info({ jobId: (job as any).id }, "MCP booking notifications sent successfully");
-    } catch (notificationError) {
-      log.error({ error: notificationError, jobId: (job as any).id }, "Failed to send MCP booking notifications");
-      // Don't fail the booking if notifications fail
-    }
+    log.info({ jobId: (job as any).id }, "MCP booking completed with built-in Housecall Pro notifications");
 
     const result = {
       job_id: (job as any).id,
