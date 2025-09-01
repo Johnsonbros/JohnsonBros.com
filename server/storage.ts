@@ -5,6 +5,7 @@ export interface IStorage {
   // Customer methods
   getCustomer(id: string): Promise<Customer | undefined>;
   getCustomerByEmail(email: string): Promise<Customer | undefined>;
+  getCustomerByPhone(phone: string): Promise<Customer | undefined>;
   createCustomer(customer: InsertCustomer): Promise<Customer>;
   
   // Service methods
@@ -191,6 +192,14 @@ export class MemStorage implements IStorage {
   async getCustomerByEmail(email: string): Promise<Customer | undefined> {
     return Array.from(this.customers.values()).find(
       (customer) => customer.email === email,
+    );
+  }
+
+  async getCustomerByPhone(phone: string): Promise<Customer | undefined> {
+    // Normalize phone number for comparison (remove non-digits)
+    const normalizedPhone = phone.replace(/\D/g, '');
+    return Array.from(this.customers.values()).find(
+      (customer) => customer.phone.replace(/\D/g, '') === normalizedPhone,
     );
   }
 

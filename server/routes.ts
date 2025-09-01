@@ -7,6 +7,7 @@ import { db } from "./db";
 import { eq, sql, and } from "drizzle-orm";
 import { CapacityCalculator } from "./src/capacity";
 import { GoogleAdsBridge } from "./src/ads/bridge";
+import rateLimit from "express-rate-limit";
 
 // Housecall Pro API client
 const HOUSECALL_API_BASE = 'https://api.housecallpro.com';
@@ -99,6 +100,15 @@ function generateTestimonialText(serviceDescription: string): string {
   return defaultTestimonials[Math.floor(Math.random() * defaultTestimonials.length)];
 }
 
+// Rate limiter for customer lookup to prevent abuse
+const customerLookupLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // Limit each IP to 5 requests per windowMs
+  message: 'Too many lookup attempts, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Get all services
   app.get("/api/services", async (_req, res) => {
@@ -125,6 +135,102 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(timeSlots);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch time slots" });
+    }
+  });
+
+  // Create a new customer
+  app.post("/api/customers", async (req, res) => {
+    try {
+      const customerData = insertCustomerSchema.parse(req.body);
+      
+      // Check if customer already exists
+      const existingCustomer = await storage.getCustomerByEmail(customerData.email);
+      if (existingCustomer) {
+        return res.status(409).json({ 
+          error: "Customer with this email already exists",
+          customer: existingCustomer
+        });
+      }
+      
+      const customer = await storage.createCustomer(customerData);
+      
+      // Also create customer in Housecall Pro
+      if (API_KEY) {
+        try {
+          const housecallResponse = await fetch(`${HOUSECALL_API_BASE}/customers`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${API_KEY}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              first_name: customer.firstName,
+              last_name: customer.lastName,
+              email: customer.email,
+              mobile_number: customer.phone,
+              addresses: customer.address ? [{
+                street: customer.address,
+                city: 'Quincy',
+                state: 'MA',
+                zip: '02169',
+                country: 'US'
+              }] : []
+            })
+          });
+          
+          if (housecallResponse.ok) {
+            const housecallCustomer = await housecallResponse.json();
+            // Store the Housecall Pro ID for future reference
+            customer.housecallProId = housecallCustomer.id;
+          }
+        } catch (error) {
+          console.error('Failed to create customer in Housecall Pro:', error);
+          // Continue even if Housecall Pro creation fails
+        }
+      }
+      
+      res.status(201).json({ success: true, customer });
+    } catch (error) {
+      console.error("Customer creation error:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid customer data", details: error.errors });
+      }
+      res.status(500).json({ error: "Failed to create customer" });
+    }
+  });
+  
+  // Lookup existing customer with rate limiting
+  app.post("/api/customers/lookup", customerLookupLimiter, async (req, res) => {
+    try {
+      const { phone, name } = req.body;
+      
+      if (!phone) {
+        return res.status(400).json({ error: "Phone number is required" });
+      }
+      
+      // Look up customer by phone
+      const customer = await storage.getCustomerByPhone(phone);
+      
+      if (customer) {
+        // Verify name matches (case-insensitive)
+        if (name) {
+          const fullName = `${customer.firstName} ${customer.lastName}`.toLowerCase();
+          const searchName = name.toLowerCase();
+          
+          if (!fullName.includes(searchName) && !searchName.includes(fullName)) {
+            return res.status(404).json({ 
+              error: "No customer found with that phone number and name combination" 
+            });
+          }
+        }
+        
+        res.json({ success: true, customer });
+      } else {
+        res.status(404).json({ error: "Customer not found" });
+      }
+    } catch (error) {
+      console.error("Customer lookup error:", error);
+      res.status(500).json({ error: "Failed to lookup customer" });
     }
   });
 

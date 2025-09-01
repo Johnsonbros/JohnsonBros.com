@@ -9,26 +9,64 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { getServices, getTimeSlots, createBooking, checkServiceArea } from "@/lib/housecallApi";
+import { createCustomer, lookupCustomer } from "@/lib/customerApi";
 import { useToast } from "@/hooks/use-toast";
-import { Calendar, X, AlertTriangle, Droplets, Flame, Wrench, Settings, Home, Zap } from "lucide-react";
+import { Calendar, X, AlertTriangle, Droplets, Flame, Wrench, Settings, Home, Zap, User, UserPlus, Clock, DollarSign } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { z } from "zod";
-import type { Service, AvailableTimeSlot, BookingFormData } from "@shared/schema";
 import { formatTimeWindowEST, convert24to12Hour } from "@/lib/timeUtils";
 
-const bookingFormSchema = z.object({
-  service: z.string().min(1, "Please select a service"),
-  selectedDate: z.string().min(1, "Please select a date"),
-  selectedTime: z.string().min(1, "Please select a time"),
+// Types based on schema
+interface Service {
+  id: string;
+  name: string;
+  description: string;
+  basePrice: string;
+  category: string;
+  duration: string;
+  isEmergency: boolean;
+}
+
+interface AvailableTimeSlot {
+  id: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  isAvailable: boolean;
+}
+
+interface Customer {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  address: string;
+}
+
+// New Customer Form Schema
+const newCustomerSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
   email: z.string().email("Invalid email address"),
   phone: z.string().min(10, "Phone number must be at least 10 digits"),
   address: z.string().min(1, "Service address is required"),
+});
+
+// Returning Customer Form Schema
+const returningCustomerSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  phone: z.string().min(10, "Phone number must be at least 10 digits"),
+});
+
+// Problem Description Schema
+const problemDescriptionSchema = z.object({
   problemDescription: z.string().optional(),
 });
 
-type BookingFormValues = z.infer<typeof bookingFormSchema>;
+type NewCustomerFormValues = z.infer<typeof newCustomerSchema>;
+type ReturningCustomerFormValues = z.infer<typeof returningCustomerSchema>;
+type ProblemDescriptionFormValues = z.infer<typeof problemDescriptionSchema>;
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -50,22 +88,36 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<AvailableTimeSlot | null>(null);
+  const [customerType, setCustomerType] = useState<"new" | "returning" | null>(null);
+  const [customer, setCustomer] = useState<Customer | null>(null);
   const [isExpressBooking, setIsExpressBooking] = useState(false);
-  const [expressWindows, setExpressWindows] = useState<string[]>([]);
+  const [isFeeWaived, setIsFeeWaived] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const form = useForm<BookingFormValues>({
-    resolver: zodResolver(bookingFormSchema),
+  // Forms for different steps
+  const newCustomerForm = useForm<NewCustomerFormValues>({
+    resolver: zodResolver(newCustomerSchema),
     defaultValues: {
-      service: "",
-      selectedDate: "",
-      selectedTime: "",
       firstName: "",
       lastName: "",
       email: "",
       phone: "",
       address: "",
+    },
+  });
+
+  const returningCustomerForm = useForm<ReturningCustomerFormValues>({
+    resolver: zodResolver(returningCustomerSchema),
+    defaultValues: {
+      name: "",
+      phone: "",
+    },
+  });
+
+  const problemForm = useForm<ProblemDescriptionFormValues>({
+    resolver: zodResolver(problemDescriptionSchema),
+    defaultValues: {
       problemDescription: "",
     },
   });
@@ -82,12 +134,61 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
     enabled: !!selectedDate,
   });
 
+  // Create Customer Mutation
+  const createCustomerMutation = useMutation({
+    mutationFn: createCustomer,
+    onSuccess: (data: any) => {
+      if (data.customer) {
+        setCustomer(data.customer);
+        setCurrentStep(4); // Move to problem description
+      }
+    },
+    onError: (error: any) => {
+      // Check if the response includes an existing customer
+      const errorData = error?.response?.data || error;
+      if (errorData?.customer) {
+        setCustomer(errorData.customer);
+        setCurrentStep(4);
+        toast({
+          title: "Account Found",
+          description: "Using your existing account.",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: errorData?.error || "Failed to create customer",
+          variant: "destructive",
+        });
+      }
+    },
+  });
+
+  // Lookup Customer Mutation
+  const lookupCustomerMutation = useMutation({
+    mutationFn: lookupCustomer,
+    onSuccess: (data: any) => {
+      if (data.customer) {
+        setCustomer(data.customer);
+        setCurrentStep(4); // Move to problem description
+      }
+    },
+    onError: (error: any) => {
+      const errorData = error?.response?.data || error;
+      toast({
+        title: "Customer Not Found",
+        description: errorData?.error || "No customer found with that information. Please try again or create a new account.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Create Booking Mutation
   const createBookingMutation = useMutation({
     mutationFn: createBooking,
     onSuccess: (data) => {
       toast({
         title: "Booking Confirmed!",
-        description: `Your appointment has been scheduled for ${selectedService?.name}. You'll receive a confirmation email shortly.`,
+        description: `Your appointment for ${selectedService?.name} has been scheduled. You'll receive a confirmation email shortly.`,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/appointments"] });
       onClose();
@@ -102,47 +203,37 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
     },
   });
 
-  const checkServiceAreaMutation = useMutation({
-    mutationFn: checkServiceArea,
-    onSuccess: (data) => {
-      if (!data.inServiceArea) {
-        toast({
-          title: "Service Area Check",
-          description: data.message,
-          variant: "destructive",
-        });
-      }
-    },
-  });
-
   useEffect(() => {
     if (isOpen) {
       // Check if this is an express booking
       const bookingType = sessionStorage.getItem('booking_type');
-      const storedExpressWindows = sessionStorage.getItem('express_windows');
+      const expressFeeWaived = sessionStorage.getItem('express_fee_waived') === 'true';
       
       if (bookingType === 'express') {
         setIsExpressBooking(true);
-        if (storedExpressWindows) {
-          setExpressWindows(JSON.parse(storedExpressWindows));
-        }
+        setIsFeeWaived(expressFeeWaived);
         // For express bookings, auto-select today's date
         const today = new Date().toISOString().split('T')[0];
         setSelectedDate(today);
-        form.setValue('selectedDate', today);
+      } else if (bookingType === 'next_day') {
+        setIsFeeWaived(true); // Next day bookings always have fee waived
+        // Auto-select tomorrow's date
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        setSelectedDate(tomorrow.toISOString().split('T')[0]);
       } else {
         setIsExpressBooking(false);
+        setIsFeeWaived(false);
       }
       
       if (preSelectedService && services) {
-        const service = services.find(s => s.id === preSelectedService);
+        const service = services.find((s: Service) => s.id === preSelectedService);
         if (service) {
           setSelectedService(service);
-          form.setValue("service", service.id);
         }
       }
     }
-  }, [isOpen, preSelectedService, services, form]);
+  }, [isOpen, preSelectedService, services]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -155,31 +246,34 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
     setSelectedService(null);
     setSelectedDate("");
     setSelectedTimeSlot(null);
-    form.reset();
+    setCustomerType(null);
+    setCustomer(null);
+    newCustomerForm.reset();
+    returningCustomerForm.reset();
+    problemForm.reset();
+    sessionStorage.removeItem('booking_type');
+    sessionStorage.removeItem('express_fee_waived');
+    sessionStorage.removeItem('express_windows');
   };
 
   const handleServiceSelect = (service: Service) => {
     setSelectedService(service);
-    form.setValue("service", service.id);
   };
 
   const handleDateSelect = (date: string) => {
     setSelectedDate(date);
     setSelectedTimeSlot(null);
-    form.setValue("selectedDate", date);
-    form.setValue("selectedTime", "");
   };
 
   const handleTimeSelect = (timeSlot: AvailableTimeSlot) => {
     setSelectedTimeSlot(timeSlot);
-    form.setValue("selectedTime", timeSlot.startTime);
   };
 
   const nextStep = () => {
     if (currentStep === 1 && selectedService) {
       setCurrentStep(2);
     } else if (currentStep === 2 && selectedDate && selectedTimeSlot) {
-      setCurrentStep(3);
+      setCurrentStep(3); // Go to customer type selection
     }
   };
 
@@ -189,22 +283,27 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
     }
   };
 
-  const onSubmit = (data: BookingFormValues) => {
-    if (!selectedService || !selectedTimeSlot) return;
+  const handleNewCustomerSubmit = (data: NewCustomerFormValues) => {
+    createCustomerMutation.mutate(data);
+  };
 
-    // Check service area first
-    checkServiceAreaMutation.mutate(data.address);
+  const handleReturningCustomerSubmit = (data: ReturningCustomerFormValues) => {
+    lookupCustomerMutation.mutate(data);
+  };
 
-    const bookingData: BookingFormData = {
-      service: data.service,
-      selectedDate: data.selectedDate,
-      selectedTime: data.selectedTime,
+  const handleFinalBookingSubmit = (data: ProblemDescriptionFormValues) => {
+    if (!selectedService || !selectedTimeSlot || !customer) return;
+
+    const bookingData: any = {
+      service: selectedService.id,
+      selectedDate: selectedDate,
+      selectedTime: selectedTimeSlot.startTime,
       customer: {
-        firstName: data.firstName,
-        lastName: data.lastName,
-        email: data.email,
-        phone: data.phone,
-        address: data.address,
+        firstName: customer.firstName,
+        lastName: customer.lastName,
+        email: customer.email,
+        phone: customer.phone,
+        address: customer.address,
       },
       problemDescription: data.problemDescription || "",
     };
@@ -238,23 +337,54 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
   const progressSteps = [
     { number: 1, label: "Service", active: currentStep >= 1, completed: currentStep > 1 },
     { number: 2, label: "Schedule", active: currentStep >= 2, completed: currentStep > 2 },
-    { number: 3, label: "Details", active: currentStep >= 3, completed: false },
+    { number: 3, label: "Account", active: currentStep >= 3, completed: currentStep > 3 },
+    { number: 4, label: "Details", active: currentStep >= 4, completed: false },
   ];
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="w-[95vw] max-w-4xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden mx-auto" hideCloseButton>
         <DialogHeader className="bg-johnson-blue text-white p-4 sm:p-6 -m-4 sm:-m-6 mb-0">
-          <div className="flex justify-between items-center">
-            <div>
+          <div className="flex justify-between items-start">
+            <div className="flex-1">
               <DialogTitle className="text-xl sm:text-2xl font-bold">Book Your Service</DialogTitle>
               <p className="text-blue-100 text-sm sm:text-base">Fast, easy scheduling in just a few steps</p>
+              
+              {/* Show selected time slot and service fee */}
+              {selectedTimeSlot && selectedDate && (
+                <div className="mt-3 bg-white/10 rounded-lg p-3 flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Clock className="h-5 w-5 text-blue-100" />
+                    <div>
+                      <p className="text-white font-medium">
+                        {new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                      </p>
+                      <p className="text-blue-100 text-sm">
+                        {formatTimeWindowEST(selectedTimeSlot.startTime, selectedTimeSlot.endTime)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <DollarSign className="h-5 w-5 text-blue-100" />
+                    <div>
+                      {isFeeWaived ? (
+                        <p className="text-white">
+                          <span className="line-through text-blue-200">$99 fee</span> 
+                          <span className="ml-2 text-green-300 font-bold">WAIVED</span>
+                        </p>
+                      ) : (
+                        <p className="text-white font-medium">$99 service fee</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
             <Button
               variant="ghost"
               size="icon"
               onClick={onClose}
-              className="text-white hover:text-gray-300 hover:bg-white/10 touch-target"
+              className="text-white hover:text-gray-300 hover:bg-white/10 touch-target ml-2"
               data-testid="close-booking-modal"
             >
               <X className="h-6 w-6" />
@@ -264,7 +394,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
 
         {/* Progress Indicator */}
         <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:py-4 -mx-4 sm:-mx-6">
-          <div className="flex justify-between items-center max-w-sm sm:max-w-md mx-auto">
+          <div className="flex justify-between items-center max-w-md mx-auto">
             {progressSteps.map((step, index) => (
               <div key={step.number} className="flex items-center flex-1">
                 <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold ${
@@ -280,7 +410,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                   {step.label}
                 </span>
                 {index < progressSteps.length - 1 && (
-                  <div className={`flex-1 h-1 mx-2 sm:mx-4 ${
+                  <div className={`flex-1 h-1 mx-2 sm:mx-3 ${
                     step.completed ? 'bg-green-500' : 'bg-gray-300'
                   }`} />
                 )}
@@ -295,7 +425,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
             <div className="step-transition-enter">
               <h4 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">What service do you need?</h4>
               <div className="grid grid-cols-1 gap-3 sm:gap-4">
-                {services?.map((service) => {
+                {services?.map((service: Service) => {
                   const IconComponent = serviceIcons[service.category as keyof typeof serviceIcons] || serviceIcons.default;
                   const isSelected = selectedService?.id === service.id;
                   
@@ -400,7 +530,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                           <p className="text-gray-500">Loading available times...</p>
                         </div>
                       ) : timeSlots && timeSlots.length > 0 ? (
-                        timeSlots.map((slot) => {
+                        timeSlots.map((slot: AvailableTimeSlot) => {
                           const isSelected = selectedTimeSlot?.id === slot.id;
                           return (
                             <div
@@ -452,22 +582,70 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                   className="bg-gradient-to-r from-johnson-blue to-johnson-teal text-white px-6 py-3 rounded-lg font-bold hover:from-johnson-teal hover:to-johnson-blue transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:transform-none disabled:shadow-none w-full sm:w-auto touch-target order-1 sm:order-2"
                   data-testid="step2-continue-button"
                 >
-                  Continue to Details
+                  Continue to Account
                 </Button>
               </div>
             </div>
           )}
 
-          {/* Step 3: Customer Details */}
-          {currentStep === 3 && (
+          {/* Step 3: Customer Type Selection */}
+          {currentStep === 3 && !customerType && (
             <div className="step-transition-enter">
-              <h4 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">Your Information</h4>
+              <h4 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">Are you a new or returning customer?</h4>
               
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 sm:space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div
+                  onClick={() => setCustomerType("new")}
+                  className="border-2 border-gray-200 rounded-lg p-6 cursor-pointer hover:border-johnson-blue transition-colors group"
+                  data-testid="new-customer-button"
+                >
+                  <div className="flex flex-col items-center text-center">
+                    <div className="bg-johnson-blue bg-opacity-10 p-4 rounded-full mb-4 group-hover:bg-opacity-20 transition-colors">
+                      <UserPlus className="h-8 w-8 text-johnson-blue" />
+                    </div>
+                    <h5 className="font-bold text-lg mb-2">New Customer</h5>
+                    <p className="text-gray-600 text-sm">Create a new account to book your service</p>
+                  </div>
+                </div>
+
+                <div
+                  onClick={() => setCustomerType("returning")}
+                  className="border-2 border-gray-200 rounded-lg p-6 cursor-pointer hover:border-johnson-blue transition-colors group"
+                  data-testid="returning-customer-button"
+                >
+                  <div className="flex flex-col items-center text-center">
+                    <div className="bg-johnson-blue bg-opacity-10 p-4 rounded-full mb-4 group-hover:bg-opacity-20 transition-colors">
+                      <User className="h-8 w-8 text-johnson-blue" />
+                    </div>
+                    <h5 className="font-bold text-lg mb-2">Returning Customer</h5>
+                    <p className="text-gray-600 text-sm">Look up your existing account</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 sm:mt-8 flex justify-start">
+                <Button
+                  onClick={prevStep}
+                  variant="outline"
+                  className="px-6 py-3 w-full sm:w-auto touch-target border-2 border-gray-300 hover:border-johnson-blue hover:bg-gray-50 transition-all duration-300 transform hover:scale-105"
+                  data-testid="step3-back-button"
+                >
+                  Back
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 3A: New Customer Form */}
+          {currentStep === 3 && customerType === "new" && (
+            <div className="step-transition-enter">
+              <h4 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">Create Your Account</h4>
+              
+              <Form {...newCustomerForm}>
+                <form onSubmit={newCustomerForm.handleSubmit(handleNewCustomerSubmit)} className="space-y-4 sm:space-y-6">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                     <FormField
-                      control={form.control}
+                      control={newCustomerForm.control}
                       name="firstName"
                       render={({ field }) => (
                         <FormItem>
@@ -476,7 +654,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                             <Input 
                               {...field} 
                               placeholder="John"
-                              data-testid="booking-first-name"
+                              data-testid="new-customer-first-name"
                             />
                           </FormControl>
                           <FormMessage />
@@ -484,7 +662,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                       )}
                     />
                     <FormField
-                      control={form.control}
+                      control={newCustomerForm.control}
                       name="lastName"
                       render={({ field }) => (
                         <FormItem>
@@ -493,46 +671,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                             <Input 
                               {...field} 
                               placeholder="Doe"
-                              data-testid="booking-last-name"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <FormField
-                      control={form.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Email *</FormLabel>
-                          <FormControl>
-                            <Input 
-                              {...field} 
-                              type="email"
-                              placeholder="john@example.com"
-                              data-testid="booking-email"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="phone"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Phone Number *</FormLabel>
-                          <FormControl>
-                            <Input 
-                              {...field} 
-                              type="tel"
-                              placeholder="(617) 555-0123"
-                              data-testid="booking-phone"
+                              data-testid="new-customer-last-name"
                             />
                           </FormControl>
                           <FormMessage />
@@ -542,7 +681,45 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                   </div>
 
                   <FormField
-                    control={form.control}
+                    control={newCustomerForm.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email *</FormLabel>
+                        <FormControl>
+                          <Input 
+                            {...field} 
+                            type="email"
+                            placeholder="john@example.com"
+                            data-testid="new-customer-email"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={newCustomerForm.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Phone Number *</FormLabel>
+                        <FormControl>
+                          <Input 
+                            {...field} 
+                            type="tel"
+                            placeholder="(617) 555-0123"
+                            data-testid="new-customer-phone"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={newCustomerForm.control}
                     name="address"
                     render={({ field }) => (
                       <FormItem>
@@ -551,7 +728,56 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                           <Input 
                             {...field} 
                             placeholder="123 Main St, Quincy, MA 02169"
-                            data-testid="booking-address"
+                            data-testid="new-customer-address"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row justify-between gap-3 sm:gap-0">
+                    <Button
+                      type="button"
+                      onClick={() => setCustomerType(null)}
+                      variant="outline"
+                      className="px-6 py-3 w-full sm:w-auto touch-target order-2 sm:order-1 border-2 border-gray-300 hover:border-johnson-blue hover:bg-gray-50 transition-all duration-300 transform hover:scale-105"
+                      data-testid="new-customer-back-button"
+                    >
+                      Back
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={createCustomerMutation.isPending}
+                      className="bg-gradient-to-r from-johnson-blue to-johnson-teal text-white px-6 py-3 rounded-lg font-bold hover:from-johnson-teal hover:to-johnson-blue transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:transform-none disabled:shadow-none w-full sm:w-auto touch-target order-1 sm:order-2"
+                      data-testid="new-customer-submit-button"
+                    >
+                      {createCustomerMutation.isPending ? "Creating Account..." : "Create Account"}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </div>
+          )}
+
+          {/* Step 3B: Returning Customer Form */}
+          {currentStep === 3 && customerType === "returning" && (
+            <div className="step-transition-enter">
+              <h4 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">Look Up Your Account</h4>
+              
+              <Form {...returningCustomerForm}>
+                <form onSubmit={returningCustomerForm.handleSubmit(handleReturningCustomerSubmit)} className="space-y-4 sm:space-y-6">
+                  <FormField
+                    control={returningCustomerForm.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Your Name *</FormLabel>
+                        <FormControl>
+                          <Input 
+                            {...field} 
+                            placeholder="John Doe"
+                            data-testid="returning-customer-name"
                           />
                         </FormControl>
                         <FormMessage />
@@ -560,17 +786,17 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                   />
 
                   <FormField
-                    control={form.control}
-                    name="problemDescription"
+                    control={returningCustomerForm.control}
+                    name="phone"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Problem Description</FormLabel>
+                        <FormLabel>Phone Number *</FormLabel>
                         <FormControl>
-                          <Textarea 
+                          <Input 
                             {...field} 
-                            rows={4}
-                            placeholder="Please describe the plumbing issue you're experiencing..."
-                            data-testid="booking-problem-description"
+                            type="tel"
+                            placeholder="(617) 555-0123"
+                            data-testid="returning-customer-phone"
                           />
                         </FormControl>
                         <FormMessage />
@@ -578,58 +804,86 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                     )}
                   />
 
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h5 className="font-semibold text-gray-900 mb-2">Booking Summary</h5>
-                    <div className="space-y-1 text-sm">
-                      <div className="flex justify-between">
-                        <span>Service:</span>
-                        <span data-testid="booking-summary-service">{selectedService?.name}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Date & Time:</span>
-                        <span data-testid="booking-summary-datetime">
-                          {selectedDate && selectedTimeSlot 
-                            ? `${new Date(selectedDate).toLocaleDateString()} at ${convert24to12Hour(selectedTimeSlot.startTime)}`
-                            : 'Not selected'
-                          }
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Service Fee:</span>
-                        <span className="font-semibold text-johnson-blue" data-testid="booking-summary-fee">
-                          $99
-                        </span>
-                      </div>
-                      <div className="text-xs text-green-600 font-medium mt-1">
-                        Applied to repair cost
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-between">
+                  <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row justify-between gap-3 sm:gap-0">
                     <Button
                       type="button"
-                      onClick={prevStep}
+                      onClick={() => setCustomerType(null)}
                       variant="outline"
-                      className="px-6 py-3"
-                      data-testid="step3-back-button"
+                      className="px-6 py-3 w-full sm:w-auto touch-target order-2 sm:order-1 border-2 border-gray-300 hover:border-johnson-blue hover:bg-gray-50 transition-all duration-300 transform hover:scale-105"
+                      data-testid="returning-customer-back-button"
+                    >
+                      Back
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={lookupCustomerMutation.isPending}
+                      className="bg-gradient-to-r from-johnson-blue to-johnson-teal text-white px-6 py-3 rounded-lg font-bold hover:from-johnson-teal hover:to-johnson-blue transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:transform-none disabled:shadow-none w-full sm:w-auto touch-target order-1 sm:order-2"
+                      data-testid="returning-customer-submit-button"
+                    >
+                      {lookupCustomerMutation.isPending ? "Looking Up..." : "Look Up Account"}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </div>
+          )}
+
+          {/* Step 4: Problem Description */}
+          {currentStep === 4 && customer && (
+            <div className="step-transition-enter">
+              <h4 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">Tell Us About Your Problem</h4>
+              
+              {/* Show customer info */}
+              <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                <p className="text-sm text-gray-600 mb-1">Booking for:</p>
+                <p className="font-semibold">{customer.firstName} {customer.lastName}</p>
+                <p className="text-sm text-gray-600">{customer.email}</p>
+                <p className="text-sm text-gray-600">{customer.phone}</p>
+                <p className="text-sm text-gray-600">{customer.address}</p>
+              </div>
+
+              <Form {...problemForm}>
+                <form onSubmit={problemForm.handleSubmit(handleFinalBookingSubmit)} className="space-y-4 sm:space-y-6">
+                  <FormField
+                    control={problemForm.control}
+                    name="problemDescription"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Problem Description (Optional)</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            {...field} 
+                            placeholder="Please describe your plumbing issue in detail. This helps our technicians come prepared with the right tools and parts..."
+                            rows={5}
+                            data-testid="problem-description"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row justify-between gap-3 sm:gap-0">
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        setCurrentStep(3);
+                        setCustomer(null);
+                        setCustomerType(null);
+                      }}
+                      variant="outline"
+                      className="px-6 py-3 w-full sm:w-auto touch-target order-2 sm:order-1 border-2 border-gray-300 hover:border-johnson-blue hover:bg-gray-50 transition-all duration-300 transform hover:scale-105"
+                      data-testid="step4-back-button"
                     >
                       Back
                     </Button>
                     <Button
                       type="submit"
                       disabled={createBookingMutation.isPending}
-                      className="bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors"
-                      data-testid="confirm-booking-button"
+                      className="bg-gradient-to-r from-johnson-blue to-johnson-teal text-white px-6 py-3 rounded-lg font-bold hover:from-johnson-teal hover:to-johnson-blue transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:transform-none disabled:shadow-none w-full sm:w-auto touch-target order-1 sm:order-2"
+                      data-testid="submit-booking-button"
                     >
-                      {createBookingMutation.isPending ? (
-                        "Creating Booking..."
-                      ) : (
-                        <>
-                          <Calendar className="mr-2 h-4 w-4" />
-                          Confirm Booking
-                        </>
-                      )}
+                      {createBookingMutation.isPending ? "Booking..." : "Complete Booking"}
                     </Button>
                   </div>
                 </form>
