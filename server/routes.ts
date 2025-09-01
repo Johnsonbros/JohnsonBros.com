@@ -7,6 +7,7 @@ import { db } from "./db";
 import { eq, sql, and } from "drizzle-orm";
 import { CapacityCalculator } from "./src/capacity";
 import { GoogleAdsBridge } from "./src/ads/bridge";
+import { HousecallProClient } from "./src/housecall";
 import rateLimit from "express-rate-limit";
 
 // Housecall Pro API client
@@ -131,9 +132,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid date format. Use YYYY-MM-DD" });
       }
 
-      const timeSlots = await storage.getAvailableTimeSlots(date);
-      res.json(timeSlots);
+      // Fetch real booking windows from HousecallPro
+      if (API_KEY) {
+        const hcpClient = HousecallProClient.getInstance();
+        const bookingWindows = await hcpClient.getBookingWindows(date);
+        
+        // Convert HousecallPro booking windows to our time slot format
+        // Filter to only include slots for the requested date
+        const timeSlots = bookingWindows
+          .filter((window: any) => {
+            const windowDate = new Date(window.start_time).toISOString().split('T')[0];
+            return window.available && windowDate === date;
+          })
+          .map((window: any, index: number) => {
+            const startTime = new Date(window.start_time);
+            const endTime = new Date(window.end_time);
+            
+            return {
+              id: `${date}-${index}`,
+              date: date,
+              startTime: startTime.toISOString(),
+              endTime: endTime.toISOString(),
+              isAvailable: window.available,
+            };
+          });
+        
+        res.json(timeSlots);
+      } else {
+        // Fallback to storage if no API key
+        const timeSlots = await storage.getAvailableTimeSlots(date);
+        res.json(timeSlots);
+      }
     } catch (error) {
+      console.error('Error fetching time slots:', error);
       res.status(500).json({ error: "Failed to fetch time slots" });
     }
   });

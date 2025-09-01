@@ -360,7 +360,18 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                         {new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                       </p>
                       <p className="text-blue-100 text-sm">
-                        {formatTimeWindowEST(selectedTimeSlot.startTime, selectedTimeSlot.endTime)}
+                        {formatTimeWindowEST(
+                          new Date(selectedTimeSlot.startTime).toLocaleTimeString('en-US', {
+                            hour12: false,
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          }),
+                          new Date(selectedTimeSlot.endTime).toLocaleTimeString('en-US', {
+                            hour12: false,
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })
+                        )}
                       </p>
                     </div>
                   </div>
@@ -532,6 +543,18 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                       ) : timeSlots && timeSlots.length > 0 ? (
                         timeSlots.map((slot: AvailableTimeSlot) => {
                           const isSelected = selectedTimeSlot?.id === slot.id;
+                          // Extract time from ISO string (HH:MM format)
+                          const startTimeOnly = new Date(slot.startTime).toLocaleTimeString('en-US', {
+                            hour12: false,
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          });
+                          const endTimeOnly = new Date(slot.endTime).toLocaleTimeString('en-US', {
+                            hour12: false,
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          });
+                          
                           return (
                             <div
                               key={slot.id}
@@ -545,7 +568,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                             >
                               <div className="flex justify-between items-center">
                                 <span className="font-medium text-sm sm:text-base">
-                                  {formatTimeWindowEST(slot.startTime, slot.endTime)}
+                                  {formatTimeWindowEST(startTimeOnly, endTimeOnly)}
                                 </span>
                                 <span className="text-xs sm:text-sm text-green-600">Available</span>
                               </div>
