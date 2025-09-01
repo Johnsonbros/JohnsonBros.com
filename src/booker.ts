@@ -8,7 +8,8 @@ const log = pino({ name: "jb-booker", level: process.env.LOG_LEVEL || "info" });
 
 const HOUSECALL_API_KEY = process.env.HOUSECALL_API_KEY;
 if (!HOUSECALL_API_KEY) {
-  throw new Error("HOUSECALL_API_KEY is required");
+  log.error("HOUSECALL_API_KEY is not set in environment variables");
+  // Allow server to start but API calls will fail gracefully
 }
 const COMPANY_TZ = process.env.COMPANY_TZ || "America/New_York";
 const DEFAULT_DISPATCH_EMPLOYEE_IDS = (process.env.DEFAULT_DISPATCH_EMPLOYEE_IDS || "")
@@ -48,24 +49,48 @@ function hcpHeaders() {
 }
 
 async function hcpGet(path: string, query?: Record<string, string | number | boolean | undefined>) {
+  if (!HOUSECALL_API_KEY) {
+    throw new Error("HOUSECALL_API_KEY is not configured. Please set it in environment variables.");
+  }
   const url = new URL(path, HCP_BASE);
   if (query) Object.entries(query).forEach(([k, v]) => {
     if (v !== undefined) url.searchParams.set(k, String(v));
   });
-  const res = await fetch(url, { headers: hcpHeaders() });
-  if (!res.ok) throw new Error(`GET ${url} -> ${res.status} ${await res.text()}`);
-  return res.json();
+  try {
+    const res = await fetch(url, { headers: hcpHeaders() });
+    if (!res.ok) {
+      const errorText = await res.text();
+      log.error({ path, errorText, status: res.status }, `HCP API error: ${res.status}`);
+      throw new Error(`GET ${url} -> ${res.status} ${errorText}`);
+    }
+    return res.json();
+  } catch (err: any) {
+    log.error({ path, error: err.message }, `Failed to fetch from HCP API`);
+    throw err;
+  }
 }
 
 async function hcpPost(path: string, body: unknown) {
+  if (!HOUSECALL_API_KEY) {
+    throw new Error("HOUSECALL_API_KEY is not configured. Please set it in environment variables.");
+  }
   const url = new URL(path, HCP_BASE);
-  const res = await fetch(url, {
-    method: "POST",
-    headers: hcpHeaders(),
-    body: JSON.stringify(body)
-  });
-  if (!res.ok) throw new Error(`POST ${url} -> ${res.status} ${await res.text()}`);
-  return res.json();
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: hcpHeaders(),
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) {
+      const errorText = await res.text();
+      log.error({ path, errorText, body, status: res.status }, `HCP API POST error: ${res.status}`);
+      throw new Error(`POST ${url} -> ${res.status} ${errorText}`);
+    }
+    return res.json();
+  } catch (err: any) {
+    log.error({ path, error: err.message, body }, `Failed to POST to HCP API`);
+    throw err;
+  }
 }
 
 /** Choose a booking window by time-of-day preference in COMPANY_TZ */
@@ -263,7 +288,9 @@ server.registerTool(
     try {
       appointmentCreated = await createAppointment((job as any).id, chosen, arrival_window);
     } catch (err: any) {
-      log.warn({ err: err?.message }, "createAppointment failed; job created without a specific appointment");
+      log.error({ err: err?.message, jobId: (job as any).id }, "Failed to create appointment for job");
+      // Continue execution - job is still created, just without specific appointment
+      // This is better than failing the entire booking
     }
 
     const result = {

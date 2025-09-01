@@ -118,6 +118,13 @@ export function loadConfig(): CapacityConfig {
           badge: 'Next Day',
           urgent: false,
         },
+        EMERGENCY_ONLY: {
+          headline: 'Weekend Emergency Service',
+          subhead: 'Available for urgent plumbing issues',
+          cta: 'Call for Emergency Service',
+          badge: 'Emergency',
+          urgent: true,
+        },
       },
       fee_waive: {
         promo_tag: 'FEEWAIVED_SAMEDAY',

@@ -169,23 +169,35 @@ export function ServiceHeatMap() {
           return 25;
         };
         
-        const heatmap = new google.maps.visualization.HeatmapLayer({
-          data: heatmapData,
-          map: map,
-          radius: getRadiusForZoom(),
-          opacity: 0.7, // Slightly lower opacity for more layered effect
-          gradient: customGradient,
-          maxIntensity: 2, // Adjusted for more granular data
-          dissipating: true
+        // Use circles instead of deprecated HeatmapLayer
+        const heatmapCircles: any[] = [];
+        
+        // Create circles for each data point with opacity based on intensity
+        heatMapData.forEach(point => {
+          const intensity = Math.min(point.count / 100, 1); // Normalize intensity
+          const circle = new google.maps.Circle({
+            strokeColor: '#EA580C',
+            strokeOpacity: 0,
+            strokeWeight: 0,
+            fillColor: intensity > 0.7 ? '#DC3C05' : intensity > 0.4 ? '#EA580C' : '#F97316',
+            fillOpacity: intensity * 0.3, // Max 30% opacity for layering
+            map: map,
+            center: { lat: point.lat, lng: point.lng },
+            radius: getRadiusForZoom() * 50, // Scale up radius for visibility
+          });
+          heatmapCircles.push(circle);
         });
         
         // Update radius on zoom change to maintain privacy
         map.addListener('zoom_changed', () => {
-          const newRadius = getRadiusForZoom();
-          heatmap.setOptions({ radius: newRadius });
+          const newRadius = getRadiusForZoom() * 50;
+          heatmapCircles.forEach(circle => {
+            circle.setRadius(newRadius);
+          });
         });
 
-        heatmapRef.current = heatmap;
+        // Store circles reference for cleanup
+        (heatmapRef as any).current = heatmapCircles;
 
         // Add click listener to show city info
         map.addListener('click', (event: any) => {

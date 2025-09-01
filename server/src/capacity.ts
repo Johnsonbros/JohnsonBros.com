@@ -418,7 +418,8 @@ export class CapacityCalculator {
     // Get current EST time details for time-based rules
     const estString = now.toLocaleString("en-US", {timeZone: "America/New_York"});
     const estNow = new Date(estString);
-    const dayOfWeek = now.getDay(); // Use original date for day of week
+    // Get day of week in EST timezone (getDay() respects timezone from estString)
+    const dayOfWeek = estNow.getDay(); // Sunday = 0, Monday = 1, etc.
     const estHours = parseInt(now.toLocaleTimeString('en-US', { 
       timeZone: 'America/New_York', 
       hour12: false,
