@@ -1,0 +1,35 @@
+{
+  // Configuration variables. Replace HOUSECALL_API_KEY with your actual key
+  "configs": {
+    "housecall": {
+      // This key will be substituted into the Authorization header below.
+      "HOUSECALL_API_KEY": "YOUR_HOUSECALL_API_KEY"
+    }
+  },
+  "servers": {
+    "housecall": {
+      // Use the OpenAPI specification provided by Housecall Pro v1 API
+      "type": "openapi",
+      "openapi": "./housecall.v1.yaml",
+      // Base URL for all API calls
+      "serverUrl": "https://api.housecallpro.com",
+      // Add headers required for authentication. The Authorization header must
+      // include the prefix 'Token' followed by your API key.
+      "headers": {
+        "Authorization": "Token {{HOUSECALL_API_KEY}}",
+        "Content-Type": "application/json"
+      },
+      // Tools to expose from the OpenAPI spec. These operationIds map to
+      // specific REST endpoints in the spec and will be available to AI assistants.
+      "tools": [
+        "get-applications",                         // Get company info
+        "get-company-schedule-availability",        // Retrieve business hours
+        "get-company-schedule-booking-windows-availability", // List available booking windows
+        "get-v1-customers",                        // Search customers
+        "post-customers",                          // Create a customer
+        "post-jobs",                               // Create a job
+        "post-jobs-job_id-appointments"            // Schedule an appointment for a job
+      ]
+    }
+  }
+}
