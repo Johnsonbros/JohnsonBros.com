@@ -239,23 +239,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Phone number is required" });
       }
       
-      // Look up customer by phone
-      const customer = await storage.getCustomerByPhone(phone);
+      // Look up customer using Housecall Pro API
+      const housecallClient = HousecallProClient.getInstance();
+      const customers = await housecallClient.searchCustomers({
+        phone: phone,
+        name: name
+      });
       
-      if (customer) {
-        // Verify name matches (case-insensitive)
-        if (name) {
-          const fullName = `${customer.firstName} ${customer.lastName}`.toLowerCase();
+      if (customers.length > 0) {
+        // Find best match for phone number
+        const normalizedPhone = phone.replace(/\D/g, '');
+        let bestMatch = customers.find(customer => {
+          const customerPhone = customer.mobile_number?.replace(/\D/g, '') || '';
+          return customerPhone === normalizedPhone;
+        });
+        
+        // If no exact phone match, try name matching
+        if (!bestMatch && name) {
           const searchName = name.toLowerCase();
-          
-          if (!fullName.includes(searchName) && !searchName.includes(fullName)) {
-            return res.status(404).json({ 
-              error: "No customer found with that phone number and name combination" 
-            });
-          }
+          bestMatch = customers.find(customer => {
+            const fullName = `${customer.first_name} ${customer.last_name}`.toLowerCase();
+            return fullName.includes(searchName) || searchName.includes(fullName);
+          });
         }
         
-        res.json({ success: true, customer });
+        if (bestMatch) {
+          // Convert Housecall Pro customer format to our format
+          const customer = {
+            id: bestMatch.id,
+            firstName: bestMatch.first_name,
+            lastName: bestMatch.last_name,
+            email: bestMatch.email,
+            phone: bestMatch.mobile_number || phone,
+            address: bestMatch.addresses?.[0]?.street || '',
+            housecallProId: bestMatch.id,
+            createdAt: new Date(bestMatch.created_at || Date.now()),
+          };
+          
+          res.json({ success: true, customer });
+        } else {
+          res.status(404).json({ error: "No customer found with that phone number and name combination" });
+        }
       } else {
         res.status(404).json({ error: "Customer not found" });
       }

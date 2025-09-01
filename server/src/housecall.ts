@@ -293,6 +293,35 @@ export class HousecallProClient {
     return data.estimates || [];
   }
 
+  async searchCustomers(searchParams: {
+    phone?: string;
+    email?: string;
+    name?: string;
+  }): Promise<any[]> {
+    const params: Record<string, any> = {
+      page_size: 100,
+    };
+
+    // Add search parameters that Housecall Pro supports
+    if (searchParams.phone) {
+      params.mobile_number = searchParams.phone.replace(/\D/g, ''); // Remove non-digits
+    }
+    if (searchParams.email) {
+      params.email = searchParams.email;
+    }
+    if (searchParams.name) {
+      params.search = searchParams.name; // General search parameter
+    }
+
+    try {
+      const data = await this.callAPI<{ customers: any[] }>('/customers', params);
+      return data.customers || [];
+    } catch (error) {
+      Logger.error('Customer search failed', { error: (error as Error).message, searchParams });
+      return [];
+    }
+  }
+
   private getMockData(endpoint: string): any {
     Logger.warn('Using mock data', { endpoint });
 
