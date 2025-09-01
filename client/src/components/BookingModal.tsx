@@ -243,7 +243,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[95vw] max-w-4xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden mx-auto">
+      <DialogContent className="w-[95vw] max-w-4xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden mx-auto" hideCloseButton>
         <DialogHeader className="bg-johnson-blue text-white p-4 sm:p-6 -m-4 sm:-m-6 mb-0">
           <div className="flex justify-between items-center">
             <div>
