@@ -182,6 +182,54 @@ export class MemStorage implements IStorage {
     defaultReviews.forEach(review => {
       this.reviews.set(review.id, review);
     });
+
+    // Add sample customers for testing lookup functionality
+    const sampleCustomers: Customer[] = [
+      {
+        id: randomUUID(),
+        firstName: "Nate",
+        lastName: "Johnson",
+        email: "nate@johnsonbros.com",
+        phone: "6176868763",
+        address: "123 Main St, Quincy, MA 02170",
+        housecallProId: null,
+        createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
+      },
+      {
+        id: randomUUID(),
+        firstName: "Sarah",
+        lastName: "Davis",
+        email: "sarah.davis@email.com",
+        phone: "6175551234",
+        address: "456 Oak Ave, Braintree, MA 02184",
+        housecallProId: null,
+        createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000), // 15 days ago
+      },
+      {
+        id: randomUUID(),
+        firstName: "Michael",
+        lastName: "Chen",
+        email: "mchen@yahoo.com",
+        phone: "6175555678",
+        address: "789 Pine St, Weymouth, MA 02190",
+        housecallProId: null,
+        createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 1 week ago
+      },
+      {
+        id: randomUUID(),
+        firstName: "Jennifer",
+        lastName: "Rodriguez",
+        email: "j.rodriguez@gmail.com",
+        phone: "6175559876",
+        address: "321 Elm St, Milton, MA 02186",
+        housecallProId: null,
+        createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), // 5 days ago
+      },
+    ];
+
+    sampleCustomers.forEach(customer => {
+      this.customers.set(customer.id, customer);
+    });
   }
 
   // Customer methods
