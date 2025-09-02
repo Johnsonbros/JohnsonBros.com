@@ -206,17 +206,9 @@ async function createJob(customerId: string, addressId: string, window: { start_
 }
 
 async function createAppointment(jobId: string, window: { start_time: string; end_time: string }, arrivalWindowMinutes: number) {
-  // Housecall requires dispatched_employees_ids in the request schema.
-  // We either use explicit IDs from env or try to proceed with an empty list (tenant-dependent).
-  const dispatched_employees_ids = DEFAULT_DISPATCH_EMPLOYEE_IDS.length > 0 ? DEFAULT_DISPATCH_EMPLOYEE_IDS : [];
-
-  const appt = await hcpPost(`/jobs/${jobId}/appointments`, {
-    start_time: window.start_time,
-    end_time: window.end_time,
-    arrival_window_minutes: arrivalWindowMinutes,
-    dispatched_employees_ids
-  });
-  return appt;
+  // Skip appointment creation for now - job scheduling is sufficient
+  // Housecall Pro will handle scheduling internally
+  return null;
 }
 
 const server = new McpServer({

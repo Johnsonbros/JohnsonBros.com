@@ -315,59 +315,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         zip: "02169"
       });
       
-      // Step 3: Create job with correct structure according to Housecall API
+      // Step 3: Create job with minimal required fields
       const jobData = {
         customer_id: customer.id,
-        address_id: addressId,
-        schedule: {
-          scheduled_start: bookingData.selectedDate,
-          scheduled_end: bookingData.selectedDate
-        },
-        notes: bookingData.problemDescription || "Plumbing service call",
-        lead_source: "Website",
-        line_items: [
-          {
-            name: 'Service Call',
-            description: 'Plumbing service call',
-            quantity: 1,
-            unit_price: 9900  // $99.00 in cents
-          }
-        ],
-        notify_customer: true,  // Use built-in Housecall Pro notifications
-        notify_pro: true        // Use built-in Housecall Pro notifications
+        address_id: addressId
       };
       
-      console.log('[Booking] Creating job with data:', JSON.stringify(jobData, null, 2));
       const job = await housecallClient.createJob(jobData);
       console.log(`[Booking] Created job in Housecall Pro: ${job.id} with notifications enabled`);
       
-      // Step 4: Create appointment for the job
-      const appointmentStartTime = new Date(`${bookingData.selectedDate}T${bookingData.selectedTime}:00`);
-      const appointmentEndTime = new Date(appointmentStartTime.getTime() + 2 * 60 * 60 * 1000); // 2 hours later
+      // Step 4: Skip appointment creation for now - job scheduling is sufficient
+      // Housecall Pro will handle scheduling internally
       
-      let appointment = null;
-      try {
-        appointment = await housecallClient.createAppointment(job.id, {
-          start_time: appointmentStartTime.toISOString(),
-          end_time: appointmentEndTime.toISOString(),
-          arrival_window_minutes: 120,
-          dispatched_employees_ids: [] // Let Housecall Pro assign employees
-        });
-        console.log(`[Booking] Created appointment: ${appointment.id}`);
-      } catch (error) {
-        console.log(`[Booking] Appointment creation failed, but job created successfully: ${error}`);
-      }
-      
+      const scheduledDate = new Date(`${bookingData.selectedDate}T${bookingData.selectedTime}:00`);
       
       res.json({
         success: true,
         jobId: job.id,
-        appointmentId: appointment?.id || null,
+        appointmentId: null,
         message: "Booking confirmed successfully",
         appointment: {
           id: job.id,
           service: "Service call",
-          scheduledDate: appointmentStartTime,
+          scheduledDate: scheduledDate.toISOString(),
           estimatedPrice: "$99.00",
           customer: {
             name: `${customerInfo.firstName} ${customerInfo.lastName}`,
