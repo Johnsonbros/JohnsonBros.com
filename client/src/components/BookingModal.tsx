@@ -373,11 +373,18 @@ export default function BookingModal({ isOpen, onClose }: BookingModalProps) {
           <div className="flex justify-between items-start">
             <div className="flex-1">
               <DialogTitle className="text-lg sm:text-2xl font-bold">Schedule Your Plumbing Service</DialogTitle>
-              <div className="flex items-center gap-2 mt-1">
-                <DollarSign className="h-4 w-4 text-blue-100" />
+              <div className="mt-1">
                 <p className="text-blue-100 text-sm sm:text-base">
-                  Professional Diagnosis & Quote
-                  {isFeeWaived && <span className="ml-2 text-green-300 font-bold">$99 FEE WAIVED TODAY</span>}
+                  {isFeeWaived ? (
+                    <>
+                      Our licensed technician will diagnose your issue and provide a repair quote
+                      <span className="ml-2 text-green-300 font-bold">• $99 SERVICE FEE WAIVED TODAY</span>
+                    </>
+                  ) : (
+                    <>
+                      Our technician will diagnose your issue, provide a repair quote, and apply the $99 service fee toward any approved repairs
+                    </>
+                  )}
                 </p>
               </div>
             </div>
