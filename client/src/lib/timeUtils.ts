@@ -46,9 +46,9 @@ export function convert24to12Hour(time24: string): string {
   return `${hours12}:${minutes.toString().padStart(2, '0')} ${period}`;
 }
 
-// Format time window like "9:00 AM - 11:00 AM EST"
+// Format time window like "9:00 AM - 11:00 AM"
 export function formatTimeWindowEST(startTime: string, endTime: string): string {
   const start12 = convert24to12Hour(startTime);
   const end12 = convert24to12Hour(endTime);
-  return `${start12} - ${end12} EST`;
+  return `${start12} - ${end12}`;
 }
