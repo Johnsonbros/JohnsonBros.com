@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/queryClient";
 import { useState, useEffect } from "react";
 import { formatTimeWindowEST } from "@/lib/timeUtils";
+import { format, addDays } from "date-fns";
 
 interface HeroSectionProps {
   onBookService: () => void;
@@ -110,6 +111,10 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
   const activeCapacity = hasToday ? todayCapacity : hasTomorrow ? tomorrowCapacity : todayCapacity;
   const uniqueSlots = !isEmergency ? (activeCapacity?.unique_express_windows || []) : [];
   const isNextDay = hasTomorrow && !hasToday && !isEmergency;
+  
+  // Get the appointment date
+  const appointmentDate = isNextDay ? addDays(new Date(), 1) : new Date();
+  const dateDisplay = format(appointmentDate, 'EEEE, MMMM d');
 
   return (
     <section className="bg-gradient-to-br from-johnson-blue to-johnson-teal text-white py-12 sm:py-16 lg:py-20 bg-pipes-blue relative overflow-hidden" style={{ backgroundBlendMode: 'overlay' }}>
@@ -243,7 +248,7 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
                                 {formatTimeWindowEST(startTime, endTime)}
                               </div>
                               <div className="text-sm opacity-90">
-                                EST
+                                {dateDisplay}
                               </div>
                             </div>
                           </div>
