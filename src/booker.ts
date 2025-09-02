@@ -186,20 +186,13 @@ async function createJob(customerId: string, addressId: string, window: { start_
     address_id: addressId,
     schedule: {
       scheduled_start,
-      scheduled_end,
-      arrival_window
+      scheduled_end
     },
     notes,
-    lead_source: "ZEKE",
+    lead_source: lead_source || "Website",
     tags,
-    assigned_employees: [
-      {
-        id: 'pro_19f45ddb23864f13ba5ffb20710e77e8'  // Nate Johnson
-      }
-    ],
     line_items: [
       {
-        id: 'olit_9412353009f546e28a0b0fb7c9a96fe2',
         name: 'Service Call - Plumbing Repair',
         quantity: 1,
         unit_price: 9900 // $99.00 in cents

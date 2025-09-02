@@ -268,7 +268,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`[Booking] Creating real booking in Housecall Pro:`, JSON.stringify(bookingData, null, 2));
       
-      const customerInfo = bookingData.customer;
+      const customerInfo = bookingData.customerInfo;
       const housecallClient = HousecallProClient.getInstance();
       
       // Step 1: Find or create customer
@@ -299,7 +299,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       } catch (error) {
         console.error("[Booking] Customer lookup/creation failed:", error);
-        return res.status(500).json({ error: "Failed to find or create customer" });
+        console.error("[Booking] Error details:", {
+          message: (error as Error).message,
+          stack: (error as Error).stack,
+          customerInfo
+        });
+        return res.status(500).json({ error: "Failed to find or create customer", details: (error as Error).message });
       }
       
       // Step 2: Get customer address
@@ -310,37 +315,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         zip: "02169"
       });
       
-      // Step 3: Create job with hardcoded line item and employee assignment
+      // Step 3: Create job with correct structure according to Housecall API
       const jobData = {
         customer_id: customer.id,
         address_id: addressId,
         schedule: {
           scheduled_start: bookingData.selectedDate,
-          scheduled_end: bookingData.selectedDate,
-          arrival_window: 120 // 2 hour window
+          scheduled_end: bookingData.selectedDate
         },
         notes: bookingData.problemDescription || "Plumbing service call",
-        lead_source: "ZEKE",
-        tags: ["website", "online_booking"],
-        assigned_employees: [
-          {
-            id: 'pro_19f45ddb23864f13ba5ffb20710e77e8'  // Nate Johnson
-          }
-        ],
+        lead_source: "Website",
         line_items: [
           {
-            id: 'olit_9412353009f546e28a0b0fb7c9a96fe2',
-            name: 'Service Call - Plumbing Repair',
+            name: 'Service Call',
+            description: 'Plumbing service call',
             quantity: 1,
-            unit_price: 9900 // $99.00 in cents
+            unit_price: 9900  // $99.00 in cents
           }
         ],
-        notify_customer: true,  // Use built-in Housecall Pro customer notifications
-        notify_pro: true        // Use built-in Housecall Pro technician notifications
+        notify_customer: true,  // Use built-in Housecall Pro notifications
+        notify_pro: true        // Use built-in Housecall Pro notifications
       };
       
+      console.log('[Booking] Creating job with data:', JSON.stringify(jobData, null, 2));
       const job = await housecallClient.createJob(jobData);
-      console.log(`[Booking] Created job in Housecall Pro: ${job.id} with built-in notifications enabled`);
+      console.log(`[Booking] Created job in Housecall Pro: ${job.id} with notifications enabled`);
       
       // Step 4: Create appointment for the job
       const appointmentStartTime = new Date(`${bookingData.selectedDate}T${bookingData.selectedTime}:00`);
