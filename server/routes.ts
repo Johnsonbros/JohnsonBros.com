@@ -327,19 +327,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
           scheduled_end: scheduledEnd.toISOString(),
           arrival_window: 180 // 3 hour window in minutes
         },
-        // Add the "Service call" line item with $99 fee
+        // Add the "Service call" line item with $0.99 placeholder fee
         line_items: [{
           name: "Service call",
-          description: bookingData.problemDescription || "Plumbing service",
-          unit_price: 99.00,
+          description: "$99 FEE WAIVED - Online Booking Special",
+          unit_price: 0.99,
           quantity: 1,
           unit_cost: 0
         }],
+        // Add tags for online booking
+        tags: ["online-booking", "$99-fee-waived", "website-lead"],
+        // Set lead source to website
+        lead_source: "Website",
         // Enable notifications
         notify_customer: true,
         notify_pro: true,
-        // Add problem description as job note
-        internal_memo: bookingData.problemDescription || "Service requested via website"
+        // Add comprehensive notes about online booking
+        internal_memo: `ONLINE BOOKING - $99 Service Fee Waived
+Customer Problem: ${bookingData.problemDescription || "Service requested"}
+Booked via: Johnson Bros Website
+Special Promotion: $99 service fee waived for online bookings`,
+        // Add job description visible to customer
+        description: "Online Booking - Service Call ($99 Fee Waived)"
       };
       
       const job = await housecallClient.createJob(jobData);
