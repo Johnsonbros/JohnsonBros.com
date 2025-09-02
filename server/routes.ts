@@ -315,19 +315,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         zip: "02169"
       });
       
-      // Step 3: Create job with minimal required fields
+      // Step 3: Create scheduled job with proper time information
+      const scheduledDate = new Date(`${bookingData.selectedDate}T${bookingData.selectedTime}:00`);
+      const scheduledEnd = new Date(scheduledDate.getTime() + 3 * 60 * 60 * 1000); // 3 hour window
+      
       const jobData = {
         customer_id: customer.id,
-        address_id: addressId
+        address_id: addressId,
+        schedule: {
+          scheduled_start: scheduledDate.toISOString(),
+          scheduled_end: scheduledEnd.toISOString(),
+          arrival_window: 180 // 3 hour window in minutes
+        },
+        // Add the "Service call" line item with $99 fee
+        line_items: [{
+          name: "Service call",
+          description: bookingData.problemDescription || "Plumbing service",
+          unit_price: 99.00,
+          quantity: 1,
+          unit_cost: 0
+        }],
+        // Enable notifications
+        notify_customer: true,
+        notify_pro: true,
+        // Add problem description as job note
+        internal_memo: bookingData.problemDescription || "Service requested via website"
       };
       
       const job = await housecallClient.createJob(jobData);
-      console.log(`[Booking] Created job in Housecall Pro: ${job.id} with notifications enabled`);
-      
-      // Step 4: Skip appointment creation for now - job scheduling is sufficient
-      // Housecall Pro will handle scheduling internally
-      
-      const scheduledDate = new Date(`${bookingData.selectedDate}T${bookingData.selectedTime}:00`);
+      console.log(`[Booking] Created scheduled job in Housecall Pro: ${job.id} for ${scheduledDate.toISOString()}`);
       
       res.json({
         success: true,
