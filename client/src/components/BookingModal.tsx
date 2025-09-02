@@ -32,6 +32,9 @@ interface Customer {
   email: string;
   phone: string;
   address: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
 }
 
 // Form Schemas
@@ -244,18 +247,24 @@ export default function BookingModal({ isOpen, onClose }: BookingModalProps) {
   const handleFinalBookingSubmit = () => {
     if (!selectedTimeSlot || !customer || !problemDescription) return;
 
+    // Extract time in HH:MM format from the ISO string
+    const timeObj = new Date(selectedTimeSlot.startTime);
+    const formattedTime = `${timeObj.getHours().toString().padStart(2, '0')}:${timeObj.getMinutes().toString().padStart(2, '0')}`;
+
     const bookingData: any = {
-      service: "service_99_fee", // Fixed service ID for $99 service fee
-      selectedDate: selectedDate,
-      selectedTime: selectedTimeSlot.startTime,
-      customer: {
+      customerInfo: {
         firstName: customer.firstName,
         lastName: customer.lastName,
         email: customer.email,
         phone: customer.phone,
         address: customer.address,
+        city: customer.city || "Quincy",
+        state: customer.state || "MA",
+        zipCode: customer.zipCode || "02169"
       },
-      problemDescription: problemDescription, // This will be added to job notes
+      selectedDate: selectedDate,
+      selectedTime: formattedTime,
+      problemDescription: problemDescription
     };
 
     createBookingMutation.mutate(bookingData);
