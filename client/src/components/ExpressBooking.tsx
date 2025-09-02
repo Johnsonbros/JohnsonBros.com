@@ -224,7 +224,6 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
                 <div className="space-y-2">
                   {uniqueSlots.map((slot, idx) => {
                     const [startTime, endTime] = slot.time_slot.split(' - ');
-                    const techCount = slot.available_techs.length;
                     
                     return (
                       <button
@@ -244,7 +243,7 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
                                 {formatTimeWindowEST(startTime, endTime)}
                               </div>
                               <div className="text-sm opacity-90">
-                                {techCount} technician{techCount > 1 ? 's' : ''} available
+                                EST
                               </div>
                             </div>
                           </div>
