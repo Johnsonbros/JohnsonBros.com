@@ -7,21 +7,29 @@ export function getNowInTZ(): Date {
 }
 
 export function getStartOfDayInTZ(date: Date = new Date()): Date {
-  const formatter = new Intl.DateTimeFormat('en-US', {
+  // Get the date string in EST/EDT
+  const estDateStr = date.toLocaleDateString('en-US', {
     timeZone: TIMEZONE,
     year: 'numeric',
     month: '2-digit',
-    day: '2-digit',
+    day: '2-digit'
   });
   
-  const parts = formatter.formatToParts(date);
-  const year = parseInt(parts.find(p => p.type === 'year')?.value || '0');
-  const month = parseInt(parts.find(p => p.type === 'month')?.value || '0') - 1;
-  const day = parseInt(parts.find(p => p.type === 'day')?.value || '0');
+  // Parse the date string and create a new Date at midnight EST/EDT
+  const [month, day, year] = estDateStr.split('/');
   
-  const startOfDay = new Date(date);
-  startOfDay.setFullYear(year, month, day);
-  startOfDay.setHours(0, 0, 0, 0);
+  // Create a date string at midnight EST/EDT
+  const midnightESTStr = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T00:00:00`;
+  
+  // Convert to a Date object using the EST timezone
+  const startOfDay = new Date(midnightESTStr + '-05:00'); // Default to EST
+  
+  // Adjust for DST if necessary
+  const testDate = new Date(midnightESTStr);
+  const isDST = testDate.getTimezoneOffset() < new Date(testDate.getFullYear(), 0, 1).getTimezoneOffset();
+  if (isDST) {
+    return new Date(midnightESTStr + '-04:00'); // EDT
+  }
   
   return startOfDay;
 }
@@ -34,9 +42,21 @@ export function getEndOfDayInTZ(date: Date = new Date()): Date {
 }
 
 export function getTomorrowInTZ(): Date {
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  return tomorrow;
+  // Get current date in EST/EDT
+  const now = new Date();
+  const estDateStr = now.toLocaleDateString('en-US', {
+    timeZone: TIMEZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  });
+  
+  // Parse and add one day
+  const [month, day, year] = estDateStr.split('/');
+  const estDate = new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T12:00:00`);
+  estDate.setDate(estDate.getDate() + 1);
+  
+  return estDate;
 }
 
 export function formatTimeInTZ(date: Date): string {

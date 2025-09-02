@@ -188,16 +188,26 @@ export default function BookingModal({ isOpen, onClose }: BookingModalProps) {
       if (bookingType === 'express') {
         setIsExpressBooking(true);
         setIsFeeWaived(expressFeeWaived);
-        const today = new Date().toISOString().split('T')[0];
+        // Get today's date in EST/EDT
+        const now = new Date();
+        const estString = now.toLocaleString('en-US', { timeZone: 'America/New_York' });
+        const estDate = new Date(estString);
+        estDate.setHours(0, 0, 0, 0);
+        const today = estDate.toISOString().split('T')[0];
         setSelectedDate(today);
         // Store in localStorage as backup
         localStorage.setItem('booking_type', 'express');
         localStorage.setItem('express_fee_waived', expressFeeWaived.toString());
       } else if (bookingType === 'next_day') {
         setIsFeeWaived(true);
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        setSelectedDate(tomorrow.toISOString().split('T')[0]);
+        // Get tomorrow's date in EST/EDT
+        const now = new Date();
+        const estString = now.toLocaleString('en-US', { timeZone: 'America/New_York' });
+        const estDate = new Date(estString);
+        estDate.setDate(estDate.getDate() + 1);
+        estDate.setHours(0, 0, 0, 0);
+        const tomorrow = estDate.toISOString().split('T')[0];
+        setSelectedDate(tomorrow);
         // Store in localStorage as backup
         localStorage.setItem('booking_type', 'next_day');
         localStorage.setItem('express_fee_waived', 'true');
@@ -317,12 +327,21 @@ export default function BookingModal({ isOpen, onClose }: BookingModalProps) {
   };
 
   const generateCalendarDays = () => {
-    const today = new Date();
+    // Get current date in EST/EDT timezone
+    const now = new Date();
+    const estString = now.toLocaleString('en-US', { timeZone: 'America/New_York' });
+    const estDate = new Date(estString);
+    
+    // Create a date object for today at midnight EST
+    const todayEST = new Date(estDate);
+    todayEST.setHours(0, 0, 0, 0);
+    const todayESTStr = todayEST.toISOString().split('T')[0];
+    
     const days = [];
     
     for (let i = 0; i < 30; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() + i);
+      const date = new Date(todayEST);
+      date.setDate(todayEST.getDate() + i);
       const dateStr = date.toISOString().split('T')[0];
       const dayOfWeek = date.toLocaleDateString('en-US', { weekday: 'short' });
       const dayOfMonth = date.getDate();
@@ -331,7 +350,7 @@ export default function BookingModal({ isOpen, onClose }: BookingModalProps) {
         date: dateStr,
         dayOfWeek,
         dayOfMonth,
-        isToday: i === 0,
+        isToday: dateStr === todayESTStr,
         isWeekend: date.getDay() === 0 || date.getDay() === 6,
       });
     }

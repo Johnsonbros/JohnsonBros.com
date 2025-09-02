@@ -59,7 +59,15 @@ export class CapacityCalculator {
   }
 
   async calculateCapacity(date: Date = new Date(), userZip?: string): Promise<CapacityResponse> {
-    const cacheKey = `capacity:${date.toISOString().split('T')[0]}`;
+    // Use EST/EDT date for cache key
+    const estDateStr = date.toLocaleDateString('en-US', {
+      timeZone: 'America/New_York',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+    const [month, day, year] = estDateStr.split('/');
+    const cacheKey = `capacity:${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
     const cached = this.cache.get(cacheKey);
     
     if (cached && cached.expires > Date.now()) {
@@ -720,7 +728,18 @@ export class CapacityCalculator {
   }
 
   async getTodayCapacity(userZip?: string): Promise<CapacityResponse> {
-    return this.calculateCapacity(new Date(), userZip);
+    // Get today's date in EST/EDT timezone
+    const now = new Date();
+    const estDateStr = now.toLocaleDateString('en-US', {
+      timeZone: 'America/New_York',
+      year: 'numeric',
+      month: '2-digit', 
+      day: '2-digit'
+    });
+    const [month, day, year] = estDateStr.split('/');
+    const todayEST = new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T12:00:00`);
+    
+    return this.calculateCapacity(todayEST, userZip);
   }
 
   async getTomorrowCapacity(userZip?: string): Promise<CapacityResponse> {
