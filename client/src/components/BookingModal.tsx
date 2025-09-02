@@ -11,7 +11,7 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "
 import { getTimeSlots, createBooking } from "@/lib/housecallApi";
 import { createCustomer, lookupCustomer } from "@/lib/customerApi";
 import { useToast } from "@/hooks/use-toast";
-import { Calendar, X, User, UserPlus, Clock, DollarSign, ChevronLeft, ClipboardList } from "lucide-react";
+import { Calendar, X, User, UserPlus, Clock, DollarSign, ChevronLeft, ClipboardList, Gift, Info } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { z } from "zod";
 import { formatTimeWindowEST } from "@/lib/timeUtils";
@@ -372,12 +372,12 @@ export default function BookingModal({ isOpen, onClose }: BookingModalProps) {
         <DialogHeader className="bg-johnson-blue text-white p-4 sm:p-6 sticky top-0 z-20 shadow-lg">
           <div className="flex justify-between items-start">
             <div className="flex-1">
-              <DialogTitle className="text-lg sm:text-2xl font-bold">Book Your Service</DialogTitle>
+              <DialogTitle className="text-lg sm:text-2xl font-bold">Schedule Your Plumbing Service</DialogTitle>
               <div className="flex items-center gap-2 mt-1">
                 <DollarSign className="h-4 w-4 text-blue-100" />
                 <p className="text-blue-100 text-sm sm:text-base">
-                  $99 Service Fee
-                  {isFeeWaived && <span className="ml-2 text-green-300 font-bold">WAIVED TODAY</span>}
+                  Professional Diagnosis & Quote
+                  {isFeeWaived && <span className="ml-2 text-green-300 font-bold">$99 FEE WAIVED TODAY</span>}
                 </p>
               </div>
             </div>
@@ -772,7 +772,7 @@ export default function BookingModal({ isOpen, onClose }: BookingModalProps) {
             {/* Step 4: Confirmation */}
             {currentStep === 4 && customer && (
               <div className="step-transition-enter">
-                <h4 className="text-base sm:text-xl font-bold text-gray-900 mb-4">Confirm Your Booking</h4>
+                <h4 className="text-base sm:text-xl font-bold text-gray-900 mb-4">Review & Confirm Your Service Appointment</h4>
                 
                 {/* Booking Summary */}
                 <div className="space-y-4">
@@ -816,17 +816,36 @@ export default function BookingModal({ isOpen, onClose }: BookingModalProps) {
                   </div>
 
                   {/* Service Fee */}
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <div className="flex justify-between items-center">
-                      <span className="font-semibold text-gray-700">Service Fee</span>
+                  <div className={`border rounded-lg p-4 ${isFeeWaived ? 'bg-green-50 border-green-200' : 'bg-blue-50 border-blue-200'}`}>
+                    <div className="flex justify-between items-center mb-2">
+                      <div className="flex items-center gap-2">
+                        {isFeeWaived ? (
+                          <Gift className="h-5 w-5 text-green-600" />
+                        ) : (
+                          <DollarSign className="h-5 w-5 text-blue-600" />
+                        )}
+                        <span className="font-semibold text-gray-700">Service Call Fee</span>
+                      </div>
                       <span className={`font-bold ${isFeeWaived ? 'text-green-600' : 'text-gray-900'}`}>
                         {isFeeWaived ? (
                           <>
                             <span className="line-through text-gray-400 mr-2">$99</span>
-                            WAIVED
+                            <span className="flex items-center gap-1">
+                              WAIVED
+                            </span>
                           </>
                         ) : (
                           '$99.00'
+                        )}
+                      </span>
+                    </div>
+                    <div className="text-xs text-gray-600 flex items-start gap-1">
+                      <Info className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                      <span>
+                        {isFeeWaived ? (
+                          "Your service call fee has been waived! This normally covers our technician's time to diagnose your issue and provide a repair quote."
+                        ) : (
+                          "This fee covers our licensed technician's time to diagnose your plumbing issue and provide you with a detailed repair quote. The fee is applied toward any repairs you approve."
                         )}
                       </span>
                     </div>
