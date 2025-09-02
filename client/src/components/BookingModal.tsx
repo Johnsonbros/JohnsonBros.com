@@ -180,20 +180,27 @@ export default function BookingModal({ isOpen, onClose }: BookingModalProps) {
 
   useEffect(() => {
     if (isOpen) {
-      // Check if this is an express booking
-      const bookingType = sessionStorage.getItem('booking_type');
-      const expressFeeWaived = sessionStorage.getItem('express_fee_waived') === 'true';
+      // Check if this is an express booking - also check localStorage as fallback
+      const bookingType = sessionStorage.getItem('booking_type') || localStorage.getItem('booking_type');
+      const expressFeeWaived = sessionStorage.getItem('express_fee_waived') === 'true' || 
+                               localStorage.getItem('express_fee_waived') === 'true';
       
       if (bookingType === 'express') {
         setIsExpressBooking(true);
         setIsFeeWaived(expressFeeWaived);
         const today = new Date().toISOString().split('T')[0];
         setSelectedDate(today);
+        // Store in localStorage as backup
+        localStorage.setItem('booking_type', 'express');
+        localStorage.setItem('express_fee_waived', expressFeeWaived.toString());
       } else if (bookingType === 'next_day') {
         setIsFeeWaived(true);
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
         setSelectedDate(tomorrow.toISOString().split('T')[0]);
+        // Store in localStorage as backup
+        localStorage.setItem('booking_type', 'next_day');
+        localStorage.setItem('express_fee_waived', 'true');
       } else {
         setIsExpressBooking(false);
         setIsFeeWaived(false);
@@ -217,9 +224,13 @@ export default function BookingModal({ isOpen, onClose }: BookingModalProps) {
     problemForm.reset();
     newCustomerForm.reset();
     returningCustomerForm.reset();
+    // Clear both sessionStorage and localStorage
     sessionStorage.removeItem('booking_type');
     sessionStorage.removeItem('express_fee_waived');
     sessionStorage.removeItem('express_windows');
+    localStorage.removeItem('booking_type');
+    localStorage.removeItem('express_fee_waived');
+    localStorage.removeItem('express_windows');
   };
 
   const handleProblemSubmit = (data: ProblemDescriptionFormValues) => {
@@ -244,8 +255,31 @@ export default function BookingModal({ isOpen, onClose }: BookingModalProps) {
     lookupCustomerMutation.mutate(data);
   };
 
-  const handleFinalBookingSubmit = () => {
+  const handleFinalBookingSubmit = async () => {
     if (!selectedTimeSlot || !customer || !problemDescription) return;
+
+    // Re-validate that the time slot is still available
+    try {
+      const currentSlots = await getTimeSlots(selectedDate);
+      const slotStillAvailable = currentSlots.some(
+        (slot: AvailableTimeSlot) => slot.id === selectedTimeSlot.id && slot.isAvailable
+      );
+      
+      if (!slotStillAvailable) {
+        toast({
+          title: "Time Slot No Longer Available",
+          description: "The selected time slot is no longer available. Please select a different time.",
+          variant: "destructive",
+        });
+        setCurrentStep(2); // Go back to time selection
+        setSelectedTimeSlot(null);
+        queryClient.invalidateQueries({ queryKey: ["/api/timeslots", selectedDate] });
+        return;
+      }
+    } catch (error) {
+      console.error("Failed to validate time slot:", error);
+      // Continue with booking if validation fails to not block the user
+    }
 
     // Extract time in HH:MM format from the ISO string
     const timeObj = new Date(selectedTimeSlot.startTime);
@@ -424,8 +458,8 @@ export default function BookingModal({ isOpen, onClose }: BookingModalProps) {
                     <h5 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base">Select Date</h5>
                     <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
                       <div className="grid grid-cols-7 gap-1 mb-2">
-                        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day) => (
-                          <div key={day} className="text-center text-[10px] sm:text-sm font-medium text-gray-500 py-1">
+                        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
+                          <div key={`weekday-${index}`} className="text-center text-[10px] sm:text-sm font-medium text-gray-500 py-1">
                             {day}
                           </div>
                         ))}

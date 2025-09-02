@@ -266,6 +266,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const bookingData = req.body;
       
+      // Validate required fields
+      if (!bookingData?.customerInfo || !bookingData?.selectedDate || !bookingData?.selectedTime) {
+        return res.status(400).json({ error: "Missing required booking information" });
+      }
+      
       console.log(`[Booking] Creating real booking in Housecall Pro:`, JSON.stringify(bookingData, null, 2));
       
       const customerInfo = bookingData.customerInfo;
@@ -290,9 +295,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             mobile_number: customerInfo.phone,
             addresses: [{
               street: customerInfo.address,
-              city: "Quincy", // Default city
-              state: "MA",
-              zip: "02169"
+              city: customerInfo.city || "Quincy",
+              state: customerInfo.state || "MA",
+              zip: customerInfo.zipCode || "02169"
             }]
           });
           console.log(`[Booking] Created new customer: ${customer.first_name} ${customer.last_name}`);
@@ -308,15 +313,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Step 2: Get customer address
-      const addressId = customer.addresses?.[0]?.id || await housecallClient.createCustomerAddress(customer.id, {
-        street: customerInfo.address,
-        city: "Quincy",
-        state: "MA", 
-        zip: "02169"
-      });
+      let addressId = customer.addresses?.[0]?.id;
+      if (!addressId) {
+        try {
+          addressId = await housecallClient.createCustomerAddress(customer.id, {
+            street: customerInfo.address,
+            city: customerInfo.city || "Quincy",
+            state: customerInfo.state || "MA", 
+            zip: customerInfo.zipCode || "02169"
+          });
+        } catch (addressError) {
+          console.error("[Booking] Failed to create address:", addressError);
+          return res.status(500).json({ error: "Failed to create customer address" });
+        }
+      }
       
-      // Step 3: Create scheduled job with proper time information
-      const scheduledDate = new Date(`${bookingData.selectedDate}T${bookingData.selectedTime}:00`);
+      if (!addressId) {
+        return res.status(500).json({ error: "Unable to determine customer address" });
+      }
+      
+      // Step 3: Create scheduled job with proper time information (handle EST timezone)
+      // Parse the date and time in EST timezone
+      // Determine if we're in EST (-05:00) or EDT (-04:00) based on the date
+      const testDate = new Date(`${bookingData.selectedDate}T12:00:00`);
+      const isDST = testDate.getTimezoneOffset() < new Date(testDate.getFullYear(), 0, 1).getTimezoneOffset();
+      const offset = isDST ? '-04:00' : '-05:00';
+      const easternTime = `${bookingData.selectedDate}T${bookingData.selectedTime}:00${offset}`;
+      const scheduledDate = new Date(easternTime);
+      
+      // Validate the date is valid and in the future
+      if (isNaN(scheduledDate.getTime())) {
+        return res.status(400).json({ error: "Invalid date or time format" });
+      }
+      
+      if (scheduledDate < new Date()) {
+        return res.status(400).json({ error: "Cannot book appointments in the past" });
+      }
       const scheduledEnd = new Date(scheduledDate.getTime() + 3 * 60 * 60 * 1000); // 3 hour window
       
       const jobData = {
