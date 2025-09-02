@@ -327,11 +327,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           scheduled_end: scheduledEnd.toISOString(),
           arrival_window: 180 // 3 hour window in minutes
         },
-        // Add the "Service call" line item with $0.99 placeholder fee
+        // Add the "Service call" line item with $99 fee (9900 cents)
         line_items: [{
           name: "Service call",
           description: "$99 FEE WAIVED - Online Booking Special",
-          unit_price: 0.99,
+          unit_price: 9900,  // $99.00 in cents
           quantity: 1,
           unit_cost: 0
         }],
