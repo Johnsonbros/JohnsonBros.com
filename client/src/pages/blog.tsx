@@ -15,49 +15,82 @@ import { SEO } from "@/components/SEO";
 
 function BlogPostCard({ post }: { post: BlogPost }) {
   return (
-    <Link href={`/blog/${post.slug}`}>
-      <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer" data-testid={`card-blog-post-${post.id}`}>
+    <Card className="h-full hover:shadow-xl transition-all duration-300 border-gray-200 hover:border-johnson-orange/30 overflow-hidden group cursor-pointer" data-testid={`card-blog-post-${post.id}`}>
+      <Link href={`/blog/${post.slug}`} className="block h-full">
         {post.featuredImage && (
-          <div className="aspect-video w-full overflow-hidden rounded-t-lg">
+          <div className="aspect-video w-full overflow-hidden bg-gray-100">
             <img 
               src={post.featuredImage} 
               alt={post.title}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
           </div>
         )}
-        <CardHeader>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+        {!post.featuredImage && (
+          <div className="aspect-video w-full bg-gradient-to-br from-johnson-orange/20 to-johnson-orange/10 flex items-center justify-center">
+            <div className="text-johnson-orange">
+              <svg className="w-24 h-24 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+              </svg>
+            </div>
+          </div>
+        )}
+        <CardHeader className="space-y-3">
+          <div className="flex items-center justify-between">
             {post.category && (
-              <Badge variant="secondary">{post.category}</Badge>
+              <Badge 
+                variant="secondary" 
+                className="text-xs bg-johnson-orange/10 text-johnson-orange border-johnson-orange/20 font-semibold"
+              >
+                {post.category.charAt(0).toUpperCase() + post.category.slice(1)}
+              </Badge>
             )}
             {post.readingTime && (
-              <span className="flex items-center gap-1">
+              <span className="flex items-center gap-1 text-xs text-gray-500">
                 <Clock className="h-3 w-3" />
                 {post.readingTime} min read
               </span>
             )}
           </div>
-          <CardTitle className="line-clamp-2">{post.title}</CardTitle>
-          <CardDescription className="line-clamp-3">
-            {post.excerpt || post.content.substring(0, 150) + "..."}
+          <CardTitle className="text-xl font-bold line-clamp-2 group-hover:text-johnson-orange transition-colors">
+            {post.title}
+          </CardTitle>
+          <CardDescription className="line-clamp-3 text-gray-600">
+            {post.excerpt || post.content.replace(/[#*\n]/g, ' ').substring(0, 150) + "..."}
           </CardDescription>
         </CardHeader>
-        <CardFooter className="flex items-center justify-between text-sm text-muted-foreground">
-          <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1">
-              <Calendar className="h-3 w-3" />
-              {post.publishDate ? format(new Date(post.publishDate), "MMM dd, yyyy") : "Draft"}
-            </span>
-            <span className="flex items-center gap-1">
-              <Eye className="h-3 w-3" />
-              {post.viewCount} views
-            </span>
+        <CardFooter className="pt-0 pb-4">
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-3 text-xs text-gray-500">
+              <span className="flex items-center gap-1">
+                <Calendar className="h-3 w-3" />
+                {post.publishDate ? format(new Date(post.publishDate), "MMM dd, yyyy") : "Draft"}
+              </span>
+              <span className="flex items-center gap-1">
+                <Eye className="h-3 w-3" />
+                {post.viewCount || 0} views
+              </span>
+            </div>
+            <div className="flex items-center gap-1 text-johnson-orange font-semibold text-sm group-hover:gap-2 transition-all">
+              Read More
+              <ArrowRight className="h-4 w-4" />
+            </div>
           </div>
-          <ArrowRight className="h-4 w-4 text-[--primary-gold]" />
+          {post.tags && post.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-3">
+              {post.tags.slice(0, 3).map((tag, index) => (
+                <span 
+                  key={index} 
+                  className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full"
+                >
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          )}
         </CardFooter>
-      </Card>
-    </Link>
+      </Link>
+    </Card>
   );
 }
 

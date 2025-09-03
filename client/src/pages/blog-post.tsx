@@ -10,6 +10,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { type BlogPost, type Keyword } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { SEO, generateArticleStructuredData } from "@/components/SEO";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface BlogPostWithKeywords extends BlogPost {
   keywords?: Keyword[];
@@ -79,28 +81,6 @@ export default function BlogPostPage() {
     }
   };
 
-  const formatContent = (content: string) => {
-    // Convert markdown-style formatting to HTML
-    let formatted = content
-      .replace(/\n\n/g, "</p><p>")
-      .replace(/\n/g, "<br />")
-      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-      .replace(/\*(.*?)\*/g, "<em>$1</em>")
-      .replace(/#{3} (.*?)(\n|$)/g, "<h3 class='text-xl font-semibold mt-6 mb-3'>$1</h3>$2")
-      .replace(/#{2} (.*?)(\n|$)/g, "<h2 class='text-2xl font-bold mt-8 mb-4'>$1</h2>$2")
-      .replace(/#{1} (.*?)(\n|$)/g, "<h1 class='text-3xl font-bold mt-8 mb-4'>$1</h1>$2")
-      .replace(/- (.*?)(\n|$)/g, "<li class='ml-4'>$1</li>$2");
-    
-    // Wrap in paragraph tags if not already wrapped
-    if (!formatted.startsWith("<")) {
-      formatted = `<p>${formatted}</p>`;
-    }
-    
-    // Wrap list items in ul tags
-    formatted = formatted.replace(/(<li.*?<\/li>\s*)+/g, (match) => `<ul class='list-disc ml-4 my-4'>${match}</ul>`);
-    
-    return formatted;
-  };
 
   if (error) {
     return (
@@ -128,20 +108,20 @@ export default function BlogPostPage() {
       {post && (
         <SEO
           title={post.metaTitle || post.title}
-          description={post.metaDescription || post.excerpt}
+          description={post.metaDescription || post.excerpt || undefined}
           keywords={post.tags || []}
           type="article"
           author={post.author || "Johnson Bros. Plumbing"}
-          publishedTime={post.publishDate || undefined}
-          modifiedTime={post.updatedAt || undefined}
+          publishedTime={post.publishDate ? new Date(post.publishDate).toISOString() : undefined}
+          modifiedTime={post.updatedAt ? post.updatedAt.toISOString() : undefined}
           url={`/blog/${post.slug}`}
           structuredData={generateArticleStructuredData({
             title: post.title,
-            description: post.metaDescription || post.excerpt,
+            description: post.metaDescription || post.excerpt || undefined,
             author: post.author,
             publishDate: post.publishDate,
             modifiedDate: post.updatedAt,
-            image: post.featuredImage,
+            image: post.featuredImage || undefined,
             url: `https://johnsonbrosplumbing.com/blog/${post.slug}`
           })}
         />
@@ -215,11 +195,45 @@ export default function BlogPostPage() {
               </header>
 
               {/* Article Content */}
-              <div 
-                className="prose prose-lg max-w-none mb-12"
-                dangerouslySetInnerHTML={{ __html: formatContent(post.content) }}
-                data-testid="text-blog-content"
-              />
+              <div className="prose prose-lg max-w-none mb-12" data-testid="text-blog-content">
+                <ReactMarkdown 
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    h1: ({children}) => <h1 className="text-3xl font-bold mt-8 mb-4 text-gray-900">{children}</h1>,
+                    h2: ({children}) => <h2 className="text-2xl font-bold mt-8 mb-4 text-gray-900">{children}</h2>,
+                    h3: ({children}) => <h3 className="text-xl font-semibold mt-6 mb-3 text-gray-900">{children}</h3>,
+                    h4: ({children}) => <h4 className="text-lg font-semibold mt-4 mb-2 text-gray-900">{children}</h4>,
+                    p: ({children}) => <p className="mb-4 text-gray-700 leading-relaxed">{children}</p>,
+                    ul: ({children}) => <ul className="list-disc list-inside mb-4 ml-4 space-y-2">{children}</ul>,
+                    ol: ({children}) => <ol className="list-decimal list-inside mb-4 ml-4 space-y-2">{children}</ol>,
+                    li: ({children}) => <li className="text-gray-700">{children}</li>,
+                    strong: ({children}) => <strong className="font-bold text-gray-900">{children}</strong>,
+                    em: ({children}) => <em className="italic">{children}</em>,
+                    blockquote: ({children}) => (
+                      <blockquote className="border-l-4 border-johnson-orange pl-4 py-2 my-4 bg-orange-50 rounded-r">
+                        {children}
+                      </blockquote>
+                    ),
+                    code: ({className, children}) => {
+                      const isInline = !className;
+                      return isInline ? (
+                        <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono text-gray-800">{children}</code>
+                      ) : (
+                        <code className="block bg-gray-100 p-4 rounded-lg overflow-x-auto font-mono text-sm text-gray-800 mb-4">
+                          {children}
+                        </code>
+                      );
+                    },
+                    a: ({href, children}) => (
+                      <a href={href} className="text-johnson-orange hover:text-orange-600 underline" target="_blank" rel="noopener noreferrer">
+                        {children}
+                      </a>
+                    ),
+                  }}
+                >
+                  {post.content}
+                </ReactMarkdown>
+              </div>
 
               {/* Keywords/Tags */}
               {post.keywords && post.keywords.length > 0 && (
