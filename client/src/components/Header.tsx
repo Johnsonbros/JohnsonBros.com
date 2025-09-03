@@ -1,9 +1,10 @@
 import { Phone, Star, Menu, X, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
+import { Link } from "wouter";
 
 interface HeaderProps {
-  onBookService: () => void;
+  onBookService?: () => void;
 }
 
 export default function Header({ onBookService }: HeaderProps) {
@@ -104,29 +105,43 @@ export default function Header({ onBookService }: HeaderProps) {
         {isMobileMenuOpen && (
           <div className="lg:hidden fixed inset-0 top-[120px] bg-johnson-blue z-40" style={{ height: 'calc(100vh - 120px - 70px)' }}>
             <nav className="flex flex-col p-6 space-y-4">
+              <Link 
+                href="/" 
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="text-white text-lg font-medium py-3 px-4 hover:bg-white/10 rounded-lg transition-colors"
+              >
+                Home
+              </Link>
               <a 
-                href="#services" 
+                href="/#services" 
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="text-white text-lg font-medium py-3 px-4 hover:bg-white/10 rounded-lg transition-colors"
               >
                 Services
               </a>
               <a 
-                href="#about" 
+                href="/#about" 
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="text-white text-lg font-medium py-3 px-4 hover:bg-white/10 rounded-lg transition-colors"
               >
                 About Us
               </a>
+              <Link 
+                href="/blog" 
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="text-white text-lg font-medium py-3 px-4 hover:bg-white/10 rounded-lg transition-colors"
+              >
+                Blog
+              </Link>
               <a 
-                href="#reviews" 
+                href="/#reviews" 
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="text-white text-lg font-medium py-3 px-4 hover:bg-white/10 rounded-lg transition-colors"
               >
                 Reviews
               </a>
               <a 
-                href="#contact" 
+                href="/#contact" 
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="text-white text-lg font-medium py-3 px-4 hover:bg-white/10 rounded-lg transition-colors"
               >
@@ -151,14 +166,25 @@ export default function Header({ onBookService }: HeaderProps) {
         {/* Mobile Sticky Bottom Action Bar */}
         <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-50 px-4 py-3">
           <div className="flex gap-3">
-            <button 
-              onClick={onBookService}
-              className="flex-1 bg-johnson-blue hover:bg-blue-700 text-white py-3 rounded-lg font-bold transition-all duration-300 shadow-md text-base touch-target flex items-center justify-center gap-2"
-              data-testid="bottom-book-service-button"
-            >
-              <Calendar className="h-5 w-5" />
-              <span>BOOK SERVICE</span>
-            </button>
+            {onBookService ? (
+              <button 
+                onClick={onBookService}
+                className="flex-1 bg-johnson-blue hover:bg-blue-700 text-white py-3 rounded-lg font-bold transition-all duration-300 shadow-md text-base touch-target flex items-center justify-center gap-2"
+                data-testid="bottom-book-service-button"
+              >
+                <Calendar className="h-5 w-5" />
+                <span>BOOK SERVICE</span>
+              </button>
+            ) : (
+              <Link 
+                href="/#booking"
+                className="flex-1 bg-johnson-blue hover:bg-blue-700 text-white py-3 rounded-lg font-bold transition-all duration-300 shadow-md text-base touch-target flex items-center justify-center gap-2"
+                data-testid="bottom-book-service-link"
+              >
+                <Calendar className="h-5 w-5" />
+                <span>BOOK SERVICE</span>
+              </Link>
+            )}
             <a 
               href="tel:6174799911" 
               className="flex-1 bg-gradient-to-r from-johnson-orange to-orange-500 hover:from-orange-500 hover:to-johnson-orange text-white py-3 rounded-lg font-bold transition-all duration-300 shadow-md text-base touch-target flex items-center justify-center gap-2"
@@ -187,10 +213,12 @@ export default function Header({ onBookService }: HeaderProps) {
 
             {/* Desktop Navigation */}
             <nav className="flex space-x-8">
-              <a href="#services" className="text-white hover:text-blue-200 transition-colors font-medium">Services</a>
-              <a href="#about" className="text-white hover:text-blue-200 transition-colors font-medium">About</a>
-              <a href="#reviews" className="text-white hover:text-blue-200 transition-colors font-medium">Reviews</a>
-              <a href="#contact" className="text-white hover:text-blue-200 transition-colors font-medium">Contact</a>
+              <Link href="/" className="text-white hover:text-blue-200 transition-colors font-medium">Home</Link>
+              <a href="/#services" className="text-white hover:text-blue-200 transition-colors font-medium">Services</a>
+              <a href="/#about" className="text-white hover:text-blue-200 transition-colors font-medium">About</a>
+              <Link href="/blog" className="text-white hover:text-blue-200 transition-colors font-medium">Blog</Link>
+              <a href="/#reviews" className="text-white hover:text-blue-200 transition-colors font-medium">Reviews</a>
+              <a href="/#contact" className="text-white hover:text-blue-200 transition-colors font-medium">Contact</a>
             </nav>
 
             {/* Desktop CTA Buttons */}
@@ -205,13 +233,24 @@ export default function Header({ onBookService }: HeaderProps) {
                 </div>
                 <span className="text-white text-sm font-medium" data-testid="rating-display">4.8/5 (281 reviews)</span>
               </div>
-              <Button 
-                onClick={onBookService}
-                className="bg-gradient-to-r from-johnson-orange to-orange-500 text-white px-6 py-3 rounded-lg font-bold hover:from-orange-500 hover:to-johnson-orange transition-all duration-300 transform hover:scale-105 shadow-lg text-base"
-                data-testid="header-book-service-button-desktop"
-              >
-                Book Service
-              </Button>
+              {onBookService ? (
+                <Button 
+                  onClick={onBookService}
+                  className="bg-gradient-to-r from-johnson-orange to-orange-500 text-white px-6 py-3 rounded-lg font-bold hover:from-orange-500 hover:to-johnson-orange transition-all duration-300 transform hover:scale-105 shadow-lg text-base"
+                  data-testid="header-book-service-button-desktop"
+                >
+                  Book Service
+                </Button>
+              ) : (
+                <Link href="/#booking">
+                  <Button 
+                    className="bg-gradient-to-r from-johnson-orange to-orange-500 text-white px-6 py-3 rounded-lg font-bold hover:from-orange-500 hover:to-johnson-orange transition-all duration-300 transform hover:scale-105 shadow-lg text-base"
+                    data-testid="header-book-service-link-desktop"
+                  >
+                    Book Service
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
         </div>

@@ -1,7 +1,12 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertCustomerSchema, insertAppointmentSchema, type BookingFormData, customerAddresses, serviceAreas, heatMapCache, syncStatus } from "@shared/schema";
+import { 
+  insertCustomerSchema, insertAppointmentSchema, type BookingFormData, 
+  customerAddresses, serviceAreas, heatMapCache, syncStatus,
+  insertBlogPostSchema, insertKeywordSchema, insertPostKeywordSchema,
+  type BlogPost, type Keyword, type PostKeyword, type KeywordRanking
+} from "@shared/schema";
 import { z } from "zod";
 import { db } from "./db";
 import { eq, sql, and } from "drizzle-orm";
@@ -111,6 +116,218 @@ const customerLookupLimiter = rateLimit({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+
+  // Seed blog data on startup (only in development)
+  if (process.env.NODE_ENV === 'development') {
+    import('./seed-blog').then(module => {
+      module.seedBlogData().catch(err => {
+        console.error('Failed to seed blog data:', err);
+      });
+    });
+  }
+
+  // ========== BLOG ROUTES ==========
+  
+  // Get all blog posts (with pagination and filtering)
+  app.get("/api/blog/posts", async (req, res) => {
+    try {
+      const { status, limit = 10, offset = 0 } = req.query;
+      
+      const posts = await storage.getAllBlogPosts(
+        status as string | undefined,
+        parseInt(limit as string),
+        parseInt(offset as string)
+      );
+      
+      res.json(posts);
+    } catch (error) {
+      console.error("Error fetching blog posts:", error);
+      res.status(500).json({ error: "Failed to fetch blog posts" });
+    }
+  });
+  
+  // Get a single blog post by slug
+  app.get("/api/blog/posts/:slug", async (req, res) => {
+    try {
+      const { slug } = req.params;
+      const post = await storage.getBlogPostBySlug(slug);
+      
+      if (!post) {
+        return res.status(404).json({ error: "Post not found" });
+      }
+      
+      // Increment view count
+      await storage.incrementPostViews(post.id);
+      
+      // Get keywords for this post
+      const postKeywords = await storage.getPostKeywords(post.id);
+      const keywordDetails = await Promise.all(
+        postKeywords.map(pk => storage.getKeyword(pk.keywordId))
+      );
+      
+      res.json({
+        ...post,
+        keywords: keywordDetails.filter(k => k !== undefined)
+      });
+    } catch (error) {
+      console.error("Error fetching blog post:", error);
+      res.status(500).json({ error: "Failed to fetch blog post" });
+    }
+  });
+  
+  // Create a new blog post
+  app.post("/api/blog/posts", async (req, res) => {
+    try {
+      const postData = insertBlogPostSchema.parse(req.body);
+      const post = await storage.createBlogPost(postData);
+      
+      // Add keywords if provided
+      if (req.body.keywords && Array.isArray(req.body.keywords)) {
+        for (const keywordName of req.body.keywords) {
+          let keyword = await storage.getKeywordByName(keywordName);
+          if (!keyword) {
+            keyword = await storage.createKeyword({ keyword: keywordName });
+          }
+          await storage.addPostKeyword({
+            postId: post.id,
+            keywordId: keyword.id,
+            isPrimary: false
+          });
+        }
+      }
+      
+      res.status(201).json(post);
+    } catch (error) {
+      console.error("Error creating blog post:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid post data", details: error.errors });
+      }
+      res.status(500).json({ error: "Failed to create blog post" });
+    }
+  });
+  
+  // Update a blog post
+  app.put("/api/blog/posts/:id", async (req, res) => {
+    try {
+      const postId = parseInt(req.params.id);
+      const postData = req.body;
+      
+      const updatedPost = await storage.updateBlogPost(postId, postData);
+      
+      if (!updatedPost) {
+        return res.status(404).json({ error: "Post not found" });
+      }
+      
+      res.json(updatedPost);
+    } catch (error) {
+      console.error("Error updating blog post:", error);
+      res.status(500).json({ error: "Failed to update blog post" });
+    }
+  });
+  
+  // Delete a blog post
+  app.delete("/api/blog/posts/:id", async (req, res) => {
+    try {
+      const postId = parseInt(req.params.id);
+      const deleted = await storage.deleteBlogPost(postId);
+      
+      if (!deleted) {
+        return res.status(404).json({ error: "Post not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting blog post:", error);
+      res.status(500).json({ error: "Failed to delete blog post" });
+    }
+  });
+  
+  // Get all keywords
+  app.get("/api/blog/keywords", async (req, res) => {
+    try {
+      const keywords = await storage.getAllKeywords();
+      res.json(keywords);
+    } catch (error) {
+      console.error("Error fetching keywords:", error);
+      res.status(500).json({ error: "Failed to fetch keywords" });
+    }
+  });
+  
+  // Create a new keyword
+  app.post("/api/blog/keywords", async (req, res) => {
+    try {
+      const keywordData = insertKeywordSchema.parse(req.body);
+      const keyword = await storage.createKeyword(keywordData);
+      res.status(201).json(keyword);
+    } catch (error) {
+      console.error("Error creating keyword:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid keyword data", details: error.errors });
+      }
+      res.status(500).json({ error: "Failed to create keyword" });
+    }
+  });
+  
+  // Track keyword rankings
+  app.post("/api/blog/keywords/:id/track", async (req, res) => {
+    try {
+      const keywordId = parseInt(req.params.id);
+      const { position, url, impressions, clicks, ctr } = req.body;
+      
+      const ranking = await storage.addKeywordRanking({
+        keywordId,
+        position,
+        url,
+        impressions,
+        clicks,
+        ctr
+      });
+      
+      res.status(201).json(ranking);
+    } catch (error) {
+      console.error("Error tracking keyword ranking:", error);
+      res.status(500).json({ error: "Failed to track keyword ranking" });
+    }
+  });
+  
+  // Get keyword rankings
+  app.get("/api/blog/keywords/:id/rankings", async (req, res) => {
+    try {
+      const keywordId = parseInt(req.params.id);
+      const { limit = 30 } = req.query;
+      
+      const rankings = await storage.getKeywordRankings(
+        keywordId,
+        parseInt(limit as string)
+      );
+      
+      res.json(rankings);
+    } catch (error) {
+      console.error("Error fetching keyword rankings:", error);
+      res.status(500).json({ error: "Failed to fetch keyword rankings" });
+    }
+  });
+  
+  // Get blog analytics
+  app.get("/api/blog/posts/:id/analytics", async (req, res) => {
+    try {
+      const postId = parseInt(req.params.id);
+      const { startDate, endDate } = req.query;
+      
+      const analytics = await storage.getBlogAnalytics(
+        postId,
+        startDate ? new Date(startDate as string) : undefined,
+        endDate ? new Date(endDate as string) : undefined
+      );
+      
+      res.json(analytics);
+    } catch (error) {
+      console.error("Error fetching blog analytics:", error);
+      res.status(500).json({ error: "Failed to fetch blog analytics" });
+    }
+  });
+  
+  // ========== END BLOG ROUTES ==========
 
   // Get available time slots for a specific date
   app.get("/api/timeslots/:date", async (req, res) => {

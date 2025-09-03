@@ -1,8 +1,9 @@
 import { Phone, Mail, MapPin, Facebook, Globe, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link } from "wouter";
 
 interface FooterProps {
-  onBookService: () => void;
+  onBookService?: () => void;
 }
 
 export default function Footer({ onBookService }: FooterProps) {
@@ -93,19 +94,31 @@ export default function Footer({ onBookService }: FooterProps) {
           <div>
             <h4 className="text-lg font-bold mb-6">Quick Links</h4>
             <ul className="space-y-3 mb-6">
-              <li><a href="#about" className="text-gray-400 hover:text-white transition-colors">About Us</a></li>
-              <li><a href="#reviews" className="text-gray-400 hover:text-white transition-colors">Reviews</a></li>
-              <li><a href="#service-area" className="text-gray-400 hover:text-white transition-colors">Service Area</a></li>
-              <li><a href="#contact" className="text-gray-400 hover:text-white transition-colors">Contact</a></li>
+              <li><a href="/#about" className="text-gray-400 hover:text-white transition-colors">About Us</a></li>
+              <li><Link href="/blog" className="text-gray-400 hover:text-white transition-colors">Blog</Link></li>
+              <li><a href="/#reviews" className="text-gray-400 hover:text-white transition-colors">Reviews</a></li>
+              <li><a href="/#service-area" className="text-gray-400 hover:text-white transition-colors">Service Area</a></li>
+              <li><a href="/#contact" className="text-gray-400 hover:text-white transition-colors">Contact</a></li>
             </ul>
             
-            <Button 
-              onClick={onBookService}
-              className="w-full bg-gradient-to-r from-johnson-orange to-orange-500 text-white px-4 py-3 rounded-lg font-bold hover:from-orange-500 hover:to-johnson-orange transition-all duration-300 transform hover:scale-105 shadow-lg touch-target"
-              data-testid="footer-book-service-button"
-            >
-              Book Service Online
-            </Button>
+            {onBookService ? (
+              <Button 
+                onClick={onBookService}
+                className="w-full bg-gradient-to-r from-johnson-orange to-orange-500 text-white px-4 py-3 rounded-lg font-bold hover:from-orange-500 hover:to-johnson-orange transition-all duration-300 transform hover:scale-105 shadow-lg touch-target"
+                data-testid="footer-book-service-button"
+              >
+                Book Service Online
+              </Button>
+            ) : (
+              <Link href="/#booking" className="w-full">
+                <Button 
+                  className="w-full bg-gradient-to-r from-johnson-orange to-orange-500 text-white px-4 py-3 rounded-lg font-bold hover:from-orange-500 hover:to-johnson-orange transition-all duration-300 transform hover:scale-105 shadow-lg touch-target"
+                  data-testid="footer-book-service-link"
+                >
+                  Book Service Online
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
 

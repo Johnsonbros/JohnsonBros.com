@@ -7,6 +7,7 @@ import { SocialProofSection } from "@/components/SocialProofSection";
 import Footer from "@/components/Footer";
 import BookingModal from "@/components/BookingModal";
 import { useState } from "react";
+import { SEO, businessStructuredData } from "@/components/SEO";
 
 export default function Home() {
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
@@ -24,6 +25,14 @@ export default function Home() {
 
   return (
     <>
+      <SEO
+        title="Johnson Bros. Plumbing & Drain Cleaning | Expert Plumbers in Quincy, MA"
+        description="Professional plumbing services in Quincy, MA. Emergency plumbing, drain cleaning, water heater repair, and more. Family-owned since 1997. Call 617-479-9911 for same-day service."
+        keywords={["plumber Quincy MA", "emergency plumber", "drain cleaning", "water heater repair", "plumbing services", "Johnson Bros Plumbing"]}
+        url="/"
+        type="website"
+        structuredData={businessStructuredData}
+      />
       <div className="min-h-screen bg-gray-50 pb-20 lg:pb-0">
         <Header onBookService={() => openBookingModal()} />
         <ExpressBooking onBookService={() => openBookingModal()} />
