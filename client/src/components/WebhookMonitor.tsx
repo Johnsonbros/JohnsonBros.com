@@ -4,7 +4,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Activity, CheckCircle, XCircle, Clock, TrendingUp, Users, DollarSign, FileText } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { RefreshCw, Activity, CheckCircle, XCircle, Clock, TrendingUp, Users, DollarSign, FileText, ShieldCheck, ShieldAlert, Info } from 'lucide-react';
 import { queryClient } from '@/lib/queryClient';
 import { useState } from 'react';
 import { format } from 'date-fns';
@@ -56,9 +57,29 @@ interface ProcessedData {
   }>;
 }
 
+interface WebhookConfig {
+  webhookUrl: string;
+  signatureVerification: 'enabled' | 'disabled';
+  status: 'secured' | 'insecure';
+  instructions: {
+    setup: string[];
+    headers: string[];
+  };
+}
+
 export default function WebhookMonitor() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [refreshing, setRefreshing] = useState(false);
+
+  // Fetch webhook configuration
+  const { data: config } = useQuery<WebhookConfig>({
+    queryKey: ['/api/webhooks/config'],
+    queryFn: async () => {
+      const response = await fetch('/api/webhooks/config');
+      if (!response.ok) throw new Error('Failed to fetch config');
+      return response.json();
+    },
+  });
 
   // Fetch webhook events
   const { data: events = [], isLoading: eventsLoading, refetch: refetchEvents } = useQuery<WebhookEvent[]>({
@@ -170,6 +191,43 @@ export default function WebhookMonitor() {
           Refresh
         </Button>
       </div>
+
+      {/* Security Status Alert */}
+      {config && (
+        <Alert className={config.status === 'secured' ? 'border-green-500' : 'border-yellow-500'}>
+          <div className="flex items-center gap-2">
+            {config.status === 'secured' ? (
+              <ShieldCheck className="h-4 w-4 text-green-500" />
+            ) : (
+              <ShieldAlert className="h-4 w-4 text-yellow-500" />
+            )}
+            <AlertTitle>
+              Webhook Security Status: {config.status === 'secured' ? 'Secured' : 'Not Secured'}
+            </AlertTitle>
+          </div>
+          <AlertDescription className="mt-2">
+            {config.status === 'secured' ? (
+              <span className="text-green-600">
+                ✓ Signature verification is enabled. All incoming webhooks will be verified using HMAC-SHA256.
+              </span>
+            ) : (
+              <div className="space-y-2">
+                <span className="text-yellow-600">
+                  ⚠️ Signature verification is disabled. Set up the HOUSECALL_WEBHOOK_SECRET environment variable to enable webhook security.
+                </span>
+                <div className="mt-2 text-sm">
+                  <strong>To enable signature verification:</strong>
+                  <ol className="list-decimal list-inside mt-1 space-y-1">
+                    <li>Get your webhook signing secret from Housecall Pro</li>
+                    <li>Add it to your environment variables as HOUSECALL_WEBHOOK_SECRET</li>
+                    <li>Restart your server to apply the changes</li>
+                  </ol>
+                </div>
+              </div>
+            )}
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -383,10 +441,23 @@ export default function WebhookMonitor() {
                 <ol className="list-decimal list-inside space-y-2 text-sm">
                   <li>Log in to your Housecall Pro account</li>
                   <li>Navigate to Settings → Integrations → Webhooks</li>
-                  <li>Add your webhook URL: <code className="bg-background px-2 py-1 rounded">https://yourdomain.com/api/webhooks/housecall</code></li>
+                  <li>Add your webhook URL: <code className="bg-background px-2 py-1 rounded">{config?.webhookUrl || 'https://yourdomain.com/api/webhooks/housecall'}</code></li>
+                  <li>Copy the webhook signing secret provided by Housecall Pro</li>
+                  <li>Add the secret to your environment as <code className="bg-background px-2 py-1 rounded">HOUSECALL_WEBHOOK_SECRET</code></li>
                   <li>Select the events you want to receive</li>
                   <li>Save and test the connection</li>
                 </ol>
+                
+                {config?.status === 'insecure' && (
+                  <Alert className="mt-4 border-yellow-500">
+                    <Info className="h-4 w-4" />
+                    <AlertTitle>Security Note</AlertTitle>
+                    <AlertDescription>
+                      Signature verification is currently disabled. Make sure to configure the HOUSECALL_WEBHOOK_SECRET 
+                      environment variable with the signing secret from Housecall Pro to secure your webhook endpoint.
+                    </AlertDescription>
+                  </Alert>
+                )}
               </div>
             </CardContent>
           </Card>

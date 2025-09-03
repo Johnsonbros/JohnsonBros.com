@@ -1476,6 +1476,47 @@ Special Promotion: $99 service fee waived for online bookings`,
   // Main webhook endpoint to receive events from Housecall Pro
   app.post('/api/webhooks/housecall', async (req, res) => {
     try {
+      // Verify webhook signature if secret is configured
+      const webhookSecret = process.env.HOUSECALL_WEBHOOK_SECRET;
+      
+      if (webhookSecret) {
+        // Housecall Pro typically sends the signature in a header like X-Housecall-Signature or similar
+        // The exact header name should be confirmed from their documentation
+        const signature = req.headers['x-housecall-signature'] || 
+                         req.headers['x-webhook-signature'] || 
+                         req.headers['x-signature'] as string;
+        
+        if (!signature) {
+          console.error('[Webhook] Missing signature header');
+          return res.status(401).json({ 
+            success: false, 
+            error: 'Missing webhook signature' 
+          });
+        }
+        
+        // Get the raw body for signature verification (requires raw body middleware)
+        const rawBody = JSON.stringify(req.body);
+        
+        // Verify the signature
+        const isValid = webhookProcessor.verifyWebhookSignature(
+          rawBody,
+          signature,
+          webhookSecret
+        );
+        
+        if (!isValid) {
+          console.error('[Webhook] Invalid signature');
+          return res.status(401).json({ 
+            success: false, 
+            error: 'Invalid webhook signature' 
+          });
+        }
+        
+        console.log('[Webhook] Signature verified successfully');
+      } else {
+        console.warn('[Webhook] No webhook secret configured - signature verification skipped');
+      }
+      
       console.log('[Webhook] Received event:', req.body);
       
       // Get event type from headers or body
@@ -1565,6 +1606,38 @@ Special Promotion: $99 service fee waived for online bookings`,
     }
   });
 
+  // Get webhook configuration status
+  app.get('/api/webhooks/config', async (req, res) => {
+    try {
+      const hasSecret = !!process.env.HOUSECALL_WEBHOOK_SECRET;
+      const webhookUrl = process.env.WEBHOOK_URL || `https://${req.headers.host}/api/webhooks/housecall`;
+      
+      res.json({
+        webhookUrl,
+        signatureVerification: hasSecret ? 'enabled' : 'disabled',
+        status: hasSecret ? 'secured' : 'insecure',
+        instructions: {
+          setup: [
+            'Log in to your Housecall Pro account',
+            'Navigate to Settings → Integrations → Webhooks',
+            `Set webhook URL to: ${webhookUrl}`,
+            'Copy the webhook signing secret provided by Housecall Pro',
+            'Add the secret to your environment variables as HOUSECALL_WEBHOOK_SECRET',
+            'Select the events you want to receive',
+            'Test the webhook connection'
+          ],
+          headers: [
+            'X-Housecall-Signature - The HMAC signature header',
+            'X-Event-Type - The type of event being sent'
+          ]
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching webhook config:', error);
+      res.status(500).json({ error: 'Failed to fetch webhook configuration' });
+    }
+  });
+  
   // Subscribe to webhooks for a company
   app.post('/api/webhooks/subscribe', async (req, res) => {
     try {
@@ -1590,7 +1663,8 @@ Special Promotion: $99 service fee waived for online bookings`,
       res.json({
         success: true,
         subscription,
-        message: 'Webhook subscription registered successfully'
+        message: 'Webhook subscription registered successfully',
+        note: 'Remember to configure HOUSECALL_WEBHOOK_SECRET environment variable with the signing secret from Housecall Pro'
       });
     } catch (error) {
       console.error('Error subscribing to webhooks:', error);
