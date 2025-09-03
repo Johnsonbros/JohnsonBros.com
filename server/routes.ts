@@ -1466,6 +1466,187 @@ Special Promotion: $99 service fee waived for online bookings`,
     }
   });
 
+  // ============================================
+  // WEBHOOK ENDPOINTS
+  // ============================================
+  
+  // Import webhook processor
+  const { webhookProcessor } = await import('./src/webhooks');
+
+  // Main webhook endpoint to receive events from Housecall Pro
+  app.post('/api/webhooks/housecall', async (req, res) => {
+    try {
+      console.log('[Webhook] Received event:', req.body);
+      
+      // Get event type from headers or body
+      const eventType = req.headers['x-event-type'] as string || 
+                       req.body.event_type || 
+                       req.body.type ||
+                       'unknown';
+      
+      // Process the webhook event
+      const result = await webhookProcessor.processWebhookEvent(
+        eventType,
+        req.body,
+        req.headers as Record<string, string>
+      );
+
+      if (result.success) {
+        console.log(`[Webhook] Successfully processed event ${result.eventId} of type ${eventType}`);
+        res.status(200).json({ 
+          success: true, 
+          eventId: result.eventId,
+          message: 'Webhook received and queued for processing' 
+        });
+      } else {
+        console.error('[Webhook] Failed to process event:', result.error);
+        res.status(500).json({ 
+          success: false, 
+          error: result.error 
+        });
+      }
+    } catch (error) {
+      console.error('[Webhook] Error handling webhook:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  });
+
+  // Get webhook events dashboard data
+  app.get('/api/webhooks/events', async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 50;
+      const category = req.query.category as string;
+      
+      const events = category 
+        ? await webhookProcessor.getEventsByCategory(category, limit)
+        : await webhookProcessor.getRecentEvents(limit);
+      
+      res.json(events);
+    } catch (error) {
+      console.error('Error fetching webhook events:', error);
+      res.status(500).json({ error: 'Failed to fetch webhook events' });
+    }
+  });
+
+  // Get webhook event details with processed data and tags
+  app.get('/api/webhooks/events/:eventId', async (req, res) => {
+    try {
+      const eventId = parseInt(req.params.eventId);
+      const data = await webhookProcessor.getProcessedDataWithTags(eventId);
+      
+      if (!data) {
+        return res.status(404).json({ error: 'Event not found' });
+      }
+      
+      res.json(data);
+    } catch (error) {
+      console.error('Error fetching webhook event details:', error);
+      res.status(500).json({ error: 'Failed to fetch event details' });
+    }
+  });
+
+  // Get webhook analytics
+  app.get('/api/webhooks/analytics', async (req, res) => {
+    try {
+      const days = parseInt(req.query.days as string) || 30;
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
+      
+      const analytics = await webhookProcessor.getAnalytics(startDate, endDate);
+      
+      res.json(analytics);
+    } catch (error) {
+      console.error('Error fetching webhook analytics:', error);
+      res.status(500).json({ error: 'Failed to fetch analytics' });
+    }
+  });
+
+  // Subscribe to webhooks for a company
+  app.post('/api/webhooks/subscribe', async (req, res) => {
+    try {
+      const { companyId, eventTypes } = req.body;
+      
+      if (!companyId) {
+        return res.status(400).json({ error: 'Company ID is required' });
+      }
+      
+      // Get the current server URL for webhook callback
+      const webhookUrl = process.env.WEBHOOK_URL || `https://${req.headers.host}/api/webhooks/housecall`;
+      
+      // Register subscription in database
+      const [subscription] = await webhookProcessor.manageSubscription(
+        companyId,
+        webhookUrl,
+        eventTypes
+      );
+      
+      // TODO: Call Housecall Pro API to register webhook subscription
+      // This would require the actual endpoint from their API
+      
+      res.json({
+        success: true,
+        subscription,
+        message: 'Webhook subscription registered successfully'
+      });
+    } catch (error) {
+      console.error('Error subscribing to webhooks:', error);
+      res.status(500).json({ error: 'Failed to subscribe to webhooks' });
+    }
+  });
+
+  // Test webhook endpoint (for development/testing)
+  app.post('/api/webhooks/test', async (req, res) => {
+    try {
+      const testEvent = {
+        id: `test-${Date.now()}`,
+        event_type: req.body.event_type || 'job.completed',
+        company_id: 'test-company',
+        customer: {
+          id: 'test-customer-1',
+          first_name: 'Test',
+          last_name: 'Customer',
+          email: 'test@example.com',
+          mobile_number: '555-0123'
+        },
+        job: {
+          id: 'test-job-1',
+          invoice_number: 'INV-TEST-001',
+          name: 'Emergency Drain Cleaning',
+          total_amount: 750,
+          work_status: 'completed',
+          completed_at: new Date().toISOString()
+        },
+        address: {
+          street: '123 Test St',
+          city: 'Quincy',
+          state: 'MA',
+          zip: '02169'
+        },
+        ...req.body
+      };
+
+      const result = await webhookProcessor.processWebhookEvent(
+        testEvent.event_type,
+        testEvent,
+        req.headers as Record<string, string>
+      );
+
+      res.json({
+        success: true,
+        message: 'Test webhook processed',
+        eventId: result.eventId,
+        testData: testEvent
+      });
+    } catch (error) {
+      console.error('Error processing test webhook:', error);
+      res.status(500).json({ error: 'Failed to process test webhook' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

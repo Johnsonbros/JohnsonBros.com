@@ -353,3 +353,195 @@ export type InsertKeywordRanking = z.infer<typeof insertKeywordRankingSchema>;
 
 export type BlogAnalytics = typeof blogAnalytics.$inferSelect;
 export type InsertBlogAnalytics = z.infer<typeof insertBlogAnalyticsSchema>;
+
+// ============================================
+// WEBHOOK INTEGRATION SYSTEM
+// ============================================
+
+// Webhook Events table - stores all incoming webhook events from Housecall Pro
+export const webhookEvents = pgTable('webhook_events', {
+  id: serial('id').primaryKey(),
+  eventId: text('event_id').unique(), // Housecall Pro event ID
+  eventType: text('event_type').notNull(), // e.g., 'customer.created', 'job.completed'
+  eventCategory: text('event_category').notNull(), // 'customer', 'job', 'estimate', 'invoice', 'appointment', 'lead'
+  entityId: text('entity_id'), // ID of the related entity (customer_id, job_id, etc.)
+  companyId: text('company_id'),
+  payload: text('payload').notNull(), // JSON string of the full webhook payload
+  status: text('status').notNull().default('pending'), // 'pending', 'processed', 'failed', 'archived'
+  processedAt: timestamp('processed_at'),
+  error: text('error'),
+  retryCount: integer('retry_count').default(0),
+  receivedAt: timestamp('received_at').defaultNow().notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  eventTypeIdx: index('webhook_event_type_idx').on(table.eventType),
+  eventCategoryIdx: index('webhook_event_category_idx').on(table.eventCategory),
+  entityIdIdx: index('webhook_entity_id_idx').on(table.entityId),
+  statusIdx: index('webhook_status_idx').on(table.status),
+  receivedAtIdx: index('webhook_received_at_idx').on(table.receivedAt),
+}));
+
+// Webhook Event Tags table - flexible tagging system for events
+export const webhookEventTags = pgTable('webhook_event_tags', {
+  id: serial('id').primaryKey(),
+  eventId: integer('event_id').notNull().references(() => webhookEvents.id, { onDelete: 'cascade' }),
+  tagName: text('tag_name').notNull(), // e.g., 'high-value', 'emergency', 'new-customer', 'repeat-customer'
+  tagValue: text('tag_value'), // Optional value for the tag
+  tagCategory: text('tag_category'), // 'priority', 'customer-type', 'service-type', 'location'
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  eventIdIdx: index('webhook_tag_event_id_idx').on(table.eventId),
+  tagNameIdx: index('webhook_tag_name_idx').on(table.tagName),
+  tagCategoryIdx: index('webhook_tag_category_idx').on(table.tagCategory),
+  uniqueEventTag: uniqueIndex('unique_event_tag').on(table.eventId, table.tagName),
+}));
+
+// Webhook Processed Data table - stores parsed and categorized data from webhooks
+export const webhookProcessedData = pgTable('webhook_processed_data', {
+  id: serial('id').primaryKey(),
+  eventId: integer('event_id').notNull().references(() => webhookEvents.id, { onDelete: 'cascade' }),
+  dataType: text('data_type').notNull(), // 'customer', 'job', 'estimate', 'invoice', 'appointment'
+  dataCategory: text('data_category'), // 'service-completed', 'payment-received', 'estimate-sent'
+  entityData: text('entity_data').notNull(), // JSON string of parsed entity data
+  
+  // Denormalized fields for quick access and filtering
+  customerName: text('customer_name'),
+  customerEmail: text('customer_email'),
+  customerPhone: text('customer_phone'),
+  jobNumber: text('job_number'),
+  invoiceNumber: text('invoice_number'),
+  estimateNumber: text('estimate_number'),
+  totalAmount: real('total_amount'),
+  serviceDate: timestamp('service_date'),
+  serviceType: text('service_type'),
+  employeeName: text('employee_name'),
+  addressCity: text('address_city'),
+  addressState: text('address_state'),
+  
+  // Metrics for dashboard widgets
+  isHighValue: boolean('is_high_value').default(false), // Amount > $500
+  isEmergency: boolean('is_emergency').default(false),
+  isRepeatCustomer: boolean('is_repeat_customer').default(false),
+  isNewCustomer: boolean('is_new_customer').default(false),
+  
+  processedAt: timestamp('processed_at').defaultNow().notNull(),
+}, (table) => ({
+  eventIdIdx: index('processed_event_id_idx').on(table.eventId),
+  dataTypeIdx: index('data_type_idx').on(table.dataType),
+  dataCategoryIdx: index('data_category_idx').on(table.dataCategory),
+  customerEmailIdx: index('customer_email_idx').on(table.customerEmail),
+  serviceDateIdx: index('service_date_idx').on(table.serviceDate),
+  highValueIdx: index('high_value_idx').on(table.isHighValue),
+}));
+
+// Webhook Subscriptions table - manage webhook subscriptions
+export const webhookSubscriptions = pgTable('webhook_subscriptions', {
+  id: serial('id').primaryKey(),
+  companyId: text('company_id').notNull(),
+  webhookUrl: text('webhook_url').notNull(),
+  eventTypes: text('event_types').array(), // Array of subscribed event types
+  isActive: boolean('is_active').default(true),
+  secretKey: text('secret_key'), // For webhook signature verification
+  lastReceivedAt: timestamp('last_received_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  companyIdIdx: uniqueIndex('company_id_sub_idx').on(table.companyId),
+  activeIdx: index('active_sub_idx').on(table.isActive),
+}));
+
+// Webhook Analytics table - aggregated metrics for dashboard
+export const webhookAnalytics = pgTable('webhook_analytics', {
+  id: serial('id').primaryKey(),
+  date: timestamp('date').notNull(),
+  eventCategory: text('event_category').notNull(),
+  totalEvents: integer('total_events').default(0),
+  processedEvents: integer('processed_events').default(0),
+  failedEvents: integer('failed_events').default(0),
+  
+  // Business metrics
+  newCustomers: integer('new_customers').default(0),
+  jobsCompleted: integer('jobs_completed').default(0),
+  estimatesSent: integer('estimates_sent').default(0),
+  invoicesCreated: integer('invoices_created').default(0),
+  totalRevenue: real('total_revenue').default(0),
+  
+  // Performance metrics
+  avgProcessingTime: integer('avg_processing_time'), // in milliseconds
+  successRate: real('success_rate'), // percentage
+  
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  dateEventIdx: uniqueIndex('date_event_idx').on(table.date, table.eventCategory),
+  dateIdx: index('analytics_date_idx').on(table.date),
+}));
+
+// Relations for webhook system
+export const webhookEventsRelations = relations(webhookEvents, ({ many, one }) => ({
+  tags: many(webhookEventTags),
+  processedData: one(webhookProcessedData, {
+    fields: [webhookEvents.id],
+    references: [webhookProcessedData.eventId],
+  }),
+}));
+
+export const webhookEventTagsRelations = relations(webhookEventTags, ({ one }) => ({
+  event: one(webhookEvents, {
+    fields: [webhookEventTags.eventId],
+    references: [webhookEvents.id],
+  }),
+}));
+
+export const webhookProcessedDataRelations = relations(webhookProcessedData, ({ one }) => ({
+  event: one(webhookEvents, {
+    fields: [webhookProcessedData.eventId],
+    references: [webhookEvents.id],
+  }),
+}));
+
+// Insert schemas for webhook system
+export const insertWebhookEventSchema = createInsertSchema(webhookEvents).omit({
+  id: true,
+  processedAt: true,
+  createdAt: true,
+  receivedAt: true,
+});
+
+export const insertWebhookEventTagSchema = createInsertSchema(webhookEventTags).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertWebhookProcessedDataSchema = createInsertSchema(webhookProcessedData).omit({
+  id: true,
+  processedAt: true,
+});
+
+export const insertWebhookSubscriptionSchema = createInsertSchema(webhookSubscriptions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertWebhookAnalyticsSchema = createInsertSchema(webhookAnalytics).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Types for webhook system
+export type WebhookEvent = typeof webhookEvents.$inferSelect;
+export type InsertWebhookEvent = z.infer<typeof insertWebhookEventSchema>;
+
+export type WebhookEventTag = typeof webhookEventTags.$inferSelect;
+export type InsertWebhookEventTag = z.infer<typeof insertWebhookEventTagSchema>;
+
+export type WebhookProcessedData = typeof webhookProcessedData.$inferSelect;
+export type InsertWebhookProcessedData = z.infer<typeof insertWebhookProcessedDataSchema>;
+
+export type WebhookSubscription = typeof webhookSubscriptions.$inferSelect;
+export type InsertWebhookSubscription = z.infer<typeof insertWebhookSubscriptionSchema>;
+
+export type WebhookAnalytics = typeof webhookAnalytics.$inferSelect;
+export type InsertWebhookAnalytics = z.infer<typeof insertWebhookAnalyticsSchema>;
