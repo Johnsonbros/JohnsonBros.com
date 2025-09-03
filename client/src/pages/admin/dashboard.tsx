@@ -1,0 +1,408 @@
+import { useState, useEffect } from 'react';
+import { useLocation, Link } from 'wouter';
+import { useQuery } from '@tanstack/react-query';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { 
+  BarChart3, Users, FileText, Calendar, Settings, LogOut, 
+  Home, DollarSign, TrendingUp, Package, AlertCircle, CheckCircle,
+  Clock, Activity, Brain, Target, Bell, ListTodo, Menu, X
+} from 'lucide-react';
+import { authenticatedFetch, logout, getAdminUser, isAuthenticated } from '@/lib/auth';
+import { cn } from '@/lib/utils';
+
+interface DashboardStats {
+  today: {
+    revenue: number;
+    jobsCompleted: number;
+    newCustomers: number;
+    estimatesSent: number;
+  };
+  week: {
+    revenue: number;
+    jobsCompleted: number;
+    newCustomers: number;
+  };
+  tasks: {
+    pending: number;
+  };
+  events: {
+    total: number;
+    failed: number;
+  };
+  customers: {
+    total: number;
+  };
+  blog: {
+    total: number;
+    published: number;
+  };
+}
+
+export default function AdminDashboard() {
+  const [, setLocation] = useLocation();
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [activeTab, setActiveTab] = useState('overview');
+  const user = getAdminUser();
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated()) {
+      setLocation('/admin/login');
+    }
+  }, [setLocation]);
+
+  // Fetch dashboard stats
+  const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
+    queryKey: ['/api/admin/dashboard/stats'],
+    queryFn: () => authenticatedFetch('/api/admin/dashboard/stats'),
+    enabled: isAuthenticated(),
+    refetchInterval: 60000, // Refresh every minute
+  });
+
+  if (!user) {
+    return null;
+  }
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  const sidebarItems = [
+    { id: 'overview', label: 'Overview', icon: Home },
+    { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+    { id: 'customers', label: 'Customers', icon: Users },
+    { id: 'tasks', label: 'Tasks', icon: ListTodo },
+    { id: 'ai-agent', label: 'AI Agent', icon: Brain },
+    { id: 'blog', label: 'Blog', icon: FileText },
+    { id: 'google-ads', label: 'Google Ads', icon: Target },
+    { id: 'webhooks', label: 'Webhooks', icon: Activity },
+    { id: 'settings', label: 'Settings', icon: Settings },
+  ];
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Top Navigation Bar */}
+      <div className="bg-white border-b border-gray-200 px-4 py-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="text-gray-600 hover:text-gray-900"
+              data-testid="button-menu-toggle"
+            >
+              {sidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </button>
+            <h1 className="text-xl font-bold text-gray-900">Admin Dashboard</h1>
+          </div>
+          
+          <div className="flex items-center space-x-4">
+            <Bell className="h-5 w-5 text-gray-600 cursor-pointer hover:text-gray-900" />
+            <div className="text-sm text-gray-700">
+              {user.firstName} {user.lastName} ({user.role})
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={logout}
+              data-testid="button-logout"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Logout
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex">
+        {/* Sidebar */}
+        <aside className={cn(
+          "bg-white border-r border-gray-200 h-[calc(100vh-60px)] transition-all duration-300",
+          sidebarOpen ? "w-64" : "w-0 overflow-hidden"
+        )}>
+          <nav className="p-4 space-y-1">
+            {sidebarItems.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setActiveTab(item.id)}
+                className={cn(
+                  "w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                  activeTab === item.id
+                    ? "bg-johnson-orange/10 text-johnson-orange"
+                    : "text-gray-700 hover:bg-gray-100"
+                )}
+                data-testid={`button-nav-${item.id}`}
+              >
+                <item.icon className="h-5 w-5" />
+                <span>{item.label}</span>
+              </button>
+            ))}
+          </nav>
+        </aside>
+
+        {/* Main Content */}
+        <main className="flex-1 p-6">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsContent value="overview">
+              <div className="space-y-6">
+                <h2 className="text-2xl font-bold text-gray-900">Dashboard Overview</h2>
+                
+                {/* Stats Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-gray-600">Today's Revenue</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center justify-between">
+                        <p className="text-2xl font-bold" data-testid="text-revenue-today">
+                          {statsLoading ? '--' : formatCurrency(stats?.today.revenue || 0)}
+                        </p>
+                        <DollarSign className="h-8 w-8 text-green-600" />
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-gray-600">Jobs Completed</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center justify-between">
+                        <p className="text-2xl font-bold" data-testid="text-jobs-today">
+                          {statsLoading ? '--' : stats?.today.jobsCompleted || 0}
+                        </p>
+                        <CheckCircle className="h-8 w-8 text-blue-600" />
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-gray-600">New Customers</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center justify-between">
+                        <p className="text-2xl font-bold" data-testid="text-customers-today">
+                          {statsLoading ? '--' : stats?.today.newCustomers || 0}
+                        </p>
+                        <Users className="h-8 w-8 text-purple-600" />
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-gray-600">Pending Tasks</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center justify-between">
+                        <p className="text-2xl font-bold" data-testid="text-tasks-pending">
+                          {statsLoading ? '--' : stats?.tasks.pending || 0}
+                        </p>
+                        <Clock className="h-8 w-8 text-orange-600" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Week Summary */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>This Week's Performance</CardTitle>
+                    <CardDescription>Key metrics for the past 7 days</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div>
+                        <p className="text-sm text-gray-600">Total Revenue</p>
+                        <p className="text-3xl font-bold text-green-600" data-testid="text-revenue-week">
+                          {statsLoading ? '--' : formatCurrency(stats?.week.revenue || 0)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Jobs Completed</p>
+                        <p className="text-3xl font-bold text-blue-600" data-testid="text-jobs-week">
+                          {statsLoading ? '--' : stats?.week.jobsCompleted || 0}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">New Customers</p>
+                        <p className="text-3xl font-bold text-purple-600" data-testid="text-customers-week">
+                          {statsLoading ? '--' : stats?.week.newCustomers || 0}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* System Status */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center justify-between">
+                        <span>Webhook Events</span>
+                        <Activity className="h-5 w-5 text-gray-400" />
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">Total Events Today</span>
+                          <span className="font-medium" data-testid="text-events-total">
+                            {statsLoading ? '--' : stats?.events.total || 0}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">Failed Events</span>
+                          <span className="font-medium text-red-600" data-testid="text-events-failed">
+                            {statsLoading ? '--' : stats?.events.failed || 0}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">Success Rate</span>
+                          <span className="font-medium text-green-600">
+                            {statsLoading ? '--' : 
+                              stats?.events.total ? 
+                                `${Math.round(((stats.events.total - stats.events.failed) / stats.events.total) * 100)}%` 
+                                : '100%'
+                            }
+                          </span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center justify-between">
+                        <span>Content & Customers</span>
+                        <FileText className="h-5 w-5 text-gray-400" />
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">Total Customers</span>
+                          <span className="font-medium" data-testid="text-customers-total">
+                            {statsLoading ? '--' : stats?.customers.total || 0}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">Blog Posts</span>
+                          <span className="font-medium" data-testid="text-blog-total">
+                            {statsLoading ? '--' : stats?.blog.total || 0}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">Published Posts</span>
+                          <span className="font-medium text-green-600" data-testid="text-blog-published">
+                            {statsLoading ? '--' : stats?.blog.published || 0}
+                          </span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="analytics">
+              <div className="space-y-6">
+                <h2 className="text-2xl font-bold text-gray-900">Analytics & Reports</h2>
+                <Card>
+                  <CardContent className="pt-6">
+                    <p className="text-gray-600">Detailed analytics and reporting tools coming soon...</p>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="customers">
+              <div className="space-y-6">
+                <h2 className="text-2xl font-bold text-gray-900">Customer Management</h2>
+                <Card>
+                  <CardContent className="pt-6">
+                    <p className="text-gray-600">Customer data from HousecallPro integration coming soon...</p>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="tasks">
+              <div className="space-y-6">
+                <h2 className="text-2xl font-bold text-gray-900">Task Management</h2>
+                <Card>
+                  <CardContent className="pt-6">
+                    <p className="text-gray-600">Task management system coming soon...</p>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="ai-agent">
+              <div className="space-y-6">
+                <h2 className="text-2xl font-bold text-gray-900">AI Agent Assistant</h2>
+                <Card>
+                  <CardContent className="pt-6">
+                    <p className="text-gray-600">AI-powered data analysis and document generation coming soon...</p>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="blog">
+              <div className="space-y-6">
+                <h2 className="text-2xl font-bold text-gray-900">Blog Management</h2>
+                <Card>
+                  <CardContent className="pt-6">
+                    <p className="text-gray-600">Blog content management interface coming soon...</p>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="google-ads">
+              <div className="space-y-6">
+                <h2 className="text-2xl font-bold text-gray-900">Google Ads Management</h2>
+                <Card>
+                  <CardContent className="pt-6">
+                    <p className="text-gray-600">Google Ads campaign management coming soon...</p>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="webhooks">
+              <div className="space-y-6">
+                <h2 className="text-2xl font-bold text-gray-900">Webhook Monitor</h2>
+                <Card>
+                  <CardContent className="pt-6">
+                    <p className="text-gray-600">Real-time webhook event monitoring coming soon...</p>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="settings">
+              <div className="space-y-6">
+                <h2 className="text-2xl font-bold text-gray-900">Settings</h2>
+                <Card>
+                  <CardContent className="pt-6">
+                    <p className="text-gray-600">System settings and configuration coming soon...</p>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </main>
+      </div>
+    </div>
+  );
+}

@@ -14,6 +14,7 @@ import { CapacityCalculator } from "./src/capacity";
 import { GoogleAdsBridge } from "./src/ads/bridge";
 import { HousecallProClient } from "./src/housecall";
 import rateLimit from "express-rate-limit";
+import adminRoutes from "./src/adminRoutes";
 
 // Housecall Pro API client
 const HOUSECALL_API_BASE = 'https://api.housecallpro.com';
@@ -116,6 +117,8 @@ const customerLookupLimiter = rateLimit({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Register admin routes with /api/admin prefix
+  app.use('/api/admin', adminRoutes);
 
   // Seed blog data on startup (only in development)
   if (process.env.NODE_ENV === 'development') {

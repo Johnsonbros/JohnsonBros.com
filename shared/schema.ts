@@ -545,3 +545,323 @@ export type InsertWebhookSubscription = z.infer<typeof insertWebhookSubscription
 
 export type WebhookAnalytics = typeof webhookAnalytics.$inferSelect;
 export type InsertWebhookAnalytics = z.infer<typeof insertWebhookAnalyticsSchema>;
+
+// ============================================
+// ADMIN DASHBOARD SYSTEM
+// ============================================
+
+// Admin users table
+export const adminUsers = pgTable('admin_users', {
+  id: serial('id').primaryKey(),
+  email: text('email').notNull().unique(),
+  passwordHash: text('password_hash').notNull(),
+  firstName: text('first_name').notNull(),
+  lastName: text('last_name').notNull(),
+  role: text('role').notNull().default('staff'), // 'super_admin', 'admin', 'tech', 'staff'
+  isActive: boolean('is_active').default(true),
+  lastLoginAt: timestamp('last_login_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  emailIdx: uniqueIndex('admin_email_idx').on(table.email),
+  roleIdx: index('admin_role_idx').on(table.role),
+}));
+
+// Admin sessions table
+export const adminSessions = pgTable('admin_sessions', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').notNull().references(() => adminUsers.id, { onDelete: 'cascade' }),
+  sessionToken: text('session_token').notNull().unique(),
+  expiresAt: timestamp('expires_at').notNull(),
+  ipAddress: text('ip_address'),
+  userAgent: text('user_agent'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  tokenIdx: uniqueIndex('session_token_idx').on(table.sessionToken),
+  userIdx: index('session_user_idx').on(table.userId),
+}));
+
+// Admin permissions table
+export const adminPermissions = pgTable('admin_permissions', {
+  id: serial('id').primaryKey(),
+  role: text('role').notNull().unique(),
+  permissions: text('permissions').array().notNull(), // Array of permission strings
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  roleIdx: uniqueIndex('permission_role_idx').on(table.role),
+}));
+
+// AI chat sessions table
+export const aiChatSessions = pgTable('ai_chat_sessions', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').notNull().references(() => adminUsers.id),
+  title: text('title').notNull(),
+  context: text('context'), // Context for the AI conversation
+  status: text('status').notNull().default('active'), // 'active', 'archived'
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  userIdx: index('ai_session_user_idx').on(table.userId),
+  statusIdx: index('ai_session_status_idx').on(table.status),
+}));
+
+// AI chat messages table
+export const aiChatMessages = pgTable('ai_chat_messages', {
+  id: serial('id').primaryKey(),
+  sessionId: integer('session_id').notNull().references(() => aiChatSessions.id, { onDelete: 'cascade' }),
+  role: text('role').notNull(), // 'user', 'assistant', 'system'
+  content: text('content').notNull(),
+  metadata: text('metadata'), // JSON string for additional data
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  sessionIdx: index('ai_message_session_idx').on(table.sessionId),
+}));
+
+// Tasks and reminders table
+export const adminTasks = pgTable('admin_tasks', {
+  id: serial('id').primaryKey(),
+  title: text('title').notNull(),
+  description: text('description'),
+  assignedTo: integer('assigned_to').references(() => adminUsers.id),
+  createdBy: integer('created_by').notNull().references(() => adminUsers.id),
+  priority: text('priority').notNull().default('medium'), // 'low', 'medium', 'high', 'urgent'
+  status: text('status').notNull().default('pending'), // 'pending', 'in_progress', 'completed', 'cancelled'
+  dueDate: timestamp('due_date'),
+  completedAt: timestamp('completed_at'),
+  category: text('category'), // 'maintenance', 'customer', 'billing', 'marketing', etc.
+  tags: text('tags').array(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  assignedIdx: index('task_assigned_idx').on(table.assignedTo),
+  statusIdx: index('task_status_idx').on(table.status),
+  dueDateIdx: index('task_due_date_idx').on(table.dueDate),
+}));
+
+// Admin documents table (for AI-generated documents)
+export const adminDocuments = pgTable('admin_documents', {
+  id: serial('id').primaryKey(),
+  title: text('title').notNull(),
+  content: text('content').notNull(),
+  type: text('type').notNull(), // 'report', 'proposal', 'memo', 'template', etc.
+  createdBy: integer('created_by').notNull().references(() => adminUsers.id),
+  metadata: text('metadata'), // JSON string for additional data
+  isTemplate: boolean('is_template').default(false),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  createdByIdx: index('doc_created_by_idx').on(table.createdBy),
+  typeIdx: index('doc_type_idx').on(table.type),
+}));
+
+// Admin activity logs table
+export const adminActivityLogs = pgTable('admin_activity_logs', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').notNull().references(() => adminUsers.id),
+  action: text('action').notNull(),
+  entityType: text('entity_type'), // 'customer', 'job', 'blog', 'task', etc.
+  entityId: text('entity_id'),
+  details: text('details'), // JSON string with action details
+  ipAddress: text('ip_address'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  userIdx: index('activity_user_idx').on(table.userId),
+  actionIdx: index('activity_action_idx').on(table.action),
+  createdAtIdx: index('activity_created_idx').on(table.createdAt),
+}));
+
+// Google Ads campaigns table
+export const googleAdsCampaigns = pgTable('google_ads_campaigns', {
+  id: serial('id').primaryKey(),
+  campaignId: text('campaign_id').notNull().unique(),
+  campaignName: text('campaign_name').notNull(),
+  status: text('status').notNull(), // 'enabled', 'paused', 'removed'
+  type: text('type').notNull(), // 'search', 'display', 'video', 'shopping'
+  budget: real('budget'),
+  impressions: integer('impressions').default(0),
+  clicks: integer('clicks').default(0),
+  cost: real('cost').default(0),
+  conversions: integer('conversions').default(0),
+  conversionValue: real('conversion_value').default(0),
+  lastSyncedAt: timestamp('last_synced_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  campaignIdIdx: uniqueIndex('gads_campaign_id_idx').on(table.campaignId),
+  statusIdx: index('gads_status_idx').on(table.status),
+}));
+
+// Website analytics table
+export const websiteAnalytics = pgTable('website_analytics', {
+  id: serial('id').primaryKey(),
+  date: timestamp('date').notNull(),
+  pageViews: integer('page_views').default(0),
+  uniqueVisitors: integer('unique_visitors').default(0),
+  bounceRate: real('bounce_rate'),
+  avgSessionDuration: integer('avg_session_duration'), // in seconds
+  conversionRate: real('conversion_rate'),
+  topPages: text('top_pages'), // JSON array of top pages
+  trafficSources: text('traffic_sources'), // JSON object of traffic sources
+  deviceTypes: text('device_types'), // JSON object of device breakdowns
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  dateIdx: uniqueIndex('website_analytics_date_idx').on(table.date),
+}));
+
+// Dashboard widgets configuration
+export const dashboardWidgets = pgTable('dashboard_widgets', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').notNull().references(() => adminUsers.id),
+  widgetType: text('widget_type').notNull(), // 'revenue', 'jobs', 'customers', 'analytics', etc.
+  position: integer('position').notNull(),
+  config: text('config'), // JSON configuration for the widget
+  isVisible: boolean('is_visible').default(true),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  userWidgetIdx: index('widget_user_idx').on(table.userId),
+}));
+
+// Relations for admin system
+export const adminUsersRelations = relations(adminUsers, ({ many }) => ({
+  sessions: many(adminSessions),
+  aiSessions: many(aiChatSessions),
+  tasksCreated: many(adminTasks),
+  documents: many(adminDocuments),
+  activityLogs: many(adminActivityLogs),
+  widgets: many(dashboardWidgets),
+}));
+
+export const aiChatSessionsRelations = relations(aiChatSessions, ({ one, many }) => ({
+  user: one(adminUsers, {
+    fields: [aiChatSessions.userId],
+    references: [adminUsers.id],
+  }),
+  messages: many(aiChatMessages),
+}));
+
+export const aiChatMessagesRelations = relations(aiChatMessages, ({ one }) => ({
+  session: one(aiChatSessions, {
+    fields: [aiChatMessages.sessionId],
+    references: [aiChatSessions.id],
+  }),
+}));
+
+export const adminTasksRelations = relations(adminTasks, ({ one }) => ({
+  assignedUser: one(adminUsers, {
+    fields: [adminTasks.assignedTo],
+    references: [adminUsers.id],
+  }),
+  creator: one(adminUsers, {
+    fields: [adminTasks.createdBy],
+    references: [adminUsers.id],
+  }),
+}));
+
+// Insert schemas for admin system
+export const insertAdminUserSchema = createInsertSchema(adminUsers).omit({
+  id: true,
+  lastLoginAt: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  email: z.string().email('Invalid email address'),
+  passwordHash: z.string().min(1),
+  firstName: z.string().min(1, 'First name is required'),
+  lastName: z.string().min(1, 'Last name is required'),
+  role: z.enum(['super_admin', 'admin', 'tech', 'staff']),
+});
+
+export const insertAdminSessionSchema = createInsertSchema(adminSessions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertAdminPermissionSchema = createInsertSchema(adminPermissions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertAiChatSessionSchema = createInsertSchema(aiChatSessions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertAiChatMessageSchema = createInsertSchema(aiChatMessages).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertAdminTaskSchema = createInsertSchema(adminTasks).omit({
+  id: true,
+  completedAt: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  title: z.string().min(1, 'Title is required'),
+  priority: z.enum(['low', 'medium', 'high', 'urgent']),
+  status: z.enum(['pending', 'in_progress', 'completed', 'cancelled']),
+});
+
+export const insertAdminDocumentSchema = createInsertSchema(adminDocuments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertAdminActivityLogSchema = createInsertSchema(adminActivityLogs).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertGoogleAdsCampaignSchema = createInsertSchema(googleAdsCampaigns).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertWebsiteAnalyticsSchema = createInsertSchema(websiteAnalytics).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertDashboardWidgetSchema = createInsertSchema(dashboardWidgets).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Types for admin system
+export type AdminUser = typeof adminUsers.$inferSelect;
+export type InsertAdminUser = z.infer<typeof insertAdminUserSchema>;
+
+export type AdminSession = typeof adminSessions.$inferSelect;
+export type InsertAdminSession = z.infer<typeof insertAdminSessionSchema>;
+
+export type AdminPermission = typeof adminPermissions.$inferSelect;
+export type InsertAdminPermission = z.infer<typeof insertAdminPermissionSchema>;
+
+export type AiChatSession = typeof aiChatSessions.$inferSelect;
+export type InsertAiChatSession = z.infer<typeof insertAiChatSessionSchema>;
+
+export type AiChatMessage = typeof aiChatMessages.$inferSelect;
+export type InsertAiChatMessage = z.infer<typeof insertAiChatMessageSchema>;
+
+export type AdminTask = typeof adminTasks.$inferSelect;
+export type InsertAdminTask = z.infer<typeof insertAdminTaskSchema>;
+
+export type AdminDocument = typeof adminDocuments.$inferSelect;
+export type InsertAdminDocument = z.infer<typeof insertAdminDocumentSchema>;
+
+export type AdminActivityLog = typeof adminActivityLogs.$inferSelect;
+export type InsertAdminActivityLog = z.infer<typeof insertAdminActivityLogSchema>;
+
+export type GoogleAdsCampaign = typeof googleAdsCampaigns.$inferSelect;
+export type InsertGoogleAdsCampaign = z.infer<typeof insertGoogleAdsCampaignSchema>;
+
+export type WebsiteAnalytics = typeof websiteAnalytics.$inferSelect;
+export type InsertWebsiteAnalytics = z.infer<typeof insertWebsiteAnalyticsSchema>;
+
+export type DashboardWidget = typeof dashboardWidgets.$inferSelect;
+export type InsertDashboardWidget = z.infer<typeof insertDashboardWidgetSchema>;
