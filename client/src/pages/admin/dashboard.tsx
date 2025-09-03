@@ -7,7 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   BarChart3, Users, FileText, Calendar, Settings, LogOut, 
   Home, DollarSign, TrendingUp, Package, AlertCircle, CheckCircle,
-  Clock, Activity, Brain, Target, Bell, ListTodo, Menu, X
+  Clock, Activity, Brain, Target, Bell, ListTodo, Menu, X, RefreshCw,
+  Loader2
 } from 'lucide-react';
 import { authenticatedFetch, logout, getAdminUser, isAuthenticated } from '@/lib/auth';
 import { cn } from '@/lib/utils';
@@ -16,6 +17,8 @@ interface DashboardStats {
   today: {
     revenue: number;
     jobsCompleted: number;
+    jobsInProgress: number;
+    jobsScheduled: number;
     newCustomers: number;
     estimatesSent: number;
   };
@@ -23,6 +26,10 @@ interface DashboardStats {
     revenue: number;
     jobsCompleted: number;
     newCustomers: number;
+  };
+  month: {
+    revenue: number;
+    jobsCompleted: number;
   };
   tasks: {
     pending: number;
@@ -33,10 +40,15 @@ interface DashboardStats {
   };
   customers: {
     total: number;
+    recentCount: number;
   };
   blog: {
     total: number;
     published: number;
+  };
+  realTimeData: {
+    lastUpdated: string;
+    source: string;
   };
 }
 
@@ -54,11 +66,11 @@ export default function AdminDashboard() {
   }, [setLocation]);
 
   // Fetch dashboard stats
-  const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
+  const { data: stats, isLoading: statsLoading, refetch, isRefetching } = useQuery<DashboardStats>({
     queryKey: ['/api/admin/dashboard/stats'],
     queryFn: () => authenticatedFetch('/api/admin/dashboard/stats'),
     enabled: isAuthenticated(),
-    refetchInterval: 60000, // Refresh every minute
+    refetchInterval: 30000, // Refresh every 30 seconds for real-time data
   });
 
   if (!user) {
@@ -151,7 +163,42 @@ export default function AdminDashboard() {
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsContent value="overview">
               <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-gray-900">Dashboard Overview</h2>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-2xl font-bold text-gray-900">Dashboard Overview</h2>
+                  <div className="flex items-center space-x-2">
+                    {stats?.realTimeData && (
+                      <span className="text-xs text-gray-500">
+                        Last updated: {new Date(stats.realTimeData.lastUpdated).toLocaleTimeString()}
+                      </span>
+                    )}
+                    <Button
+                      onClick={() => refetch()}
+                      size="sm"
+                      variant="outline"
+                      disabled={isRefetching}
+                      data-testid="button-refresh-stats"
+                    >
+                      {isRefetching ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-4 w-4" />
+                      )}
+                      <span className="ml-2">Refresh</span>
+                    </Button>
+                  </div>
+                </div>
+                
+                {/* Real-time indicator */}
+                {stats?.realTimeData && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                      <span className="text-sm text-green-700">
+                        Live data from HousecallPro API
+                      </span>
+                    </div>
+                  </div>
+                )}
                 
                 {/* Stats Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -171,14 +218,31 @@ export default function AdminDashboard() {
 
                   <Card>
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-medium text-gray-600">Jobs Completed</CardTitle>
+                      <CardTitle className="text-sm font-medium text-gray-600">Jobs Today</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="flex items-center justify-between">
-                        <p className="text-2xl font-bold" data-testid="text-jobs-today">
-                          {statsLoading ? '--' : stats?.today.jobsCompleted || 0}
-                        </p>
-                        <CheckCircle className="h-8 w-8 text-blue-600" />
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-2xl font-bold" data-testid="text-jobs-today">
+                              {statsLoading ? '--' : stats?.today.jobsCompleted || 0}
+                            </p>
+                            <p className="text-xs text-gray-500">Completed</p>
+                          </div>
+                          <CheckCircle className="h-8 w-8 text-blue-600" />
+                        </div>
+                        {stats && (
+                          <div className="grid grid-cols-2 gap-2 pt-2 border-t">
+                            <div>
+                              <p className="text-sm font-medium text-orange-600">{stats.today.jobsInProgress}</p>
+                              <p className="text-xs text-gray-500">In Progress</p>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-gray-600">{stats.today.jobsScheduled}</p>
+                              <p className="text-xs text-gray-500">Scheduled</p>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
@@ -212,32 +276,56 @@ export default function AdminDashboard() {
                   </Card>
                 </div>
 
-                {/* Week Summary */}
+                {/* Week & Month Summary */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>This Week's Performance</CardTitle>
-                    <CardDescription>Key metrics for the past 7 days</CardDescription>
+                    <CardTitle>Performance Summary</CardTitle>
+                    <CardDescription>Key metrics for different time periods</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="space-y-4">
                       <div>
-                        <p className="text-sm text-gray-600">Total Revenue</p>
-                        <p className="text-3xl font-bold text-green-600" data-testid="text-revenue-week">
-                          {statsLoading ? '--' : formatCurrency(stats?.week.revenue || 0)}
-                        </p>
+                        <h4 className="font-medium text-gray-700 mb-3">This Week</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                          <div>
+                            <p className="text-sm text-gray-600">Revenue</p>
+                            <p className="text-2xl font-bold text-green-600" data-testid="text-revenue-week">
+                              {statsLoading ? '--' : formatCurrency(stats?.week.revenue || 0)}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-600">Jobs Completed</p>
+                            <p className="text-2xl font-bold text-blue-600" data-testid="text-jobs-week">
+                              {statsLoading ? '--' : stats?.week.jobsCompleted || 0}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-600">New Customers</p>
+                            <p className="text-2xl font-bold text-purple-600" data-testid="text-customers-week">
+                              {statsLoading ? '--' : stats?.week.newCustomers || 0}
+                            </p>
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm text-gray-600">Jobs Completed</p>
-                        <p className="text-3xl font-bold text-blue-600" data-testid="text-jobs-week">
-                          {statsLoading ? '--' : stats?.week.jobsCompleted || 0}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-600">New Customers</p>
-                        <p className="text-3xl font-bold text-purple-600" data-testid="text-customers-week">
-                          {statsLoading ? '--' : stats?.week.newCustomers || 0}
-                        </p>
-                      </div>
+                      {stats?.month && (
+                        <div className="pt-4 border-t">
+                          <h4 className="font-medium text-gray-700 mb-3">This Month</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                              <p className="text-sm text-gray-600">Revenue</p>
+                              <p className="text-2xl font-bold text-green-600" data-testid="text-revenue-month">
+                                {formatCurrency(stats.month.revenue || 0)}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-gray-600">Jobs Completed</p>
+                              <p className="text-2xl font-bold text-blue-600" data-testid="text-jobs-month">
+                                {stats.month.jobsCompleted || 0}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -292,6 +380,12 @@ export default function AdminDashboard() {
                           <span className="text-sm text-gray-600">Total Customers</span>
                           <span className="font-medium" data-testid="text-customers-total">
                             {statsLoading ? '--' : stats?.customers.total || 0}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">Recent Customers</span>
+                          <span className="font-medium" data-testid="text-customers-recent">
+                            {statsLoading ? '--' : stats?.customers.recentCount || 0}
                           </span>
                         </div>
                         <div className="flex justify-between">

@@ -184,12 +184,94 @@ router.get('/users', authenticate, requirePermission('users.view'), async (req, 
 // DASHBOARD ANALYTICS
 // ============================================
 
+// Get real-time HousecallPro metrics
+router.get('/dashboard/housecall-metrics', authenticate, requirePermission('dashboard.view'), async (req, res) => {
+  try {
+    const { HousecallProClient } = await import('./housecall');
+    const hcpClient = HousecallProClient.getInstance();
+    
+    // Get date range from query params or default to today
+    const date = req.query.date ? new Date(req.query.date as string) : new Date();
+    date.setHours(0, 0, 0, 0);
+    const nextDay = new Date(date);
+    nextDay.setDate(nextDay.getDate() + 1);
+    
+    // Fetch real-time metrics from HousecallPro
+    const [jobs, estimates, employees, bookingWindows] = await Promise.all([
+      hcpClient.getJobs({
+        scheduled_start_min: date.toISOString(),
+        scheduled_start_max: nextDay.toISOString()
+      }).catch(() => []),
+      
+      hcpClient.getEstimates({
+        scheduled_start_min: date.toISOString(),
+        scheduled_start_max: nextDay.toISOString()
+      }).catch(() => []),
+      
+      hcpClient.getEmployees().catch(() => []),
+      
+      hcpClient.getBookingWindows(
+        date.toISOString().split('T')[0],
+        nextDay.toISOString().split('T')[0]
+      ).catch(() => [])
+    ]);
+    
+    // Calculate metrics
+    const jobsByStatus = {
+      scheduled: jobs.filter(j => j.work_status === 'scheduled').length,
+      in_progress: jobs.filter(j => j.work_status === 'in_progress').length,
+      completed: jobs.filter(j => j.work_status === 'completed').length,
+      cancelled: jobs.filter(j => j.work_status === 'cancelled').length
+    };
+    
+    const revenue = jobs
+      .filter(j => j.work_status === 'completed')
+      .reduce((sum, job) => sum + (job.total_amount || 0), 0);
+    
+    const activeEmployees = employees.filter(e => e.is_active).length;
+    const availableWindows = bookingWindows.filter(w => w.available).length;
+    
+    res.json({
+      date: date.toISOString(),
+      jobs: {
+        total: jobs.length,
+        byStatus: jobsByStatus,
+        revenue
+      },
+      estimates: {
+        total: estimates.length,
+        value: estimates.reduce((sum, e) => sum + (e.total_amount || 0), 0)
+      },
+      employees: {
+        total: employees.length,
+        active: activeEmployees
+      },
+      availability: {
+        totalWindows: bookingWindows.length,
+        availableWindows,
+        utilizationRate: bookingWindows.length ? 
+          Math.round((1 - availableWindows / bookingWindows.length) * 100) : 0
+      },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('HousecallPro metrics error:', error);
+    res.status(500).json({ error: 'Failed to fetch metrics' });
+  }
+});
+
 // Get dashboard stats
 router.get('/dashboard/stats', authenticate, requirePermission('dashboard.view'), async (req, res) => {
   try {
+    // Import HousecallProClient
+    const { HousecallProClient } = await import('./housecall');
+    const hcpClient = HousecallProClient.getInstance();
+    
     // Get date ranges
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
     const weekAgo = new Date(today);
@@ -197,7 +279,56 @@ router.get('/dashboard/stats', authenticate, requirePermission('dashboard.view')
     const monthAgo = new Date(today);
     monthAgo.setMonth(monthAgo.getMonth() - 1);
     
-    // Get webhook analytics for today
+    // Fetch real-time data from HousecallPro API
+    let todayJobs: any[] = [];
+    let weekJobs: any[] = [];
+    let monthJobs: any[] = [];
+    let recentCustomers: any[] = [];
+    
+    try {
+      // Fetch today's jobs from HousecallPro
+      todayJobs = await hcpClient.getJobs({
+        scheduled_start_min: today.toISOString().split('T')[0],
+        scheduled_start_max: tomorrow.toISOString().split('T')[0]
+      });
+      
+      // Fetch this week's jobs
+      weekJobs = await hcpClient.getJobs({
+        scheduled_start_min: weekAgo.toISOString().split('T')[0],
+        scheduled_start_max: tomorrow.toISOString().split('T')[0]
+      });
+      
+      // Fetch this month's jobs
+      monthJobs = await hcpClient.getJobs({
+        scheduled_start_min: monthAgo.toISOString().split('T')[0],
+        scheduled_start_max: tomorrow.toISOString().split('T')[0]
+      });
+      
+      // Fetch recent customers
+      const customersResponse = await hcpClient.callAPI<{ customers: any[] }>('/customers', {
+        page_size: 100,
+        created_after: weekAgo.toISOString()
+      });
+      recentCustomers = customersResponse.customers || [];
+      
+    } catch (error) {
+      console.error('Error fetching real-time HousecallPro data:', error);
+    }
+    
+    // Calculate real-time stats from HousecallPro data
+    const todayRevenue = todayJobs.reduce((sum, job) => sum + (job.total_amount || 0), 0);
+    const todayJobsCompleted = todayJobs.filter(job => job.work_status === 'completed').length;
+    const todayJobsInProgress = todayJobs.filter(job => job.work_status === 'in_progress').length;
+    const todayJobsScheduled = todayJobs.filter(job => job.work_status === 'scheduled').length;
+    
+    const weekRevenue = weekJobs.reduce((sum, job) => sum + (job.total_amount || 0), 0);
+    const weekJobsCompleted = weekJobs.length;
+    const weekNewCustomers = recentCustomers.length;
+    
+    const monthRevenue = monthJobs.reduce((sum, job) => sum + (job.total_amount || 0), 0);
+    const monthJobsCompleted = monthJobs.length;
+    
+    // Get webhook analytics for today (as fallback/additional data)
     const [todayAnalytics] = await db.select({
       totalRevenue: sql<number>`COALESCE(SUM(${webhookAnalytics.totalRevenue}), 0)`,
       jobsCompleted: sql<number>`COALESCE(SUM(${webhookAnalytics.jobsCompleted}), 0)`,
@@ -249,17 +380,33 @@ router.get('/dashboard/stats', authenticate, requirePermission('dashboard.view')
     })
     .from(blogPosts);
     
+    // Get total customers from database (all time)
+    const allCustomersResponse = await hcpClient.callAPI<{ customers: any[], total_items: number }>('/customers', {
+      page_size: 1,
+      page: 1
+    }).catch(() => ({ customers: [], total_items: customerStats?.totalCustomers || 0 }));
+    
     res.json({
       today: {
-        revenue: todayAnalytics?.totalRevenue || 0,
-        jobsCompleted: todayAnalytics?.jobsCompleted || 0,
-        newCustomers: todayAnalytics?.newCustomers || 0,
+        // Use real-time data from HousecallPro API, fallback to webhook analytics
+        revenue: todayRevenue || todayAnalytics?.totalRevenue || 0,
+        jobsCompleted: todayJobsCompleted || todayAnalytics?.jobsCompleted || 0,
+        jobsInProgress: todayJobsInProgress || 0,
+        jobsScheduled: todayJobsScheduled || 0,
+        newCustomers: recentCustomers.filter(c => {
+          const createdAt = new Date(c.created_at);
+          return createdAt >= today && createdAt < tomorrow;
+        }).length || todayAnalytics?.newCustomers || 0,
         estimatesSent: todayAnalytics?.estimatesSent || 0
       },
       week: {
-        revenue: weekAnalytics?.totalRevenue || 0,
-        jobsCompleted: weekAnalytics?.jobsCompleted || 0,
-        newCustomers: weekAnalytics?.newCustomers || 0
+        revenue: weekRevenue || weekAnalytics?.totalRevenue || 0,
+        jobsCompleted: weekJobsCompleted || weekAnalytics?.jobsCompleted || 0,
+        newCustomers: weekNewCustomers || weekAnalytics?.newCustomers || 0
+      },
+      month: {
+        revenue: monthRevenue || 0,
+        jobsCompleted: monthJobsCompleted || 0
       },
       tasks: {
         pending: taskStats?.pendingTasks || 0
@@ -269,11 +416,16 @@ router.get('/dashboard/stats', authenticate, requirePermission('dashboard.view')
         failed: eventStats?.failedEvents || 0
       },
       customers: {
-        total: customerStats?.totalCustomers || 0
+        total: allCustomersResponse.total_items || customerStats?.totalCustomers || 0,
+        recentCount: recentCustomers.length
       },
       blog: {
         total: blogStats?.totalPosts || 0,
         published: blogStats?.publishedPosts || 0
+      },
+      realTimeData: {
+        lastUpdated: new Date().toISOString(),
+        source: 'housecall_pro_api'
       }
     });
   } catch (error) {
