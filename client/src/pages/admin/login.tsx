@@ -81,7 +81,7 @@ export default function AdminLogin() {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="admin@johnsonbrosplumbing.com"
+                    placeholder="Sales@thejohnsonbros.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="pl-10"
@@ -128,7 +128,7 @@ export default function AdminLogin() {
             <div className="mt-6 text-center text-sm text-gray-600">
               <p>Default credentials for first login:</p>
               <p className="mt-1">
-                Email: <span className="font-mono">admin@johnsonbrosplumbing.com</span>
+                Email: <span className="font-mono">Sales@thejohnsonbros.com</span>
               </p>
               <p className="mt-1">
                 Password: <span className="font-mono">JohnsonBros2025!</span>

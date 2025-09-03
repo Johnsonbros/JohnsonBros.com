@@ -218,7 +218,7 @@ export async function ensureSuperAdmin() {
     const hashedPassword = await hashPassword(defaultPassword);
     
     await db.insert(adminUsers).values({
-      email: 'admin@johnsonbrosplumbing.com',
+      email: 'Sales@thejohnsonbros.com',
       passwordHash: hashedPassword,
       firstName: 'Admin',
       lastName: 'User',
@@ -227,7 +227,7 @@ export async function ensureSuperAdmin() {
     });
     
     console.log('Default super admin created');
-    console.log('Email: admin@johnsonbrosplumbing.com');
+    console.log('Email: Sales@thejohnsonbros.com');
     console.log('Password:', defaultPassword);
   }
 }
