@@ -1,4 +1,4 @@
-# Johnson Bros. Plumbing Platform - Features Analysis & Improvement Roadmap
+# Johnson Bros. Plumbing & Drain Cleaning Platform - Features Analysis & Improvement Roadmap
 
 ## Executive Summary
 This document provides a comprehensive analysis of the Johnson Bros. Plumbing & Drain Cleaning AI-first platform. It details each component's goal, current implementation status, and strategic improvements for near-term development.
