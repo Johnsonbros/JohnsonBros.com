@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { AuthenticatedRequest } from '../types/express';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { db } from '../db';
@@ -150,9 +151,10 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
     return res.status(401).json({ error: 'Invalid or expired session' });
   }
   
-  // Add user data to request
-  (req as any).user = sessionData.user;
-  (req as any).permissions = sessionData.permissions;
+  // Add user data to request with proper typing
+  const authReq = req as AuthenticatedRequest;
+  authReq.user = sessionData.user;
+  authReq.permissions = sessionData.permissions;
   
   next();
 }
@@ -160,13 +162,14 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
 // Middleware: Check permission
 export function requirePermission(permission: string) {
   return async (req: Request, res: Response, next: NextFunction) => {
-    const permissions = (req as any).permissions || [];
+    const authReq = req as AuthenticatedRequest;
+    const permissions = authReq.permissions || [];
     
     if (!permissions.includes(permission)) {
       // Log unauthorized access attempt
-      if ((req as any).user) {
+      if (authReq.user) {
         await db.insert(adminActivityLogs).values({
-          userId: (req as any).user.id,
+          userId: authReq.user.id,
           action: 'unauthorized_access',
           entityType: 'permission',
           entityId: permission,

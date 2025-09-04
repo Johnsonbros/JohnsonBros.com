@@ -34,6 +34,7 @@ interface HCPJob {
   scheduled_end: string;
   work_status: string;
   duration_minutes?: number;
+  total_amount?: number; // Total amount in cents
 }
 
 export class HousecallProClient {

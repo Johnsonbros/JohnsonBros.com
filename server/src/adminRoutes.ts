@@ -211,8 +211,7 @@ router.get('/dashboard/housecall-metrics', authenticate, requirePermission('dash
       hcpClient.getEmployees().catch(() => []),
       
       hcpClient.getBookingWindows(
-        date.toISOString().split('T')[0],
-        nextDay.toISOString().split('T')[0]
+        date.toISOString().split('T')[0]
       ).catch(() => [])
     ]);
     
