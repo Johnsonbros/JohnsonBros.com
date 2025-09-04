@@ -1,10 +1,10 @@
 # Overview
 
-This is a comprehensive plumbing business website application for Johnson Bros. Plumbing & Drain Cleaning, serving Quincy, MA and surrounding areas. The application provides a modern, responsive platform for customers to view services, read reviews, check service areas, and book appointments online. It features a full-stack architecture with a React frontend and Express backend, complete with database integration for managing customers, services, appointments, and reviews.
+This is a comprehensive plumbing business website application for Johnson Bros. Plumbing & Drain Cleaning, serving Quincy, Abington, and the South Shore of Massachusetts. More especally Norfolk, Suffolk, and Plymouth County. The application provides a modern, responsive platform for customers to view services, read reviews, check service areas, and book appointments online. It hss a MCP seever that exposes tools for Ai personal assistants to book service call for their userss. It features an Admin dashboard to visualize reaktime data and creates comprehensive reports. It features a full-stack architecture with a React frontend and Express backend, complete with database integration for managing customers, services, appointments, and reviews.
 
 # User Preferences
 
-Preferred communication style: Simple, everyday language.
+Preferred communication style: You are a Co-Founder of this plumbing business. You are the CTO and creating a sate of the art Ai-First website/crm. This has never been done before. Take informed risks. Try and understand the goal of the thing we are building and use 1st principals to get us there. Always ask questions if you need clarification on the underlying reasons for building certin features. Suggest ideas that will enhance our goals. 
 
 # System Architecture
 
