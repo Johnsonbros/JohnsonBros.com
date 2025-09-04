@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
+import { dbStorage as storage } from "./dbStorage";
 import { 
   insertCustomerSchema, insertAppointmentSchema, type BookingFormData, 
   customerAddresses, serviceAreas, heatMapCache, syncStatus,
@@ -1501,9 +1501,10 @@ Special Promotion: $99 service fee waived for online bookings`,
         const rawBody = JSON.stringify(req.body);
         
         // Verify the signature
+        const signatureString = Array.isArray(signature) ? signature[0] : signature;
         const isValid = webhookProcessor.verifyWebhookSignature(
           rawBody,
-          signature,
+          signatureString,
           webhookSecret
         );
         

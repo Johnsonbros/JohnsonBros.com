@@ -213,6 +213,7 @@ export class MemStorage implements IStorage {
     const customer: Customer = {
       ...insertCustomer,
       id,
+      phone: insertCustomer.phone || null,
       housecallProId: null,
       createdAt: new Date(),
     };
@@ -229,7 +230,7 @@ export class MemStorage implements IStorage {
 
   async getAppointmentsByCustomer(customerId: string): Promise<Appointment[]> {
     return Array.from(this.appointments.values()).filter(
-      (appointment) => appointment.customerId === customerId,
+      (appointment) => appointment.customerId === parseInt(customerId),
     );
   }
 
@@ -239,6 +240,9 @@ export class MemStorage implements IStorage {
       ...appointment,
       id,
       status: appointment.status ?? "scheduled",
+      customerId: appointment.customerId || null,
+      address: appointment.address || null,
+      notes: appointment.notes || null,
       createdAt: new Date(),
     };
     this.appointments.set(String(id), newAppointment);
@@ -300,8 +304,8 @@ export class MemStorage implements IStorage {
     const now = new Date();
     const newPost: BlogPost = {
       id,
-      slug: post.slug,
-      title: post.title,
+      slug: post.slug || '',
+      title: post.title || '',
       excerpt: post.excerpt ?? null,
       content: post.content,
       featuredImage: post.featuredImage ?? null,

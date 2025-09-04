@@ -1,4 +1,4 @@
-import { storage } from "./storage";
+import { dbStorage as storage } from "./dbStorage";
 import { type InsertBlogPost, type InsertKeyword } from "@shared/schema";
 
 const samplePosts: InsertBlogPost[] = [
