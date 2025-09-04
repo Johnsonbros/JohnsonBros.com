@@ -8,10 +8,11 @@ import {
   BarChart3, Users, FileText, Calendar, Settings, LogOut, 
   Home, DollarSign, TrendingUp, Package, AlertCircle, CheckCircle,
   Clock, Activity, Brain, Target, Bell, ListTodo, Menu, X, RefreshCw,
-  Loader2
+  Loader2, Zap
 } from 'lucide-react';
 import { authenticatedFetch, logout, getAdminUser, isAuthenticated } from '@/lib/auth';
 import { cn } from '@/lib/utils';
+import OperationsDashboard from './operations';
 
 interface DashboardStats {
   today: {
@@ -88,6 +89,7 @@ export default function AdminDashboard() {
 
   const sidebarItems = [
     { id: 'overview', label: 'Overview', icon: Home },
+    { id: 'operations', label: 'Operations', icon: Zap },
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
     { id: 'customers', label: 'Customers', icon: Users },
     { id: 'tasks', label: 'Tasks', icon: ListTodo },
@@ -405,6 +407,10 @@ export default function AdminDashboard() {
                   </Card>
                 </div>
               </div>
+            </TabsContent>
+
+            <TabsContent value="operations">
+              <OperationsDashboard />
             </TabsContent>
 
             <TabsContent value="analytics">

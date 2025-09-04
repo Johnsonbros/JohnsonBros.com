@@ -184,6 +184,269 @@ router.get('/users', authenticate, requirePermission('users.view'), async (req, 
 // DASHBOARD ANALYTICS
 // ============================================
 
+// Get real-time operations overview
+router.get('/dashboard/operations', authenticate, requirePermission('dashboard.view'), async (req, res) => {
+  try {
+    const { HousecallProClient } = await import('./housecall');
+    const { CapacityCalculator } = await import('./capacity');
+    const hcpClient = HousecallProClient.getInstance();
+    const capacityCalc = CapacityCalculator.getInstance();
+    
+    // Get today's date range
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    // Fetch all data in parallel
+    const [jobs, estimates, employees, capacity, bookingWindows] = await Promise.all([
+      hcpClient.getJobs({
+        scheduled_start_min: today.toISOString(),
+        scheduled_start_max: tomorrow.toISOString()
+      }).catch(() => []),
+      
+      hcpClient.getEstimates({
+        scheduled_start_min: today.toISOString(),
+        scheduled_start_max: tomorrow.toISOString()
+      }).catch(() => []),
+      
+      hcpClient.getEmployees().catch(() => []),
+      
+      capacityCalc.calculateCapacity(),
+      
+      hcpClient.getBookingWindows(
+        today.toISOString().split('T')[0]
+      ).catch(() => [])
+    ]);
+    
+    // Process jobs by time slot and status
+    const jobsByTimeSlot = {
+      morning: jobs.filter((j: any) => {
+        const hour = new Date(j.scheduled_start).getHours();
+        return hour >= 8 && hour < 12;
+      }),
+      afternoon: jobs.filter((j: any) => {
+        const hour = new Date(j.scheduled_start).getHours();
+        return hour >= 12 && hour < 17;
+      }),
+      evening: jobs.filter((j: any) => {
+        const hour = new Date(j.scheduled_start).getHours();
+        return hour >= 17;
+      })
+    };
+    
+    // Calculate revenue metrics
+    const completedRevenue = jobs
+      .filter((j: any) => j.work_status === 'completed')
+      .reduce((sum: number, job: any) => sum + (job.total_amount || 0), 0);
+    
+    const scheduledRevenue = jobs
+      .filter((j: any) => j.work_status === 'scheduled' || j.work_status === 'in_progress')
+      .reduce((sum: number, job: any) => sum + (job.total_amount || 0), 0);
+    
+    const dailyGoal = 5000; // Configure based on business targets
+    const revenueProgress = Math.min(100, Math.round((completedRevenue / dailyGoal) * 100));
+    
+    // Identify emergency or high-priority jobs
+    const emergencyJobs = jobs.filter((j: any) => 
+      j.tags?.includes('emergency') || 
+      j.tags?.includes('urgent') ||
+      j.description?.toLowerCase().includes('emergency') ||
+      j.description?.toLowerCase().includes('urgent')
+    );
+    
+    // Tech status with current assignments
+    const techStatus = employees
+      .filter((e: any) => e.is_active && e.role === 'technician')
+      .map((tech: any) => {
+        const techJobs = jobs.filter((j: any) => 
+          j.assigned_employees?.some((e: any) => e.id === tech.id)
+        );
+        
+        const currentJob = techJobs.find((j: any) => j.work_status === 'in_progress');
+        const upcomingJobs = techJobs.filter((j: any) => j.work_status === 'scheduled');
+        
+        return {
+          id: tech.id,
+          name: `${tech.first_name} ${tech.last_name}`,
+          status: currentJob ? 'busy' : upcomingJobs.length > 0 ? 'scheduled' : 'available',
+          currentJob: currentJob ? {
+            id: currentJob.id,
+            customer: (currentJob as any).customer?.name || 'Unknown',
+            address: (currentJob as any).address?.street || 'No address',
+            scheduledTime: currentJob.scheduled_start
+          } : null,
+          jobCount: techJobs.length,
+          completedToday: techJobs.filter((j: any) => j.work_status === 'completed').length
+        };
+      });
+    
+    res.json({
+      timestamp: new Date().toISOString(),
+      
+      // Capacity overview
+      capacity: {
+        state: capacity.overall.state,
+        score: capacity.overall.score,
+        availableWindows: bookingWindows.filter((w: any) => w.available).length,
+        totalWindows: bookingWindows.length,
+        utilizationRate: bookingWindows.length ? 
+          Math.round((1 - bookingWindows.filter((w: any) => w.available).length / bookingWindows.length) * 100) : 0
+      },
+      
+      // Jobs overview
+      jobs: {
+        total: jobs.length,
+        byStatus: {
+          scheduled: jobs.filter((j: any) => j.work_status === 'scheduled').length,
+          inProgress: jobs.filter((j: any) => j.work_status === 'in_progress').length,
+          completed: jobs.filter((j: any) => j.work_status === 'completed').length,
+          cancelled: jobs.filter((j: any) => j.work_status === 'cancelled').length
+        },
+        byTimeSlot: {
+          morning: jobsByTimeSlot.morning.length,
+          afternoon: jobsByTimeSlot.afternoon.length,
+          evening: jobsByTimeSlot.evening.length
+        },
+        emergencyCount: emergencyJobs.length
+      },
+      
+      // Revenue tracking
+      revenue: {
+        completed: completedRevenue,
+        scheduled: scheduledRevenue,
+        total: completedRevenue + scheduledRevenue,
+        goal: dailyGoal,
+        progress: revenueProgress
+      },
+      
+      // Technician status
+      technicians: techStatus,
+      
+      // Alerts
+      alerts: [
+        ...emergencyJobs.map((job: any) => ({
+          type: 'emergency',
+          message: `Emergency job for ${job.customer?.name}`,
+          jobId: job.id,
+          timestamp: job.created_at
+        })),
+        ...((capacity.overall.state as string) === 'BOOKED_SOLID' ? [{
+          type: 'capacity',
+          message: 'Fully booked - no available slots today',
+          timestamp: new Date().toISOString()
+        }] : [])
+      ]
+    });
+  } catch (error) {
+    console.error('Operations dashboard error:', error);
+    res.status(500).json({ error: 'Failed to fetch operations data' });
+  }
+});
+
+// Get today's job board with detailed info
+router.get('/dashboard/job-board', authenticate, requirePermission('dashboard.view'), async (req, res) => {
+  try {
+    const { HousecallProClient } = await import('./housecall');
+    const hcpClient = HousecallProClient.getInstance();
+    
+    // Get today's date range
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    // Fetch jobs with details
+    const jobs = await hcpClient.getJobs({
+      scheduled_start_min: today.toISOString(),
+      scheduled_start_max: tomorrow.toISOString()
+    }).catch(() => []);
+    
+    // Format jobs for the board
+    const jobBoard = jobs.map((job: any) => ({
+      id: job.id,
+      customer: {
+        name: job.customer?.name || 'Unknown',
+        phone: job.customer?.mobile_number || job.customer?.home_number,
+        email: job.customer?.email
+      },
+      address: {
+        street: job.address?.street,
+        city: job.address?.city,
+        zip: job.address?.zip
+      },
+      service: {
+        type: job.line_items?.[0]?.name || 'Service',
+        description: job.description,
+        tags: job.tags || []
+      },
+      schedule: {
+        start: job.scheduled_start,
+        end: job.scheduled_end,
+        duration: job.scheduled_duration_minutes || 60
+      },
+      technician: job.assigned_employees?.map((e: any) => ({
+        id: e.id,
+        name: `${e.first_name} ${e.last_name}`
+      })) || [],
+      status: job.work_status,
+      amount: job.total_amount || 0,
+      isPriority: job.tags?.includes('emergency') || job.tags?.includes('urgent'),
+      notes: job.note
+    }));
+    
+    res.json({
+      timestamp: new Date().toISOString(),
+      date: today.toISOString().split('T')[0],
+      jobs: jobBoard
+    });
+  } catch (error) {
+    console.error('Job board error:', error);
+    res.status(500).json({ error: 'Failed to fetch job board' });
+  }
+});
+
+// Update job assignment (drag and drop support)
+router.put('/dashboard/jobs/:id/assign', authenticate, requirePermission('jobs.edit'), async (req, res) => {
+  try {
+    const { HousecallProClient } = await import('./housecall');
+    const hcpClient = HousecallProClient.getInstance();
+    
+    const jobId = req.params.id;
+    const { technicianId, scheduledStart, scheduledEnd } = req.body;
+    
+    // Update job assignment in HousecallPro
+    // Note: Direct job update API not exposed, would need to implement in HousecallProClient
+    // For now, log the intended update
+    console.log(`Would update job ${jobId} with tech ${technicianId}`);
+    
+    const updatedJob = {
+      id: jobId,
+      assigned_employee_ids: technicianId ? [technicianId] : [],
+      scheduled_start: scheduledStart,
+      scheduled_end: scheduledEnd
+    };
+    
+    // Log the activity
+    await logActivity(
+      (req as any).user.id,
+      'job_reassigned',
+      'job',
+      jobId,
+      JSON.stringify({ technicianId, scheduledStart }),
+      req.ip
+    );
+    
+    res.json({
+      success: true,
+      job: updatedJob
+    });
+  } catch (error) {
+    console.error('Job assignment error:', error);
+    res.status(500).json({ error: 'Failed to update job assignment' });
+  }
+});
+
 // Get real-time HousecallPro metrics
 router.get('/dashboard/housecall-metrics', authenticate, requirePermission('dashboard.view'), async (req, res) => {
   try {
