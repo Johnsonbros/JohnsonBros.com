@@ -3,14 +3,45 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod";
 import { fetch } from "undici";
 import pino from "pino";
+import { randomUUID } from "crypto";
 
 const log = pino({ name: "jb-booker", level: process.env.LOG_LEVEL || "info" });
 
-const HOUSECALL_API_KEY = process.env.HOUSECALL_API_KEY;
-if (!HOUSECALL_API_KEY) {
-  log.error("HOUSECALL_API_KEY is not set in environment variables");
-  // Allow server to start but API calls will fail gracefully
+// Error types for better classification
+enum ErrorType {
+  CONFIGURATION = "CONFIGURATION",
+  VALIDATION = "VALIDATION", 
+  API_ERROR = "API_ERROR",
+  NETWORK = "NETWORK",
+  NOT_FOUND = "NOT_FOUND",
+  BUSINESS_LOGIC = "BUSINESS_LOGIC",
+  UNKNOWN = "UNKNOWN"
 }
+
+interface StructuredError {
+  type: ErrorType;
+  code: string;
+  message: string;
+  details?: any;
+  correlationId: string;
+  userMessage: string; // Friendly message for AI assistants
+}
+
+// Environment validation
+function validateEnvironment() {
+  const required = ["HOUSECALL_API_KEY"];
+  const missing = required.filter(key => !process.env[key]);
+  
+  if (missing.length > 0) {
+    log.error({ missing }, "Missing required environment variables");
+    throw new Error(`Missing required environment variables: ${missing.join(", ")}`);
+  }
+}
+
+// Validate environment on startup
+validateEnvironment();
+
+const HOUSECALL_API_KEY = process.env.HOUSECALL_API_KEY!;
 const COMPANY_TZ = process.env.COMPANY_TZ || "America/New_York";
 const DEFAULT_DISPATCH_EMPLOYEE_IDS = (process.env.DEFAULT_DISPATCH_EMPLOYEE_IDS || "")
   .split(",")
@@ -48,33 +79,88 @@ function hcpHeaders() {
   };
 }
 
-async function hcpGet(path: string, query?: Record<string, string | number | boolean | undefined>) {
-  if (!HOUSECALL_API_KEY) {
-    throw new Error("HOUSECALL_API_KEY is not configured. Please set it in environment variables.");
-  }
+function createStructuredError(
+  type: ErrorType,
+  code: string,
+  message: string,
+  userMessage: string,
+  correlationId: string,
+  details?: any
+): StructuredError {
+  return { type, code, message, userMessage, correlationId, details };
+}
+
+async function hcpGet(path: string, query?: Record<string, string | number | boolean | undefined>, correlationId?: string) {
+  const corrId = correlationId || randomUUID();
   const url = new URL(path, HCP_BASE);
   if (query) Object.entries(query).forEach(([k, v]) => {
     if (v !== undefined) url.searchParams.set(k, String(v));
   });
+  
   try {
     const res = await fetch(url, { headers: hcpHeaders() });
     if (!res.ok) {
       const errorText = await res.text();
-      log.error({ path, errorText, status: res.status }, `HCP API error: ${res.status}`);
-      throw new Error(`GET ${url} -> ${res.status} ${errorText}`);
+      log.error({ path, errorText, status: res.status, correlationId: corrId }, `HCP API error: ${res.status}`);
+      
+      if (res.status === 401 || res.status === 403) {
+        throw createStructuredError(
+          ErrorType.CONFIGURATION,
+          "HCP_AUTH_ERROR",
+          `Authentication failed: ${res.status} ${errorText}`,
+          "There's an issue with the HousecallPro API authentication. Please contact support.",
+          corrId,
+          { status: res.status, path }
+        );
+      } else if (res.status === 404) {
+        throw createStructuredError(
+          ErrorType.NOT_FOUND,
+          "HCP_NOT_FOUND",
+          `Resource not found: ${path}`,
+          "The requested resource was not found in HousecallPro.",
+          corrId,
+          { status: res.status, path }
+        );
+      } else if (res.status >= 500) {
+        throw createStructuredError(
+          ErrorType.API_ERROR,
+          "HCP_SERVER_ERROR",
+          `HousecallPro server error: ${res.status} ${errorText}`,
+          "HousecallPro is experiencing technical difficulties. Please try again in a few minutes.",
+          corrId,
+          { status: res.status, path }
+        );
+      } else {
+        throw createStructuredError(
+          ErrorType.API_ERROR,
+          "HCP_CLIENT_ERROR",
+          `HCP API error: ${res.status} ${errorText}`,
+          "There was an issue with the booking request. Please check the provided information and try again.",
+          corrId,
+          { status: res.status, path }
+        );
+      }
     }
     return res.json();
   } catch (err: any) {
-    log.error({ path, error: err.message }, `Failed to fetch from HCP API`);
-    throw err;
+    if (err.type) throw err; // Already a structured error
+    
+    log.error({ path, error: err.message, correlationId: corrId }, `Failed to fetch from HCP API`);
+    throw createStructuredError(
+      ErrorType.NETWORK,
+      "NETWORK_ERROR",
+      `Network error: ${err.message}`,
+      "There was a network connectivity issue. Please try again.",
+      corrId,
+      { path, originalError: err.message }
+    );
   }
 }
 
-async function hcpPost(path: string, body: unknown) {
-  if (!HOUSECALL_API_KEY) {
-    throw new Error("HOUSECALL_API_KEY is not configured. Please set it in environment variables.");
-  }
+async function hcpPost(path: string, body: unknown, correlationId?: string) {
+  const corrId = correlationId || randomUUID();
   const url = new URL(path, HCP_BASE);
+  
   try {
     const res = await fetch(url, {
       method: "POST",
@@ -83,13 +169,59 @@ async function hcpPost(path: string, body: unknown) {
     });
     if (!res.ok) {
       const errorText = await res.text();
-      log.error({ path, errorText, body, status: res.status }, `HCP API POST error: ${res.status}`);
-      throw new Error(`POST ${url} -> ${res.status} ${errorText}`);
+      log.error({ path, errorText, body, status: res.status, correlationId: corrId }, `HCP API POST error: ${res.status}`);
+      
+      if (res.status === 401 || res.status === 403) {
+        throw createStructuredError(
+          ErrorType.CONFIGURATION,
+          "HCP_AUTH_ERROR",
+          `Authentication failed: ${res.status} ${errorText}`,
+          "There's an issue with the HousecallPro API authentication. Please contact support.",
+          corrId,
+          { status: res.status, path }
+        );
+      } else if (res.status === 422) {
+        throw createStructuredError(
+          ErrorType.VALIDATION,
+          "HCP_VALIDATION_ERROR",
+          `Validation error: ${errorText}`,
+          "Some of the provided information is invalid. Please check the customer details and try again.",
+          corrId,
+          { status: res.status, path, body }
+        );
+      } else if (res.status >= 500) {
+        throw createStructuredError(
+          ErrorType.API_ERROR,
+          "HCP_SERVER_ERROR",
+          `HousecallPro server error: ${res.status} ${errorText}`,
+          "HousecallPro is experiencing technical difficulties. Please try again in a few minutes.",
+          corrId,
+          { status: res.status, path }
+        );
+      } else {
+        throw createStructuredError(
+          ErrorType.API_ERROR,
+          "HCP_CLIENT_ERROR",
+          `HCP API error: ${res.status} ${errorText}`,
+          "There was an issue creating the booking. Please check the provided information and try again.",
+          corrId,
+          { status: res.status, path, body }
+        );
+      }
     }
     return res.json();
   } catch (err: any) {
-    log.error({ path, error: err.message, body }, `Failed to POST to HCP API`);
-    throw err;
+    if (err.type) throw err; // Already a structured error
+    
+    log.error({ path, error: err.message, body, correlationId: corrId }, `Failed to POST to HCP API`);
+    throw createStructuredError(
+      ErrorType.NETWORK,
+      "NETWORK_ERROR",
+      `Network error: ${err.message}`,
+      "There was a network connectivity issue. Please try again.",
+      corrId,
+      { path, originalError: err.message }
+    );
   }
 }
 
@@ -120,10 +252,12 @@ function chooseWindow(windows: Array<{ start_time: string; end_time: string; ava
   return candidates[0] || windows.find(w => w.available);
 }
 
-async function findOrCreateCustomer(input: BookInput) {
+async function findOrCreateCustomer(input: BookInput, correlationId?: string) {
+  const corrId = correlationId || randomUUID();
+  
   // Try to find by phone/email using ?q
   const q = input.email || input.phone;
-  const search = await hcpGet("/customers", { q, page_size: 1 }) as any;
+  const search = await hcpGet("/customers", { q, page_size: 1 }, corrId) as any;
   const existing = (search.customers || [])[0];
   if (existing?.id) return existing;
 
@@ -144,7 +278,7 @@ async function findOrCreateCustomer(input: BookInput) {
       zip: input.zip,
       country: input.country
     }]
-  }) as any;
+  }, corrId) as any;
   return created;
 }
 
@@ -157,7 +291,9 @@ function minutesBetween(aIso: string, bIso: string) {
   return Math.max(30, Math.round(diffMs / 60000)); // minimum 30 min
 }
 
-async function getPrimaryAddressId(customer: any, input: BookInput) {
+async function getPrimaryAddressId(customer: any, input: BookInput, correlationId?: string) {
+  const corrId = correlationId || randomUUID();
+  
   // Prefer the one we just created (if present)
   const fromCreate = customer?.addresses?.[0]?.id;
   if (fromCreate) return fromCreate;
@@ -172,11 +308,12 @@ async function getPrimaryAddressId(customer: any, input: BookInput) {
     state: input.state,
     zip: input.zip,
     country: input.country
-  }) as any;
+  }, corrId) as any;
   return addr.id;
 }
 
-async function createJob(customerId: string, addressId: string, window: { start_time: string; end_time: string }, notes: string, lead_source: string, tags: string[]) {
+async function createJob(customerId: string, addressId: string, window: { start_time: string; end_time: string }, notes: string, lead_source: string, tags: string[], correlationId?: string) {
+  const corrId = correlationId || randomUUID();
   const scheduled_start = toYmd(window.start_time);
   const scheduled_end = toYmd(window.end_time);
   const arrival_window = minutesBetween(window.start_time, window.end_time);
@@ -200,12 +337,12 @@ async function createJob(customerId: string, addressId: string, window: { start_
     ],
     notify_customer: true,  // Use built-in Housecall Pro customer notifications
     notify_pro: true        // Use built-in Housecall Pro technician notifications
-  }) as any;
+  }, corrId) as any;
 
   return { job, arrival_window };
 }
 
-async function createAppointment(jobId: string, window: { start_time: string; end_time: string }, arrivalWindowMinutes: number) {
+async function createAppointment(jobId: string, window: { start_time: string; end_time: string }, arrivalWindowMinutes: number, correlationId?: string) {
   // Skip appointment creation for now - job scheduling is sufficient
   // Housecall Pro will handle scheduling internally
   return null;
@@ -246,74 +383,172 @@ server.registerTool(
     }
   } as any,
   async (raw) => {
-    const input = BookInput.parse(raw);
-    log.info({ input }, "book_service_call: start");
+    const correlationId = randomUUID();
+    
+    try {
+      // Input validation
+      const input = BookInput.parse(raw);
+      log.info({ input, correlationId }, "book_service_call: start");
 
-    // Step 1: fetch booking windows
-    const params: Record<string, string> = {};
-    if (input.earliest_date) params.start_date = input.earliest_date;
-    if (input.show_for_days) params.show_for_days = String(input.show_for_days);
+      // Step 1: fetch booking windows
+      const params: Record<string, string> = {};
+      if (input.earliest_date) params.start_date = input.earliest_date;
+      if (input.show_for_days) params.show_for_days = String(input.show_for_days);
 
-    const bw = await hcpGet("/company/schedule_availability/booking_windows", params) as any;
-    const windows: Array<{ start_time: string; end_time: string; available: boolean }> = bw.booking_windows || [];
+      const bw = await hcpGet("/company/schedule_availability/booking_windows", params, correlationId) as any;
+      const windows: Array<{ start_time: string; end_time: string; available: boolean }> = bw.booking_windows || [];
 
-    if (!windows.length) {
+      if (!windows.length) {
+        const error = createStructuredError(
+          ErrorType.BUSINESS_LOGIC,
+          "NO_AVAILABILITY",
+          "No booking windows available",
+          "No available booking windows were returned by HousecallPro. Try expanding the date range or choosing different dates.",
+          correlationId
+        );
+        log.warn({ correlationId }, error.userMessage);
+        
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify({
+              success: false,
+              error: error.userMessage,
+              error_code: error.code,
+              correlation_id: correlationId
+            }, null, 2)
+          }]
+        };
+      }
+
+      // Step 2: choose a window by time-of-day preference
+      const chosen = chooseWindow(windows, input.time_preference);
+      if (!chosen) {
+        const error = createStructuredError(
+          ErrorType.BUSINESS_LOGIC,
+          "NO_PREFERRED_WINDOW",
+          "No booking window matched time preference",
+          "No booking window matched the time preference. Please try a different preference or date range.",
+          correlationId
+        );
+        log.warn({ correlationId, preference: input.time_preference }, error.userMessage);
+        
+        return {
+          content: [{ 
+            type: "text", 
+            text: JSON.stringify({
+              success: false,
+              error: error.userMessage,
+              error_code: error.code,
+              correlation_id: correlationId
+            }, null, 2)
+          }]
+        };
+      }
+
+      // Step 3: find or create customer
+      const customer = await findOrCreateCustomer(input, correlationId);
+
+      // Step 4: get address id (create if needed)
+      const addressId = await getPrimaryAddressId(customer, input, correlationId);
+
+      // Step 5: create job with day + arrival window
+      const { job, arrival_window } = await createJob(customer.id, addressId, chosen, input.description, input.lead_source, input.tags, correlationId);
+
+      // Step 6: add appointment with concrete start/end (time on the day)
+      let appointmentCreated: any = null;
+      try {
+        appointmentCreated = await createAppointment((job as any).id, chosen, arrival_window, correlationId);
+      } catch (err: any) {
+        log.error({ err: err?.message, jobId: (job as any).id, correlationId }, "Failed to create appointment for job");
+        // Continue execution - job is still created, just without specific appointment
+        // This is better than failing the entire booking
+      }
+
+      log.info({ jobId: (job as any).id, correlationId }, "MCP booking completed with built-in Housecall Pro notifications");
+
+      const result = {
+        success: true,
+        job_id: (job as any).id,
+        appointment_id: appointmentCreated?.id || null,
+        scheduled_start: chosen.start_time,
+        scheduled_end: chosen.end_time,
+        arrival_window_minutes: arrival_window,
+        summary: `Booked for ${toYmd(chosen.start_time)} (${input.time_preference})`,
+        customer_id: customer.id,
+        correlation_id: correlationId
+      };
+
+      log.info({ result, correlationId }, "book_service_call: success");
+
+      return {
+        content: [
+          { type: "text", text: JSON.stringify(result, null, 2) }
+        ]
+      };
+      
+    } catch (err: any) {
+      // Comprehensive error handling with structured responses
+      let structuredError: StructuredError;
+      
+      if (err.type) {
+        // Already a structured error
+        structuredError = err;
+      } else if (err.name === 'ZodError') {
+        // Input validation error
+        structuredError = createStructuredError(
+          ErrorType.VALIDATION,
+          "INPUT_VALIDATION_ERROR",
+          `Input validation failed: ${err.message}`,
+          "The booking information provided is invalid. Please check all required fields and try again.",
+          correlationId,
+          { validation_errors: err.issues }
+        );
+      } else {
+        // Unknown error
+        structuredError = createStructuredError(
+          ErrorType.UNKNOWN,
+          "UNEXPECTED_ERROR",
+          `Unexpected error: ${err.message}`,
+          "An unexpected error occurred while processing your booking. Please try again or contact support.",
+          correlationId,
+          { original_error: err.message, stack: err.stack }
+        );
+      }
+      
+      log.error({ 
+        error: structuredError,
+        correlationId 
+      }, "book_service_call: error");
+
       return {
         content: [{
           type: "text",
-          text: "No available booking windows were returned by Housecall Pro. Try expanding the date range."
+          text: JSON.stringify({
+            success: false,
+            error: structuredError.userMessage,
+            error_code: structuredError.code,
+            error_type: structuredError.type,
+            correlation_id: correlationId,
+            details: structuredError.details
+          }, null, 2)
         }]
       };
     }
-
-    // Step 2: choose a window by time-of-day preference
-    const chosen = chooseWindow(windows, input.time_preference);
-    if (!chosen) {
-      return {
-        content: [{ type: "text", text: "No booking window matched the time preference. Please try a different preference or date range." }]
-      };
-    }
-
-    // Step 3: find or create customer
-    const customer = await findOrCreateCustomer(input);
-
-    // Step 4: get address id (create if needed)
-    const addressId = await getPrimaryAddressId(customer, input);
-
-    // Step 5: create job with day + arrival window
-    const { job, arrival_window } = await createJob(customer.id, addressId, chosen, input.description, input.lead_source, input.tags);
-
-    // Step 6: add appointment with concrete start/end (time on the day)
-    let appointmentCreated: any = null;
-    try {
-      appointmentCreated = await createAppointment((job as any).id, chosen, arrival_window);
-    } catch (err: any) {
-      log.error({ err: err?.message, jobId: (job as any).id }, "Failed to create appointment for job");
-      // Continue execution - job is still created, just without specific appointment
-      // This is better than failing the entire booking
-    }
-
-    log.info({ jobId: (job as any).id }, "MCP booking completed with built-in Housecall Pro notifications");
-
-    const result = {
-      job_id: (job as any).id,
-      appointment_id: appointmentCreated?.id || null,
-      scheduled_start: chosen.start_time,
-      scheduled_end: chosen.end_time,
-      arrival_window_minutes: arrival_window,
-      summary: `Booked for ${toYmd(chosen.start_time)} (${input.time_preference})`,
-      customer_id: customer.id
-    };
-
-    log.info({ result }, "book_service_call: success");
-
-    return {
-      content: [
-        { type: "text", text: JSON.stringify(result, null, 2) }
-      ]
-    };
   }
 );
 
-const transport = new StdioServerTransport();
-await server.connect(transport);
+// Server startup with error handling
+async function startServer() {
+  try {
+    const transport = new StdioServerTransport();
+    await server.connect(transport);
+    log.info("MCP server started successfully");
+  } catch (err: any) {
+    log.error({ error: err.message, stack: err.stack }, "Failed to start MCP server");
+    process.exit(1);
+  }
+}
+
+// Start the server
+startServer();
