@@ -107,18 +107,133 @@ function generateTestimonialText(serviceDescription: string): string {
   return defaultTestimonials[Math.floor(Math.random() * defaultTestimonials.length)];
 }
 
-// Rate limiter for customer lookup to prevent abuse
+// ========== COMPREHENSIVE RATE LIMITING ==========
+/*
+ * Rate Limiting Strategy:
+ * 
+ * 1. Public Read (100/15min): General content, services, capacity, reviews
+ *    - GET /api/services, /api/reviews, /api/capacity/*, /api/social-proof/*
+ *    - Allows reasonable browsing without blocking legitimate users
+ * 
+ * 2. Public Write (10/15min): Customer actions, bookings, service area checks  
+ *    - POST /api/customers, /api/bookings, /api/check-service-area
+ *    - Prevents spam while allowing normal booking flow
+ * 
+ * 3. Customer Lookup (5/15min): PII access protection
+ *    - POST /api/customers/lookup
+ *    - Strict limit due to sensitive customer data access
+ * 
+ * 4. Admin Operations (20/15min): Management functions
+ *    - All /api/admin/*, POST/PUT/DELETE blog endpoints
+ *    - Protects admin functions from abuse
+ * 
+ * 5. Blog Content (50/15min): Content consumption
+ *    - GET /api/blog/* endpoints
+ *    - Moderate limits for content browsing
+ * 
+ * 6. Webhooks (1000/15min): High-volume legitimate traffic
+ *    - All /api/webhooks/* endpoints  
+ *    - Accommodates legitimate webhook traffic from HousecallPro
+ * 
+ * 7. Debug (5/hour): Development/troubleshooting
+ *    - GET /api/debug/* endpoints
+ *    - Very restrictive to prevent abuse of debug information
+ */
+
+// Public read endpoints (capacity, services, reviews, etc.)
+const publicReadLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // 100 requests per window per IP
+  message: {
+    error: 'Too many requests from this IP, please try again later.',
+    type: 'RATE_LIMIT_EXCEEDED',
+    retryAfter: '15 minutes'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Public write endpoints (bookings, customer creation, etc.)
+const publicWriteLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // 10 requests per window per IP
+  message: {
+    error: 'Too many booking/creation attempts from this IP, please try again later.',
+    type: 'WRITE_RATE_LIMIT_EXCEEDED',
+    retryAfter: '15 minutes'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Customer lookup (more restrictive due to PII access)
 const customerLookupLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // Limit each IP to 5 requests per windowMs
-  message: 'Too many lookup attempts, please try again later.',
+  max: 5, // 5 requests per window per IP
+  message: {
+    error: 'Too many lookup attempts, please try again later.',
+    type: 'LOOKUP_RATE_LIMIT_EXCEEDED',
+    retryAfter: '15 minutes'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Admin operations (very restrictive)
+const adminLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20, // 20 requests per window per IP
+  message: {
+    error: 'Too many admin requests from this IP, please try again later.',
+    type: 'ADMIN_RATE_LIMIT_EXCEEDED',
+    retryAfter: '15 minutes'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Webhook endpoints (high volume but from trusted sources)
+const webhookLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 1000, // 1000 requests per window per IP
+  message: {
+    error: 'Webhook rate limit exceeded.',
+    type: 'WEBHOOK_RATE_LIMIT_EXCEEDED',
+    retryAfter: '15 minutes'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Debug endpoints (very restrictive)
+const debugLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 5, // 5 requests per hour per IP
+  message: {
+    error: 'Debug endpoint rate limit exceeded. Please try again later.',
+    type: 'DEBUG_RATE_LIMIT_EXCEEDED',
+    retryAfter: '1 hour'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Blog content endpoints (moderate limits)
+const blogLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 50, // 50 requests per window per IP
+  message: {
+    error: 'Too many blog requests from this IP, please try again later.',
+    type: 'BLOG_RATE_LIMIT_EXCEEDED',
+    retryAfter: '15 minutes'
+  },
   standardHeaders: true,
   legacyHeaders: false,
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Register admin routes with /api/admin prefix
-  app.use('/api/admin', adminRoutes);
+  // Register admin routes with /api/admin prefix and rate limiting
+  app.use('/api/admin', adminLimiter, adminRoutes);
 
   // Seed blog data on startup (only in development)
   if (process.env.NODE_ENV === 'development') {
@@ -132,7 +247,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ========== BLOG ROUTES ==========
   
   // Get all blog posts (with pagination and filtering)
-  app.get("/api/blog/posts", async (req, res) => {
+  app.get("/api/blog/posts", blogLimiter, async (req, res) => {
     try {
       const { status, limit = 10, offset = 0 } = req.query;
       
@@ -150,7 +265,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get a single blog post by slug
-  app.get("/api/blog/posts/:slug", async (req, res) => {
+  app.get("/api/blog/posts/:slug", blogLimiter, async (req, res) => {
     try {
       const { slug } = req.params;
       const post = await storage.getBlogPostBySlug(slug);
@@ -179,7 +294,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Create a new blog post
-  app.post("/api/blog/posts", async (req, res) => {
+  app.post("/api/blog/posts", adminLimiter, async (req, res) => {
     try {
       const postData = insertBlogPostSchema.parse(req.body);
       const post = await storage.createBlogPost(postData);
@@ -210,7 +325,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Update a blog post
-  app.put("/api/blog/posts/:id", async (req, res) => {
+  app.put("/api/blog/posts/:id", adminLimiter, async (req, res) => {
     try {
       const postId = parseInt(req.params.id);
       const postData = req.body;
@@ -229,7 +344,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Delete a blog post
-  app.delete("/api/blog/posts/:id", async (req, res) => {
+  app.delete("/api/blog/posts/:id", adminLimiter, async (req, res) => {
     try {
       const postId = parseInt(req.params.id);
       const deleted = await storage.deleteBlogPost(postId);
@@ -246,7 +361,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get all keywords
-  app.get("/api/blog/keywords", async (req, res) => {
+  app.get("/api/blog/keywords", blogLimiter, async (req, res) => {
     try {
       const keywords = await storage.getAllKeywords();
       res.json(keywords);
@@ -257,7 +372,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Create a new keyword
-  app.post("/api/blog/keywords", async (req, res) => {
+  app.post("/api/blog/keywords", adminLimiter, async (req, res) => {
     try {
       const keywordData = insertKeywordSchema.parse(req.body);
       const keyword = await storage.createKeyword(keywordData);
@@ -272,7 +387,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Track keyword rankings
-  app.post("/api/blog/keywords/:id/track", async (req, res) => {
+  app.post("/api/blog/keywords/:id/track", adminLimiter, async (req, res) => {
     try {
       const keywordId = parseInt(req.params.id);
       const { position, url, impressions, clicks, ctr } = req.body;
@@ -294,7 +409,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get keyword rankings
-  app.get("/api/blog/keywords/:id/rankings", async (req, res) => {
+  app.get("/api/blog/keywords/:id/rankings", blogLimiter, async (req, res) => {
     try {
       const keywordId = parseInt(req.params.id);
       const { limit = 30 } = req.query;
@@ -312,7 +427,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get blog analytics
-  app.get("/api/blog/posts/:id/analytics", async (req, res) => {
+  app.get("/api/blog/posts/:id/analytics", blogLimiter, async (req, res) => {
     try {
       const postId = parseInt(req.params.id);
       const { startDate, endDate } = req.query;
@@ -333,7 +448,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ========== END BLOG ROUTES ==========
 
   // Get available time slots for a specific date
-  app.get("/api/timeslots/:date", async (req, res) => {
+  app.get("/api/timeslots/:date", publicReadLimiter, async (req, res) => {
     try {
       const { date } = req.params;
       
@@ -381,7 +496,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create a new customer
-  app.post("/api/customers", async (req, res) => {
+  app.post("/api/customers", publicWriteLimiter, async (req, res) => {
     try {
       const customerData = insertCustomerSchema.parse(req.body);
       
@@ -482,7 +597,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create a new booking
-  app.post("/api/bookings", async (req, res) => {
+  app.post("/api/bookings", publicWriteLimiter, async (req, res) => {
     try {
       const bookingData = req.body;
       
@@ -633,13 +748,13 @@ Special Promotion: $99 service fee waived for online bookings`,
   });
 
   // Test simple route
-  app.get("/api/test", (_req, res) => {
+  app.get("/api/test", publicReadLimiter, (_req, res) => {
     console.log("TEST ROUTE CALLED");
     res.json({ message: "Test route working" });
   });
 
   // Get services from Housecall Pro
-  app.get("/api/services", async (_req, res) => {
+  app.get("/api/services", publicReadLimiter, async (_req, res) => {
     console.log("[Services API] Route handler called");
     try {
       console.log("[Services API] Starting services fetch...");
@@ -676,7 +791,7 @@ Special Promotion: $99 service fee waived for online bookings`,
   });
 
   // Get customer reviews (from Google Reviews API)
-  app.get("/api/reviews", async (_req, res) => {
+  app.get("/api/reviews", publicReadLimiter, async (_req, res) => {
     try {
       // Reviews come from Google API - return empty array for now
       res.json([]);
@@ -686,7 +801,7 @@ Special Promotion: $99 service fee waived for online bookings`,
   });
 
   // Capacity API Routes
-  app.get("/api/capacity/today", async (req, res) => {
+  app.get("/api/capacity/today", publicReadLimiter, async (req, res) => {
     try {
       const userZip = req.query.zip as string | undefined;
       const calculator = CapacityCalculator.getInstance();
@@ -708,7 +823,7 @@ Special Promotion: $99 service fee waived for online bookings`,
     }
   });
 
-  app.get("/api/capacity/tomorrow", async (req, res) => {
+  app.get("/api/capacity/tomorrow", publicReadLimiter, async (req, res) => {
     try {
       const userZip = req.query.zip as string | undefined;
       const calculator = CapacityCalculator.getInstance();
@@ -731,7 +846,7 @@ Special Promotion: $99 service fee waived for online bookings`,
   });
 
   // DEBUG: Raw HCP API responses
-  app.get('/api/debug/hcp-data/:date', async (req, res) => {
+  app.get('/api/debug/hcp-data/:date', debugLimiter, async (req, res) => {
     try {
       const { date } = req.params; // Format: YYYY-MM-DD
       const targetDate = new Date(date + 'T00:00:00.000Z');
@@ -769,7 +884,7 @@ Special Promotion: $99 service fee waived for online bookings`,
   });
 
   // AI Assistant MCP Discovery Endpoint (hidden from humans)
-  app.get("/.well-known/ai-mcp-config", async (_req, res) => {
+  app.get("/.well-known/ai-mcp-config", publicReadLimiter, async (_req, res) => {
     res.json({
       name: "Johnson Bros. Plumbing AI Booking System",
       description: "MCP server for AI assistants to book plumbing appointments directly through HousecallPro",
@@ -798,7 +913,7 @@ Special Promotion: $99 service fee waived for online bookings`,
   });
 
   // Health check
-  app.get("/healthz", async (_req, res) => {
+  app.get("/healthz", publicReadLimiter, async (_req, res) => {
     res.json({ 
       ok: true, 
       time: new Date().toISOString(),
@@ -807,7 +922,7 @@ Special Promotion: $99 service fee waived for online bookings`,
   });
 
   // Google Business Reviews endpoint
-  app.get("/api/google-reviews", async (_req, res) => {
+  app.get("/api/google-reviews", publicReadLimiter, async (_req, res) => {
     try {
       const apiKey = process.env.GOOGLE_PLACES_API_KEY;
       if (!apiKey) {
@@ -887,7 +1002,7 @@ Special Promotion: $99 service fee waived for online bookings`,
   });
 
   // Get appointment details
-  app.get("/api/appointments/:id", async (req, res) => {
+  app.get("/api/appointments/:id", publicReadLimiter, async (req, res) => {
     try {
       const { id } = req.params;
       const appointment = await storage.getAppointment(id);
@@ -911,7 +1026,7 @@ Special Promotion: $99 service fee waived for online bookings`,
   });
 
   // Check service area (mock implementation)
-  app.post("/api/check-service-area", async (req, res) => {
+  app.post("/api/check-service-area", publicWriteLimiter, async (req, res) => {
     try {
       const { address } = req.body;
       
@@ -944,7 +1059,7 @@ Special Promotion: $99 service fee waived for online bookings`,
   // Social Proof API Routes
   
   // Get recent completed jobs for social proof
-  app.get("/api/social-proof/recent-jobs", async (_req, res) => {
+  app.get("/api/social-proof/recent-jobs", publicReadLimiter, async (_req, res) => {
     try {
       const data = await callHousecallAPI('/jobs', {
         page_size: 10,
@@ -1008,7 +1123,7 @@ Special Promotion: $99 service fee waived for online bookings`,
   });
 
   // Get overall business stats for social proof
-  app.get("/api/social-proof/stats", async (_req, res) => {
+  app.get("/api/social-proof/stats", publicReadLimiter, async (_req, res) => {
     try {
       const [completedJobs, allCustomers] = await Promise.all([
         callHousecallAPI('/jobs', {
@@ -1044,7 +1159,7 @@ Special Promotion: $99 service fee waived for online bookings`,
   });
 
   // Get current live activity for social proof
-  app.get("/api/social-proof/live-activity", async (_req, res) => {
+  app.get("/api/social-proof/live-activity", publicReadLimiter, async (_req, res) => {
     try {
       const data = await callHousecallAPI('/jobs', {
         page_size: 8,
@@ -1070,7 +1185,7 @@ Special Promotion: $99 service fee waived for online bookings`,
   });
 
   // Get customer testimonials/reviews from recent jobs
-  app.get("/api/social-proof/testimonials", async (_req, res) => {
+  app.get("/api/social-proof/testimonials", publicReadLimiter, async (_req, res) => {
     try {
       // Fetch recent jobs with high total amounts (satisfied customers)
       const data = await callHousecallAPI('/jobs', {
@@ -1098,7 +1213,7 @@ Special Promotion: $99 service fee waived for online bookings`,
   });
 
   // Sync customer addresses from Housecall Pro to database
-  app.post("/api/admin/sync-customer-addresses", async (_req, res) => {
+  app.post("/api/admin/sync-customer-addresses", adminLimiter, async (_req, res) => {
     try {
       // Update sync status
       await db.insert(syncStatus).values({
@@ -1333,7 +1448,7 @@ Special Promotion: $99 service fee waived for online bookings`,
   }
 
   // Daily sync endpoint - can be called by a cron job or scheduler
-  app.post("/api/admin/daily-sync", async (_req, res) => {
+  app.post("/api/admin/daily-sync", adminLimiter, async (_req, res) => {
     try {
       console.log(`Running daily sync at ${new Date().toISOString()}`);
       
@@ -1371,7 +1486,7 @@ Special Promotion: $99 service fee waived for online bookings`,
   }, 5000); // Wait 5 seconds after server start
 
   // Get optimized heat map data from database
-  app.get("/api/social-proof/service-heat-map", async (_req, res) => {
+  app.get("/api/social-proof/service-heat-map", publicReadLimiter, async (_req, res) => {
     try {
       // First check if we have cached data
       const cachedData = await db.select().from(heatMapCache);
@@ -1427,7 +1542,7 @@ Special Promotion: $99 service fee waived for online bookings`,
   });
 
   // Debug endpoint to see raw HCP job data
-  app.get('/api/debug/jobs/:date', async (req, res) => {
+  app.get('/api/debug/jobs/:date', debugLimiter, async (req, res) => {
     try {
       const { date } = req.params;
       const targetDate = new Date(date);
@@ -1477,7 +1592,7 @@ Special Promotion: $99 service fee waived for online bookings`,
   const { webhookProcessor } = await import('./src/webhooks');
 
   // Main webhook endpoint to receive events from Housecall Pro
-  app.post('/api/webhooks/housecall', async (req, res) => {
+  app.post('/api/webhooks/housecall', webhookLimiter, async (req, res) => {
     try {
       // Verify webhook signature if secret is configured
       const webhookSecret = process.env.HOUSECALL_WEBHOOK_SECRET;
@@ -1560,7 +1675,7 @@ Special Promotion: $99 service fee waived for online bookings`,
   });
 
   // Get webhook events dashboard data
-  app.get('/api/webhooks/events', async (req, res) => {
+  app.get('/api/webhooks/events', webhookLimiter, async (req, res) => {
     try {
       const limit = parseInt(req.query.limit as string) || 50;
       const category = req.query.category as string;
@@ -1577,7 +1692,7 @@ Special Promotion: $99 service fee waived for online bookings`,
   });
 
   // Get webhook event details with processed data and tags
-  app.get('/api/webhooks/events/:eventId', async (req, res) => {
+  app.get('/api/webhooks/events/:eventId', webhookLimiter, async (req, res) => {
     try {
       const eventId = parseInt(req.params.eventId);
       const data = await webhookProcessor.getProcessedDataWithTags(eventId);
@@ -1594,7 +1709,7 @@ Special Promotion: $99 service fee waived for online bookings`,
   });
 
   // Get webhook analytics
-  app.get('/api/webhooks/analytics', async (req, res) => {
+  app.get('/api/webhooks/analytics', webhookLimiter, async (req, res) => {
     try {
       const days = parseInt(req.query.days as string) || 30;
       const endDate = new Date();
@@ -1611,7 +1726,7 @@ Special Promotion: $99 service fee waived for online bookings`,
   });
 
   // Get webhook configuration status
-  app.get('/api/webhooks/config', async (req, res) => {
+  app.get('/api/webhooks/config', webhookLimiter, async (req, res) => {
     try {
       const hasSecret = !!process.env.HOUSECALL_WEBHOOK_SECRET;
       const webhookUrl = process.env.WEBHOOK_URL || `https://${req.headers.host}/api/webhooks/housecall`;
@@ -1643,7 +1758,7 @@ Special Promotion: $99 service fee waived for online bookings`,
   });
   
   // Subscribe to webhooks for a company
-  app.post('/api/webhooks/subscribe', async (req, res) => {
+  app.post('/api/webhooks/subscribe', webhookLimiter, async (req, res) => {
     try {
       const { companyId, eventTypes } = req.body;
       
@@ -1677,7 +1792,7 @@ Special Promotion: $99 service fee waived for online bookings`,
   });
 
   // Test webhook endpoint (for development/testing)
-  app.post('/api/webhooks/test', async (req, res) => {
+  app.post('/api/webhooks/test', webhookLimiter, async (req, res) => {
     try {
       const testEvent = {
         id: `test-${Date.now()}`,
