@@ -13,6 +13,7 @@ import {
 import { authenticatedFetch, logout, getAdminUser, isAuthenticated } from '@/lib/auth';
 import { cn } from '@/lib/utils';
 import OperationsDashboard from './operations';
+import CustomizableDashboard from './customizable-dashboard';
 
 interface DashboardStats {
   today: {
@@ -90,6 +91,7 @@ export default function AdminDashboard() {
   const sidebarItems = [
     { id: 'overview', label: 'Overview', icon: Home },
     { id: 'operations', label: 'Operations', icon: Zap },
+    { id: 'customizable', label: 'Customizable', icon: BarChart3 },
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
     { id: 'customers', label: 'Customers', icon: Users },
     { id: 'tasks', label: 'Tasks', icon: ListTodo },
@@ -411,6 +413,10 @@ export default function AdminDashboard() {
 
             <TabsContent value="operations">
               <OperationsDashboard />
+            </TabsContent>
+
+            <TabsContent value="customizable">
+              <CustomizableDashboard />
             </TabsContent>
 
             <TabsContent value="analytics">

@@ -704,9 +704,117 @@ router.get('/dashboard/widgets', authenticate, async (req, res) => {
       .where(eq(dashboardWidgets.userId, (req as any).user.id))
       .orderBy(dashboardWidgets.position);
     
-    res.json(widgets);
+    // If no widgets exist, create default widgets
+    if (widgets.length === 0) {
+      const defaultWidgets = [
+        { widgetType: 'capacity_gauge', position: 0, gridLayout: { x: 0, y: 0, w: 6, h: 3 }, isVisible: true },
+        { widgetType: 'revenue_tracker', position: 1, gridLayout: { x: 6, y: 0, w: 6, h: 3 }, isVisible: true },
+        { widgetType: 'job_board', position: 2, gridLayout: { x: 0, y: 3, w: 8, h: 4 }, isVisible: true },
+        { widgetType: 'tech_status', position: 3, gridLayout: { x: 8, y: 3, w: 4, h: 4 }, isVisible: true },
+        { widgetType: 'recent_jobs', position: 4, gridLayout: { x: 0, y: 7, w: 6, h: 3 }, isVisible: true },
+        { widgetType: 'stats_overview', position: 5, gridLayout: { x: 6, y: 7, w: 6, h: 3 }, isVisible: true }
+      ];
+      
+      const createdWidgets = await db.insert(dashboardWidgets).values(
+        defaultWidgets.map(w => ({
+          ...w,
+          userId: (req as any).user.id,
+          gridLayout: JSON.stringify(w.gridLayout)
+        }))
+      ).returning();
+      
+      res.json(createdWidgets);
+    } else {
+      res.json(widgets);
+    }
   } catch (error) {
     console.error('Get widgets error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Update dashboard widget layout
+router.put('/dashboard/widgets/layout', authenticate, async (req, res) => {
+  try {
+    const { layouts } = req.body;
+    const userId = (req as any).user.id;
+    
+    // Update each widget's position and grid layout
+    for (const layout of layouts) {
+      await db.update(dashboardWidgets)
+        .set({
+          gridLayout: JSON.stringify(layout.gridLayout),
+          position: layout.position,
+          updatedAt: new Date()
+        })
+        .where(and(
+          eq(dashboardWidgets.userId, userId),
+          eq(dashboardWidgets.widgetType, layout.widgetType)
+        ));
+    }
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Update widget layout error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Update widget visibility
+router.put('/dashboard/widgets/:widgetType/visibility', authenticate, async (req, res) => {
+  try {
+    const { widgetType } = req.params;
+    const { isVisible } = req.body;
+    const userId = (req as any).user.id;
+    
+    const [updated] = await db.update(dashboardWidgets)
+      .set({
+        isVisible,
+        updatedAt: new Date()
+      })
+      .where(and(
+        eq(dashboardWidgets.userId, userId),
+        eq(dashboardWidgets.widgetType, widgetType)
+      ))
+      .returning();
+    
+    res.json(updated);
+  } catch (error) {
+    console.error('Update widget visibility error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Reset dashboard widgets to default
+router.post('/dashboard/widgets/reset', authenticate, async (req, res) => {
+  try {
+    const userId = (req as any).user.id;
+    
+    // Delete existing widgets
+    await db.delete(dashboardWidgets)
+      .where(eq(dashboardWidgets.userId, userId));
+    
+    // Create default widgets
+    const defaultWidgets = [
+      { widgetType: 'capacity_gauge', position: 0, gridLayout: { x: 0, y: 0, w: 6, h: 3 }, isVisible: true },
+      { widgetType: 'revenue_tracker', position: 1, gridLayout: { x: 6, y: 0, w: 6, h: 3 }, isVisible: true },
+      { widgetType: 'job_board', position: 2, gridLayout: { x: 0, y: 3, w: 8, h: 4 }, isVisible: true },
+      { widgetType: 'tech_status', position: 3, gridLayout: { x: 8, y: 3, w: 4, h: 4 }, isVisible: true },
+      { widgetType: 'recent_jobs', position: 4, gridLayout: { x: 0, y: 7, w: 6, h: 3 }, isVisible: true },
+      { widgetType: 'stats_overview', position: 5, gridLayout: { x: 6, y: 7, w: 6, h: 3 }, isVisible: true }
+    ];
+    
+    const createdWidgets = await db.insert(dashboardWidgets).values(
+      defaultWidgets.map(w => ({
+        ...w,
+        userId,
+        gridLayout: JSON.stringify(w.gridLayout)
+      }))
+    ).returning();
+    
+    res.json(createdWidgets);
+  } catch (error) {
+    console.error('Reset widgets error:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });

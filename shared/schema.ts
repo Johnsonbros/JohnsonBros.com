@@ -1,4 +1,4 @@
-import { pgTable, serial, text, timestamp, real, integer, boolean, index, uniqueIndex } from 'drizzle-orm/pg-core';
+import { pgTable, serial, text, timestamp, real, integer, boolean, index, uniqueIndex, json } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
@@ -711,9 +711,10 @@ export const websiteAnalytics = pgTable('website_analytics', {
 // Dashboard widgets configuration
 export const dashboardWidgets = pgTable('dashboard_widgets', {
   id: serial('id').primaryKey(),
-  userId: integer('user_id').notNull().references(() => adminUsers.id),
+  userId: integer('user_id').notNull().references(() => adminUsers.id, { onDelete: 'cascade' }),
   widgetType: text('widget_type').notNull(), // 'revenue', 'jobs', 'customers', 'analytics', etc.
   position: integer('position').notNull(),
+  gridLayout: json('grid_layout'), // { x: 0, y: 0, w: 4, h: 2 } for react-grid-layout
   config: text('config'), // JSON configuration for the widget
   isVisible: boolean('is_visible').default(true),
   createdAt: timestamp('created_at').defaultNow().notNull(),
