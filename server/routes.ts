@@ -1448,12 +1448,14 @@ Special Promotion: $99 service fee waived for online bookings`,
   }
 
   // Daily sync endpoint - can be called by a cron job or scheduler
-  app.post("/api/admin/daily-sync", adminLimiter, async (_req, res) => {
+  app.post("/api/admin/daily-sync", adminLimiter, async (req, res) => {
     try {
       console.log(`Running daily sync at ${new Date().toISOString()}`);
       
       // Call the sync endpoint internally
-      const response = await fetch('http://localhost:5000/api/admin/sync-customer-addresses', {
+      const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
+      const host = process.env.NODE_ENV === 'production' ? req.get('host') : 'localhost:5000';
+      const response = await fetch(`${protocol}://${host}/api/admin/sync-customer-addresses`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -1475,7 +1477,9 @@ Special Promotion: $99 service fee waived for online bookings`,
   setTimeout(async () => {
     try {
       console.log("Running initial data sync on server start...");
-      await fetch('http://localhost:5000/api/admin/sync-customer-addresses', {
+      const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
+      const host = process.env.NODE_ENV === 'production' ? process.env.REPL_SLUG ? `${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co` : 'localhost:5000' : 'localhost:5000';
+      await fetch(`${protocol}://${host}/api/admin/sync-customer-addresses`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -1513,7 +1517,9 @@ Special Promotion: $99 service fee waived for online bookings`,
         console.log("No cached data, syncing from Housecall Pro...");
         
         // Trigger sync in background
-        fetch('http://localhost:5000/api/admin/sync-customer-addresses', { 
+        const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
+        const host = process.env.NODE_ENV === 'production' ? process.env.REPL_SLUG ? `${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co` : 'localhost:5000' : 'localhost:5000';
+        fetch(`${protocol}://${host}/api/admin/sync-customer-addresses`, { 
           method: 'POST',
           headers: { 'Content-Type': 'application/json' }
         }).catch(err => console.error("Background sync failed:", err));

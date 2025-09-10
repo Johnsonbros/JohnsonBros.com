@@ -228,9 +228,12 @@ export class GoogleAdsBridge {
       actionCount: this.state.actions.length,
     });
 
-    // TODO: Implement actual Google Ads API calls
-    // This would use the Google Ads API client library
-    // For now, just log what would happen
+    // Note: Google Ads API integration is not yet implemented.
+    // When ready to integrate:
+    // 1. Add Google Ads API client library
+    // 2. Set up OAuth2 authentication
+    // 3. Implement campaign management methods
+    // Currently operating in stub mode for testing
     for (const action of this.state.actions) {
       Logger.info('Would execute ads action', action);
     }

@@ -24,6 +24,7 @@ interface Notification {
 export function JobCompletionNotifications() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [activeTimeouts, setActiveTimeouts] = useState<Set<NodeJS.Timeout>>(new Set());
 
   const { data: recentJobs = [] } = useQuery<RecentJob[]>({
     queryKey: ["/api/social-proof/recent-jobs"],
@@ -34,6 +35,7 @@ export function JobCompletionNotifications() {
     if (recentJobs.length === 0) return;
 
     let timeoutId: NodeJS.Timeout;
+    const localTimeouts = new Set<NodeJS.Timeout>();
 
     const scheduleNextNotification = () => {
       // Random delay between 45 seconds to 3 minutes (more organic)
@@ -53,16 +55,20 @@ export function JobCompletionNotifications() {
             setNotifications([newNotification]);
 
             // Hide notification after 5 seconds
-            setTimeout(() => {
+            const hideTimeout = setTimeout(() => {
               setNotifications(prev => 
                 prev.map(n => n.id === newNotification.id ? { ...n, show: false } : n)
               );
             }, 5000);
+            localTimeouts.add(hideTimeout);
 
             // Remove notification after animation completes
-            setTimeout(() => {
+            const removeTimeout = setTimeout(() => {
               setNotifications([]);
+              localTimeouts.delete(hideTimeout);
+              localTimeouts.delete(removeTimeout);
             }, 5500);
+            localTimeouts.add(removeTimeout);
 
             setCurrentIndex(prev => prev + 1);
           }
@@ -71,6 +77,7 @@ export function JobCompletionNotifications() {
         // Schedule the next notification
         scheduleNextNotification();
       }, randomDelay);
+      localTimeouts.add(timeoutId);
     };
 
     // Initial delay (10-30 seconds after page load)
@@ -78,8 +85,11 @@ export function JobCompletionNotifications() {
     timeoutId = setTimeout(() => {
       scheduleNextNotification();
     }, initialDelay);
+    localTimeouts.add(timeoutId);
 
     return () => {
+      // Clear all timeouts on unmount
+      localTimeouts.forEach(timeout => clearTimeout(timeout));
       clearTimeout(timeoutId);
     };
   }, [recentJobs]); // Only depend on recentJobs to avoid infinite loops
@@ -88,9 +98,19 @@ export function JobCompletionNotifications() {
     setNotifications(prev => 
       prev.map(n => n.id === id ? { ...n, show: false } : n)
     );
-    setTimeout(() => {
+    const dismissTimeout = setTimeout(() => {
       setNotifications(prev => prev.filter(n => n.id !== id));
     }, 300);
+    // Add to active timeouts for cleanup if needed
+    setActiveTimeouts(prev => new Set(prev).add(dismissTimeout));
+    // Remove from set after execution
+    setTimeout(() => {
+      setActiveTimeouts(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(dismissTimeout);
+        return newSet;
+      });
+    }, 350);
   };
 
   return (

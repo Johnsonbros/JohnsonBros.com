@@ -39,8 +39,15 @@ export function ServiceHeatMap() {
     if (!heatMapData || heatMapData.length === 0 || !mapRef.current) return;
 
     const initializeMap = async () => {
+      const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+      
+      if (!apiKey) {
+        console.warn("Google Maps API key is not configured. Map features will be limited.");
+        // You could optionally show a message to the user or use a fallback
+      }
+      
       const loader = new Loader({
-        apiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "",
+        apiKey: apiKey || "",
         version: "weekly",
         libraries: ["visualization", "geometry"]
       });
@@ -126,6 +133,9 @@ export function ServiceHeatMap() {
           'rgba(220, 60, 5, 1)'
         ];
 
+        // Store intervals for cleanup
+        const intervals: NodeJS.Timeout[] = [];
+        
         // Add pulsing markers for top service areas
         const topAreas = heatMapData
           .sort((a, b) => b.count - a.count)
@@ -146,7 +156,7 @@ export function ServiceHeatMap() {
           // Subtle pulse animation
           let opacity = 0.1;
           let growing = true;
-          setInterval(() => {
+          const intervalId = setInterval(() => {
             if (growing) {
               opacity += 0.005;
               if (opacity >= 0.2) growing = false;
@@ -156,7 +166,12 @@ export function ServiceHeatMap() {
             }
             pulseCircle.setOptions({ fillOpacity: opacity });
           }, 150);
+          
+          intervals.push(intervalId);
         });
+        
+        // Store intervals on map instance for cleanup
+        (mapInstanceRef.current as any).pulseIntervals = intervals;
         
         // Mobile-optimized heat map settings
         // Adjust radius based on zoom level for privacy at max zoom
@@ -278,6 +293,13 @@ export function ServiceHeatMap() {
     };
 
     initializeMap();
+    
+    // Cleanup function to clear intervals on unmount
+    return () => {
+      if (mapInstanceRef.current && (mapInstanceRef.current as any).pulseIntervals) {
+        (mapInstanceRef.current as any).pulseIntervals.forEach((id: NodeJS.Timeout) => clearInterval(id));
+      }
+    };
   }, [heatMapData]);
 
   if (isLoading) {
