@@ -130,6 +130,7 @@ export default function Header({ onBookService }: HeaderProps) {
                 href="/blog" 
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="text-white text-lg font-medium py-3 px-4 hover:bg-white/10 rounded-lg transition-colors"
+                data-testid="mobile-nav-blog"
               >
                 Blog
               </Link>
@@ -216,7 +217,7 @@ export default function Header({ onBookService }: HeaderProps) {
               <Link href="/" className="text-white hover:text-blue-200 transition-colors font-medium">Home</Link>
               <a href="/#services" className="text-white hover:text-blue-200 transition-colors font-medium">Services</a>
               <a href="/#about" className="text-white hover:text-blue-200 transition-colors font-medium">About</a>
-              <Link href="/blog" className="text-white hover:text-blue-200 transition-colors font-medium">Blog</Link>
+              <Link href="/blog" className="text-white hover:text-blue-200 transition-colors font-medium" data-testid="desktop-nav-blog">Blog</Link>
               <a href="/#reviews" className="text-white hover:text-blue-200 transition-colors font-medium">Reviews</a>
               <a href="/#contact" className="text-white hover:text-blue-200 transition-colors font-medium">Contact</a>
             </nav>
