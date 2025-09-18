@@ -17,7 +17,7 @@ export default function Footer({ onBookService }: FooterProps) {
               <img 
                 src="/JB_logo_New_1756136293648.png" 
                 alt="Johnson Bros. Plumbing & Drain Cleaning" 
-                className="h-12 sm:h-14 w-auto brightness-0 invert"
+                className="h-12 sm:h-14 w-auto"
                 data-testid="footer-company-logo"
               />
             </div>
