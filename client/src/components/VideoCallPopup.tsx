@@ -71,7 +71,7 @@ export function VideoCallPopup() {
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-lg max-w-[95vw] p-0 overflow-hidden bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-blue-900 border-0 shadow-2xl" data-testid="video-call-popup">
+      <DialogContent className="sm:max-w-md max-w-[85vw] p-0 overflow-hidden bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-blue-900 border-0 shadow-2xl" data-testid="video-call-popup">
         {/* Header with gradient background */}
         <div className="relative bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 px-6 py-8 text-white">
           {/* Decorative elements */}
