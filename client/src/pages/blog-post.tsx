@@ -113,7 +113,7 @@ export default function BlogPostPage() {
           type="article"
           author={post.author || "Johnson Bros. Plumbing"}
           publishedTime={post.publishDate ? new Date(post.publishDate).toISOString() : undefined}
-          modifiedTime={post.updatedAt ? post.updatedAt.toISOString() : undefined}
+          modifiedTime={post.updatedAt ? new Date(post.updatedAt).toISOString() : undefined}
           url={`/blog/${post.slug}`}
           structuredData={generateArticleStructuredData({
             title: post.title,
