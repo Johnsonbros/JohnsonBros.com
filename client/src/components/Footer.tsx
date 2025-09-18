@@ -76,7 +76,7 @@ export default function Footer({ onBookService }: FooterProps) {
               <div className="flex items-center space-x-3">
                 <Mail className="h-4 w-4 sm:h-5 sm:w-5 text-johnson-blue flex-shrink-0" />
                 <div>
-                  <p className="font-semibold text-sm sm:text-base" data-testid="footer-email">info@johnsonbros.com</p>
+                  <p className="font-semibold text-sm sm:text-base" data-testid="footer-email">Sales@TheJohnsonBros.com</p>
                   <p className="text-xs sm:text-sm text-gray-400">Email Us</p>
                 </div>
               </div>
