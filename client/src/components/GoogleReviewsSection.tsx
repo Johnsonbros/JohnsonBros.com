@@ -253,14 +253,8 @@ export default function GoogleReviewsSection() {
               variant="outline" 
               size="lg" 
               onClick={() => {
-                // Open Google reviews for the primary location
-                const primaryLocation = googleData.locations[0];
-                if (primaryLocation?.placeId) {
-                  window.open(`https://www.google.com/maps/place/?q=place_id:${primaryLocation.placeId}`, '_blank');
-                } else {
-                  // Fallback to search
-                  window.open('https://www.google.com/search?q=Johnson+Bros+Plumbing+reviews', '_blank');
-                }
+                // Open the specific Johnson Bros. Google Maps listing
+                window.open('https://www.google.com/maps/place/Johnson+Bros.+Plumbing+%26+Drain+Cleaning/@42.1266539,-70.9450644,17z/data=!3m1!4b1!4m6!3m5!1s0x49fa703971dae33d:0xb7d5974b1007a5f2!8m2!3d42.12665!4d-70.9424895!16s%2Fg%2F11x0_2sp94?entry=ttu&g_ep=EgoyMDI1MDkxNy4wIKXMDSoASAFQAw%3D%3D', '_blank');
               }}
               data-testid="view-more-reviews-btn"
             >
