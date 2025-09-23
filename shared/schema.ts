@@ -547,6 +547,89 @@ export type WebhookAnalytics = typeof webhookAnalytics.$inferSelect;
 export type InsertWebhookAnalytics = z.infer<typeof insertWebhookAnalyticsSchema>;
 
 // ============================================
+// REFERRAL SYSTEM
+// ============================================
+
+// Referrals tracking table
+export const referrals = pgTable('referrals', {
+  id: serial('id').primaryKey(),
+  referrerCustomerId: text('referrer_customer_id').notNull(), // HousecallPro customer ID
+  referrerName: text('referrer_name').notNull(),
+  referrerPhone: text('referrer_phone').notNull(),
+  referredLeadId: text('referred_lead_id'), // HousecallPro lead ID
+  referredName: text('referred_name').notNull(),
+  referredPhone: text('referred_phone').notNull(),
+  referredEmail: text('referred_email'),
+  referralCode: text('referral_code').unique(),
+  status: text('status').notNull().default('pending'), // 'pending', 'converted', 'expired'
+  discountAmount: integer('discount_amount').default(9900), // in cents ($99.00)
+  discountApplied: boolean('discount_applied').default(false),
+  notes: text('notes'),
+  jobId: text('job_id'), // HousecallPro job ID when converted
+  convertedAt: timestamp('converted_at'),
+  expiresAt: timestamp('expires_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  referrerIdx: index('referrer_customer_idx').on(table.referrerCustomerId),
+  referredIdx: index('referred_lead_idx').on(table.referredLeadId),
+  statusIdx: index('referral_status_idx').on(table.status),
+  codeIdx: uniqueIndex('referral_code_idx').on(table.referralCode),
+}));
+
+// Customer credits/rewards table
+export const customerCredits = pgTable('customer_credits', {
+  id: serial('id').primaryKey(),
+  customerId: text('customer_id').notNull(), // HousecallPro customer ID
+  amount: integer('amount').notNull(), // in cents
+  type: text('type').notNull().default('referral'), // 'referral', 'promotion', 'loyalty'
+  sourceReferralId: integer('source_referral_id').references(() => referrals.id),
+  appliedToJobId: text('applied_to_job_id'), // HousecallPro job ID
+  status: text('status').notNull().default('available'), // 'available', 'applied', 'expired'
+  expiresAt: timestamp('expires_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  appliedAt: timestamp('applied_at'),
+}, (table) => ({
+  customerIdx: index('credit_customer_idx').on(table.customerId),
+  statusIdx: index('credit_status_idx').on(table.status),
+  typeIdx: index('credit_type_idx').on(table.type),
+}));
+
+// Relations for referral system
+export const referralsRelations = relations(referrals, ({ one }) => ({
+  referrerCredit: one(customerCredits, {
+    fields: [referrals.id],
+    references: [customerCredits.sourceReferralId],
+  }),
+}));
+
+// Insert schemas for referral system
+export const insertReferralSchema = createInsertSchema(referrals)
+  .omit({
+    id: true,
+    createdAt: true,
+    convertedAt: true,
+  })
+  .extend({
+    referrerPhone: z.string().min(10, 'Phone number must be at least 10 digits'),
+    referredName: z.string().min(1, 'Name is required'),
+    referredPhone: z.string().min(10, 'Phone number must be at least 10 digits'),
+    referredEmail: z.string().email().optional(),
+  });
+
+export const insertCustomerCreditSchema = createInsertSchema(customerCredits).omit({
+  id: true,
+  createdAt: true,
+  appliedAt: true,
+});
+
+// Types for referral system
+export type Referral = typeof referrals.$inferSelect;
+export type InsertReferral = z.infer<typeof insertReferralSchema>;
+
+export type CustomerCredit = typeof customerCredits.$inferSelect;
+export type InsertCustomerCredit = z.infer<typeof insertCustomerCreditSchema>;
+
+// ============================================
 // ADMIN DASHBOARD SYSTEM
 // ============================================
 

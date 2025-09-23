@@ -6,7 +6,9 @@ import {
   type PostKeyword, type InsertPostKeyword,
   type KeywordRanking, type InsertKeywordRanking,
   type BlogAnalytics, type InsertBlogAnalytics,
-  type AvailableTimeSlot
+  type AvailableTimeSlot,
+  type Referral, type InsertReferral,
+  type CustomerCredit, type InsertCustomerCredit
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -53,6 +55,18 @@ export interface IStorage {
   // Analytics methods
   getBlogAnalytics(postId: number, startDate?: Date, endDate?: Date): Promise<BlogAnalytics[]>;
   updateBlogAnalytics(analytics: InsertBlogAnalytics): Promise<BlogAnalytics>;
+  
+  // Referral methods
+  createReferral(referral: InsertReferral): Promise<Referral>;
+  getReferral(id: number): Promise<Referral | undefined>;
+  getReferralByCode(code: string): Promise<Referral | undefined>;
+  getReferralsByCustomer(customerId: string): Promise<Referral[]>;
+  updateReferralStatus(id: number, status: string, leadId?: string): Promise<Referral | undefined>;
+  
+  // Customer credit methods
+  createCustomerCredit(credit: InsertCustomerCredit): Promise<CustomerCredit>;
+  getCustomerCredits(customerId: string): Promise<CustomerCredit[]>;
+  applyCredit(creditId: number, jobId: string): Promise<CustomerCredit | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -64,11 +78,15 @@ export class MemStorage implements IStorage {
   private keywordRankings: Map<number, KeywordRanking>;
   private blogAnalytics: Map<number, BlogAnalytics>;
   private timeSlots: Map<string, AvailableTimeSlot>;
+  private referrals: Map<number, Referral>;
+  private customerCredits: Map<number, CustomerCredit>;
   private nextBlogId: number;
   private nextKeywordId: number;
   private nextPostKeywordId: number;
   private nextRankingId: number;
   private nextAnalyticsId: number;
+  private nextReferralId: number;
+  private nextCreditId: number;
 
   constructor() {
     this.customers = new Map();
@@ -79,11 +97,15 @@ export class MemStorage implements IStorage {
     this.keywordRankings = new Map();
     this.blogAnalytics = new Map();
     this.timeSlots = new Map();
+    this.referrals = new Map();
+    this.customerCredits = new Map();
     this.nextBlogId = 1;
     this.nextKeywordId = 1;
     this.nextPostKeywordId = 1;
     this.nextRankingId = 1;
     this.nextAnalyticsId = 1;
+    this.nextReferralId = 1;
+    this.nextCreditId = 1;
   }
 
   private initializeDefaultData() {
@@ -311,7 +333,7 @@ export class MemStorage implements IStorage {
       featuredImage: post.featuredImage ?? null,
       metaTitle: post.metaTitle ?? null,
       metaDescription: post.metaDescription ?? null,
-      author: post.author,
+      author: post.author ?? 'Johnson Bros. Plumbing',
       status: post.status,
       publishDate: post.publishDate ? new Date(post.publishDate) : null,
       viewCount: 0,
@@ -536,6 +558,98 @@ export class MemStorage implements IStorage {
       this.blogAnalytics.set(id, newAnalytics);
       return newAnalytics;
     }
+  }
+
+  // Referral methods
+  async createReferral(referral: InsertReferral): Promise<Referral> {
+    const id = this.nextReferralId++;
+    const code = `REF${Date.now().toString(36).toUpperCase()}`;
+    const newReferral: Referral = {
+      id,
+      referrerCustomerId: referral.referrerCustomerId,
+      referrerName: referral.referrerName,
+      referrerPhone: referral.referrerPhone,
+      referredLeadId: referral.referredLeadId ?? null,
+      referredName: referral.referredName,
+      referredPhone: referral.referredPhone,
+      referredEmail: referral.referredEmail ?? null,
+      referralCode: code,
+      status: referral.status ?? 'pending',
+      discountAmount: referral.discountAmount ?? 9900,
+      discountApplied: referral.discountApplied ?? false,
+      notes: referral.notes ?? null,
+      jobId: referral.jobId ?? null,
+      convertedAt: null,
+      expiresAt: referral.expiresAt ?? null,
+      createdAt: new Date(),
+    };
+    this.referrals.set(id, newReferral);
+    return newReferral;
+  }
+
+  async getReferral(id: number): Promise<Referral | undefined> {
+    return this.referrals.get(id);
+  }
+
+  async getReferralByCode(code: string): Promise<Referral | undefined> {
+    return Array.from(this.referrals.values()).find(r => r.referralCode === code);
+  }
+
+  async getReferralsByCustomer(customerId: string): Promise<Referral[]> {
+    return Array.from(this.referrals.values()).filter(
+      r => r.referrerCustomerId === customerId
+    );
+  }
+
+  async updateReferralStatus(id: number, status: string, leadId?: string): Promise<Referral | undefined> {
+    const referral = this.referrals.get(id);
+    if (referral) {
+      referral.status = status;
+      if (leadId) {
+        referral.referredLeadId = leadId;
+      }
+      if (status === 'converted') {
+        referral.convertedAt = new Date();
+      }
+      return referral;
+    }
+    return undefined;
+  }
+
+  // Customer credit methods
+  async createCustomerCredit(credit: InsertCustomerCredit): Promise<CustomerCredit> {
+    const id = this.nextCreditId++;
+    const newCredit: CustomerCredit = {
+      id,
+      customerId: credit.customerId,
+      amount: credit.amount,
+      type: credit.type ?? 'referral',
+      sourceReferralId: credit.sourceReferralId ?? null,
+      appliedToJobId: credit.appliedToJobId ?? null,
+      status: credit.status ?? 'available',
+      expiresAt: credit.expiresAt ?? null,
+      createdAt: new Date(),
+      appliedAt: null,
+    };
+    this.customerCredits.set(id, newCredit);
+    return newCredit;
+  }
+
+  async getCustomerCredits(customerId: string): Promise<CustomerCredit[]> {
+    return Array.from(this.customerCredits.values()).filter(
+      c => c.customerId === customerId && c.status === 'available'
+    );
+  }
+
+  async applyCredit(creditId: number, jobId: string): Promise<CustomerCredit | undefined> {
+    const credit = this.customerCredits.get(creditId);
+    if (credit && credit.status === 'available') {
+      credit.status = 'applied';
+      credit.appliedToJobId = jobId;
+      credit.appliedAt = new Date();
+      return credit;
+    }
+    return undefined;
   }
 }
 
