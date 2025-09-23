@@ -86,11 +86,10 @@ export default function Referral() {
       if (data.email) params.append("email", data.email);
       if (data.phone) params.append("phone", data.phone);
       
-      return apiRequest(`/api/customers/lookup?${params.toString()}`, {
-        method: "GET",
-      });
+      const response = await apiRequest("GET", `/api/customers/lookup?${params.toString()}`);
+      return await response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       if (data.success && data.customer) {
         setCurrentCustomer(data.customer);
         setLookupError(null);
@@ -114,17 +113,15 @@ export default function Referral() {
     mutationFn: async (data: ReferralFormData) => {
       if (!currentCustomer) throw new Error("No customer selected");
       
-      return apiRequest("/api/referrals", {
-        method: "POST",
-        body: {
-          referrerCustomerId: currentCustomer.id,
-          referrerName: `${currentCustomer.first_name} ${currentCustomer.last_name}`,
-          referrerPhone: currentCustomer.mobile_number || currentCustomer.home_number,
-          ...data,
-        },
+      const response = await apiRequest("POST", "/api/referrals", {
+        referrerCustomerId: currentCustomer.id,
+        referrerName: `${currentCustomer.first_name} ${currentCustomer.last_name}`,
+        referrerPhone: currentCustomer.mobile_number || currentCustomer.home_number,
+        ...data,
       });
+      return await response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       toast({
         title: "Referral Submitted!",
         description: "Thank you for referring a friend! They'll receive $99 off their first service, and you'll earn $50 credit when they complete their booking.",
@@ -143,7 +140,7 @@ export default function Referral() {
   });
 
   // Fetch existing referrals if customer is logged in
-  const { data: referralsData, isLoading: referralsLoading } = useQuery({
+  const { data: referralsData, isLoading: referralsLoading } = useQuery<{ success: boolean; referrals: any[] }>({
     queryKey: ["/api/referrals", currentCustomer?.id],
     enabled: !!currentCustomer?.id,
   });
