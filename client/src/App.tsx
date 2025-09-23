@@ -7,7 +7,6 @@ import Home from "@/pages/home";
 import Blog from "@/pages/blog";
 import BlogPost from "@/pages/blog-post";
 import Referral from "@/pages/referral";
-import Profile from "@/pages/profile";
 import Webhooks from "@/pages/webhooks";
 import AdminLogin from "@/pages/admin/login";
 import AdminDashboard from "@/pages/admin/dashboard";
@@ -22,7 +21,6 @@ function Router() {
       <Route path="/blog" component={Blog} />
       <Route path="/blog/:slug" component={BlogPost} />
       <Route path="/referral" component={Referral} />
-      <Route path="/profile" component={Profile} />
       <Route path="/webhooks" component={Webhooks} />
       <Route path="/admin/login" component={AdminLogin} />
       <Route path="/admin/dashboard" component={AdminDashboard} />
