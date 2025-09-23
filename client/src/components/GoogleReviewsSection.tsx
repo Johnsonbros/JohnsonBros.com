@@ -249,7 +249,21 @@ export default function GoogleReviewsSection() {
             <Button size="lg" data-testid="book-service-btn">
               Book Your Service
             </Button>
-            <Button variant="outline" size="lg" data-testid="view-more-reviews-btn">
+            <Button 
+              variant="outline" 
+              size="lg" 
+              onClick={() => {
+                // Open Google reviews for the primary location
+                const primaryLocation = googleData.locations[0];
+                if (primaryLocation?.placeId) {
+                  window.open(`https://www.google.com/maps/place/?q=place_id:${primaryLocation.placeId}`, '_blank');
+                } else {
+                  // Fallback to search
+                  window.open('https://www.google.com/search?q=Johnson+Bros+Plumbing+reviews', '_blank');
+                }
+              }}
+              data-testid="view-more-reviews-btn"
+            >
               <ExternalLink className="h-4 w-4 mr-2" />
               View More on Google
             </Button>
