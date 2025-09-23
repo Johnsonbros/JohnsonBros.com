@@ -53,6 +53,22 @@ img {
   loading: lazy;
 }
 
+/* Lighter placeholder text */
+::placeholder {
+  color: rgb(156 163 175 / 0.5) !important;  /* Very light gray with 50% opacity */
+  opacity: 1 !important;
+}
+
+input::placeholder {
+  color: rgb(156 163 175 / 0.5) !important;  /* Very light gray with 50% opacity */
+  opacity: 1 !important;
+}
+
+textarea::placeholder {
+  color: rgb(156 163 175 / 0.5) !important;  /* Very light gray with 50% opacity */
+  opacity: 1 !important;
+}
+
 /* Social Proof Widget Animations */
 @keyframes fade-in-up {
   from {

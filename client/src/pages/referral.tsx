@@ -147,6 +147,13 @@ export default function Referral() {
   const handleReferralSubmit = (data: ReferralFormData) => {
     createReferralMutation.mutate(data);
   };
+  
+  // Reset to customer lookup
+  const handleResetLookup = () => {
+    setCurrentCustomer(null);
+    setLookupError(null);
+    lookupForm.reset();
+  };
 
   return (
     <>
@@ -302,16 +309,49 @@ export default function Referral() {
           ) : (
             <div className="space-y-8">
               {/* Customer Info Banner */}
-              <Alert data-testid="alert-customer-info">
-                <CheckCircle className="h-4 w-4" />
-                <AlertTitle>Welcome back, {currentCustomer.first_name}!</AlertTitle>
-                <AlertDescription>
-                  You can now refer friends and track your referral rewards.
-                </AlertDescription>
-              </Alert>
+              <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200" data-testid="alert-customer-info">
+                <CardContent className="pt-6">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-3">
+                        <CheckCircle className="h-6 w-6 text-blue-600" />
+                        <h2 className="text-2xl font-bold text-gray-900">Welcome back!</h2>
+                      </div>
+                      <div className="space-y-1 text-gray-700">
+                        <p className="text-lg font-medium">
+                          {currentCustomer.firstName || currentCustomer.first_name} {currentCustomer.lastName || currentCustomer.last_name}
+                        </p>
+                        <p className="text-sm">
+                          <span className="font-medium">Phone:</span> {currentCustomer.phone || currentCustomer.mobile_number || currentCustomer.home_number}
+                        </p>
+                        {(currentCustomer.address || currentCustomer.street) && (
+                          <p className="text-sm">
+                            <span className="font-medium">Address:</span> {currentCustomer.address || currentCustomer.street}
+                            {(currentCustomer.city || currentCustomer.zip) && (
+                              <>, {currentCustomer.city || ''} {currentCustomer.state || ''} {currentCustomer.zip || ''}</>
+                            )}
+                          </p>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-600 mt-3">
+                        You can now refer friends and track your referral rewards.
+                      </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleResetLookup}
+                      className="text-xs text-gray-500 hover:text-gray-700 whitespace-nowrap"
+                      data-testid="button-not-you"
+                    >
+                      Not you? Click here...
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
 
               {/* Existing Referrals */}
-              {referralsData?.referrals?.length > 0 && (
+              {referralsData?.referrals && referralsData.referrals.length > 0 && (
                 <Card data-testid="card-existing-referrals">
                   <CardHeader>
                     <CardTitle>Your Referrals</CardTitle>
@@ -321,7 +361,7 @@ export default function Referral() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      {referralsData.referrals.map((referral: any, index: number) => (
+                      {referralsData?.referrals?.map((referral: any, index: number) => (
                         <div 
                           key={referral.id} 
                           className="flex items-center justify-between p-4 border rounded-lg"
