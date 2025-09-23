@@ -224,15 +224,18 @@ export default function Header({ onBookService }: HeaderProps) {
 
             {/* Desktop CTA Buttons */}
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2 bg-white/10 px-3 py-2 rounded-lg">
-                <div className="flex text-yellow-400">
-                  <Star className="h-4 w-4 fill-current" />
-                  <Star className="h-4 w-4 fill-current" />
-                  <Star className="h-4 w-4 fill-current" />
-                  <Star className="h-4 w-4 fill-current" />
-                  <Star className="h-4 w-4 fill-current" />
+              <div className="flex items-center space-x-3 bg-gradient-to-r from-white/20 to-white/10 backdrop-blur-sm px-4 py-3 rounded-xl border border-white/20 shadow-lg hover:from-white/25 hover:to-white/15 transition-all duration-300">
+                <div className="flex text-yellow-400 space-x-0.5">
+                  <Star className="h-5 w-5 fill-current drop-shadow-sm" />
+                  <Star className="h-5 w-5 fill-current drop-shadow-sm" />
+                  <Star className="h-5 w-5 fill-current drop-shadow-sm" />
+                  <Star className="h-5 w-5 fill-current drop-shadow-sm" />
+                  <Star className="h-5 w-5 fill-current drop-shadow-sm" />
                 </div>
-                <span className="text-white text-sm font-medium" data-testid="rating-display">4.8/5 (281 reviews)</span>
+                <div className="flex flex-col">
+                  <span className="text-white text-lg font-bold leading-none" data-testid="rating-display">4.8/5</span>
+                  <span className="text-blue-100 text-xs font-medium opacity-90">281 reviews</span>
+                </div>
               </div>
               {onBookService ? (
                 <Button 
