@@ -7,7 +7,10 @@ import {
   type KeywordRanking, type InsertKeywordRanking,
   type BlogAnalytics, type InsertBlogAnalytics,
   type AvailableTimeSlot,
-  customers, appointments, blogPosts, keywords, postKeywords, keywordRankings, blogAnalytics
+  type Referral, type InsertReferral,
+  type CustomerCredit, type InsertCustomerCredit,
+  customers, appointments, blogPosts, keywords, postKeywords, keywordRankings, blogAnalytics,
+  referrals, customerCredits
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, lte, desc, asc, sql } from "drizzle-orm";
@@ -248,6 +251,75 @@ export class DatabaseStorage implements IStorage {
     // Time slots come from HousecallPro API, not database storage
     // This method is here for interface compatibility
     return [];
+  }
+
+  // Referral methods
+  async createReferral(referral: InsertReferral): Promise<Referral> {
+    const code = `REF${Date.now().toString(36).toUpperCase()}`;
+    const [newReferral] = await db.insert(referrals).values({
+      ...referral,
+      referralCode: code
+    }).returning();
+    return newReferral;
+  }
+
+  async getReferral(id: number): Promise<Referral | undefined> {
+    const [referral] = await db.select().from(referrals).where(eq(referrals.id, id)).limit(1);
+    return referral;
+  }
+
+  async getReferralByCode(code: string): Promise<Referral | undefined> {
+    const [referral] = await db.select().from(referrals).where(eq(referrals.referralCode, code)).limit(1);
+    return referral;
+  }
+
+  async getReferralsByCustomer(customerId: string): Promise<Referral[]> {
+    return await db.select().from(referrals).where(eq(referrals.referrerCustomerId, customerId));
+  }
+
+  async updateReferralStatus(id: number, status: string, leadId?: string): Promise<Referral | undefined> {
+    const updateData: any = { status };
+    if (leadId) {
+      updateData.referredLeadId = leadId;
+    }
+    if (status === 'converted') {
+      updateData.convertedAt = new Date();
+    }
+    
+    const [updated] = await db.update(referrals)
+      .set(updateData)
+      .where(eq(referrals.id, id))
+      .returning();
+    return updated;
+  }
+
+  // Customer credit methods
+  async createCustomerCredit(credit: InsertCustomerCredit): Promise<CustomerCredit> {
+    const [newCredit] = await db.insert(customerCredits).values(credit).returning();
+    return newCredit;
+  }
+
+  async getCustomerCredits(customerId: string): Promise<CustomerCredit[]> {
+    return await db.select().from(customerCredits)
+      .where(and(
+        eq(customerCredits.customerId, customerId),
+        eq(customerCredits.status, 'available')
+      ));
+  }
+
+  async applyCredit(creditId: number, jobId: string): Promise<CustomerCredit | undefined> {
+    const [credit] = await db.update(customerCredits)
+      .set({
+        status: 'applied',
+        appliedToJobId: jobId,
+        appliedAt: new Date()
+      })
+      .where(and(
+        eq(customerCredits.id, creditId),
+        eq(customerCredits.status, 'available')
+      ))
+      .returning();
+    return credit;
   }
 }
 

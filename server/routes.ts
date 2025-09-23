@@ -596,6 +596,125 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============================================
+  // REFERRAL SYSTEM ENDPOINTS
+  // ============================================
+
+  // Get referrals for a customer
+  app.get("/api/referrals/:customerId", customerLookupLimiter, async (req, res) => {
+    try {
+      const customerId = req.params.customerId;
+      const referrals = await storage.getReferralsByCustomer(customerId);
+      res.json({ success: true, referrals });
+    } catch (error) {
+      console.error("Failed to get referrals:", error);
+      res.status(500).json({ error: "Failed to retrieve referrals" });
+    }
+  });
+
+  // Create a new referral
+  app.post("/api/referrals", customerLookupLimiter, async (req, res) => {
+    try {
+      const {
+        referrerCustomerId,
+        referrerName,
+        referrerPhone,
+        referredName,
+        referredPhone,
+        referredEmail,
+        referredAddress,
+        referredCity,
+        referredState,
+        referredZip,
+        serviceNeeded,
+        notes
+      } = req.body;
+
+      // Validate required fields
+      if (!referrerCustomerId || !referrerName || !referrerPhone || !referredName || !referredPhone) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      const housecallClient = HousecallProClient.getInstance();
+
+      // Create lead in HousecallPro
+      const leadData = {
+        customer: {
+          first_name: referredName.split(' ')[0],
+          last_name: referredName.split(' ').slice(1).join(' ') || referredName,
+          email: referredEmail,
+          mobile_number: referredPhone,
+          lead_source: "Customer Referral",
+          tags: [`referred-by-${referrerCustomerId}`, "referral-program"],
+          notes: `Referred by: ${referrerName} (${referrerPhone})
+Customer ID: ${referrerCustomerId}
+Service Needed: ${serviceNeeded || 'General plumbing service'}
+$99 REFERRAL DISCOUNT APPLIES`,
+          address: referredAddress ? {
+            street: referredAddress,
+            city: referredCity || "Quincy",
+            state: referredState || "MA",
+            zip: referredZip || ""
+          } : undefined
+        },
+        // Apply the $99 discount as a line item
+        line_items: [{
+          name: "Referral Discount",
+          description: `$99 off - Referred by ${referrerName}`,
+          kind: "fixed discount",
+          unit_price: -9900, // Negative for discount
+          quantity: 1
+        }],
+        notes: notes || `New customer referred by ${referrerName}. $99 referral discount applied.`
+      };
+
+      // Create lead in HousecallPro
+      const lead = await housecallClient.createLead(leadData);
+
+      // Save referral to database
+      const referral = await storage.createReferral({
+        referrerCustomerId,
+        referrerName,
+        referrerPhone,
+        referredLeadId: lead.id,
+        referredName,
+        referredPhone,
+        referredEmail,
+        notes: `Service: ${serviceNeeded || 'General plumbing'}. ${notes || ''}`,
+        status: 'pending',
+        discountAmount: 9900,
+        discountApplied: true
+      });
+
+      res.json({ 
+        success: true, 
+        referral,
+        leadId: lead.id,
+        referralCode: referral.referralCode,
+        message: "Referral created successfully! The new customer has been added to our system with a $99 discount."
+      });
+
+    } catch (error) {
+      console.error("Failed to create referral:", error);
+      res.status(500).json({ error: "Failed to create referral" });
+    }
+  });
+
+  // Get referral by code
+  app.get("/api/referrals/code/:code", async (req, res) => {
+    try {
+      const referral = await storage.getReferralByCode(req.params.code);
+      if (referral) {
+        res.json({ success: true, referral });
+      } else {
+        res.status(404).json({ error: "Referral not found" });
+      }
+    } catch (error) {
+      console.error("Failed to get referral by code:", error);
+      res.status(500).json({ error: "Failed to retrieve referral" });
+    }
+  });
+
   // Create a new booking
   app.post("/api/bookings", publicWriteLimiter, async (req, res) => {
     try {

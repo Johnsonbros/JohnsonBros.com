@@ -667,4 +667,11 @@ export class HousecallProClient {
       throw error;
     }
   }
+
+  async createLead(leadData: any): Promise<any> {
+    console.log('[HousecallProClient] Creating lead:', JSON.stringify(leadData, null, 2));
+    const lead = await this.callAPI('/leads', {}, { method: 'POST', body: leadData });
+    console.log('[HousecallProClient] Lead created:', lead);
+    return lead;
+  }
 }
