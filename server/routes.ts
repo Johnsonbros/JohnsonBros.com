@@ -553,18 +553,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Lookup existing customer with rate limiting
   app.post("/api/customers/lookup", async (req, res) => {
     try {
-      const { phone, name } = req.body;
+      const { phone, name, firstName, lastName } = req.body;
       
-      if (!phone) {
-        return res.status(400).json({ error: "Phone number is required" });
+      // Support both formats: separate firstName/lastName or combined name
+      const customerName = name || (firstName && lastName ? `${firstName} ${lastName}` : null);
+      
+      if (!phone || !customerName) {
+        return res.status(400).json({ error: "Phone number, first name, and last name are required" });
       }
       
       // Look up customer using Housecall Pro API
-      console.log(`[Customer Lookup] Searching for customer - Name: "${name}", Phone: "${phone}"`);
+      console.log(`[Customer Lookup] Searching for customer - Name: "${customerName}", Phone: "${phone}"`);
       const housecallClient = HousecallProClient.getInstance();
       const customers = await housecallClient.searchCustomers({
         phone: phone,
-        name: name
+        name: customerName
       });
       console.log(`[Customer Lookup] API returned ${customers.length} customers:`, customers.map(c => ({ id: c.id, name: `${c.first_name} ${c.last_name}`, phone: c.mobile_number })));
       

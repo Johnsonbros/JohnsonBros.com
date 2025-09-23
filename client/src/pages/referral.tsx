@@ -19,13 +19,9 @@ import { SEO } from "@/components/SEO";
 
 // Customer lookup schema
 const customerLookupSchema = z.object({
-  email: z.string().email().optional(),
-  phone: z.string().min(10, "Phone number must be at least 10 digits").optional(),
+  phone: z.string().min(10, "Phone number must be at least 10 digits"),
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
-}).refine(data => data.email || data.phone, {
-  message: "Either email or phone number is required",
-  path: ["email"],
 });
 
 // Referral form schema
@@ -54,7 +50,6 @@ export default function Referral() {
   const lookupForm = useForm<CustomerLookupData>({
     resolver: zodResolver(customerLookupSchema),
     defaultValues: {
-      email: "",
       phone: "",
       firstName: "",
       lastName: "",
@@ -80,13 +75,11 @@ export default function Referral() {
   // Customer lookup mutation
   const lookupMutation = useMutation({
     mutationFn: async (data: CustomerLookupData) => {
-      const params = new URLSearchParams();
-      params.append("firstName", data.firstName);
-      params.append("lastName", data.lastName);
-      if (data.email) params.append("email", data.email);
-      if (data.phone) params.append("phone", data.phone);
-      
-      const response = await apiRequest("GET", `/api/customers/lookup?${params.toString()}`);
+      const response = await apiRequest("POST", "/api/customers/lookup", {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        phone: data.phone
+      });
       return await response.json();
     },
     onSuccess: (data: any) => {
@@ -99,7 +92,7 @@ export default function Referral() {
         });
       } else {
         setCurrentCustomer(null);
-        setLookupError("Customer not found. Please check your information and try again.");
+        setLookupError("Customer not found. Please verify that all three fields (first name, last name, and phone number) match exactly as they appear in our records.");
       }
     },
     onError: () => {
@@ -225,19 +218,19 @@ export default function Referral() {
               <CardHeader>
                 <CardTitle>Step 1: Find Your Account</CardTitle>
                 <CardDescription>
-                  Enter your information to access your referral dashboard
+                  Enter your information exactly as it appears in our records. All three fields must match to access your referral dashboard.
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <Form {...lookupForm}>
                   <form onSubmit={lookupForm.handleSubmit(handleCustomerLookup)} className="space-y-6">
-                    <div className="grid md:grid-cols-2 gap-4">
+                    <div className="grid md:grid-cols-3 gap-4">
                       <FormField
                         control={lookupForm.control}
                         name="firstName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>First Name</FormLabel>
+                            <FormLabel>First Name *</FormLabel>
                             <FormControl>
                               <Input placeholder="John" {...field} data-testid="input-firstname" />
                             </FormControl>
@@ -251,34 +244,10 @@ export default function Referral() {
                         name="lastName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Last Name</FormLabel>
+                            <FormLabel>Last Name *</FormLabel>
                             <FormControl>
                               <Input placeholder="Doe" {...field} data-testid="input-lastname" />
                             </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <FormField
-                        control={lookupForm.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Email (Optional)</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="email" 
-                                placeholder="john@example.com" 
-                                {...field} 
-                                data-testid="input-email"
-                              />
-                            </FormControl>
-                            <FormDescription>
-                              Provide either email or phone number
-                            </FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -289,7 +258,7 @@ export default function Referral() {
                         name="phone"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Phone (Optional)</FormLabel>
+                            <FormLabel>Phone Number *</FormLabel>
                             <FormControl>
                               <Input 
                                 type="tel" 
@@ -298,14 +267,17 @@ export default function Referral() {
                                 data-testid="input-phone"
                               />
                             </FormControl>
-                            <FormDescription>
-                              10-digit phone number
-                            </FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
                     </div>
+                    
+                    <Alert>
+                      <AlertDescription>
+                        For security, all three fields must match your customer profile exactly. Please use the same phone number you provided during service.
+                      </AlertDescription>
+                    </Alert>
 
                     {lookupError && (
                       <Alert variant="destructive" data-testid="alert-lookup-error">
