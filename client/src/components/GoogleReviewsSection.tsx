@@ -122,52 +122,60 @@ export default function GoogleReviewsSection() {
     <section className="py-16 bg-white" data-testid="google-reviews-section">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header with ratings summary */}
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl mb-6" data-testid="reviews-title">
+        <div className="text-center mb-16">
+          <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl lg:text-5xl mb-4" data-testid="reviews-title">
             Real Google Reviews from Our Customers
           </h2>
+          <p className="text-lg text-gray-600 mb-12 max-w-3xl mx-auto">
+            See what our satisfied customers are saying about our exceptional plumbing services across Massachusetts
+          </p>
           
-          {/* Overall rating display */}
-          <div className="inline-flex items-center justify-center space-x-4 bg-green-50 rounded-lg p-6 mb-6">
-            <div className="text-center">
-              <div className="flex justify-center space-x-1 mb-2">
-                {renderStars(Math.round(googleData.averageRating))}
+          {/* Enhanced rating display for desktop */}
+          <div className="bg-gradient-to-r from-green-50 via-blue-50 to-green-50 rounded-2xl p-8 lg:p-12 mb-8 shadow-lg border border-green-100">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12 items-center max-w-4xl mx-auto">
+              
+              {/* Average Rating - Larger on desktop */}
+              <div className="text-center">
+                <div className="flex justify-center space-x-1 mb-4">
+                  {renderStars(Math.round(googleData.averageRating))}
+                </div>
+                <div className="text-4xl lg:text-5xl font-bold text-gray-900 mb-2" data-testid="average-rating">
+                  {googleData.averageRating.toFixed(1)}
+                </div>
+                <div className="text-sm lg:text-base text-gray-600 font-medium">Average Rating</div>
               </div>
-              <div className="text-3xl font-bold text-gray-900" data-testid="average-rating">
-                {googleData.averageRating.toFixed(1)}
+              
+              {/* Total Reviews */}
+              <div className="text-center">
+                <div className="text-4xl lg:text-5xl font-bold text-blue-600 mb-2" data-testid="total-reviews">
+                  {googleData.totalReviews.toLocaleString()}
+                </div>
+                <div className="text-sm lg:text-base text-gray-600 font-medium">Google Reviews</div>
+                <div className="text-xs text-gray-500 mt-1">And growing daily!</div>
               </div>
-              <div className="text-sm text-gray-600">Average Rating</div>
-            </div>
-            
-            <div className="h-12 w-px bg-gray-300"></div>
-            
-            <div className="text-center">
-              <div className="text-3xl font-bold text-gray-900" data-testid="total-reviews">
-                {googleData.totalReviews.toLocaleString()}
+              
+              {/* Locations */}
+              <div className="text-center">
+                <div className="text-4xl lg:text-5xl font-bold text-green-600 mb-2">
+                  {googleData.locations.length}
+                </div>
+                <div className="text-sm lg:text-base text-gray-600 font-medium">Service Locations</div>
+                <div className="text-xs text-gray-500 mt-1">Across Massachusetts</div>
               </div>
-              <div className="text-sm text-gray-600">Google Reviews</div>
-            </div>
-            
-            <div className="h-12 w-px bg-gray-300"></div>
-            
-            <div className="text-center">
-              <div className="text-3xl font-bold text-gray-900">
-                {googleData.locations.length}
-              </div>
-              <div className="text-sm text-gray-600">Locations</div>
+              
             </div>
           </div>
 
-          {/* Location badges */}
-          <div className="flex flex-wrap justify-center gap-2 mb-8">
+          {/* Enhanced location badges */}
+          <div className="flex flex-wrap justify-center gap-3 mb-8">
             {googleData.locations.map((location) => (
               <Badge
                 key={location.placeId}
                 variant="outline"
-                className="bg-white border-gray-300 text-gray-700 px-3 py-1"
+                className="bg-white border-blue-200 text-blue-700 px-4 py-2 text-sm font-medium hover:bg-blue-50 transition-colors duration-200 shadow-sm"
                 data-testid={`location-badge-${location.placeId}`}
               >
-                <MapPin className="h-3 w-3 mr-1" />
+                <MapPin className="h-4 w-4 mr-2" />
                 {location.name.replace('Johnson Bros. Plumbing & Drain Cleaning - ', '')}
               </Badge>
             ))}
