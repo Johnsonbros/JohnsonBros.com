@@ -22,15 +22,11 @@ export function SocialProofSection() {
             <ServiceHeatMap />
           </div>
 
-          {/* Stats Row */}
-          <div className="grid grid-cols-1 lg:grid-cols-1 gap-6 md:gap-8 justify-center">
+          {/* Success Story & Recent Completions - Side by Side on Desktop */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 lg:gap-10">
             <div className="animate-fade-in-up flex justify-center" style={{ animationDelay: '0.2s' }}>
               <StatsWidget />
             </div>
-          </div>
-
-          {/* Activity row - Recent Jobs */}
-          <div className="grid grid-cols-1 gap-6 md:gap-8 justify-center">
             <div className="animate-fade-in-up flex justify-center" style={{ animationDelay: '0.3s' }}>
               <RecentJobsWidget />
             </div>
