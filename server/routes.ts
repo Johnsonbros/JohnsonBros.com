@@ -2449,6 +2449,209 @@ Special Promotion: $99 service fee waived for online bookings`,
     }
   });
 
+  // Standard MCP discovery endpoint - serves the full manifest
+  app.get('/.well-known/mcp/manifest.json', mcpLimiter, mcpLoggingMiddleware, async (req, res) => {
+    try {
+      // Set proper headers for JSON content
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Cache-Control', 'public, max-age=300'); // 5 minute cache
+      
+      // Serve the same full manifest as /api/mcp/manifest
+      const manifest = {
+        name: "Johnson Bros. Plumbing MCP Server",
+        version: "1.0.0",
+        description: "Professional plumbing services booking and management system",
+        
+        company: {
+          name: "Johnson Bros. Plumbing & Drain Cleaning",
+          phone: "(617) 479-9911",
+          email: "info@thejohnsonbros.com",
+          website: "https://www.thejohnsonbros.com",
+          license: "Master Plumber License #MP-001234",
+          service_areas: ["Quincy, MA", "Abington, MA", "South Shore, MA"],
+          emergency_service: "24/7 Available"
+        },
+
+        capabilities: {
+          tools: [
+            {
+              name: "book_service_call",
+              description: "Book a plumbing service call with Johnson Bros. Plumbing",
+              parameters: {
+                type: "object",
+                properties: {
+                  customer: {
+                    type: "object",
+                    properties: {
+                      firstName: { type: "string", description: "Customer's first name" },
+                      lastName: { type: "string", description: "Customer's last name" },
+                      email: { type: "string", format: "email" },
+                      phone: { type: "string", description: "Customer's phone number" },
+                      address: {
+                        type: "object",
+                        properties: {
+                          street: { type: "string" },
+                          city: { type: "string" },
+                          state: { type: "string", default: "MA" },
+                          zipCode: { type: "string" }
+                        },
+                        required: ["street", "city", "zipCode"]
+                      }
+                    },
+                    required: ["firstName", "lastName", "phone", "address"]
+                  },
+                  service: {
+                    type: "object",
+                    properties: {
+                      type: {
+                        type: "string",
+                        enum: ["emergency", "drain_cleaning", "water_heater", "general_plumbing", "pipe_repair"],
+                        description: "Type of plumbing service needed"
+                      },
+                      description: { type: "string", description: "Detailed description of the problem" },
+                      priority: {
+                        type: "string",
+                        enum: ["low", "medium", "high", "emergency"],
+                        default: "medium"
+                      }
+                    },
+                    required: ["type", "description"]
+                  },
+                  scheduling: {
+                    type: "object",
+                    properties: {
+                      preferredDate: { type: "string", format: "date" },
+                      preferredTime: { type: "string", description: "Preferred time window" },
+                      flexibility: {
+                        type: "string",
+                        enum: ["strict", "flexible", "asap"],
+                        default: "flexible"
+                      }
+                    }
+                  }
+                },
+                required: ["customer", "service"]
+              }
+            },
+            {
+              name: "search_availability",
+              description: "Check available time slots for service appointments without booking",
+              parameters: {
+                type: "object", 
+                properties: {
+                  date: { type: "string", format: "date", description: "Preferred date (YYYY-MM-DD)" },
+                  serviceType: {
+                    type: "string", 
+                    description: "Type of service needed (e.g., 'emergency plumbing', 'routine maintenance', 'drain cleaning')"
+                  },
+                  time_preference: {
+                    type: "string",
+                    enum: ["any", "morning", "afternoon", "evening"],
+                    description: "Preferred time of day"
+                  },
+                  show_for_days: {
+                    type: "number",
+                    minimum: 1,
+                    maximum: 30,
+                    description: "Number of days to show availability for"
+                  }
+                },
+                required: ["date", "serviceType"]
+              }
+            },
+            {
+              name: "lookup_customer",
+              description: "Look up existing customer information",
+              parameters: {
+                type: "object",
+                properties: {
+                  phone: { type: "string", description: "Customer phone number" },
+                  email: { type: "string", format: "email", description: "Customer email address" }
+                }
+              }
+            },
+            {
+              name: "get_services",
+              description: "Get detailed information about available plumbing services",
+              parameters: {
+                type: "object",
+                properties: {
+                  serviceType: {
+                    type: "string",
+                    enum: ["all", "emergency", "drain_cleaning", "water_heater", "general_plumbing", "pipe_repair"]
+                  }
+                }
+              }
+            },
+            {
+              name: "get_capacity",
+              description: "Check current service capacity and booking availability",
+              parameters: {
+                type: "object",
+                properties: {
+                  date: { type: "string", format: "date" },
+                  serviceArea: { type: "string", description: "City or zip code" }
+                }
+              }
+            }
+          ],
+          
+          resources: [
+            {
+              name: "service_pricing",
+              description: "Current pricing information for plumbing services",
+              mimeType: "application/json"
+            },
+            {
+              name: "service_areas", 
+              description: "Detailed service area coverage maps",
+              mimeType: "application/json"
+            },
+            {
+              name: "business_hours",
+              description: "Operating hours and emergency availability", 
+              mimeType: "application/json"
+            }
+          ]
+        },
+
+        business_info: {
+          hours: {
+            regular: "Monday-Friday 7AM-7PM, Saturday-Sunday 8AM-6PM EST",
+            emergency: "24/7 Emergency Service Available"
+          },
+          service_guarantee: "100% satisfaction guaranteed on all work",
+          response_time: {
+            emergency: "Within 1 hour",
+            standard: "Same or next day",
+            scheduled: "At your preferred time"
+          },
+          payment_methods: ["Cash", "Check", "Credit Card", "Financing Available"],
+          certifications: ["Licensed Master Plumber", "Insured & Bonded", "BBB A+ Rated"]
+        },
+
+        integration: {
+          booking_system: "Housecall Pro",
+          real_time_scheduling: true,
+          automatic_confirmations: true,
+          customer_notifications: true
+        },
+
+        metadata: {
+          last_updated: new Date().toISOString(),
+          api_version: "1.0.0",
+          documentation_url: "/api/mcp/docs"
+        }
+      };
+
+      res.json(manifest);
+    } catch (error) {
+      console.error('Error serving /.well-known/mcp/manifest.json:', error);
+      res.status(500).json({ error: 'Failed to serve MCP manifest' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
