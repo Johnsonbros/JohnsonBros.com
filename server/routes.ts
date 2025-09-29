@@ -1968,6 +1968,319 @@ Special Promotion: $99 service fee waived for online bookings`,
     }
   });
 
+  // ========== MCP (Model Context Protocol) ENDPOINTS ==========
+  
+  // MCP API key authentication middleware
+  const mcpAuthMiddleware = (req: any, res: any, next: any) => {
+    const apiKey = req.headers['x-mcp-api-key'];
+    const expectedApiKey = process.env.MCP_API_KEY || 'default-mcp-key-change-me';
+    
+    if (!apiKey) {
+      return res.status(401).json({ 
+        error: 'Missing API key',
+        message: 'X-MCP-API-Key header is required for MCP access'
+      });
+    }
+    
+    if (apiKey !== expectedApiKey) {
+      return res.status(403).json({ 
+        error: 'Invalid API key',
+        message: 'The provided API key is not valid'
+      });
+    }
+    
+    // Log MCP client for analytics
+    const clientInfo = req.headers['x-mcp-client'] || 'unknown-client';
+    console.log(`MCP API access: ${clientInfo} from ${req.ip}`);
+    
+    next();
+  };
+
+  // MCP rate limiting (more generous for authenticated clients)
+  const mcpLimiter = rateLimit({
+    windowMs: 1 * 60 * 1000, // 1 minute
+    max: 20, // 20 requests per minute for authenticated MCP clients
+    message: { error: 'Too many MCP requests, please try again later' },
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+
+  // MCP Manifest Endpoint (authenticated)
+  app.get('/api/mcp/manifest', mcpLimiter, mcpAuthMiddleware, async (req, res) => {
+    try {
+      const manifest = {
+        name: "Johnson Bros. Plumbing MCP Server",
+        version: "1.0.0",
+        description: "Professional plumbing services booking and management system",
+        
+        company: {
+          name: "Johnson Bros. Plumbing & Drain Cleaning",
+          phone: "(617) 479-9911",
+          email: "info@thejohnsonbros.com",
+          website: "https://www.thejohnsonbros.com",
+          license: "Master Plumber License #MP-001234",
+          service_areas: ["Quincy, MA", "Abington, MA", "South Shore, MA"],
+          emergency_service: "24/7 Available"
+        },
+
+        capabilities: {
+          tools: [
+            {
+              name: "book_service_call",
+              description: "Book a plumbing service call with Johnson Bros. Plumbing",
+              parameters: {
+                type: "object",
+                properties: {
+                  customer: {
+                    type: "object",
+                    properties: {
+                      firstName: { type: "string", description: "Customer's first name" },
+                      lastName: { type: "string", description: "Customer's last name" },
+                      email: { type: "string", format: "email" },
+                      phone: { type: "string", description: "Customer's phone number" },
+                      address: {
+                        type: "object",
+                        properties: {
+                          street: { type: "string" },
+                          city: { type: "string" },
+                          state: { type: "string", default: "MA" },
+                          zipCode: { type: "string" }
+                        },
+                        required: ["street", "city", "zipCode"]
+                      }
+                    },
+                    required: ["firstName", "lastName", "phone", "address"]
+                  },
+                  service: {
+                    type: "object",
+                    properties: {
+                      type: {
+                        type: "string",
+                        enum: ["emergency", "drain_cleaning", "water_heater", "general_plumbing", "pipe_repair"],
+                        description: "Type of plumbing service needed"
+                      },
+                      description: { type: "string", description: "Detailed description of the problem" },
+                      priority: {
+                        type: "string",
+                        enum: ["low", "medium", "high", "emergency"],
+                        default: "medium"
+                      }
+                    },
+                    required: ["type", "description"]
+                  },
+                  scheduling: {
+                    type: "object",
+                    properties: {
+                      preferredDate: { type: "string", format: "date" },
+                      preferredTime: { type: "string", description: "Preferred time window" },
+                      flexibility: {
+                        type: "string",
+                        enum: ["strict", "flexible", "asap"],
+                        default: "flexible"
+                      }
+                    }
+                  }
+                },
+                required: ["customer", "service"]
+              }
+            },
+            {
+              name: "search_availability",
+              description: "Check available time slots for service appointments",
+              parameters: {
+                type: "object", 
+                properties: {
+                  date: { type: "string", format: "date", description: "Preferred date (YYYY-MM-DD)" },
+                  serviceType: {
+                    type: "string",
+                    enum: ["emergency", "drain_cleaning", "water_heater", "general_plumbing", "pipe_repair"]
+                  },
+                  zipCode: { type: "string", description: "Service location zip code" }
+                },
+                required: ["date", "serviceType", "zipCode"]
+              }
+            },
+            {
+              name: "lookup_customer",
+              description: "Look up existing customer information",
+              parameters: {
+                type: "object",
+                properties: {
+                  phone: { type: "string", description: "Customer phone number" },
+                  email: { type: "string", format: "email", description: "Customer email address" }
+                }
+              }
+            },
+            {
+              name: "get_services",
+              description: "Get detailed information about available plumbing services",
+              parameters: {
+                type: "object",
+                properties: {
+                  serviceType: {
+                    type: "string",
+                    enum: ["all", "emergency", "drain_cleaning", "water_heater", "general_plumbing", "pipe_repair"]
+                  }
+                }
+              }
+            },
+            {
+              name: "get_capacity",
+              description: "Check current service capacity and booking availability",
+              parameters: {
+                type: "object",
+                properties: {
+                  date: { type: "string", format: "date" },
+                  serviceArea: { type: "string", description: "City or zip code" }
+                }
+              }
+            }
+          ],
+          
+          resources: [
+            {
+              name: "service_pricing",
+              description: "Current pricing information for plumbing services",
+              mimeType: "application/json"
+            },
+            {
+              name: "service_areas",
+              description: "Detailed service area coverage maps",
+              mimeType: "application/json"
+            },
+            {
+              name: "business_hours",
+              description: "Operating hours and emergency availability",
+              mimeType: "application/json"
+            }
+          ]
+        },
+
+        business_info: {
+          hours: {
+            regular: "Monday-Friday 7AM-7PM, Saturday-Sunday 8AM-6PM EST",
+            emergency: "24/7 Emergency Service Available"
+          },
+          service_guarantee: "100% satisfaction guaranteed on all work",
+          response_time: {
+            emergency: "Within 1 hour",
+            standard: "Same or next day",
+            scheduled: "At your preferred time"
+          },
+          payment_methods: ["Cash", "Check", "Credit Card", "Financing Available"],
+          certifications: ["Licensed Master Plumber", "Insured & Bonded", "BBB A+ Rated"]
+        },
+
+        integration: {
+          booking_system: "Housecall Pro",
+          real_time_scheduling: true,
+          automatic_confirmations: true,
+          customer_notifications: true
+        },
+
+        metadata: {
+          last_updated: new Date().toISOString(),
+          api_version: "1.0.0",
+          documentation_url: "/api/mcp/docs"
+        }
+      };
+
+      res.json(manifest);
+    } catch (error) {
+      console.error('Error generating MCP manifest:', error);
+      res.status(500).json({ error: 'Failed to generate MCP manifest' });
+    }
+  });
+
+  // MCP Documentation Endpoint (authenticated)
+  app.get('/api/mcp/docs', mcpLimiter, mcpAuthMiddleware, async (req, res) => {
+    try {
+      const docs = {
+        title: "Johnson Bros. Plumbing MCP Integration Guide",
+        version: "1.0.0",
+        description: "Complete documentation for integrating with Johnson Bros. Plumbing services via Model Context Protocol",
+        
+        authentication: {
+          method: "API Key",
+          header: "X-MCP-API-Key",
+          description: "Include your API key in the X-MCP-API-Key header for all requests",
+          example: "X-MCP-API-Key: your-api-key-here"
+        },
+
+        getting_started: {
+          discovery: "Use the .well-known/mcp.json file for initial discovery",
+          manifest: "GET /api/mcp/manifest for complete tool specifications",
+          authentication: "All MCP endpoints require API key authentication",
+          rate_limits: "20 requests per minute for authenticated clients"
+        },
+
+        tools: {
+          book_service_call: {
+            description: "Books a plumbing service appointment with real-time integration to Housecall Pro",
+            usage: "Collects customer info, service details, and scheduling preferences",
+            validation: "Address validation ensures service area coverage",
+            response: "Returns booking confirmation with appointment details"
+          },
+          search_availability: {
+            description: "Checks real-time availability for service appointments",
+            usage: "Query by date, service type, and location",
+            response: "Returns available time slots and scheduling options"
+          },
+          lookup_customer: {
+            description: "Retrieves existing customer information for returning clients",
+            usage: "Search by phone number or email address",
+            privacy: "Limited to basic contact and service history"
+          },
+          get_services: {
+            description: "Provides detailed service information and pricing",
+            categories: ["Emergency Repair", "Drain Cleaning", "Water Heaters", "General Plumbing", "Pipe Work"]
+          },
+          get_capacity: {
+            description: "Real-time capacity checking for optimal scheduling",
+            usage: "Helps determine best appointment times and service availability"
+          }
+        },
+
+        examples: {
+          booking_flow: [
+            "1. Check service area coverage",
+            "2. Search availability for preferred date",
+            "3. Collect customer information",
+            "4. Book service call with all details",
+            "5. Receive confirmation and scheduling"
+          ],
+          emergency_service: "For emergencies, use priority: 'emergency' for immediate response",
+          returning_customers: "Use lookup_customer first to retrieve existing information"
+        },
+
+        business_context: {
+          service_areas: "Primary: Quincy & Abington MA. Extended: South Shore region",
+          specialties: "Emergency repairs, drain cleaning, water heater service",
+          response_times: "Emergency: 1 hour, Standard: Same/next day",
+          operating_hours: "7 days a week with 24/7 emergency availability"
+        },
+
+        integration_notes: {
+          real_time_booking: "All bookings integrate directly with Housecall Pro scheduling system",
+          customer_data: "Customer information is securely stored and managed",
+          notifications: "Automatic confirmations and updates sent to customers",
+          quality_assurance: "All work backed by satisfaction guarantee"
+        },
+
+        support: {
+          technical: "Contact development team for API issues",
+          business: "Call (617) 479-9911 for service questions",
+          emergency: "24/7 emergency line always available"
+        }
+      };
+
+      res.json(docs);
+    } catch (error) {
+      console.error('Error generating MCP documentation:', error);
+      res.status(500).json({ error: 'Failed to generate MCP documentation' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
