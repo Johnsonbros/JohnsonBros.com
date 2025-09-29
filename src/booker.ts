@@ -314,8 +314,8 @@ async function getPrimaryAddressId(customer: any, input: BookInput, correlationI
 
 async function createJob(customerId: string, addressId: string, window: { start_time: string; end_time: string }, notes: string, lead_source: string, tags: string[], correlationId?: string) {
   const corrId = correlationId || randomUUID();
-  const scheduled_start = toYmd(window.start_time);
-  const scheduled_end = toYmd(window.end_time);
+  const scheduled_start = window.start_time;
+  const scheduled_end = window.end_time;
   const arrival_window = minutesBetween(window.start_time, window.end_time);
 
   const job = await hcpPost("/jobs", {
