@@ -1968,6 +1968,80 @@ Special Promotion: $99 service fee waived for online bookings`,
     }
   });
 
+  // ========== MCP DISCOVERY ENDPOINTS ==========
+  
+  // Serve .well-known/mcp.json directly (ensure it works in all environments)
+  app.get('/.well-known/mcp.json', (req, res) => {
+    try {
+      // Set proper headers for JSON content
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Cache-Control', 'public, max-age=300'); // 5 minute cache
+      
+      const mcpDiscovery = {
+        "name": "Johnson Bros. Plumbing MCP Server",
+        "description": "Model Context Protocol server for Johnson Bros. Plumbing & Drain Cleaning services",
+        "version": "1.0.0",
+        "company": "Johnson Bros. Plumbing & Drain Cleaning",
+        "contact": {
+          "phone": "(617) 479-9911",
+          "email": "info@thejohnsonbros.com",
+          "website": "https://www.thejohnsonbros.com"
+        },
+        "service_areas": [
+          "Quincy, MA",
+          "Abington, MA",
+          "South Shore, MA"
+        ],
+        "services": [
+          "Emergency plumbing repair",
+          "Drain cleaning and unclogging",
+          "Water heater service and installation", 
+          "Pipe repair and replacement",
+          "General plumbing service calls"
+        ],
+        "mcp": {
+          "manifest_url": "/api/mcp/manifest",
+          "documentation_url": "/api/mcp/docs",
+          "authentication": {
+            "type": "none",
+            "description": "No authentication required - publicly accessible to all AI assistants"
+          },
+          "discovery": {
+            "client_header": "X-MCP-Client",
+            "user_agent_pattern": "mcp-client|ai-assistant",
+            "rate_limit": "20 requests per minute"
+          }
+        },
+        "capabilities": {
+          "booking": true,
+          "availability_check": true,
+          "customer_management": true,
+          "service_pricing": true,
+          "real_time_scheduling": true,
+          "emergency_service": true
+        },
+        "tools_preview": [
+          "book_service_call",
+          "search_availability", 
+          "lookup_customer",
+          "get_services",
+          "get_capacity"
+        ],
+        "business_hours": {
+          "emergency": "24/7 available",
+          "regular": "Mon-Fri 7AM-7PM, Sat-Sun 8AM-6PM EST"
+        },
+        "last_updated": new Date().toISOString()
+      };
+
+      res.json(mcpDiscovery);
+    } catch (error) {
+      console.error('Error serving .well-known/mcp.json:', error);
+      res.status(500).json({ error: 'Failed to serve MCP discovery file' });
+    }
+  });
+
   // ========== MCP (Model Context Protocol) ENDPOINTS ==========
   
   // MCP client logging middleware (optional)
