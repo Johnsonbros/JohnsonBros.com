@@ -1970,43 +1970,25 @@ Special Promotion: $99 service fee waived for online bookings`,
 
   // ========== MCP (Model Context Protocol) ENDPOINTS ==========
   
-  // MCP API key authentication middleware
-  const mcpAuthMiddleware = (req: any, res: any, next: any) => {
-    const apiKey = req.headers['x-mcp-api-key'];
-    const expectedApiKey = process.env.MCP_API_KEY || 'default-mcp-key-change-me';
-    
-    if (!apiKey) {
-      return res.status(401).json({ 
-        error: 'Missing API key',
-        message: 'X-MCP-API-Key header is required for MCP access'
-      });
-    }
-    
-    if (apiKey !== expectedApiKey) {
-      return res.status(403).json({ 
-        error: 'Invalid API key',
-        message: 'The provided API key is not valid'
-      });
-    }
-    
-    // Log MCP client for analytics
+  // MCP client logging middleware (optional)
+  const mcpLoggingMiddleware = (req: any, res: any, next: any) => {
+    // Log MCP client for analytics (optional header)
     const clientInfo = req.headers['x-mcp-client'] || 'unknown-client';
     console.log(`MCP API access: ${clientInfo} from ${req.ip}`);
-    
     next();
   };
 
-  // MCP rate limiting (more generous for authenticated clients)
+  // MCP rate limiting (public endpoints with reasonable limits)
   const mcpLimiter = rateLimit({
     windowMs: 1 * 60 * 1000, // 1 minute
-    max: 20, // 20 requests per minute for authenticated MCP clients
+    max: 20, // 20 requests per minute for public MCP access
     message: { error: 'Too many MCP requests, please try again later' },
     standardHeaders: true,
     legacyHeaders: false,
   });
 
-  // MCP Manifest Endpoint (authenticated)
-  app.get('/api/mcp/manifest', mcpLimiter, mcpAuthMiddleware, async (req, res) => {
+  // MCP Manifest Endpoint (public)
+  app.get('/api/mcp/manifest', mcpLimiter, mcpLoggingMiddleware, async (req, res) => {
     try {
       const manifest = {
         name: "Johnson Bros. Plumbing MCP Server",
@@ -2192,8 +2174,8 @@ Special Promotion: $99 service fee waived for online bookings`,
     }
   });
 
-  // MCP Documentation Endpoint (authenticated)
-  app.get('/api/mcp/docs', mcpLimiter, mcpAuthMiddleware, async (req, res) => {
+  // MCP Documentation Endpoint (public)
+  app.get('/api/mcp/docs', mcpLimiter, mcpLoggingMiddleware, async (req, res) => {
     try {
       const docs = {
         title: "Johnson Bros. Plumbing MCP Integration Guide",
@@ -2201,17 +2183,16 @@ Special Promotion: $99 service fee waived for online bookings`,
         description: "Complete documentation for integrating with Johnson Bros. Plumbing services via Model Context Protocol",
         
         authentication: {
-          method: "API Key",
-          header: "X-MCP-API-Key",
-          description: "Include your API key in the X-MCP-API-Key header for all requests",
-          example: "X-MCP-API-Key: your-api-key-here"
+          method: "None",
+          description: "No authentication required - publicly accessible to all AI assistants",
+          note: "Optional X-MCP-Client header can be included to identify the client for analytics"
         },
 
         getting_started: {
           discovery: "Use the .well-known/mcp.json file for initial discovery",
           manifest: "GET /api/mcp/manifest for complete tool specifications",
-          authentication: "All MCP endpoints require API key authentication",
-          rate_limits: "20 requests per minute for authenticated clients"
+          authentication: "No authentication required - endpoints are public",
+          rate_limits: "20 requests per minute for public access"
         },
 
         tools: {
