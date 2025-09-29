@@ -157,17 +157,18 @@ export function VideoCallPopup() {
               size="lg"
               data-testid="button-schedule-video-call"
             >
-              <Clock className="mr-2 h-5 w-5" />
-              Schedule a Video Consultation
+              <PhoneCall className="mr-2 h-5 w-5" />
+              Call a Plumber
             </Button>
             
             <Button 
               onClick={() => setIsOpen(false)}
-              variant="ghost"
-              className="w-full text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+              variant="outline"
+              className="w-full border-2 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 font-medium shadow-sm hover:shadow-md transition-all duration-200"
+              size="lg"
               data-testid="button-close-video-popup"
             >
-              Maybe later
+              Maybe Later
             </Button>
           </div>
 
