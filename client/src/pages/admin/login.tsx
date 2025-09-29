@@ -126,12 +126,12 @@ export default function AdminLogin() {
             </form>
             
             <div className="mt-6 text-center text-sm text-gray-600">
-              <p>Default credentials for first login:</p>
+              <p>Admin credentials:</p>
               <p className="mt-1">
                 Email: <span className="font-mono">Sales@thejohnsonbros.com</span>
               </p>
-              <p className="mt-1">
-                Password: <span className="font-mono">JohnsonBros2025!</span>
+              <p className="mt-1 text-xs">
+                Contact system administrator for password
               </p>
             </div>
           </CardContent>

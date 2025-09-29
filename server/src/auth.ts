@@ -217,7 +217,12 @@ export async function ensureSuperAdmin() {
     .limit(1);
   
   if (admins.length === 0) {
-    const defaultPassword = process.env.ADMIN_DEFAULT_PASSWORD || 'JohnsonBros2025!';
+    const defaultPassword = process.env.ADMIN_DEFAULT_PASSWORD;
+    
+    if (!defaultPassword) {
+      throw new Error('ADMIN_DEFAULT_PASSWORD environment variable must be set for initial admin setup');
+    }
+    
     const hashedPassword = await hashPassword(defaultPassword);
     
     await db.insert(adminUsers).values({
@@ -231,6 +236,6 @@ export async function ensureSuperAdmin() {
     
     console.log('Default super admin created');
     console.log('Email: Sales@thejohnsonbros.com');
-    console.log('Password:', defaultPassword);
+    console.log('Password: [ADMIN_DEFAULT_PASSWORD environment variable]');
   }
 }
