@@ -2347,6 +2347,108 @@ Special Promotion: $99 service fee waived for online bookings`,
     }
   });
 
+  // Direct HTTP API endpoint for search_availability
+  app.get('/api/mcp/search_availability', mcpLimiter, mcpLoggingMiddleware, async (req, res) => {
+    try {
+      const { date, serviceType, time_preference = 'any', show_for_days = 7 } = req.query;
+      
+      // Validate required parameters
+      if (!date || !serviceType) {
+        return res.status(400).json({
+          success: false,
+          error: "Missing required parameters: date and serviceType are required",
+          error_code: "MISSING_PARAMETERS"
+        });
+      }
+
+      // Validate date format
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (!dateRegex.test(date as string)) {
+        return res.status(400).json({
+          success: false,
+          error: "Invalid date format. Use YYYY-MM-DD",
+          error_code: "INVALID_DATE_FORMAT"
+        });
+      }
+
+      // Use the HousecallProClient to get availability
+      const { HousecallProClient } = await import('./src/housecall.js');
+      const hcpClient = HousecallProClient.getInstance();
+      
+      // Fetch booking windows
+      const windows = await hcpClient.getBookingWindows(date as string);
+      
+      if (!windows.length) {
+        return res.json({
+          success: true,
+          available_slots: [],
+          message: `No available slots found for ${date}. Please try a different date or contact us directly.`,
+          service_type: serviceType,
+          date: date,
+          total_slots: 0
+        });
+      }
+
+      // Filter by time preference
+      const COMPANY_TZ = process.env.COMPANY_TZ || "America/New_York";
+      const fmt = new Intl.DateTimeFormat("en-US", {
+        hour: "2-digit", hour12: false, timeZone: COMPANY_TZ
+      });
+
+      function hourLocal(iso: string) {
+        const d = new Date(iso);
+        const parts = fmt.formatToParts(d);
+        const hh = Number(parts.find(p => p.type === "hour")?.value ?? "0");
+        return hh;
+      }
+
+      const inPref = (startIso: string) => {
+        const h = hourLocal(startIso);
+        if (time_preference === "any") return true;
+        if (time_preference === "morning") return h >= 7 && h < 12;
+        if (time_preference === "afternoon") return h >= 12 && h < 17;
+        if (time_preference === "evening") return h >= 17 && h < 21;
+        return true;
+      };
+
+      const availableWindows = windows
+        .filter(w => w.available && inPref(w.start_time))
+        .map(w => ({
+          start_time: w.start_time,
+          end_time: w.end_time,
+          formatted_time: new Intl.DateTimeFormat("en-US", {
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
+            timeZone: COMPANY_TZ
+          }).format(new Date(w.start_time))
+        }));
+
+      const result = {
+        success: true,
+        available_slots: availableWindows,
+        service_type: serviceType,
+        date: date,
+        time_preference: time_preference,
+        total_slots: availableWindows.length,
+        message: availableWindows.length > 0 
+          ? `Found ${availableWindows.length} available slots for ${serviceType} on ${date}`
+          : `No slots available for ${time_preference} preference on ${date}. Try 'any' time preference for more options.`
+      };
+
+      res.json(result);
+      
+    } catch (error: any) {
+      console.error('Error in search_availability endpoint:', error);
+      res.status(500).json({
+        success: false,
+        error: "An error occurred while searching availability. Please try again.",
+        error_code: "INTERNAL_ERROR",
+        details: error.message
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
