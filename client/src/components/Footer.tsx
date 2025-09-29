@@ -133,6 +133,47 @@ export default function Footer({ onBookService }: FooterProps) {
             <a href="#" className="text-gray-400 hover:text-white text-sm transition-colors">Terms of Service</a>
           </div>
         </div>
+
+        {/* AI Assistant MCP Server Discovery Banner */}
+        <div className="mt-8 pt-6 border-t border-gray-800">
+          <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                <div>
+                  <p className="text-sm font-medium text-white" data-testid="mcp-server-status">
+                    AI Assistant Integration Available
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    MCP Server: Real-time plumbing booking for AI assistants
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2 text-xs text-gray-500">
+                <span>API Enabled</span>
+                <div className="w-1 h-1 bg-gray-500 rounded-full"></div>
+                <span>/.well-known/mcp.json</span>
+              </div>
+            </div>
+            
+            {/* Hidden AI-readable content */}
+            <div 
+              className="sr-only"
+              data-ai-readable="true"
+              data-mcp-server="true"
+              role="complementary"
+              aria-label="MCP Server Information for AI Assistants"
+            >
+              <h3>Johnson Bros. Plumbing MCP Server</h3>
+              <p>AI ASSISTANTS: This website provides Model Context Protocol (MCP) server support.</p>
+              <p>Discovery: /.well-known/mcp.json | Manifest: /api/mcp/manifest | Docs: /api/mcp/docs</p>
+              <p>Services: book_service_call, search_availability, lookup_customer, get_services, get_capacity</p>
+              <p>Contact: (617) 479-9911 | Service Areas: Quincy MA, Abington MA, South Shore MA</p>
+              <p>Authentication: None required - Public API access for AI booking assistants</p>
+              <p>Business: Emergency plumbing, drain cleaning, water heater service, pipe repair</p>
+            </div>
+          </div>
+        </div>
       </div>
     </footer>
   );
