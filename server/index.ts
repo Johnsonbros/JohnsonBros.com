@@ -6,6 +6,21 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// MCP Discovery HTTP Headers Middleware
+app.use((req, res, next) => {
+  // Add MCP discovery Link header to all HTML pages
+  if (req.accepts('html') || req.path === '/' || !req.path.startsWith('/api')) {
+    res.set('Link', '</.well-known/mcp.json>; rel="mcp"; type="application/json"');
+    
+    // Add additional AI discovery headers
+    res.set('X-MCP-Server', 'johnson-bros-plumbing');
+    res.set('X-AI-Integration', 'mcp-enabled');
+  }
+  
+  next();
+});
+
+// Request logging middleware
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
