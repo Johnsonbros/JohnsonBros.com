@@ -2142,18 +2142,28 @@ Special Promotion: $99 service fee waived for online bookings`,
             },
             {
               name: "search_availability",
-              description: "Check available time slots for service appointments",
+              description: "Check available time slots for service appointments without booking",
               parameters: {
                 type: "object", 
                 properties: {
                   date: { type: "string", format: "date", description: "Preferred date (YYYY-MM-DD)" },
                   serviceType: {
-                    type: "string",
-                    enum: ["emergency", "drain_cleaning", "water_heater", "general_plumbing", "pipe_repair"]
+                    type: "string", 
+                    description: "Type of service needed (e.g., 'emergency plumbing', 'routine maintenance', 'drain cleaning')"
                   },
-                  zipCode: { type: "string", description: "Service location zip code" }
+                  time_preference: {
+                    type: "string",
+                    enum: ["any", "morning", "afternoon", "evening"],
+                    description: "Preferred time of day"
+                  },
+                  show_for_days: {
+                    type: "number",
+                    minimum: 1,
+                    maximum: 30,
+                    description: "Number of days to show availability for"
+                  }
                 },
-                required: ["date", "serviceType", "zipCode"]
+                required: ["date", "serviceType"]
               }
             },
             {
@@ -2277,9 +2287,10 @@ Special Promotion: $99 service fee waived for online bookings`,
             response: "Returns booking confirmation with appointment details"
           },
           search_availability: {
-            description: "Checks real-time availability for service appointments",
-            usage: "Query by date, service type, and location",
-            response: "Returns available time slots and scheduling options"
+            description: "Checks real-time availability for service appointments without booking",
+            usage: "Query by date and service type only - no location/zip code required",
+            parameters: ["date (YYYY-MM-DD)", "serviceType", "time_preference (optional)", "show_for_days (optional)"],
+            response: "Returns available time slots with formatted times and scheduling options"
           },
           lookup_customer: {
             description: "Retrieves existing customer information for returning clients",
