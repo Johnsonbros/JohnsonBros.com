@@ -102,7 +102,7 @@ export function VideoCallPopup() {
             Need Help Right Now?
           </DialogTitle>
           <DialogDescription className="text-center text-xl text-blue-100">
-            FaceTime with a Licensed Plumber!
+            FaceTime a plumber or call now
           </DialogDescription>
         </div>
 
