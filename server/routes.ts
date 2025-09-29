@@ -2395,12 +2395,12 @@ Special Promotion: $99 service fee waived for online bookings`,
         hour: "2-digit", hour12: false, timeZone: COMPANY_TZ
       });
 
-      function hourLocal(iso: string) {
+      const hourLocal = (iso: string) => {
         const d = new Date(iso);
         const parts = fmt.formatToParts(d);
         const hh = Number(parts.find(p => p.type === "hour")?.value ?? "0");
         return hh;
-      }
+      };
 
       const inPref = (startIso: string) => {
         const h = hourLocal(startIso);
