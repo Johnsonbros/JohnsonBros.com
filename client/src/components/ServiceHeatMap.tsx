@@ -114,7 +114,7 @@ export function ServiceHeatMap() {
       const loader = new Loader({
         apiKey: apiKey || "",
         version: "weekly",
-        libraries: ["visualization", "geometry"]
+        libraries: ["visualization", "geometry", "marker"]
       });
 
       try {
@@ -279,54 +279,60 @@ export function ServiceHeatMap() {
         // Store circles reference for cleanup
         (heatmapRef as any).current = heatmapCircles;
 
-        // Add testimonial markers to the map
+        // Add testimonial markers to the map using AdvancedMarkerElement
         testimonials.forEach((testimonial, index) => {
-          const testimonialMarker = new google.maps.Marker({
+          // Create a custom marker element for the testimonial
+          const markerElement = document.createElement('div');
+          markerElement.style.cssText = `
+            width: 16px;
+            height: 16px;
+            background-color: #3B82F6;
+            border: 2px solid #1E40AF;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s ease;
+          `;
+          markerElement.title = `${testimonial.name} - ${testimonial.service}`;
+
+          const testimonialMarker = new google.maps.marker.AdvancedMarkerElement({
             position: { lat: testimonial.lat, lng: testimonial.lng },
             map: map,
-            icon: {
-              path: google.maps.SymbolPath.CIRCLE,
-              fillColor: '#3B82F6',
-              fillOpacity: 0.8,
-              strokeColor: '#1E40AF',
-              strokeWeight: 2,
-              scale: 8,
-            },
+            content: markerElement,
             title: `${testimonial.name} - ${testimonial.service}`,
             zIndex: 1000
           });
 
           // Add click listener for testimonial
-          testimonialMarker.addListener('click', () => {
+          markerElement.addEventListener('click', () => {
             setActiveTestimonial(testimonial.id);
             setTimeout(() => setActiveTestimonial(null), 5000); // Auto-hide after 5 seconds
           });
 
           // Add hover effect
-          testimonialMarker.addListener('mouseover', () => {
-            testimonialMarker.setOptions({
-              icon: {
-                path: google.maps.SymbolPath.CIRCLE,
-                fillColor: '#10B981',
-                fillOpacity: 1,
-                strokeColor: '#047857',
-                strokeWeight: 3,
-                scale: 10,
-              }
-            });
+          markerElement.addEventListener('mouseover', () => {
+            markerElement.style.cssText = `
+              width: 20px;
+              height: 20px;
+              background-color: #10B981;
+              border: 3px solid #047857;
+              border-radius: 50%;
+              cursor: pointer;
+              transition: all 0.2s ease;
+              transform: translateX(-2px) translateY(-2px);
+            `;
           });
 
-          testimonialMarker.addListener('mouseout', () => {
-            testimonialMarker.setOptions({
-              icon: {
-                path: google.maps.SymbolPath.CIRCLE,
-                fillColor: '#3B82F6',
-                fillOpacity: 0.8,
-                strokeColor: '#1E40AF',
-                strokeWeight: 2,
-                scale: 8,
-              }
-            });
+          markerElement.addEventListener('mouseout', () => {
+            markerElement.style.cssText = `
+              width: 16px;
+              height: 16px;
+              background-color: #3B82F6;
+              border: 2px solid #1E40AF;
+              border-radius: 50%;
+              cursor: pointer;
+              transition: all 0.2s ease;
+              transform: translateX(0) translateY(0);
+            `;
           });
         });
 
