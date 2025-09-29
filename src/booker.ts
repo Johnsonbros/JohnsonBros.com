@@ -72,6 +72,15 @@ const BookInput = z.object({
 
 type BookInput = z.infer<typeof BookInput>;
 
+const SearchAvailabilityInput = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format"),
+  serviceType: z.string().min(1),
+  time_preference: z.enum(["any", "morning", "afternoon", "evening"]).default("any"),
+  show_for_days: z.number().int().min(1).max(30).default(7)
+});
+
+type SearchAvailabilityInput = z.infer<typeof SearchAvailabilityInput>;
+
 function hcpHeaders() {
   return {
     "Authorization": `Token ${HOUSECALL_API_KEY}`,
@@ -520,6 +529,170 @@ server.registerTool(
         error: structuredError,
         correlationId 
       }, "book_service_call: error");
+
+      return {
+        content: [{
+          type: "text",
+          text: JSON.stringify({
+            success: false,
+            error: structuredError.userMessage,
+            error_code: structuredError.code,
+            error_type: structuredError.type,
+            correlation_id: correlationId,
+            details: structuredError.details
+          }, null, 2)
+        }]
+      };
+    }
+  }
+);
+
+// Register search_availability tool
+server.registerTool(
+  "search_availability",
+  {
+    title: "Search Johnson Bros. Plumbing service availability",
+    description: "Check available time slots for service appointments without booking. Returns available windows for the specified date and service type.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        date: { type: "string", format: "date", description: "Preferred date (YYYY-MM-DD)" },
+        serviceType: { type: "string", description: "Type of service needed (e.g., 'emergency plumbing', 'routine maintenance', 'drain cleaning')" },
+        time_preference: { type: "string", enum: ["any", "morning", "afternoon", "evening"], description: "Preferred time of day" },
+        show_for_days: { type: "number", minimum: 1, maximum: 30, description: "Number of days to show availability for" }
+      },
+      required: ["date", "serviceType"]
+    }
+  } as any,
+  async (raw) => {
+    const correlationId = randomUUID();
+    
+    try {
+      // Input validation
+      const input = SearchAvailabilityInput.parse(raw);
+      log.info({ input, correlationId }, "search_availability: start");
+
+      // Step 1: fetch booking windows
+      const params: Record<string, string> = {};
+      params.start_date = input.date;
+      if (input.show_for_days) params.show_for_days = String(input.show_for_days);
+
+      const bw = await hcpGet("/company/schedule_availability/booking_windows", params, correlationId) as any;
+      const windows: Array<{ start_time: string; end_time: string; available: boolean }> = bw.booking_windows || [];
+
+      if (!windows.length) {
+        log.warn({ correlationId, date: input.date }, "No booking windows available");
+        
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify({
+              success: true,
+              available_slots: [],
+              message: `No available slots found for ${input.date}. Please try a different date or contact us directly.`,
+              service_type: input.serviceType,
+              date: input.date,
+              correlation_id: correlationId
+            }, null, 2)
+          }]
+        };
+      }
+
+      // Step 2: filter by time preference if specified
+      const fmt = new Intl.DateTimeFormat("en-US", {
+        hour: "2-digit", hour12: false, timeZone: COMPANY_TZ
+      });
+
+      function hourLocal(iso: string) {
+        const d = new Date(iso);
+        const parts = fmt.formatToParts(d);
+        const hh = Number(parts.find(p => p.type === "hour")?.value ?? "0");
+        return hh;
+      }
+
+      const inPref = (startIso: string) => {
+        const h = hourLocal(startIso);
+        if (input.time_preference === "any") return true;
+        if (input.time_preference === "morning") return h >= 7 && h < 12;
+        if (input.time_preference === "afternoon") return h >= 12 && h < 17;
+        if (input.time_preference === "evening") return h >= 17 && h < 21;
+        return true;
+      };
+
+      const availableWindows = windows
+        .filter(w => w.available && inPref(w.start_time))
+        .map(w => ({
+          start_time: w.start_time,
+          end_time: w.end_time,
+          formatted_time: new Intl.DateTimeFormat("en-US", {
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
+            timeZone: COMPANY_TZ
+          }).format(new Date(w.start_time))
+        }));
+
+      const result = {
+        success: true,
+        available_slots: availableWindows,
+        service_type: input.serviceType,
+        date: input.date,
+        time_preference: input.time_preference,
+        total_slots: availableWindows.length,
+        message: availableWindows.length > 0 
+          ? `Found ${availableWindows.length} available slots for ${input.serviceType} on ${input.date}`
+          : `No slots available for ${input.time_preference} preference on ${input.date}. Try 'any' time preference for more options.`,
+        correlation_id: correlationId
+      };
+
+      log.info({ 
+        result: { 
+          slots_found: availableWindows.length, 
+          service_type: input.serviceType,
+          date: input.date
+        }, 
+        correlationId 
+      }, "search_availability: success");
+
+      return {
+        content: [
+          { type: "text", text: JSON.stringify(result, null, 2) }
+        ]
+      };
+      
+    } catch (err: any) {
+      // Comprehensive error handling
+      let structuredError: StructuredError;
+      
+      if (err.type) {
+        // Already a structured error
+        structuredError = err;
+      } else if (err.name === 'ZodError') {
+        // Input validation error
+        structuredError = createStructuredError(
+          ErrorType.VALIDATION,
+          "INPUT_VALIDATION_ERROR",
+          `Input validation failed: ${err.message}`,
+          "The search parameters are invalid. Please check the date format (YYYY-MM-DD) and service type.",
+          correlationId,
+          { validation_errors: err.issues }
+        );
+      } else {
+        // Unknown error
+        structuredError = createStructuredError(
+          ErrorType.UNKNOWN,
+          "UNEXPECTED_ERROR",
+          `Unexpected error: ${err.message}`,
+          "An unexpected error occurred while searching availability. Please try again.",
+          correlationId,
+          { original_error: err.message, stack: err.stack }
+        );
+      }
+      
+      log.error({ 
+        error: structuredError,
+        correlationId 
+      }, "search_availability: error");
 
       return {
         content: [{
