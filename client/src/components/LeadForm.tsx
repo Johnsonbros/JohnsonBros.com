@@ -1,0 +1,241 @@
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+
+// Validation schema based on HousecallPro LeadCreate API
+const leadFormSchema = z.object({
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  phone: z.string().min(10, "Please enter a valid phone number"),
+  email: z.string().email("Please enter a valid email address").optional().or(z.literal("")),
+  serviceDetails: z.string().min(3, "Please describe the service you need"),
+  marketingConsent: z.boolean().default(false),
+});
+
+type LeadFormData = z.infer<typeof leadFormSchema>;
+
+interface LeadFormProps {
+  onSuccess?: () => void;
+  leadSource?: string;
+  className?: string;
+}
+
+export default function LeadForm({ onSuccess, leadSource = "Website Contact Form", className }: LeadFormProps) {
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const { toast } = useToast();
+
+  const form = useForm<LeadFormData>({
+    resolver: zodResolver(leadFormSchema),
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      phone: "",
+      email: "",
+      serviceDetails: "",
+      marketingConsent: false,
+    },
+  });
+
+  // Lead creation mutation
+  const createLeadMutation = useMutation({
+    mutationFn: async (data: LeadFormData) => {
+      return apiRequest("POST", "/api/leads", {
+        customer: {
+          first_name: data.firstName,
+          last_name: data.lastName,
+          email: data.email || undefined,
+          mobile_number: data.phone,
+          notifications_enabled: data.marketingConsent,
+          lead_source: leadSource,
+          notes: data.serviceDetails,
+          tags: ["Website Lead"],
+        },
+      });
+    },
+    onSuccess: () => {
+      setIsSubmitted(true);
+      toast({
+        title: "Thank you!",
+        description: "We've received your request and will contact you soon.",
+      });
+      form.reset();
+      onSuccess?.();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onSubmit = (data: LeadFormData) => {
+    createLeadMutation.mutate(data);
+  };
+
+  if (isSubmitted) {
+    return (
+      <Card className={`w-full max-w-md mx-auto ${className}`}>
+        <CardContent className="p-6">
+          <div className="text-center">
+            <div className="w-16 h-16 mx-auto mb-4 bg-green-100 rounded-full flex items-center justify-center">
+              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold mb-2">Thank you!</h3>
+            <p className="text-gray-600 mb-4">
+              We've received your request and will call you back shortly to schedule your service.
+            </p>
+            <Button 
+              onClick={() => setIsSubmitted(false)}
+              variant="outline"
+              className="w-full"
+              data-testid="button-submit-another"
+            >
+              Submit Another Request
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className={`w-full max-w-md mx-auto ${className}`}>
+      <CardContent className="p-6">
+        <div className="mb-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-2" data-testid="text-contact-title">
+            Contact us
+          </h2>
+          <p className="text-sm text-gray-600" data-testid="text-contact-subtitle">
+            Leave your contact details and we will call you back.
+          </p>
+        </div>
+
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <div>
+            <Input
+              {...form.register("firstName")}
+              placeholder="First name"
+              className="w-full"
+              data-testid="input-first-name"
+            />
+            {form.formState.errors.firstName && (
+              <p className="text-red-500 text-xs mt-1" data-testid="error-first-name">
+                {form.formState.errors.firstName.message}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <Input
+              {...form.register("lastName")}
+              placeholder="Last name"
+              className="w-full"
+              data-testid="input-last-name"
+            />
+            {form.formState.errors.lastName && (
+              <p className="text-red-500 text-xs mt-1" data-testid="error-last-name">
+                {form.formState.errors.lastName.message}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <Input
+              {...form.register("phone")}
+              type="tel"
+              placeholder="Phone number"
+              className="w-full"
+              data-testid="input-phone"
+            />
+            {form.formState.errors.phone && (
+              <p className="text-red-500 text-xs mt-1" data-testid="error-phone">
+                {form.formState.errors.phone.message}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <Input
+              {...form.register("email")}
+              type="email"
+              placeholder="Email (optional)"
+              className="w-full"
+              data-testid="input-email"
+            />
+            {form.formState.errors.email && (
+              <p className="text-red-500 text-xs mt-1" data-testid="error-email">
+                {form.formState.errors.email.message}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <Textarea
+              {...form.register("serviceDetails")}
+              placeholder="Service details"
+              className="w-full min-h-[80px] resize-none"
+              data-testid="input-service-details"
+            />
+            {form.formState.errors.serviceDetails && (
+              <p className="text-red-500 text-xs mt-1" data-testid="error-service-details">
+                {form.formState.errors.serviceDetails.message}
+              </p>
+            )}
+          </div>
+
+          <div className="flex items-start space-x-2">
+            <Checkbox
+              {...form.register("marketingConsent")}
+              id="marketing-consent"
+              className="mt-1"
+              data-testid="checkbox-marketing-consent"
+            />
+            <label 
+              htmlFor="marketing-consent" 
+              className="text-xs text-gray-600 leading-relaxed cursor-pointer"
+              data-testid="label-marketing-consent"
+            >
+              By checking this box, I consent to receive marketing and promotional text messages at the phone number I have provided above. Message and data rates may apply. Message frequency varies. Reply HELP for help and STOP to stop.
+            </label>
+          </div>
+
+          <Button
+            type="submit"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3"
+            disabled={createLeadMutation.isPending}
+            data-testid="button-contact-submit"
+          >
+            {createLeadMutation.isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Submitting...
+              </>
+            ) : (
+              'Contact us'
+            )}
+          </Button>
+        </form>
+
+        <div className="mt-4 text-center">
+          <p className="text-xs text-gray-500" data-testid="text-powered-by">
+            Powered by Johnson Bros. Plumbing
+          </p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}

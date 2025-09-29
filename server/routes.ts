@@ -600,6 +600,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ============================================
+  // LEAD CREATION ENDPOINT
+  // ============================================
+
+  // Create a new lead
+  app.post("/api/leads", customerLookupLimiter, async (req, res) => {
+    try {
+      const { customer } = req.body;
+
+      // Validate required fields
+      if (!customer || !customer.first_name || !customer.last_name || !customer.mobile_number) {
+        return res.status(400).json({ error: "Missing required customer fields: first_name, last_name, mobile_number" });
+      }
+
+      const housecallClient = HousecallProClient.getInstance();
+
+      // Create lead in HousecallPro
+      const leadData = {
+        customer: {
+          first_name: customer.first_name,
+          last_name: customer.last_name,
+          email: customer.email || undefined,
+          mobile_number: customer.mobile_number,
+          notifications_enabled: customer.notifications_enabled || false,
+          lead_source: customer.lead_source || "Website Contact Form",
+          tags: customer.tags || ["Website Lead"],
+          notes: customer.notes || "New lead from website contact form",
+        }
+      };
+
+      console.log(`[Lead Creation] Creating lead for ${customer.first_name} ${customer.last_name} (${customer.mobile_number})`);
+      
+      const lead = await housecallClient.createLead(leadData);
+      console.log(`[Lead Creation] Successfully created lead: ${lead.id}`);
+
+      res.json({ 
+        success: true, 
+        lead: {
+          id: lead.id,
+          customer_id: lead.customer_id,
+          status: lead.status
+        }
+      });
+    } catch (error) {
+      console.error("Lead creation error:", error);
+      res.status(500).json({ 
+        error: "Failed to create lead",
+        details: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // ============================================
   // REFERRAL SYSTEM ENDPOINTS
   // ============================================
 
