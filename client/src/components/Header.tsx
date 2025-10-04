@@ -149,6 +149,14 @@ export default function Header({ onBookService }: HeaderProps) {
               >
                 Contact
               </Link>
+              <Link 
+                href="/referral" 
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="text-white text-lg font-medium py-3 px-4 hover:bg-white/10 rounded-lg transition-colors"
+                data-testid="mobile-nav-referral"
+              >
+                Referral Program
+              </Link>
               <div className="pt-4 border-t border-white/20">
                 <div className="flex items-center justify-center space-x-2 bg-white/10 px-4 py-3 rounded-lg">
                   <div className="flex text-yellow-400">
@@ -221,6 +229,7 @@ export default function Header({ onBookService }: HeaderProps) {
               <Link href="/blog" className="text-white hover:text-blue-200 transition-colors font-medium" data-testid="desktop-nav-blog">Blog</Link>
               <a href="/#reviews" className="text-white hover:text-blue-200 transition-colors font-medium">Reviews</a>
               <Link href="/contact" className="text-white hover:text-blue-200 transition-colors font-medium" data-testid="desktop-nav-contact">Contact</Link>
+              <Link href="/referral" className="text-white hover:text-blue-200 transition-colors font-medium" data-testid="desktop-nav-referral">Referral</Link>
             </nav>
 
             {/* Desktop CTA Buttons */}

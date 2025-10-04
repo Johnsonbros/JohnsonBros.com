@@ -98,7 +98,8 @@ export default function Footer({ onBookService }: FooterProps) {
               <li><Link href="/blog" className="text-gray-400 hover:text-white transition-colors">Blog</Link></li>
               <li><a href="/#reviews" className="text-gray-400 hover:text-white transition-colors">Reviews</a></li>
               <li><a href="/#service-area" className="text-gray-400 hover:text-white transition-colors">Service Area</a></li>
-              <li><a href="/#contact" className="text-gray-400 hover:text-white transition-colors">Contact</a></li>
+              <li><Link href="/contact" className="text-gray-400 hover:text-white transition-colors">Contact</Link></li>
+              <li><Link href="/referral" className="text-gray-400 hover:text-white transition-colors">Referral Program</Link></li>
             </ul>
             
             {onBookService ? (
