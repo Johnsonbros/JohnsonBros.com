@@ -22,6 +22,14 @@ import NewConstruction from "@/pages/services/new-construction";
 import GasHeat from "@/pages/services/gas-heat";
 import DrainCleaning from "@/pages/services/drain-cleaning";
 
+// Service Area Pages
+import QuincyPlumbing from "@/pages/service-areas/quincy";
+import BraintreePlumbing from "@/pages/service-areas/braintree";
+import WeymouthPlumbing from "@/pages/service-areas/weymouth";
+import PlymouthPlumbing from "@/pages/service-areas/plymouth";
+import MarshfieldPlumbing from "@/pages/service-areas/marshfield";
+import HinghamPlumbing from "@/pages/service-areas/hingham";
+
 function Router() {
   return (
     <Switch>
@@ -39,6 +47,14 @@ function Router() {
       <Route path="/services/new-construction" component={NewConstruction} />
       <Route path="/services/gas-heat" component={GasHeat} />
       <Route path="/services/drain-cleaning" component={DrainCleaning} />
+      
+      {/* Service Area Pages */}
+      <Route path="/service-areas/quincy" component={QuincyPlumbing} />
+      <Route path="/service-areas/braintree" component={BraintreePlumbing} />
+      <Route path="/service-areas/weymouth" component={WeymouthPlumbing} />
+      <Route path="/service-areas/plymouth" component={PlymouthPlumbing} />
+      <Route path="/service-areas/marshfield" component={MarshfieldPlumbing} />
+      <Route path="/service-areas/hingham" component={HinghamPlumbing} />
       
       <Route component={NotFound} />
     </Switch>
