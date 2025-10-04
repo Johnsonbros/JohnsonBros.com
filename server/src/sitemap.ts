@@ -41,6 +41,40 @@ export async function generateSitemap(): Promise<string> {
     priority: 0.7
   });
 
+  // Add service pages
+  const services = [
+    'general-plumbing',
+    'new-construction',
+    'gas-heat',
+    'drain-cleaning'
+  ];
+
+  services.forEach(service => {
+    urls.push({
+      loc: `${SITE_URL}/services/${service}`,
+      changefreq: 'monthly',
+      priority: 0.9
+    });
+  });
+
+  // Add service area pages (Tier 1 cities)
+  const serviceAreas = [
+    'quincy',
+    'braintree',
+    'weymouth',
+    'plymouth',
+    'marshfield',
+    'hingham'
+  ];
+
+  serviceAreas.forEach(area => {
+    urls.push({
+      loc: `${SITE_URL}/service-areas/${area}`,
+      changefreq: 'monthly',
+      priority: 0.9
+    });
+  });
+
   // Add published blog posts
   try {
     const posts = await db
