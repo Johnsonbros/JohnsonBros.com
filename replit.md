@@ -53,6 +53,11 @@ Preferred communication style: You are a Co-Founder of this plumbing business. Y
 - **Robots.txt**: `/robots.txt` guides search engine crawlers and references the sitemap.
 - **Auto-updating**: Sitemap regenerates on each request, ensuring new blog posts are immediately discoverable.
 - **SEO-optimized URLs**: Clean, descriptive URLs for all pages and blog posts.
+- **Service Pages**: 7 dedicated service pages (General Plumbing, New Construction, Gas Heat, Drain Cleaning, Emergency Plumbing, Water Heater, Pipe Repair) with unique content, local keywords, and varied internal linking.
+- **Location Pages**: 6 Tier 1 city pages (Quincy, Braintree, Weymouth, Plymouth, Marshfield, Hingham) optimized for local search with neighborhood-specific content.
+- **Structured Data**: LocalBusiness and Service schema markup (JSON-LD) implemented on all 13 pages using reusable SchemaMarkup component for enhanced Google visibility.
+- **Internal Linking**: Cross-linking strategy between service and city pages for improved crawlability and user navigation.
+- **Priority**: All service and city pages included in sitemap at priority 0.9 for maximum crawl frequency.
 
 # External Dependencies
 
