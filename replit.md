@@ -48,6 +48,12 @@ Preferred communication style: You are a Co-Founder of this plumbing business. Y
 - **Data Protection**: Coordinate privacy (offset for display), PII handling, and secure API key storage.
 - **External API Security**: Bearer token authentication for HousecallPro, circuit breaker pattern, and request retry logic.
 
+## SEO & Discoverability
+- **Dynamic Sitemap**: `/sitemap.xml` automatically includes all static pages and published blog posts from the database.
+- **Robots.txt**: `/robots.txt` guides search engine crawlers and references the sitemap.
+- **Auto-updating**: Sitemap regenerates on each request, ensuring new blog posts are immediately discoverable.
+- **SEO-optimized URLs**: Clean, descriptive URLs for all pages and blog posts.
+
 # External Dependencies
 
 - **Design System**: Radix UI.
