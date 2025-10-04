@@ -678,8 +678,29 @@ export class HousecallProClient {
 
   async createLead(leadData: any): Promise<any> {
     console.log('[HousecallProClient] Creating lead:', JSON.stringify(leadData, null, 2));
-    const lead = await this.callAPI('/leads', {}, { method: 'POST', body: leadData });
-    console.log('[HousecallProClient] Lead created:', lead);
-    return lead;
+    
+    try {
+      const lead = await this.callAPI('/leads', {}, { method: 'POST', body: leadData });
+      console.log('[HousecallProClient] Lead created:', lead);
+      return lead;
+    } catch (error) {
+      // If lead source not found, retry without it
+      if (error instanceof Error && error.message.includes('Lead source not found')) {
+        console.log('[HousecallProClient] Lead source not found, retrying without lead_source');
+        const leadDataWithoutSource = {
+          ...leadData,
+          customer: {
+            ...leadData.customer,
+            lead_source: undefined
+          }
+        };
+        delete leadDataWithoutSource.customer.lead_source;
+        
+        const lead = await this.callAPI('/leads', {}, { method: 'POST', body: leadDataWithoutSource });
+        console.log('[HousecallProClient] Lead created without lead_source:', lead);
+        return lead;
+      }
+      throw error;
+    }
   }
 }
