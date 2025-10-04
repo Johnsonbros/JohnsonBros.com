@@ -46,7 +46,10 @@ export async function generateSitemap(): Promise<string> {
     'general-plumbing',
     'new-construction',
     'gas-heat',
-    'drain-cleaning'
+    'drain-cleaning',
+    'emergency-plumbing',
+    'water-heater',
+    'pipe-repair'
   ];
 
   services.forEach(service => {

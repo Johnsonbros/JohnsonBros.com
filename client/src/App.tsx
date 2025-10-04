@@ -21,6 +21,9 @@ import GeneralPlumbing from "@/pages/services/general-plumbing";
 import NewConstruction from "@/pages/services/new-construction";
 import GasHeat from "@/pages/services/gas-heat";
 import DrainCleaning from "@/pages/services/drain-cleaning";
+import EmergencyPlumbing from "@/pages/services/emergency-plumbing";
+import WaterHeater from "@/pages/services/water-heater";
+import PipeRepair from "@/pages/services/pipe-repair";
 
 // Service Area Pages
 import QuincyPlumbing from "@/pages/service-areas/quincy";
@@ -47,6 +50,9 @@ function Router() {
       <Route path="/services/new-construction" component={NewConstruction} />
       <Route path="/services/gas-heat" component={GasHeat} />
       <Route path="/services/drain-cleaning" component={DrainCleaning} />
+      <Route path="/services/emergency-plumbing" component={EmergencyPlumbing} />
+      <Route path="/services/water-heater" component={WaterHeater} />
+      <Route path="/services/pipe-repair" component={PipeRepair} />
       
       {/* Service Area Pages */}
       <Route path="/service-areas/quincy" component={QuincyPlumbing} />
