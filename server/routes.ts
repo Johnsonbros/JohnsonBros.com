@@ -15,6 +15,7 @@ import { GoogleAdsBridge } from "./src/ads/bridge";
 import { HousecallProClient } from "./src/housecall";
 import rateLimit from "express-rate-limit";
 import adminRoutes from "./src/adminRoutes";
+import { generateSitemap } from "./src/sitemap";
 
 // Housecall Pro API client
 const HOUSECALL_API_BASE = 'https://api.housecallpro.com';
@@ -521,8 +522,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              first_name: customer.name.split(' ')[0] || customer.name,
-              last_name: customer.name.split(' ').slice(1).join(' ') || '',
+              first_name: customer.firstName,
+              last_name: customer.lastName,
               email: customer.email,
               mobile_number: customer.phone,
               addresses: []
@@ -1093,6 +1094,18 @@ Special Promotion: $99 service fee waived for online bookings`,
       time: new Date().toISOString(),
       version: process.env.npm_package_version || '1.0.0'
     });
+  });
+
+  // Sitemap.xml for SEO
+  app.get("/sitemap.xml", publicReadLimiter, async (_req, res) => {
+    try {
+      const sitemap = await generateSitemap();
+      res.header('Content-Type', 'application/xml');
+      res.send(sitemap);
+    } catch (error) {
+      console.error('Error generating sitemap:', error);
+      res.status(500).send('Error generating sitemap');
+    }
   });
 
   // Google Business Reviews endpoint
