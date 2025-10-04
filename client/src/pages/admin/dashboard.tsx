@@ -72,7 +72,9 @@ export default function AdminDashboard() {
     queryKey: ['/api/admin/dashboard/stats'],
     queryFn: () => authenticatedFetch('/api/admin/dashboard/stats'),
     enabled: isAuthenticated(),
-    refetchInterval: 30000, // Refresh every 30 seconds for real-time data
+    refetchInterval: 120000, // Refresh every 2 minutes
+    staleTime: 60000, // Consider data stale after 1 minute
+    refetchIntervalInBackground: false, // Don't poll when tab is inactive
   });
 
   if (!user) {

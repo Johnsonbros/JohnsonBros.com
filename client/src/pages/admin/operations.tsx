@@ -111,14 +111,18 @@ export default function OperationsDashboard() {
   const { data: operations, isLoading: opsLoading, refetch: refetchOps } = useQuery<OperationsData>({
     queryKey: ['/api/admin/dashboard/operations'],
     queryFn: () => authenticatedFetch('/api/admin/dashboard/operations'),
-    refetchInterval: autoRefresh ? 15000 : false, // Auto-refresh every 15 seconds
+    refetchInterval: autoRefresh ? 60000 : false, // Auto-refresh every 60 seconds
+    staleTime: 30000, // Consider data stale after 30 seconds
+    refetchIntervalInBackground: false, // Don't poll when tab is inactive
   });
 
   // Fetch job board data
   const { data: jobBoard, isLoading: jobsLoading, refetch: refetchJobs } = useQuery<JobBoardData>({
     queryKey: ['/api/admin/dashboard/job-board'],
     queryFn: () => authenticatedFetch('/api/admin/dashboard/job-board'),
-    refetchInterval: autoRefresh ? 30000 : false, // Auto-refresh every 30 seconds
+    refetchInterval: autoRefresh ? 120000 : false, // Auto-refresh every 2 minutes
+    staleTime: 60000, // Consider data stale after 1 minute
+    refetchIntervalInBackground: false, // Don't poll when tab is inactive
   });
 
   // Job reassignment mutation

@@ -19,7 +19,9 @@ interface RecentJob {
 export function RecentJobsWidget() {
   const { data: recentJobs = [], isLoading } = useQuery<RecentJob[]>({
     queryKey: ["/api/social-proof/recent-jobs"],
-    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchInterval: 180000, // Refresh every 3 minutes
+    staleTime: 120000, // Consider data stale after 2 minutes
+    refetchIntervalInBackground: false, // Don't poll when tab is inactive
   });
 
   if (isLoading) {

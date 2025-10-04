@@ -45,7 +45,7 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
   const [userZip, setUserZip] = useState<string | null>(null);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<ExpressWindow | null>(null);
   
-  // Fetch today's capacity data with frequent updates for real-time changes
+  // Fetch today's capacity data with periodic updates
   const { data: todayCapacity } = useQuery<CapacityData>({
     queryKey: ['/api/capacity/today', userZip],
     queryFn: async () => {
@@ -53,9 +53,9 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
       const response = await apiRequest("GET", url);
       return response.json();
     },
-    refetchInterval: 30000, // Check every 30 seconds for job cancellations and time updates
-    staleTime: 20000, // Consider data stale after 20 seconds
-    refetchIntervalInBackground: true,
+    refetchInterval: 60000, // Check every minute for updates
+    staleTime: 45000, // Consider data stale after 45 seconds
+    refetchIntervalInBackground: false, // Don't poll when tab is inactive
     refetchOnWindowFocus: true,
   });
 
@@ -72,9 +72,9 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
       return response.json();
     },
     enabled: shouldShowTomorrow,
-    refetchInterval: 30000, // Check every 30 seconds for updates
-    staleTime: 20000,
-    refetchIntervalInBackground: true,
+    refetchInterval: 60000, // Check every minute for updates
+    staleTime: 45000,
+    refetchIntervalInBackground: false, // Don't poll when tab is inactive
     refetchOnWindowFocus: true,
   });
 

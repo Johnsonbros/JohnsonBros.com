@@ -5,7 +5,9 @@ import { cn } from '@/lib/utils';
 export default function CapacityGauge() {
   const { data: capacity, isLoading } = useQuery({
     queryKey: ['/api/capacity/today'],
-    refetchInterval: 30000,
+    refetchInterval: 120000, // Refresh every 2 minutes
+    staleTime: 60000, // Consider data stale after 1 minute
+    refetchIntervalInBackground: false, // Don't poll when tab is inactive
   });
 
   if (isLoading) {
@@ -66,7 +68,7 @@ export default function CapacityGauge() {
       
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
         <Clock className="h-3 w-3" />
-        <span>Updates every 30s</span>
+        <span>Updates every 2 min</span>
       </div>
     </div>
   );
