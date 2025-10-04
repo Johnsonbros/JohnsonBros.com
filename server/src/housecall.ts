@@ -206,7 +206,15 @@ export class HousecallProClient {
         }
 
         if (!response.ok) {
-          throw new Error(`API error: ${response.status} ${response.statusText}`);
+          // Try to get error details from response body
+          let errorDetails = '';
+          try {
+            const errorBody = await response.text();
+            errorDetails = errorBody ? `: ${errorBody}` : '';
+          } catch (e) {
+            // Ignore parse errors
+          }
+          throw new Error(`API error: ${response.status} ${response.statusText}${errorDetails}`);
         }
 
         const data = await response.json();

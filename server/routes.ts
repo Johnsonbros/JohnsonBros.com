@@ -625,8 +625,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           notifications_enabled: customer.notifications_enabled || false,
           lead_source: customer.lead_source || "Website Contact Form",
           tags: customer.tags || ["Website Lead"],
-          notes: customer.notes || "New lead from website contact form",
-        }
+        },
+        notes: customer.notes || "New lead from website contact form"
       };
 
       console.log(`[Lead Creation] Creating lead for ${customer.first_name} ${customer.last_name} (${customer.mobile_number})`);
