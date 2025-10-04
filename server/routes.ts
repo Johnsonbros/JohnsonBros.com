@@ -1110,13 +1110,13 @@ Special Promotion: $99 service fee waived for online bookings`,
 
   // Robots.txt for SEO
   app.get("/robots.txt", publicReadLimiter, async (req, res) => {
-    const baseUrl = `https://${req.get('host')}`;
+    const siteUrl = process.env.SITE_URL || `https://${req.get('host')}`;
     const robotsTxt = `# Johnson Bros. Plumbing & Drain Cleaning
 User-agent: *
 Allow: /
 Disallow: /api/admin/
 
-Sitemap: ${baseUrl}/sitemap.xml
+Sitemap: ${siteUrl}/sitemap.xml
 `;
     res.header('Content-Type', 'text/plain');
     res.send(robotsTxt);
