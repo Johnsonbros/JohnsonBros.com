@@ -4,10 +4,19 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Phone, CheckCircle, Flame, ShieldCheck, Wrench } from "lucide-react";
 import { Link } from "wouter";
+import { LocalBusinessSchema } from "@/components/schema-markup";
 
 export default function GasHeatServices() {
   return (
     <>
+      <LocalBusinessSchema 
+        serviceArea={["Quincy", "Weymouth", "Braintree", "Plymouth", "Marshfield", "Hingham"]}
+        service={{
+          name: "Gas Heat Installation & Repair Services",
+          description: "Licensed gas fitters providing safe gas heat installation, repair, and maintenance for furnaces, boilers, and water heaters across South Shore MA",
+          url: "https://johnsonbrosplumbing.com/services/gas-heat"
+        }}
+      />
       <Helmet>
         <title>Gas Heat Installation & Repair South Shore MA | Licensed Gas Fitters | Johnson Bros</title>
         <meta 

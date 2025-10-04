@@ -4,10 +4,19 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Phone, CheckCircle, Building2, Ruler, ClipboardCheck } from "lucide-react";
 import { Link } from "wouter";
+import { LocalBusinessSchema } from "@/components/schema-markup";
 
 export default function NewConstructionPlumbing() {
   return (
     <>
+      <LocalBusinessSchema 
+        serviceArea={["Quincy", "Weymouth", "Braintree", "Plymouth", "Marshfield", "Hingham"]}
+        service={{
+          name: "New Construction Plumbing Services",
+          description: "Expert new construction plumbing for residential and commercial projects. Licensed plumbing contractors for new builds across South Shore MA",
+          url: "https://johnsonbrosplumbing.com/services/new-construction"
+        }}
+      />
       <Helmet>
         <title>New Construction Plumbing Services South Shore MA | Commercial & Residential | Johnson Bros</title>
         <meta 

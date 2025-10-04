@@ -3,10 +3,19 @@ import { Link } from 'wouter';
 import { Phone, Droplets, Thermometer, Clock, Shield, CheckCircle, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { LocalBusinessSchema } from '@/components/schema-markup';
 
 export default function WaterHeater() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
+      <LocalBusinessSchema 
+        serviceArea={["Quincy", "Weymouth", "Braintree", "Plymouth", "Marshfield", "Hingham"]}
+        service={{
+          name: "Water Heater Repair, Replacement & Installation",
+          description: "Expert water heater repair, replacement, and installation services for tank and tankless systems. Same-day service available across South Shore MA",
+          url: "https://johnsonbrosplumbing.com/services/water-heater"
+        }}
+      />
       <Helmet>
         <title>Water Heater Repair & Installation South Shore MA | Johnson Bros.</title>
         <meta name="description" content="Expert water heater repair, replacement & installation in Quincy, Weymouth, Plymouth, Braintree MA. Tank & tankless systems. Same-day service. Call (617) 479-9911!" />

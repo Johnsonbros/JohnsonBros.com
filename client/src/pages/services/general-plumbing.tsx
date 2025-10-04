@@ -4,10 +4,19 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Phone, CheckCircle, Clock, Shield, Star } from "lucide-react";
 import { Link } from "wouter";
+import { LocalBusinessSchema } from "@/components/schema-markup";
 
 export default function GeneralPlumbing() {
   return (
     <>
+      <LocalBusinessSchema 
+        serviceArea={["Quincy", "Weymouth", "Braintree", "Plymouth", "Marshfield", "Hingham", "Abington"]}
+        service={{
+          name: "General Plumbing Services",
+          description: "Professional general plumbing services for residential and commercial properties. Complete plumbing repairs, installations, and maintenance across South Shore MA",
+          url: "https://johnsonbrosplumbing.com/services/general-plumbing"
+        }}
+      />
       <Helmet>
         <title>General Plumbing Services South Shore MA | Licensed Plumbers | Johnson Bros</title>
         <meta 

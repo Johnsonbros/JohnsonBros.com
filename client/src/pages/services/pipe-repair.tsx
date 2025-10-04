@@ -3,10 +3,19 @@ import { Link } from 'wouter';
 import { Phone, Wrench, Droplet, Shield, Clock, CheckCircle, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { LocalBusinessSchema } from '@/components/schema-markup';
 
 export default function PipeRepair() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
+      <LocalBusinessSchema 
+        serviceArea={["Quincy", "Weymouth", "Braintree", "Plymouth", "Marshfield", "Hingham"]}
+        service={{
+          name: "Pipe Repair, Replacement & Repiping Services",
+          description: "Professional pipe repair, replacement, and whole-house repiping services. Expert leak detection and repair for copper, PEX, PVC, and galvanized pipes",
+          url: "https://johnsonbrosplumbing.com/services/pipe-repair"
+        }}
+      />
       <Helmet>
         <title>Pipe Repair & Replacement South Shore MA | Johnson Bros. Plumbing</title>
         <meta name="description" content="Professional pipe repair, replacement & repiping in Quincy, Weymouth, Braintree, Plymouth MA. Copper, PEX & PVC pipes. Fix leaks fast. Call (617) 479-9911!" />

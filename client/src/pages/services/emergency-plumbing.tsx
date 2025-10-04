@@ -3,10 +3,19 @@ import { Link } from 'wouter';
 import { Phone, Clock, AlertCircle, Wrench, Shield, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { LocalBusinessSchema } from '@/components/schema-markup';
 
 export default function EmergencyPlumbing() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
+      <LocalBusinessSchema 
+        serviceArea={["Quincy", "Weymouth", "Braintree", "Plymouth", "Marshfield", "Hingham", "Abington"]}
+        service={{
+          name: "24/7 Emergency Plumbing Services",
+          description: "Emergency plumber available 24/7 for burst pipes, flooding, sewage backups, gas leaks, and all plumbing emergencies across South Shore Massachusetts",
+          url: "https://johnsonbrosplumbing.com/services/emergency-plumbing"
+        }}
+      />
       <Helmet>
         <title>24/7 Emergency Plumber South Shore MA | Johnson Bros. Plumbing</title>
         <meta name="description" content="Emergency plumber available 24/7 in Quincy, Weymouth, Braintree, Plymouth & South Shore MA. Fast response for burst pipes, flooding, gas leaks. Call (617) 479-9911 now!" />

@@ -4,10 +4,12 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Phone, MapPin, CheckCircle, Clock, Shield } from "lucide-react";
 import { Link } from "wouter";
+import { LocalBusinessSchema } from "@/components/schema-markup";
 
 export default function BraintreePlumbing() {
   return (
     <>
+      <LocalBusinessSchema serviceArea="Braintree" />
       <Helmet>
         <title>Plumber Braintree MA | 24/7 Emergency Plumbing | Johnson Bros</title>
         <meta 

@@ -4,10 +4,19 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Phone, CheckCircle, Droplets, Zap, ShieldAlert } from "lucide-react";
 import { Link } from "wouter";
+import { LocalBusinessSchema } from "@/components/schema-markup";
 
 export default function DrainCleaningServices() {
   return (
     <>
+      <LocalBusinessSchema 
+        serviceArea={["Quincy", "Weymouth", "Braintree", "Plymouth", "Marshfield", "Hingham"]}
+        service={{
+          name: "Drain Cleaning Services",
+          description: "Professional drain cleaning services for clogged drains, sewer lines, kitchen sinks, and slow-flowing pipes. 24/7 emergency service across South Shore MA",
+          url: "https://johnsonbrosplumbing.com/services/drain-cleaning"
+        }}
+      />
       <Helmet>
         <title>Drain Cleaning Services South Shore MA | Clogged Drains | Sewer Lines | Johnson Bros</title>
         <meta 
