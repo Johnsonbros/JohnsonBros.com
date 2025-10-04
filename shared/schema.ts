@@ -107,7 +107,8 @@ export type SyncStatus = typeof syncStatus.$inferSelect;
 // Customer table for booking system
 export const customers = pgTable('customers', {
   id: serial('id').primaryKey(),
-  name: text('name').notNull(),
+  firstName: text('first_name').notNull(),
+  lastName: text('last_name').notNull(),
   email: text('email').notNull().unique(),
   phone: text('phone'),
   housecallProId: text('housecall_pro_id'),
