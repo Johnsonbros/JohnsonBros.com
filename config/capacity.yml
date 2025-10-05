@@ -3,11 +3,11 @@ thresholds:
   same_day_fee_waived: 0.35  # Capacity score >= 35% triggers fee waiver
   limited_same_day: 0.10      # Capacity score >= 10% allows limited same-day
 
-# Tech employee mapping (will be updated with actual IDs)
+# Tech employee mapping (actual HousecallPro employee IDs)
 tech_map:
-  nate: "emp_nate_placeholder"
-  nick: "emp_nick_placeholder"
-  jahz: "emp_jahz_placeholder"
+  nate: "pro_19f45ddb23864f13ba5ffb20710e77e8"
+  nick: "pro_784bb427ee27422f892b2db87dbdaf03"
+  jahz: "pro_b0a7d40a10dc4477908cc808f62054ff"
 
 # Service area ZIP codes
 # Express booking eligibility tiers based on distance

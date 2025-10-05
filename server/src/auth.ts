@@ -217,25 +217,41 @@ export async function ensureSuperAdmin() {
     .limit(1);
   
   if (admins.length === 0) {
+    console.warn('═══════════════════════════════════════════════════════════');
+    console.warn('⚠️  NO SUPER ADMIN EXISTS - APPLICATION SECURITY AT RISK');
+    console.warn('═══════════════════════════════════════════════════════════');
+    console.warn('');
+    console.warn('Please run the admin setup script to create a super admin:');
+    console.warn('  npm run setup:admin');
+    console.warn('');
+    console.warn('Or set these environment variables for automatic setup:');
+    console.warn('  ADMIN_EMAIL - Email for the admin account');
+    console.warn('  ADMIN_DEFAULT_PASSWORD - Secure password (min 12 chars)');
+    console.warn('  ADMIN_FIRST_NAME - Admin first name');
+    console.warn('  ADMIN_LAST_NAME - Admin last name');
+    console.warn('═══════════════════════════════════════════════════════════');
+    
+    // Only create admin if all required env vars are set
+    const adminEmail = process.env.ADMIN_EMAIL;
     const defaultPassword = process.env.ADMIN_DEFAULT_PASSWORD;
+    const firstName = process.env.ADMIN_FIRST_NAME || 'Admin';
+    const lastName = process.env.ADMIN_LAST_NAME || 'User';
     
-    if (!defaultPassword) {
-      throw new Error('ADMIN_DEFAULT_PASSWORD environment variable must be set for initial admin setup');
+    if (adminEmail && defaultPassword && defaultPassword.length >= 12) {
+      const hashedPassword = await hashPassword(defaultPassword);
+      
+      await db.insert(adminUsers).values({
+        email: adminEmail,
+        passwordHash: hashedPassword,
+        firstName,
+        lastName,
+        role: 'super_admin',
+        isActive: true
+      });
+      
+      console.log('✅ Super admin created automatically');
+      console.log(`   Email: ${adminEmail}`);
+      console.log('   Password: [Set via ADMIN_DEFAULT_PASSWORD]');
     }
-    
-    const hashedPassword = await hashPassword(defaultPassword);
-    
-    await db.insert(adminUsers).values({
-      email: 'Sales@thejohnsonbros.com',
-      passwordHash: hashedPassword,
-      firstName: 'Admin',
-      lastName: 'User',
-      role: 'super_admin',
-      isActive: true
-    });
-    
-    console.log('Default super admin created');
-    console.log('Email: Sales@thejohnsonbros.com');
-    console.log('Password: [ADMIN_DEFAULT_PASSWORD environment variable]');
   }
 }
