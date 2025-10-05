@@ -17,6 +17,7 @@ import rateLimit from "express-rate-limit";
 import adminRoutes from "./src/adminRoutes";
 import { generateSitemap } from "./src/sitemap";
 import { healthChecker } from "./src/healthcheck";
+import { Logger } from "./src/logger";
 
 // Housecall Pro API client
 const HOUSECALL_API_BASE = 'https://api.housecallpro.com';
@@ -47,7 +48,7 @@ async function callHousecallAPI(endpoint: string, params: Record<string, any> = 
   });
 
   if (!response.ok) {
-    console.error(`Housecall API error details:`, {
+    Logger.error(`Housecall API error details:`, {
       url: url.toString(),
       status: response.status,
       statusText: response.statusText
@@ -241,7 +242,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   if (process.env.NODE_ENV === 'development') {
     import('./seed-blog').then(module => {
       module.seedBlogData().catch(err => {
-        console.error('Failed to seed blog data:', err);
+        Logger.error('Failed to seed blog data:', err);
       });
     });
   }
@@ -261,7 +262,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(posts);
     } catch (error) {
-      console.error("Error fetching blog posts:", error);
+      Logger.error("Error fetching blog posts:", error);
       res.status(500).json({ error: "Failed to fetch blog posts" });
     }
   });
@@ -290,7 +291,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         keywords: keywordDetails.filter(k => k !== undefined)
       });
     } catch (error) {
-      console.error("Error fetching blog post:", error);
+      Logger.error("Error fetching blog post:", error);
       res.status(500).json({ error: "Failed to fetch blog post" });
     }
   });
@@ -318,7 +319,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.status(201).json(post);
     } catch (error) {
-      console.error("Error creating blog post:", error);
+      Logger.error("Error creating blog post:", error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: "Invalid post data", details: error.errors });
       }
@@ -340,7 +341,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(updatedPost);
     } catch (error) {
-      console.error("Error updating blog post:", error);
+      Logger.error("Error updating blog post:", error);
       res.status(500).json({ error: "Failed to update blog post" });
     }
   });
@@ -357,7 +358,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json({ success: true });
     } catch (error) {
-      console.error("Error deleting blog post:", error);
+      Logger.error("Error deleting blog post:", error);
       res.status(500).json({ error: "Failed to delete blog post" });
     }
   });
@@ -368,7 +369,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const keywords = await storage.getAllKeywords();
       res.json(keywords);
     } catch (error) {
-      console.error("Error fetching keywords:", error);
+      Logger.error("Error fetching keywords:", error);
       res.status(500).json({ error: "Failed to fetch keywords" });
     }
   });
@@ -380,7 +381,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const keyword = await storage.createKeyword(keywordData);
       res.status(201).json(keyword);
     } catch (error) {
-      console.error("Error creating keyword:", error);
+      Logger.error("Error creating keyword:", error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: "Invalid keyword data", details: error.errors });
       }
@@ -405,7 +406,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.status(201).json(ranking);
     } catch (error) {
-      console.error("Error tracking keyword ranking:", error);
+      Logger.error("Error tracking keyword ranking:", error);
       res.status(500).json({ error: "Failed to track keyword ranking" });
     }
   });
@@ -423,7 +424,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(rankings);
     } catch (error) {
-      console.error("Error fetching keyword rankings:", error);
+      Logger.error("Error fetching keyword rankings:", error);
       res.status(500).json({ error: "Failed to fetch keyword rankings" });
     }
   });
@@ -442,7 +443,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(analytics);
     } catch (error) {
-      console.error("Error fetching blog analytics:", error);
+      Logger.error("Error fetching blog analytics:", error);
       res.status(500).json({ error: "Failed to fetch blog analytics" });
     }
   });
@@ -492,7 +493,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.json(timeSlots);
       }
     } catch (error) {
-      console.error('Error fetching time slots:', error);
+      Logger.error('Error fetching time slots:', error);
       res.status(500).json({ error: "Failed to fetch time slots" });
     }
   });
@@ -537,14 +538,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             customer.housecallProId = housecallCustomer.id;
           }
         } catch (error) {
-          console.error('Failed to create customer in Housecall Pro:', error);
+          Logger.error('Failed to create customer in Housecall Pro:', error);
           // Continue even if Housecall Pro creation fails
         }
       }
       
       res.status(201).json({ success: true, customer });
     } catch (error) {
-      console.error("Customer creation error:", error);
+      Logger.error("Customer creation error:", error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: "Invalid customer data", details: error.errors });
       }
@@ -565,13 +566,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Look up customer using Housecall Pro API
-      console.log(`[Customer Lookup] Searching for customer - Name: "${customerName}", Phone: "${phone}"`);
+      Logger.info(`[Customer Lookup] Searching for customer - Name: "${customerName}", Phone: "${phone}"`);
       const housecallClient = HousecallProClient.getInstance();
       const customers = await housecallClient.searchCustomers({
         phone: phone,
         name: customerName
       });
-      console.log(`[Customer Lookup] API returned ${customers.length} customers:`, customers.map(c => ({ id: c.id, name: `${c.first_name} ${c.last_name}`, phone: c.mobile_number })));
+      Logger.info(`[Customer Lookup] API returned ${customers.length} customers:`, customers.map(c => ({ id: c.id, name: `${c.first_name} ${c.last_name}`, phone: c.mobile_number })));
       
       if (customers.length > 0) {
         // Simply take the first matching customer
@@ -590,13 +591,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           createdAt: new Date(bestMatch.created_at || Date.now()),
         };
         
-        console.log(`[Customer Lookup] Returning customer: ${customer.firstName} ${customer.lastName} (${customer.phone})`);
+        Logger.info(`[Customer Lookup] Returning customer: ${customer.firstName} ${customer.lastName} (${customer.phone})`);
         res.json({ success: true, customer });
       } else {
         res.status(404).json({ error: "Customer not found" });
       }
     } catch (error) {
-      console.error("Customer lookup error:", error);
+      Logger.error("Customer lookup error:", error);
       res.status(500).json({ error: "Failed to lookup customer" });
     }
   });
@@ -631,10 +632,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         notes: customer.notes || "New lead from website contact form"
       };
 
-      console.log(`[Lead Creation] Creating lead for ${customer.first_name} ${customer.last_name} (${customer.mobile_number})`);
+      Logger.info(`[Lead Creation] Creating lead for ${customer.first_name} ${customer.last_name} (${customer.mobile_number})`);
       
       const lead = await housecallClient.createLead(leadData);
-      console.log(`[Lead Creation] Successfully created lead: ${lead.id}`);
+      Logger.info(`[Lead Creation] Successfully created lead: ${lead.id}`);
 
       res.json({ 
         success: true, 
@@ -645,7 +646,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
     } catch (error) {
-      console.error("Lead creation error:", error);
+      Logger.error("Lead creation error:", error);
       res.status(500).json({ 
         error: "Failed to create lead",
         details: error instanceof Error ? error.message : String(error)
@@ -664,7 +665,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const referrals = await storage.getReferralsByCustomer(customerId);
       res.json({ success: true, referrals });
     } catch (error) {
-      console.error("Failed to get referrals:", error);
+      Logger.error("Failed to get referrals:", error);
       res.status(500).json({ error: "Failed to retrieve referrals" });
     }
   });
@@ -752,7 +753,7 @@ $99 REFERRAL DISCOUNT APPLIES`,
       });
 
     } catch (error) {
-      console.error("Failed to create referral:", error);
+      Logger.error("Failed to create referral:", error);
       res.status(500).json({ error: "Failed to create referral" });
     }
   });
@@ -767,7 +768,7 @@ $99 REFERRAL DISCOUNT APPLIES`,
         res.status(404).json({ error: "Referral not found" });
       }
     } catch (error) {
-      console.error("Failed to get referral by code:", error);
+      Logger.error("Failed to get referral by code:", error);
       res.status(500).json({ error: "Failed to retrieve referral" });
     }
   });
@@ -782,7 +783,7 @@ $99 REFERRAL DISCOUNT APPLIES`,
         return res.status(400).json({ error: "Missing required booking information" });
       }
       
-      console.log(`[Booking] Creating real booking in Housecall Pro:`, JSON.stringify(bookingData, null, 2));
+      Logger.info(`[Booking] Creating real booking in Housecall Pro:`, JSON.stringify(bookingData, null, 2));
       
       const customerInfo = bookingData.customerInfo;
       const housecallClient = HousecallProClient.getInstance();
@@ -797,7 +798,7 @@ $99 REFERRAL DISCOUNT APPLIES`,
         
         if (existingCustomers.length > 0) {
           customer = existingCustomers[0];
-          console.log(`[Booking] Found existing customer: ${customer.first_name} ${customer.last_name}`);
+          Logger.info(`[Booking] Found existing customer: ${customer.first_name} ${customer.last_name}`);
         } else {
           customer = await housecallClient.createCustomer({
             first_name: customerInfo.firstName,
@@ -811,11 +812,11 @@ $99 REFERRAL DISCOUNT APPLIES`,
               zip: customerInfo.zipCode || "02169"
             }]
           });
-          console.log(`[Booking] Created new customer: ${customer.first_name} ${customer.last_name}`);
+          Logger.info(`[Booking] Created new customer: ${customer.first_name} ${customer.last_name}`);
         }
       } catch (error) {
-        console.error("[Booking] Customer lookup/creation failed:", error);
-        console.error("[Booking] Error details:", {
+        Logger.error("[Booking] Customer lookup/creation failed:", error);
+        Logger.error("[Booking] Error details:", {
           message: (error as Error).message,
           stack: (error as Error).stack,
           customerInfo
@@ -834,7 +835,7 @@ $99 REFERRAL DISCOUNT APPLIES`,
             zip: customerInfo.zipCode || "02169"
           });
         } catch (addressError) {
-          console.error("[Booking] Failed to create address:", addressError);
+          Logger.error("[Booking] Failed to create address:", addressError);
           return res.status(500).json({ error: "Failed to create customer address" });
         }
       }
@@ -895,7 +896,7 @@ Special Promotion: $99 service fee waived for online bookings`,
       };
       
       const job = await housecallClient.createJob(jobData);
-      console.log(`[Booking] Created scheduled job in Housecall Pro: ${job.id} for ${scheduledDate.toISOString()}`);
+      Logger.info(`[Booking] Created scheduled job in Housecall Pro: ${job.id} for ${scheduledDate.toISOString()}`);
       
       res.json({
         success: true,
@@ -915,7 +916,7 @@ Special Promotion: $99 service fee waived for online bookings`,
         },
       });
     } catch (error) {
-      console.error("Booking error:", error);
+      Logger.error("Booking error:", error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: "Invalid booking data", details: error.errors });
       }
@@ -925,7 +926,7 @@ Special Promotion: $99 service fee waived for online bookings`,
 
   // Test simple route
   app.get("/api/test", publicReadLimiter, (_req, res) => {
-    console.log("TEST ROUTE CALLED");
+    Logger.info("TEST ROUTE CALLED");
     res.json({ message: "Test route working" });
   });
 
@@ -972,14 +973,14 @@ Special Promotion: $99 service fee waived for online bookings`,
 
   // Get services from Housecall Pro
   app.get("/api/services", publicReadLimiter, async (_req, res) => {
-    console.log("[Services API] Route handler called");
+    Logger.info("[Services API] Route handler called");
     try {
-      console.log("[Services API] Starting services fetch...");
+      Logger.info("[Services API] Starting services fetch...");
       const housecallClient = HousecallProClient.getInstance();
-      console.log("[Services API] Got client instance");
+      Logger.info("[Services API] Got client instance");
       
       const services = await housecallClient.getServices();
-      console.log(`[Services API] Found ${services.length} services`);
+      Logger.info(`[Services API] Found ${services.length} services`);
       
       // Look for Service Fee service specifically
       const serviceFeeService = services.find(service => 
@@ -987,13 +988,13 @@ Special Promotion: $99 service fee waived for online bookings`,
       );
       
       if (serviceFeeService) {
-        console.log(`[Services API] Found Service Fee service: ${serviceFeeService.name} (ID: ${serviceFeeService.id}) - Price: ${serviceFeeService.price}`);
+        Logger.info(`[Services API] Found Service Fee service: ${serviceFeeService.name} (ID: ${serviceFeeService.id}) - Price: ${serviceFeeService.price}`);
       } else {
-        console.log("[Services API] Service Fee service not found");
+        Logger.info("[Services API] Service Fee service not found");
       }
       
       services.forEach(service => {
-        console.log(`[Services API] Service: ${service.name} (ID: ${service.id}) - Price: ${service.price || 'N/A'}`);
+        Logger.info(`[Services API] Service: ${service.name} (ID: ${service.id}) - Price: ${service.price || 'N/A'}`);
       });
       
       res.json({
@@ -1002,7 +1003,7 @@ Special Promotion: $99 service fee waived for online bookings`,
         totalCount: services.length
       });
     } catch (error) {
-      console.error("Services fetch error:", error);
+      Logger.error("Services fetch error:", error);
       res.status(500).json({ error: "Failed to fetch services", details: error instanceof Error ? error.message : String(error) });
     }
   });
@@ -1025,7 +1026,7 @@ Special Promotion: $99 service fee waived for online bookings`,
       const capacity = await calculator.getTodayCapacity(userZip);
       res.json(capacity);
     } catch (error) {
-      console.error("Error fetching today's capacity:", error);
+      Logger.error("Error fetching today's capacity:", error);
       res.status(500).json({ 
         error: "Failed to fetch capacity",
         overall: { score: 0, state: 'NEXT_DAY' },
@@ -1047,7 +1048,7 @@ Special Promotion: $99 service fee waived for online bookings`,
       const capacity = await calculator.getTomorrowCapacity(userZip);
       res.json(capacity);
     } catch (error) {
-      console.error("Error fetching tomorrow's capacity:", error);
+      Logger.error("Error fetching tomorrow's capacity:", error);
       res.status(500).json({ 
         error: "Failed to fetch capacity",
         overall: { score: 0, state: 'NEXT_DAY' },
@@ -1095,7 +1096,7 @@ Special Promotion: $99 service fee waived for online bookings`,
         }
       });
     } catch (error) {
-      console.error('Debug HCP data error:', error);
+      Logger.error('Debug HCP data error:', error);
       res.status(500).json({ error: 'Failed to fetch HCP data', details: error instanceof Error ? error.message : String(error) });
     }
   });
@@ -1145,7 +1146,7 @@ Special Promotion: $99 service fee waived for online bookings`,
       res.header('Content-Type', 'application/xml');
       res.send(sitemap);
     } catch (error) {
-      console.error('Error generating sitemap:', error);
+      Logger.error('Error generating sitemap:', error);
       res.status(500).send('Error generating sitemap');
     }
   });
@@ -1222,7 +1223,7 @@ Sitemap: ${siteUrl}/sitemap.xml
             }
           }
         } catch (error) {
-          console.error(`Error fetching reviews for ${location.name}:`, error);
+          Logger.error(`Error fetching reviews for ${location.name}:`, error);
         }
       }
 
@@ -1239,7 +1240,7 @@ Sitemap: ${siteUrl}/sitemap.xml
       });
 
     } catch (error) {
-      console.error("Error fetching Google reviews:", error);
+      Logger.error("Error fetching Google reviews:", error);
       res.status(500).json({ error: "Failed to fetch Google reviews" });
     }
   });
@@ -1360,7 +1361,7 @@ Sitemap: ${siteUrl}/sitemap.xml
 
       res.json(recentJobs);
     } catch (error) {
-      console.error("Error fetching recent jobs:", error);
+      Logger.error("Error fetching recent jobs:", error);
       res.status(500).json({ error: "Failed to fetch recent jobs" });
     }
   });
@@ -1396,7 +1397,7 @@ Sitemap: ${siteUrl}/sitemap.xml
 
       res.json(stats);
     } catch (error) {
-      console.error("Error fetching stats:", error);
+      Logger.error("Error fetching stats:", error);
       res.status(500).json({ error: "Failed to fetch business stats" });
     }
   });
@@ -1422,7 +1423,7 @@ Sitemap: ${siteUrl}/sitemap.xml
 
       res.json(liveActivity);
     } catch (error) {
-      console.error("Error fetching live activity:", error);
+      Logger.error("Error fetching live activity:", error);
       res.status(500).json({ error: "Failed to fetch live activity" });
     }
   });
@@ -1450,7 +1451,7 @@ Sitemap: ${siteUrl}/sitemap.xml
 
       res.json(testimonials);
     } catch (error) {
-      console.error("Error fetching testimonials:", error);
+      Logger.error("Error fetching testimonials:", error);
       res.status(500).json({ error: "Failed to fetch testimonials" });
     }
   });
@@ -1477,7 +1478,7 @@ Sitemap: ${siteUrl}/sitemap.xml
       let page = 1;
       let hasMore = true;
       
-      console.log(`Starting comprehensive customer sync at ${new Date().toISOString()}`);
+      Logger.info(`Starting comprehensive customer sync at ${new Date().toISOString()}`);
       
       while (hasMore) { // Fetch ALL pages
         const data = await callHousecallAPI('/customers', {
@@ -1586,7 +1587,7 @@ Sitemap: ${siteUrl}/sitemap.xml
         syncedAt: new Date().toISOString(),
       });
     } catch (error: any) {
-      console.error("Sync error:", error);
+      Logger.error("Sync error:", error);
       
       await db.update(syncStatus)
         .set({
@@ -1693,7 +1694,7 @@ Sitemap: ${siteUrl}/sitemap.xml
   // Daily sync endpoint - can be called by a cron job or scheduler
   app.post("/api/admin/daily-sync", adminLimiter, async (req, res) => {
     try {
-      console.log(`Running daily sync at ${new Date().toISOString()}`);
+      Logger.info(`Running daily sync at ${new Date().toISOString()}`);
       
       // Call the sync endpoint internally
       const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
@@ -1711,7 +1712,7 @@ Sitemap: ${siteUrl}/sitemap.xml
         ...result
       });
     } catch (error: any) {
-      console.error("Daily sync failed:", error);
+      Logger.error("Daily sync failed:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -1719,16 +1720,16 @@ Sitemap: ${siteUrl}/sitemap.xml
   // Auto-sync on server start (runs once when server starts)
   setTimeout(async () => {
     try {
-      console.log("Running initial data sync on server start...");
+      Logger.info("Running initial data sync on server start...");
       const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
       const host = process.env.NODE_ENV === 'production' ? process.env.REPL_SLUG ? `${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co` : 'localhost:5000' : 'localhost:5000';
       await fetch(`${protocol}://${host}/api/admin/sync-customer-addresses`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
-      console.log("Initial sync completed");
+      Logger.info("Initial sync completed");
     } catch (error) {
-      console.error("Initial sync failed:", error);
+      Logger.error("Initial sync failed:", error);
     }
   }, 5000); // Wait 5 seconds after server start
 
@@ -1748,7 +1749,7 @@ Sitemap: ${siteUrl}/sitemap.xml
           intensity: point.intensity || 0.8
         }));
         
-        console.log(`Heat map: Serving ${heatMapData.length} cached grid points from 3000+ customers`);
+        Logger.info(`Heat map: Serving ${heatMapData.length} cached grid points from 3000+ customers`);
         return res.json(heatMapData);
       }
       
@@ -1757,7 +1758,7 @@ Sitemap: ${siteUrl}/sitemap.xml
       
       if (addresses.length === 0) {
         // If no database data, fetch from API and sync
-        console.log("No cached data, syncing from Housecall Pro...");
+        Logger.info("No cached data, syncing from Housecall Pro...");
         
         // Trigger sync in background
         const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
@@ -1765,7 +1766,7 @@ Sitemap: ${siteUrl}/sitemap.xml
         fetch(`${protocol}://${host}/api/admin/sync-customer-addresses`, { 
           method: 'POST',
           headers: { 'Content-Type': 'application/json' }
-        }).catch(err => console.error("Background sync failed:", err));
+        }).catch(err => Logger.error("Background sync failed:", err));
         
         // Return empty for now
         return res.json([]);
@@ -1782,10 +1783,10 @@ Sitemap: ${siteUrl}/sitemap.xml
           intensity: 0.8
         }));
       
-      console.log(`Heat map: Generated ${heatMapData.length} points from database`);
+      Logger.info(`Heat map: Generated ${heatMapData.length} points from database`);
       res.json(heatMapData);
     } catch (error) {
-      console.error("Error fetching heat map data:", error);
+      Logger.error("Error fetching heat map data:", error);
       res.status(500).json({ error: "Failed to fetch heat map data" });
     }
   });
@@ -1854,7 +1855,7 @@ Sitemap: ${siteUrl}/sitemap.xml
                          req.headers['x-signature'] as string;
         
         if (!signature) {
-          console.error('[Webhook] Missing signature header');
+          Logger.error('[Webhook] Missing signature header');
           return res.status(401).json({ 
             success: false, 
             error: 'Missing webhook signature' 
@@ -1873,19 +1874,19 @@ Sitemap: ${siteUrl}/sitemap.xml
         );
         
         if (!isValid) {
-          console.error('[Webhook] Invalid signature');
+          Logger.error('[Webhook] Invalid signature');
           return res.status(401).json({ 
             success: false, 
             error: 'Invalid webhook signature' 
           });
         }
         
-        console.log('[Webhook] Signature verified successfully');
+        Logger.info('[Webhook] Signature verified successfully');
       } else {
         console.warn('[Webhook] No webhook secret configured - signature verification skipped');
       }
       
-      console.log('[Webhook] Received event:', req.body);
+      Logger.info('[Webhook] Received event:', req.body);
       
       // Get event type from headers or body
       const eventType = req.headers['x-event-type'] as string || 
@@ -1901,21 +1902,21 @@ Sitemap: ${siteUrl}/sitemap.xml
       );
 
       if (result.success) {
-        console.log(`[Webhook] Successfully processed event ${result.eventId} of type ${eventType}`);
+        Logger.info(`[Webhook] Successfully processed event ${result.eventId} of type ${eventType}`);
         res.status(200).json({ 
           success: true, 
           eventId: result.eventId,
           message: 'Webhook received and queued for processing' 
         });
       } else {
-        console.error('[Webhook] Failed to process event:', result.error);
+        Logger.error('[Webhook] Failed to process event:', result.error);
         res.status(500).json({ 
           success: false, 
           error: result.error 
         });
       }
     } catch (error) {
-      console.error('[Webhook] Error handling webhook:', error);
+      Logger.error('[Webhook] Error handling webhook:', error);
       res.status(500).json({ 
         success: false, 
         error: error instanceof Error ? error.message : 'Unknown error' 
@@ -1935,7 +1936,7 @@ Sitemap: ${siteUrl}/sitemap.xml
       
       res.json(events);
     } catch (error) {
-      console.error('Error fetching webhook events:', error);
+      Logger.error('Error fetching webhook events:', error);
       res.status(500).json({ error: 'Failed to fetch webhook events' });
     }
   });
@@ -1952,7 +1953,7 @@ Sitemap: ${siteUrl}/sitemap.xml
       
       res.json(data);
     } catch (error) {
-      console.error('Error fetching webhook event details:', error);
+      Logger.error('Error fetching webhook event details:', error);
       res.status(500).json({ error: 'Failed to fetch event details' });
     }
   });
@@ -1969,7 +1970,7 @@ Sitemap: ${siteUrl}/sitemap.xml
       
       res.json(analytics);
     } catch (error) {
-      console.error('Error fetching webhook analytics:', error);
+      Logger.error('Error fetching webhook analytics:', error);
       res.status(500).json({ error: 'Failed to fetch analytics' });
     }
   });
@@ -2001,7 +2002,7 @@ Sitemap: ${siteUrl}/sitemap.xml
         }
       });
     } catch (error) {
-      console.error('Error fetching webhook config:', error);
+      Logger.error('Error fetching webhook config:', error);
       res.status(500).json({ error: 'Failed to fetch webhook configuration' });
     }
   });
@@ -2035,7 +2036,7 @@ Sitemap: ${siteUrl}/sitemap.xml
         note: 'Remember to configure HOUSECALL_WEBHOOK_SECRET environment variable with the signing secret from Housecall Pro'
       });
     } catch (error) {
-      console.error('Error subscribing to webhooks:', error);
+      Logger.error('Error subscribing to webhooks:', error);
       res.status(500).json({ error: 'Failed to subscribe to webhooks' });
     }
   });
@@ -2084,7 +2085,7 @@ Sitemap: ${siteUrl}/sitemap.xml
         testData: testEvent
       });
     } catch (error) {
-      console.error('Error processing test webhook:', error);
+      Logger.error('Error processing test webhook:', error);
       res.status(500).json({ error: 'Failed to process test webhook' });
     }
   });
@@ -2158,7 +2159,7 @@ Sitemap: ${siteUrl}/sitemap.xml
 
       res.json(mcpDiscovery);
     } catch (error) {
-      console.error('Error serving .well-known/mcp.json:', error);
+      Logger.error('Error serving .well-known/mcp.json:', error);
       res.status(500).json({ error: 'Failed to serve MCP discovery file' });
     }
   });
@@ -2169,7 +2170,7 @@ Sitemap: ${siteUrl}/sitemap.xml
   const mcpLoggingMiddleware = (req: any, res: any, next: any) => {
     // Log MCP client for analytics (optional header)
     const clientInfo = req.headers['x-mcp-client'] || 'unknown-client';
-    console.log(`MCP API access: ${clientInfo} from ${req.ip}`);
+    Logger.info(`MCP API access: ${clientInfo} from ${req.ip}`);
     next();
   };
 
@@ -2374,7 +2375,7 @@ Sitemap: ${siteUrl}/sitemap.xml
 
       res.json(manifest);
     } catch (error) {
-      console.error('Error generating MCP manifest:', error);
+      Logger.error('Error generating MCP manifest:', error);
       res.status(500).json({ error: 'Failed to generate MCP manifest' });
     }
   });
@@ -2463,7 +2464,7 @@ Sitemap: ${siteUrl}/sitemap.xml
 
       res.json(docs);
     } catch (error) {
-      console.error('Error generating MCP documentation:', error);
+      Logger.error('Error generating MCP documentation:', error);
       res.status(500).json({ error: 'Failed to generate MCP documentation' });
     }
   });
@@ -2560,7 +2561,7 @@ Sitemap: ${siteUrl}/sitemap.xml
       res.json(result);
       
     } catch (error: any) {
-      console.error('Error in search_availability endpoint:', error);
+      Logger.error('Error in search_availability endpoint:', error);
       res.status(500).json({
         success: false,
         error: "An error occurred while searching availability. Please try again.",
@@ -2768,7 +2769,7 @@ Sitemap: ${siteUrl}/sitemap.xml
 
       res.json(manifest);
     } catch (error) {
-      console.error('Error serving /.well-known/mcp/manifest.json:', error);
+      Logger.error('Error serving /.well-known/mcp/manifest.json:', error);
       res.status(500).json({ error: 'Failed to serve MCP manifest' });
     }
   });

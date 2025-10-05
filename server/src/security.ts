@@ -7,17 +7,20 @@ import { Express, Request, Response, NextFunction } from 'express';
 export function configureSecurityMiddleware(app: Express) {
   const isProduction = process.env.NODE_ENV === 'production';
   
-  // Security headers with helmet
+  // Security headers with helmet - strict CSP for production
   app.use(helmet({
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'", "https://maps.googleapis.com"],
-        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        // Remove unsafe-inline for production security - use nonce or hash-based CSP
+        scriptSrc: ["'self'", "https://maps.googleapis.com"],
+        styleSrc: ["'self'", "https://fonts.googleapis.com"],
         fontSrc: ["'self'", "https://fonts.gstatic.com"],
         imgSrc: ["'self'", "data:", "https:", "blob:"],
         connectSrc: ["'self'", "https://api.housecallpro.com", "https://maps.googleapis.com"],
         frameSrc: ["'self'", "https://maps.googleapis.com"],
+        objectSrc: ["'none'"],
+        upgradeInsecureRequests: [],
       },
     },
     hsts: {

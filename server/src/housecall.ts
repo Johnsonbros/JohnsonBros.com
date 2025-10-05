@@ -120,10 +120,11 @@ export class HousecallProClient {
       }
     }
 
-    // Use mock data if no API key is configured
+    // FAIL FAST if no API key is configured - never serve mock data in production
     if (!API_KEY) {
-      Logger.warn('Using mock data - no API key configured');
-      return this.getMockData(endpoint) as T;
+      const errorMsg = 'CRITICAL: HousecallPro API key not configured. Set HOUSECALL_PRO_API_KEY or HCP_COMPANY_API_KEY environment variable.';
+      Logger.error(errorMsg);
+      throw new Error(errorMsg);
     }
 
     let lastError: Error | null = null;
@@ -387,165 +388,7 @@ export class HousecallProClient {
     }
   }
 
-  private getMockData(endpoint: string): any {
-    Logger.warn('Using mock data', { endpoint });
-
-    if (endpoint.includes('/employees')) {
-      return {
-        employees: [
-          {
-            id: 'emp_mock_nate',
-            first_name: 'Nate',
-            last_name: 'Johnson',
-            can_be_booked_online: true,
-            is_active: true,
-          },
-          {
-            id: 'emp_mock_nick',
-            first_name: 'Nick',
-            last_name: 'Johnson',
-            can_be_booked_online: true,
-            is_active: true,
-          },
-          {
-            id: 'emp_mock_jahz',
-            first_name: 'Jahz',
-            last_name: 'Tech',
-            can_be_booked_online: true,
-            is_active: true,
-          },
-        ],
-      };
-    }
-
-    if (endpoint.includes('booking_windows')) {
-      const now = new Date();
-      const today = now.toISOString().split('T')[0];
-      const currentHour = now.getHours();
-      
-      // Generate booking windows that are always in the future
-      const windows: HCPBookingWindow[] = [];
-      
-      // DISABLED: Don't generate fake same-day slots in production
-      // Only return empty windows to properly show "Next Day Guarantee"
-      if (false && currentHour < 17) { // Disabled mock same-day slots
-        // Business hours: 8 AM - 5 PM for plumbing service
-        const businessHourEnd = 17; // 5 PM
-        
-        // Generate realistic morning/afternoon slots
-        if (currentHour < 11) {
-          // Morning slots
-          windows.push({
-            id: 'window_morning_1',
-            start_time: '09:00',
-            end_time: '11:00',
-            date: today,
-            available: true,
-            employee_ids: ['emp_mock_nate', 'emp_mock_nick'],
-          });
-          
-          windows.push({
-            id: 'window_morning_2',
-            start_time: '11:00',
-            end_time: '13:00',
-            date: today,
-            available: true,
-            employee_ids: ['emp_mock_jahz'],
-          });
-        } else if (currentHour < 15) {
-          // Afternoon slots
-          windows.push({
-            id: 'window_afternoon_1',
-            start_time: '13:00',
-            end_time: '15:00',
-            date: today,
-            available: true,
-            employee_ids: ['emp_mock_nate', 'emp_mock_nick'],
-          });
-          
-          windows.push({
-            id: 'window_afternoon_2',
-            start_time: '15:00',
-            end_time: '17:00',
-            date: today,
-            available: true,
-            employee_ids: ['emp_mock_jahz'],
-          });
-        } else {
-          // Late afternoon slot (last chance for same day)
-          windows.push({
-            id: 'window_late_afternoon',
-            start_time: '15:00',
-            end_time: '17:00',
-            date: today,
-            available: true,
-            employee_ids: ['emp_mock_nate', 'emp_mock_nick', 'emp_mock_jahz'],
-          });
-        }
-      }
-      
-      // If no same-day windows (or it's late), add tomorrow morning slots
-      if (windows.length === 0) {
-        const tomorrow = new Date(now);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        const tomorrowStr = tomorrow.toISOString().split('T')[0];
-        
-        windows.push(
-          {
-            id: 'window_tomorrow_1',
-            start_time: '08:00',
-            end_time: '10:00',
-            date: tomorrowStr,
-            available: true,
-            employee_ids: ['emp_mock_nate'],
-          },
-          {
-            id: 'window_tomorrow_2',
-            start_time: '10:00',
-            end_time: '12:00',
-            date: tomorrowStr,
-            available: true,
-            employee_ids: ['emp_mock_nick', 'emp_mock_jahz'],
-          },
-          {
-            id: 'window_tomorrow_3',
-            start_time: '14:00',
-            end_time: '16:00',
-            date: tomorrowStr,
-            available: true,
-            employee_ids: ['emp_mock_nate', 'emp_mock_jahz'],
-          }
-        );
-      }
-      
-      return {
-        booking_windows: windows,
-      };
-    }
-
-    if (endpoint.includes('/jobs')) {
-      // Return fewer jobs to show more availability
-      const now = new Date();
-      const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
-      const inOneHour = new Date(now.getTime() + 60 * 60 * 1000);
-      
-      return {
-        jobs: [
-          {
-            id: 'job_mock_1',
-            employee_ids: ['emp_mock_nate'],
-            scheduled_start: oneHourAgo.toISOString(),
-            scheduled_end: now.toISOString(),
-            work_status: 'completed',
-            duration_minutes: 60,
-          },
-        ],
-      };
-    }
-
-
-    return {};
-  }
+  // Mock data removed for production security - system must fail fast if API is unavailable
 
   async getServices(): Promise<any[]> {
     try {
