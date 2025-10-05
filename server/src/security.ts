@@ -137,7 +137,7 @@ export function configureSecurityMiddleware(app: Express) {
   app.use((req: Request, res: Response, next: NextFunction) => {
     // Sanitize query parameters
     for (const key in req.query) {
-      if (typeof req.query[key] === 'string') {
+      if (Object.prototype.hasOwnProperty.call(req.query, key) && typeof req.query[key] === 'string') {
         req.query[key] = (req.query[key] as string).replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
       }
     }
