@@ -83,7 +83,7 @@ export function SEO({
         document.head.appendChild(scriptElement);
       }
       
-      scriptElement.innerHTML = JSON.stringify(structuredData);
+      scriptElement.textContent = JSON.stringify(structuredData);
     }
     
     // Cleanup function to remove tags when component unmounts
