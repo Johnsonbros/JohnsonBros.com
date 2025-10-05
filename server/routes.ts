@@ -16,6 +16,7 @@ import { HousecallProClient } from "./src/housecall";
 import rateLimit from "express-rate-limit";
 import adminRoutes from "./src/adminRoutes";
 import { generateSitemap } from "./src/sitemap";
+import { healthChecker } from "./src/healthcheck";
 
 // Housecall Pro API client
 const HOUSECALL_API_BASE = 'https://api.housecallpro.com';
@@ -926,6 +927,47 @@ Special Promotion: $99 service fee waived for online bookings`,
   app.get("/api/test", publicReadLimiter, (_req, res) => {
     console.log("TEST ROUTE CALLED");
     res.json({ message: "Test route working" });
+  });
+
+  // Health check endpoints
+  app.get("/health", async (_req, res) => {
+    // Simple health check - always returns 200 if the server is running
+    res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
+  });
+
+  app.get("/api/health", async (_req, res) => {
+    // Detailed health check with dependency checks
+    try {
+      const health = await healthChecker.getHealthStatus();
+      const statusCode = health.status === 'unhealthy' ? 503 : 200;
+      res.status(statusCode).json(health);
+    } catch (error) {
+      res.status(503).json({
+        status: 'unhealthy',
+        error: 'Health check failed',
+        message: error.message,
+        timestamp: new Date().toISOString(),
+      });
+    }
+  });
+
+  app.get("/api/health/live", async (_req, res) => {
+    // Kubernetes liveness probe - checks if the server is alive
+    res.status(200).json({ alive: true });
+  });
+
+  app.get("/api/health/ready", async (_req, res) => {
+    // Kubernetes readiness probe - checks if the server is ready to serve traffic
+    try {
+      const health = await healthChecker.getHealthStatus();
+      if (health.status === 'unhealthy') {
+        res.status(503).json({ ready: false, reason: 'Dependencies unhealthy' });
+      } else {
+        res.status(200).json({ ready: true });
+      }
+    } catch (error) {
+      res.status(503).json({ ready: false, reason: error.message });
+    }
   });
 
   // Get services from Housecall Pro
