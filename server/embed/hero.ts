@@ -164,11 +164,10 @@
     }
 
     if (!data) {
-      target.innerHTML = `
-        <div class="jbros-hero-error">
-          Unable to load availability. Please call us at (617) 479-9499.
-        </div>
-      `;
+      const errorDiv = document.createElement('div');
+      errorDiv.className = 'jbros-hero-error';
+      errorDiv.textContent = 'Unable to load availability. Please call us at (617) 479-9499.';
+      target.replaceChildren(errorDiv);
       return;
     }
 
@@ -183,23 +182,47 @@
       finalBookUrl = `${bookUrl}${separator}promo=FEEWAIVED_SAMEDAY&utm_source=site&utm_campaign=capacity`;
     }
 
-    target.innerHTML = `
-      <div class="jbros-hero">
-        <div class="jbros-hero-content">
-          ${ui_copy.badge ? `<div class="${badgeClass}">${ui_copy.badge}</div>` : ''}
-          <h2 class="jbros-hero-headline">${ui_copy.headline}</h2>
-          <p class="jbros-hero-subhead">${ui_copy.subhead}</p>
-          <a href="${finalBookUrl}" class="jbros-hero-cta">${ui_copy.cta}</a>
-        </div>
-      </div>
-    `;
+    const heroDiv = document.createElement('div');
+    heroDiv.className = 'jbros-hero';
+    
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'jbros-hero-content';
+    
+    if (ui_copy.badge) {
+      const badgeDiv = document.createElement('div');
+      badgeDiv.className = badgeClass;
+      badgeDiv.textContent = ui_copy.badge;
+      contentDiv.appendChild(badgeDiv);
+    }
+    
+    const headline = document.createElement('h2');
+    headline.className = 'jbros-hero-headline';
+    headline.textContent = ui_copy.headline;
+    contentDiv.appendChild(headline);
+    
+    const subhead = document.createElement('p');
+    subhead.className = 'jbros-hero-subhead';
+    subhead.textContent = ui_copy.subhead;
+    contentDiv.appendChild(subhead);
+    
+    const cta = document.createElement('a');
+    cta.className = 'jbros-hero-cta';
+    cta.textContent = ui_copy.cta;
+    cta.setAttribute('href', finalBookUrl);
+    contentDiv.appendChild(cta);
+    
+    heroDiv.appendChild(contentDiv);
+    target.replaceChildren(heroDiv);
   }
 
   // Initialize and refresh
   async function init() {
     const target = document.querySelector(targetSelector);
     if (target) {
-      target.innerHTML = '<div class="jbros-hero-loading">Checking availability...</div>';
+      const loadingDiv = document.createElement('div');
+      loadingDiv.className = 'jbros-hero-loading';
+      loadingDiv.textContent = 'Checking availability...';
+      target.replaceChildren(loadingDiv);
     }
 
     const data = await fetchCapacity();
