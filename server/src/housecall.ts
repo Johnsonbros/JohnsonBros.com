@@ -274,7 +274,7 @@ export class HousecallProClient {
   }
 
   async getBookingWindows(date: string): Promise<HCPBookingWindow[]> {
-    Logger.debug('[HousecallProClient] Getting booking windows for date:', date);
+    Logger.debug(`[HousecallProClient] Getting booking windows for date: ${date}`);
     const data = await this.callAPI<{ booking_windows: HCPBookingWindow[] }>(
       '/company/schedule_availability/booking_windows',
       {
@@ -282,8 +282,8 @@ export class HousecallProClient {
         end_date: date,
       }
     );
-    Logger.debug('[HousecallProClient] Booking windows response:', JSON.stringify(data.booking_windows));
-    Logger.debug('[HousecallProClient] First window available?', data.booking_windows?.[0]?.available);
+    Logger.debug(`[HousecallProClient] Booking windows response: ${JSON.stringify(data.booking_windows)}`);
+    Logger.debug(`[HousecallProClient] First window available? ${data.booking_windows?.[0]?.available}`);
     
     const windows = data.booking_windows || [];
     
@@ -327,7 +327,7 @@ export class HousecallProClient {
     name?: string;
   }): Promise<any[]> {
     try {
-      Logger.debug(`[HousecallProClient] Searching for customer:`, searchParams);
+      Logger.debug(`[HousecallProClient] Searching for customer: ${JSON.stringify(searchParams)}`);
       
       // Build search query using the 'q' parameter as per API docs
       // The 'q' parameter searches across name, email, mobile number and address
@@ -582,7 +582,7 @@ export class HousecallProClient {
           return uniqueServices;
         }
       } catch (error: any) {
-        Logger.debug(`[HousecallProClient] Jobs extraction failed:`, error.message);
+        Logger.debug(`[HousecallProClient] Jobs extraction failed: ${error.message}`);
       }
       
       // Fallback to common plumbing services including Service Fee
@@ -638,35 +638,35 @@ export class HousecallProClient {
   }
 
   async createJob(jobData: any): Promise<any> {
-    Logger.debug('[HousecallProClient] Creating job with data:', JSON.stringify(jobData, null, 2));
+    Logger.debug(`[HousecallProClient] Creating job with data: ${JSON.stringify(jobData, null, 2)}`);
     const job = await this.callAPI('/jobs', {}, { method: 'POST', body: jobData });
-    Logger.debug('[HousecallProClient] Job created:', job);
+    Logger.debug(`[HousecallProClient] Job created: ${JSON.stringify(job)}`);
     return job;
   }
 
   async createAppointment(jobId: string, appointmentData: any): Promise<any> {
-    Logger.debug(`[HousecallProClient] Creating appointment for job ${jobId}:`, JSON.stringify(appointmentData, null, 2));
+    Logger.debug(`[HousecallProClient] Creating appointment for job ${jobId}: ${JSON.stringify(appointmentData, null, 2)}`);
     const appointment = await this.callAPI(`/jobs/${jobId}/appointments`, {}, { method: 'POST', body: appointmentData });
-    Logger.debug('[HousecallProClient] Appointment created:', appointment);
+    Logger.debug(`[HousecallProClient] Appointment created: ${JSON.stringify(appointment)}`);
     return appointment;
   }
 
   async createCustomerAddress(customerId: string, addressData: any): Promise<string> {
-    Logger.debug(`[HousecallProClient] Creating address for customer ${customerId}:`, JSON.stringify(addressData, null, 2));
+    Logger.debug(`[HousecallProClient] Creating address for customer ${customerId}: ${JSON.stringify(addressData, null, 2)}`);
     const address = await this.callAPI(`/customers/${customerId}/addresses`, {}, { method: 'POST', body: addressData });
-    Logger.debug('[HousecallProClient] Address created:', address);
+    Logger.debug(`[HousecallProClient] Address created: ${JSON.stringify(address)}`);
     return (address as any).id;
   }
 
   async createCustomer(customerData: any): Promise<any> {
-    Logger.debug('[HousecallProClient] Creating customer:', JSON.stringify(customerData, null, 2));
+    Logger.debug(`[HousecallProClient] Creating customer: ${JSON.stringify(customerData, null, 2)}`);
     const customer = await this.callAPI('/customers', {}, { method: 'POST', body: customerData });
-    Logger.debug('[HousecallProClient] Customer created:', customer);
+    Logger.debug(`[HousecallProClient] Customer created: ${JSON.stringify(customer)}`);
     return customer;
   }
 
   async addJobNote(jobId: string, note: string): Promise<void> {
-    Logger.debug(`[HousecallProClient] Adding note to job ${jobId}:`, note);
+    Logger.debug(`[HousecallProClient] Adding note to job ${jobId}: ${note}`);
     try {
       await this.callAPI(`/jobs/${jobId}/notes`, {}, { method: 'POST', body: { content: note } });
       Logger.debug('[HousecallProClient] Note added successfully');
@@ -677,11 +677,11 @@ export class HousecallProClient {
   }
 
   async createLead(leadData: any): Promise<any> {
-    Logger.debug('[HousecallProClient] Creating lead:', JSON.stringify(leadData, null, 2));
+    Logger.debug(`[HousecallProClient] Creating lead: ${JSON.stringify(leadData, null, 2)}`);
     
     try {
       const lead = await this.callAPI('/leads', {}, { method: 'POST', body: leadData });
-      Logger.debug('[HousecallProClient] Lead created:', lead);
+      Logger.debug(`[HousecallProClient] Lead created: ${JSON.stringify(lead)}`);
       return lead;
     } catch (error) {
       // If lead source not found, retry without it
@@ -697,7 +697,7 @@ export class HousecallProClient {
         delete leadDataWithoutSource.customer.lead_source;
         
         const lead = await this.callAPI('/leads', {}, { method: 'POST', body: leadDataWithoutSource });
-        Logger.debug('[HousecallProClient] Lead created without lead_source:', lead);
+        Logger.debug(`[HousecallProClient] Lead created without lead_source: ${JSON.stringify(lead)}`);
         return lead;
       }
       throw error;
