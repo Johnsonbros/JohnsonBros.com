@@ -96,19 +96,19 @@ export class CapacityCalculator {
     const jobs: any[] = []; // Empty jobs array since jobs API is broken
 
     // Log estimates data for visibility (jobs API is broken, but that's fine)
-    console.log(`[Capacity] Using HCP booking windows as authoritative availability source`);
-    console.log(`[Capacity] Found ${estimates.length} estimates for debugging purposes`);
+    this.logger.debug('Using HCP booking windows as authoritative availability source');
+    this.logger.debug(`Found ${estimates.length} estimates for debugging purposes`);
     
     // The booking windows API already factors in ALL scheduled work (jobs + estimates)
     // so we don't need to manually calculate from individual items
     const relevantJobs = estimates; // Keep for legacy compatibility
     
     // Use HCP booking windows as-is (they already reflect all scheduled work)
-    console.log(`[Capacity] Using authoritative HCP booking windows - no manual override needed`);
+    this.logger.debug('Using authoritative HCP booking windows - no manual override needed');
     const realBookingWindows = bookingWindows;
     
     // Debug: Check if we got real windows
-    console.log(`[Capacity] Booking windows received: ${realBookingWindows.length}`);
+    this.logger.debug(`[Capacity] Booking windows received: ${realBookingWindows.length}`);
     
     // CRITICAL FIX: The API returns windows with ISO timestamps like "2025-08-27T12:00:00.000Z"
     // We need to check if the date part matches today, not if date is missing
@@ -120,21 +120,21 @@ export class CapacityCalculator {
       const isAvailable = w.available === true;
       
       if (isToday && !isAvailable) {
-        console.log(`[Capacity] Window for today but NOT available: ${w.start_time} - ${w.end_time}`);
+        this.logger.debug(`[Capacity] Window for today but NOT available: ${w.start_time} - ${w.end_time}`);
       }
       
       return isToday && isAvailable;
     });
-    console.log(`[Capacity] REAL available windows today: ${availableToday.length}`);
+    this.logger.debug(`[Capacity] REAL available windows today: ${availableToday.length}`);
 
     // Map employees to our tech names
     const techEmployeeMap = this.mapEmployeesToTechs(employees, config);
     
     // DEBUG: Log employee mapping
-    console.log(`[Capacity] Employee mapping:`);
+    this.logger.debug(`[Capacity] Employee mapping:`);
     for (const [techName, employeeId] of techEmployeeMap) {
       const employee = employees.find(e => e.id === employeeId);
-      console.log(`[Capacity]   ${techName} -> ${employeeId} (${employee?.first_name} ${employee?.last_name})`);
+      this.logger.debug(`[Capacity]   ${techName} -> ${employeeId} (${employee?.first_name} ${employee?.last_name})`);
     }
     
     // Calculate per-tech capacity with real availability
@@ -163,14 +163,14 @@ export class CapacityCalculator {
 
     // Get available express windows for TODAY only
     const todayStr = date.toISOString().split('T')[0];
-    console.log(`[Express] Starting express windows filtering for ${todayStr}. RealBookingWindows count: ${realBookingWindows.length}`);
+    this.logger.debug(`[Express] Starting express windows filtering for ${todayStr}. RealBookingWindows count: ${realBookingWindows.length}`);
     const expressWindows = realBookingWindows
       .filter(window => {
         // Check if window is for the target date
         const windowDate = window.start_time ? window.start_time.split('T')[0] : 
                           (window.date ? window.date.split('T')[0] : todayStr);
         if (windowDate !== todayStr) {
-          console.log(`[Express] Window ${window.start_time} filtered out - wrong date. Window: ${windowDate}, Target: ${todayStr}`);
+          this.logger.debug(`[Express] Window ${window.start_time} filtered out - wrong date. Window: ${windowDate}, Target: ${todayStr}`);
           return false;
         }
         
@@ -189,7 +189,7 @@ export class CapacityCalculator {
         const isBookable = now < bookingCutoff;
         const isNotExpired = now < windowEnd;
         
-        console.log(`[Express] Window ${window.start_time}: available=${window.available}, isBookable=${isBookable} (now: ${now.toISOString()}, cutoff: ${bookingCutoff.toISOString()}), isNotExpired=${isNotExpired}`);
+        this.logger.debug(`[Express] Window ${window.start_time}: available=${window.available}, isBookable=${isBookable} (now: ${now.toISOString()}, cutoff: ${bookingCutoff.toISOString()}), isNotExpired=${isNotExpired}`);
         
         return window.available && isBookable && isNotExpired;
       })
@@ -217,11 +217,11 @@ export class CapacityCalculator {
         }
       });
 
-    console.log(`[Express] Filtered express windows count: ${expressWindows.length}`, expressWindows);
+    this.logger.debug(`[Express] Filtered express windows count: ${expressWindows.length}`, expressWindows);
 
     // Create unique express windows with tech availability
     const uniqueExpressWindows = this.consolidateTimeSlots(expressWindows, techCapacities);
-    console.log(`[Express] Unique express windows count: ${uniqueExpressWindows.length}`, uniqueExpressWindows);
+    this.logger.debug(`[Express] Unique express windows count: ${uniqueExpressWindows.length}`, uniqueExpressWindows);
 
     // Calculate expiration time (30 seconds for real-time updates)
     const expiresAt = new Date(Date.now() + 30000);
@@ -288,7 +288,7 @@ export class CapacityCalculator {
       const windowDateStr = w.start_time ? w.start_time.split('T')[0] : '';
       return windowDateStr === todayStr && w.available === true;
     });
-    console.log(`[Capacity] calculateTechCapacities: ${availableWindowsToday.length} available windows for ${todayStr}`);
+    this.logger.debug(`[Capacity] calculateTechCapacities: ${availableWindowsToday.length} available windows for ${todayStr}`);
     
     for (const [techName, employeeId] of techEntries) {
       // Get windows for this tech - TODAY ONLY
@@ -305,7 +305,7 @@ export class CapacityCalculator {
       
       // Debug: Log if no windows found
       if (techWindows.length === 0) {
-        console.log(`[Capacity] No available windows for ${techName} on ${todayStr}`);
+        this.logger.debug(`[Capacity] No available windows for ${techName} on ${todayStr}`);
       }
 
       // Get open windows (not yet passed)
@@ -472,7 +472,7 @@ export class CapacityCalculator {
 
     // Handle force_state override (removed - we'll use actual time-based logic)
     // Logging for debugging time-based states
-    console.log(`[Capacity] Time check: ${estHours}:${estMinutes} EST, Day: ${dayOfWeek}, State: ${state}`);
+    this.logger.debug(`[Capacity] Time check: ${estHours}:${estMinutes} EST, Day: ${dayOfWeek}, State: ${state}`);
 
     return {
       score: overallScore,
@@ -549,7 +549,7 @@ export class CapacityCalculator {
     date: Date
   ): any[] {
     const dateStr = date.toISOString().split('T')[0];
-    console.log(`[Capacity] Calculating real availability for ${dateStr}`);
+    this.logger.debug(`[Capacity] Calculating real availability for ${dateStr}`);
     
     // Define our standard time slots (8-11 AM, 11-2 PM, 2-5 PM EST)
     const standardSlots = [
@@ -573,7 +573,7 @@ export class CapacityCalculator {
     }
     
     // Mark busy slots based on jobs and estimates (using correct HCP API structure)
-    console.log(`[Capacity] Checking ${jobs.length} jobs for busy slots`);
+    this.logger.debug(`[Capacity] Checking ${jobs.length} jobs for busy slots`);
     for (const item of jobs) {
       if (!item.assigned_employees) continue;
       
@@ -589,13 +589,13 @@ export class CapacityCalculator {
         
         // Check work status and determine which slots are busy
         if (item.work_status === 'in_progress' || item.work_status === 'scheduled' || item.work_status === 'completed') {
-          console.log(`[Capacity] ${techName} has ${item.work_status} work: ${scheduledStart} to ${scheduledEnd}`);
+          this.logger.debug(`[Capacity] ${techName} has ${item.work_status} work: ${scheduledStart} to ${scheduledEnd}`);
           
           // Check if work has already started
           if (workStarted) {
             // Work is actively being worked on
             const workStartHour = new Date(workStarted).getUTCHours();
-            console.log(`[Capacity] ${techName} started work at UTC hour ${workStartHour}`);
+            this.logger.debug(`[Capacity] ${techName} started work at UTC hour ${workStartHour}`);
             
             // If work hasn't ended, assume they're busy for the rest of the day
             if (!workCompleted) {
@@ -615,7 +615,7 @@ export class CapacityCalculator {
             // Work is scheduled but not started yet - use scheduled times
             const scheduleStartHour = new Date(scheduledStart).getUTCHours();
             const scheduleEndHour = new Date(scheduledEnd).getUTCHours();
-            console.log(`[Capacity] ${techName} scheduled work UTC hours ${scheduleStartHour}-${scheduleEndHour}`);
+            this.logger.debug(`[Capacity] ${techName} scheduled work UTC hours ${scheduleStartHour}-${scheduleEndHour}`);
             
             // Mark slots as busy based on scheduled window
             if (scheduleStartHour < 15) techBusySlots.get(emp.id).add(0); // 8-11 AM EST
@@ -624,13 +624,13 @@ export class CapacityCalculator {
           } else {
             // No schedule info available, make conservative assumption
             if (item.work_status === 'in_progress') {
-              console.log(`[Capacity] ${techName} has in-progress work with no times - marking all day busy`);
+              this.logger.debug(`[Capacity] ${techName} has in-progress work with no times - marking all day busy`);
               techBusySlots.get(emp.id).add(0); // 8-11 AM
               techBusySlots.get(emp.id).add(1); // 11-2 PM
               techBusySlots.get(emp.id).add(2); // 2-5 PM
             } else {
               // For scheduled work without times, assume all day commitment
-              console.log(`[Capacity] ${techName} has scheduled work with no times - marking ALL DAY busy`);
+              this.logger.debug(`[Capacity] ${techName} has scheduled work with no times - marking ALL DAY busy`);
               techBusySlots.get(emp.id).add(0); // 8-11 AM
               techBusySlots.get(emp.id).add(1); // 11-2 PM
               techBusySlots.get(emp.id).add(2); // 2-5 PM
@@ -662,7 +662,7 @@ export class CapacityCalculator {
       if (isToday && isPastCutoff) {
         const estCutoff = bookingCutoff.toLocaleTimeString('en-US', {timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit'});
         const estNow = now.toLocaleTimeString('en-US', {timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit'});
-        console.log(`[Capacity] SKIPPED: ${slot.label} - expired (cutoff ${estCutoff} EST, now ${estNow} EST)`);
+        this.logger.debug(`[Capacity] SKIPPED: ${slot.label} - expired (cutoff ${estCutoff} EST, now ${estNow} EST)`);
         continue;
       }
       
@@ -696,7 +696,7 @@ export class CapacityCalculator {
         });
         
         if (isAnyTechAvailable && !originalWindow.available) {
-          console.log(`[Capacity] CORRECTED: ${slot.label} marked as AVAILABLE (was unavailable)`);
+          this.logger.debug(`[Capacity] CORRECTED: ${slot.label} marked as AVAILABLE (was unavailable)`);
         }
       } else {
         // Create a new window if it doesn't exist
@@ -709,7 +709,7 @@ export class CapacityCalculator {
           calculated_availability: true,
           label: slot.label
         });
-        console.log(`[Capacity] CREATED: ${slot.label} window with availability: ${isAnyTechAvailable}`);
+        this.logger.debug(`[Capacity] CREATED: ${slot.label} window with availability: ${isAnyTechAvailable}`);
       }
     }
     
@@ -723,7 +723,7 @@ export class CapacityCalculator {
       }
     }
     
-    console.log(`[Capacity] Corrected windows: ${correctedWindows.filter(w => w.available).length} available of ${correctedWindows.length} total`);
+    this.logger.debug(`[Capacity] Corrected windows: ${correctedWindows.filter(w => w.available).length} available of ${correctedWindows.length} total`);
     return correctedWindows;
   }
 
