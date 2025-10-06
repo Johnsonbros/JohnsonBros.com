@@ -108,10 +108,18 @@ export default function Referral() {
     mutationFn: async (data: ReferralFormData) => {
       if (!currentCustomer) throw new Error("No customer selected");
       
+      const referrerPhone = currentCustomer.phone || currentCustomer.mobile_number || currentCustomer.home_number;
+      if (!referrerPhone) {
+        throw new Error("No phone number found for your account. Please contact support.");
+      }
+      
+      const firstName = currentCustomer.firstName || currentCustomer.first_name;
+      const lastName = currentCustomer.lastName || currentCustomer.last_name;
+      
       const response = await apiRequest("POST", "/api/referrals", {
         referrerCustomerId: currentCustomer.id,
-        referrerName: `${currentCustomer.first_name} ${currentCustomer.last_name}`,
-        referrerPhone: currentCustomer.mobile_number || currentCustomer.home_number,
+        referrerName: `${firstName} ${lastName}`,
+        referrerPhone: referrerPhone,
         ...data,
       });
       return await response.json();
@@ -125,10 +133,11 @@ export default function Referral() {
       // Invalidate any referral queries
       queryClient.invalidateQueries({ queryKey: ["/api/referrals"] });
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      const errorMessage = error?.message || "Failed to submit referral. Please try again.";
       toast({
         title: "Error",
-        description: "Failed to submit referral. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     },
