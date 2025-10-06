@@ -135,12 +135,16 @@ export function configureSecurityMiddleware(app: Express) {
   
   // XSS Protection
   app.use((req: Request, res: Response, next: NextFunction) => {
-    // Sanitize query parameters
+    // Sanitize query parameters - use Object.create(null) to prevent prototype pollution
+    const sanitizedQuery = Object.create(null);
     for (const key in req.query) {
       if (Object.prototype.hasOwnProperty.call(req.query, key) && typeof req.query[key] === 'string') {
-        req.query[key] = (req.query[key] as string).replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+        sanitizedQuery[key] = (req.query[key] as string).replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+      } else if (Object.prototype.hasOwnProperty.call(req.query, key)) {
+        sanitizedQuery[key] = req.query[key];
       }
     }
+    req.query = sanitizedQuery;
     next();
   });
 }
