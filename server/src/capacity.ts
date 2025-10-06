@@ -450,18 +450,24 @@ export class CapacityCalculator {
     const isWeekend = dayOfWeek === 0 || dayOfWeek === 6; // Saturday or Sunday
     const isEmergencyTime = isFridayAfternoon || isWeekend;
     
-    // Determine state based on time-based rules
+    // Determine state based on availability first, then time-based rules
     let state: OverallCapacity['state'];
 
-    if (isEmergencyTime) {
-      // Friday after 3pm or weekend - emergency service
-      state = 'EMERGENCY_ONLY';
+    // First check if there are actual available windows
+    if (!hasWindowsToday || isPastLastWindow || !hasAvailableTechs) {
+      // No slots available - use time-based fallback
+      if (isEmergencyTime) {
+        state = 'EMERGENCY_ONLY';
+      } else {
+        state = 'NEXT_DAY';
+      }
     } else if (!isExpressAvailable) {
-      // Monday-Thursday after 3pm - next day service
+      // Has windows but outside express hours (Monday-Thursday after 3pm)
       state = 'NEXT_DAY';
-    } else if (!hasWindowsToday || isPastLastWindow || !hasAvailableTechs) {
-      // No slots available during express hours
-      state = 'NEXT_DAY';
+    } else if (isEmergencyTime && hasWindowsToday && hasAvailableTechs) {
+      // Weekend/Friday afternoon but we DO have available slots
+      // Treat it as limited same day (emergency slots available)
+      state = 'LIMITED_SAME_DAY';
     } else if (overallScore >= config.thresholds.same_day_fee_waived) {
       state = 'SAME_DAY_FEE_WAIVED';
     } else if (overallScore >= config.thresholds.limited_same_day) {
