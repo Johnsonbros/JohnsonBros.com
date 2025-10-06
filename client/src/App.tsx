@@ -4,6 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { HelmetProvider } from "react-helmet-async";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Home from "@/pages/home";
 import Blog from "@/pages/blog";
 import BlogPost from "@/pages/blog-post";
@@ -69,9 +70,10 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <HelmetProvider>
-        <TooltipProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <HelmetProvider>
+          <TooltipProvider>
         {/* AI Assistant MCP Server Information - Hidden from visual users */}
         <div 
           id="ai-mcp-server-info" 
@@ -149,11 +151,12 @@ function App() {
         
         <Toaster />
         <Router />
-        <JobCompletionNotifications />
-        <VideoCallPopup />
-      </TooltipProvider>
-      </HelmetProvider>
-    </QueryClientProvider>
+          <JobCompletionNotifications />
+          <VideoCallPopup />
+        </TooltipProvider>
+        </HelmetProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 
