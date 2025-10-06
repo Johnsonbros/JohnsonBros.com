@@ -127,6 +127,11 @@ export class WebhookProcessor {
       // Update analytics
       await this.updateAnalytics(eventType, processedData);
 
+      // Send notification for referral leads
+      if (eventType === 'lead.created' && processedData.notes === 'REFERRAL LEAD') {
+        await this.notifyReferralLead(payload, processedData);
+      }
+
       // Mark event as processed
       await db.update(webhookEvents)
         .set({ 
@@ -228,6 +233,9 @@ export class WebhookProcessor {
         };
 
       case 'lead':
+        const isReferral = payload.customer?.tags?.includes('referral-program') || 
+                          payload.tags?.includes('referral-program') ||
+                          payload.customer?.lead_source?.includes('Referral');
         return {
           ...baseData,
           customerName: payload.customer?.name || `${payload.customer?.first_name || ''} ${payload.customer?.last_name || ''}`.trim(),
@@ -236,6 +244,7 @@ export class WebhookProcessor {
           addressCity: payload.address?.city,
           addressState: payload.address?.state,
           isNewCustomer: true,
+          notes: isReferral ? 'REFERRAL LEAD' : undefined,
         };
 
       default:
@@ -418,6 +427,50 @@ export class WebhookProcessor {
         )
       )
       .orderBy(desc(webhookAnalytics.date));
+  }
+
+  // Send notification when a referral lead is created
+  private async notifyReferralLead(payload: any, processedData: Partial<InsertWebhookProcessedData>) {
+    try {
+      // Extract referral information from the lead notes
+      const notes = payload.customer?.notes || payload.notes || '';
+      const referrerMatch = notes.match(/Referred by: ([^(]+)\(([^)]+)\)/);
+      const customerIdMatch = notes.match(/Customer ID: (\S+)/);
+      
+      const referredCustomer = processedData.customerName || 'Unknown';
+      const referredPhone = processedData.customerPhone || 'N/A';
+      const referredEmail = processedData.customerEmail || 'N/A';
+      const referrerName = referrerMatch ? referrerMatch[1].trim() : 'Unknown';
+      const referrerPhone = referrerMatch ? referrerMatch[2].trim() : 'N/A';
+      const referrerCustomerId = customerIdMatch ? customerIdMatch[1] : 'N/A';
+      
+      // Log prominently to console
+      console.log('\n' + '='.repeat(80));
+      console.log('🎉 NEW REFERRAL LEAD CREATED!');
+      console.log('='.repeat(80));
+      console.log(`📅 Date: ${new Date().toLocaleString()}`);
+      console.log(`\n👤 REFERRED CUSTOMER:`);
+      console.log(`   Name: ${referredCustomer}`);
+      console.log(`   Phone: ${referredPhone}`);
+      console.log(`   Email: ${referredEmail}`);
+      console.log(`\n🤝 REFERRER:`);
+      console.log(`   Name: ${referrerName}`);
+      console.log(`   Phone: ${referrerPhone}`);
+      console.log(`   Customer ID: ${referrerCustomerId}`);
+      console.log(`\n💰 Discount: $99 applied to referred customer`);
+      console.log(`💵 Credit: $50 will be issued to referrer when job completes`);
+      console.log(`\n📋 Lead ID: ${payload.id}`);
+      console.log('='.repeat(80) + '\n');
+      
+      // TODO: Add email/SMS notification here
+      // Example:
+      // - Send email to admin@johnsonsbrothersplumbing.com
+      // - Send SMS to business phone number
+      // - You can use Twilio, SendGrid, or other services
+      
+    } catch (error) {
+      console.error('Error sending referral notification:', error);
+    }
   }
 
   // Verify webhook signature (if Housecall Pro provides one)
