@@ -1844,7 +1844,7 @@ Sitemap: ${siteUrl}/sitemap.xml
   const { webhookProcessor } = await import('./src/webhooks');
 
   // Main webhook endpoint to receive events from Housecall Pro
-  app.post('/api/webhooks/housecall', webhookLimiter, async (req, res) => {
+  app.post('/webhooks/housecall', webhookLimiter, async (req, res) => {
     try {
       // Verify webhook signature if secret is configured
       const webhookSecret = process.env.HOUSECALL_WEBHOOK_SECRET;
