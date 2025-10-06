@@ -55,6 +55,7 @@ GOOGLE_ADS_ACCOUNT_ID=
 ### 4. Data Integrity Issues
 
 - [x] Tech employee IDs using placeholders ("emp_nate_placeholder") - FIXED: Updated with real HousecallPro IDs
+- [x] Referral form name validation for HCP API - FIXED: Split into separate first/last name fields for proper API validation
 - [ ] Mock data still active in MemStorage class
 - [ ] No data validation on critical fields
 - [ ] Missing database constraints
