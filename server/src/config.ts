@@ -77,9 +77,9 @@ export function loadConfig(): CapacityConfig {
         limited_same_day: 0.10,
       },
       tech_map: {
-        nate: 'emp_nate_placeholder',
-        nick: 'emp_nick_placeholder',
-        jahz: 'emp_jahz_placeholder',
+        nate: 'pro_19f45ddb23864f13ba5ffb20710e77e8',
+        nick: 'pro_784bb427ee27422f892b2db87dbdaf03',
+        jahz: 'pro_b0a7d40a10dc4477908cc808f62054ff',
       },
       geos: ['02170', '02169', '02171', '02351', '02184'],
       ads_rules: {
