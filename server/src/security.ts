@@ -145,10 +145,18 @@ export function configureSecurityMiddleware(app: Express) {
         continue;
       }
       
-      if (Object.prototype.hasOwnProperty.call(req.query, key) && typeof req.query[key] === 'string') {
-        sanitizedQuery[key] = (req.query[key] as string).replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
-      } else if (Object.prototype.hasOwnProperty.call(req.query, key)) {
-        sanitizedQuery[key] = req.query[key];
+      if (Object.prototype.hasOwnProperty.call(req.query, key)) {
+        const value = req.query[key];
+        const sanitizedValue = typeof value === 'string' 
+          ? value.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') 
+          : value;
+        
+        Object.defineProperty(sanitizedQuery, key, {
+          value: sanitizedValue,
+          enumerable: true,
+          writable: true,
+          configurable: true
+        });
       }
     }
     req.query = sanitizedQuery;
