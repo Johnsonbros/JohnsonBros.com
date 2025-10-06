@@ -50,7 +50,6 @@ html {
 img {
   max-width: 100%;
   height: auto;
-  loading: lazy;
 }
 
 /* Lighter placeholder text */

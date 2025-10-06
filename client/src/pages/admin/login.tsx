@@ -100,7 +100,7 @@ export default function AdminLogin() {
                           <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                           <Input
                             type="email"
-                            placeholder="Sales@thejohnsonbros.com"
+                            placeholder="admin@example.com"
                             className="pl-10"
                             data-testid="input-email"
                             {...field}
@@ -154,12 +154,8 @@ export default function AdminLogin() {
             </Form>
             
             <div className="mt-6 text-center text-sm text-gray-600">
-              <p>Admin credentials:</p>
-              <p className="mt-1">
-                Email: <span className="font-mono">Sales@thejohnsonbros.com</span>
-              </p>
-              <p className="mt-1 text-xs">
-                Contact system administrator for password
+              <p className="text-xs">
+                Contact system administrator for login credentials
               </p>
             </div>
           </CardContent>
