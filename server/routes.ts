@@ -677,7 +677,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         referrerCustomerId,
         referrerName,
         referrerPhone,
-        referredName,
+        referredFirstName,
+        referredLastName,
         referredPhone,
         referredEmail,
         referredAddress,
@@ -689,17 +690,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } = req.body;
 
       // Validate required fields
-      if (!referrerCustomerId || !referrerName || !referrerPhone || !referredName || !referredPhone) {
+      if (!referrerCustomerId || !referrerName || !referrerPhone || !referredFirstName || !referredLastName || !referredPhone) {
         return res.status(400).json({ error: "Missing required fields" });
       }
 
       const housecallClient = HousecallProClient.getInstance();
+      const referredName = `${referredFirstName} ${referredLastName}`;
 
       // Create lead in HousecallPro
       const leadData = {
         customer: {
-          first_name: referredName.split(' ')[0],
-          last_name: referredName.split(' ').slice(1).join(' ') || referredName,
+          first_name: referredFirstName,
+          last_name: referredLastName,
           email: referredEmail,
           mobile_number: referredPhone,
           lead_source: "Customer Referral",
@@ -729,7 +731,7 @@ $99 REFERRAL DISCOUNT APPLIES`,
       // Create lead in HousecallPro
       const lead = await housecallClient.createLead(leadData);
 
-      // Save referral to database
+      // Save referral to database (combine first and last name for storage)
       const referral = await storage.createReferral({
         referrerCustomerId,
         referrerName,

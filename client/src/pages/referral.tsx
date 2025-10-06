@@ -26,7 +26,8 @@ const customerLookupSchema = z.object({
 
 // Referral form schema
 const referralFormSchema = z.object({
-  referredName: z.string().min(1, "Name is required"),
+  referredFirstName: z.string().min(1, "First name is required"),
+  referredLastName: z.string().min(1, "Last name is required"),
   referredPhone: z.string().min(10, "Phone number must be at least 10 digits"),
   referredEmail: z.string().email("Invalid email format").optional().or(z.literal("")),
   referredAddress: z.string().optional(),
@@ -60,7 +61,8 @@ export default function Referral() {
   const referralForm = useForm<ReferralFormData>({
     resolver: zodResolver(referralFormSchema),
     defaultValues: {
-      referredName: "",
+      referredFirstName: "",
+      referredLastName: "",
       referredPhone: "",
       referredEmail: "",
       referredAddress: "",
@@ -400,15 +402,15 @@ export default function Referral() {
                       <div className="grid md:grid-cols-2 gap-4">
                         <FormField
                           control={referralForm.control}
-                          name="referredName"
+                          name="referredFirstName"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Friend's Full Name</FormLabel>
+                              <FormLabel>Friend's First Name</FormLabel>
                               <FormControl>
                                 <Input 
-                                  placeholder="Jane Smith" 
+                                  placeholder="Jane" 
                                   {...field} 
-                                  data-testid="input-referred-name"
+                                  data-testid="input-referred-firstname"
                                 />
                               </FormControl>
                               <FormMessage />
@@ -418,16 +420,15 @@ export default function Referral() {
                         
                         <FormField
                           control={referralForm.control}
-                          name="referredPhone"
+                          name="referredLastName"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Friend's Phone Number</FormLabel>
+                              <FormLabel>Friend's Last Name</FormLabel>
                               <FormControl>
                                 <Input 
-                                  type="tel" 
-                                  placeholder="617-555-5678" 
+                                  placeholder="Smith" 
                                   {...field} 
-                                  data-testid="input-referred-phone"
+                                  data-testid="input-referred-lastname"
                                 />
                               </FormControl>
                               <FormMessage />
@@ -435,6 +436,25 @@ export default function Referral() {
                           )}
                         />
                       </div>
+                      
+                      <FormField
+                        control={referralForm.control}
+                        name="referredPhone"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Friend's Phone Number</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="tel" 
+                                placeholder="617-555-5678" 
+                                {...field} 
+                                data-testid="input-referred-phone"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
                       <FormField
                         control={referralForm.control}
