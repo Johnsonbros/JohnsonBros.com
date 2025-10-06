@@ -137,7 +137,14 @@ export function configureSecurityMiddleware(app: Express) {
   app.use((req: Request, res: Response, next: NextFunction) => {
     // Sanitize query parameters - use Object.create(null) to prevent prototype pollution
     const sanitizedQuery = Object.create(null);
+    const dangerousKeys = ['__proto__', 'constructor', 'prototype'];
+    
     for (const key in req.query) {
+      // Skip dangerous property names that could cause issues
+      if (dangerousKeys.includes(key)) {
+        continue;
+      }
+      
       if (Object.prototype.hasOwnProperty.call(req.query, key) && typeof req.query[key] === 'string') {
         sanitizedQuery[key] = (req.query[key] as string).replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
       } else if (Object.prototype.hasOwnProperty.call(req.query, key)) {
