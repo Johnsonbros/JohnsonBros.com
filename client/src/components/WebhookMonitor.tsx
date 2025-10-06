@@ -115,8 +115,7 @@ export default function WebhookMonitor() {
       
       if (!response.ok) throw new Error('Failed to send test webhook');
       
-      const result = await response.json();
-      console.log('Test webhook sent:', result);
+      await response.json();
       
       // Refetch events after test
       setTimeout(() => {

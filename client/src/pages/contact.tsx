@@ -117,8 +117,6 @@ export default function ContactPage() {
                 <LeadForm 
                   leadSource="Website Contact Page"
                   onSuccess={() => {
-                    // Optional: Add any success tracking here
-                    console.log("Lead form submitted successfully");
                   }}
                 />
               </div>
