@@ -462,11 +462,30 @@ export class WebhookProcessor {
       console.log(`\n📋 Lead ID: ${payload.id}`);
       console.log('='.repeat(80) + '\n');
       
-      // TODO: Add email/SMS notification here
-      // Example:
-      // - Send email to admin@johnsonsbrothersplumbing.com
-      // - Send SMS to business phone number
-      // - You can use Twilio, SendGrid, or other services
+      // Send SMS notification using Twilio
+      const accountSid = process.env.TWILIO_ACCOUNT_SID;
+      const authToken = process.env.TWILIO_AUTH_TOKEN;
+      const fromNumber = process.env.TWILIO_PHONE_NUMBER;
+      const toNumber = '+16174799911';
+      
+      if (accountSid && authToken && fromNumber) {
+        try {
+          const twilio = (await import('twilio')).default;
+          const client = twilio(accountSid, authToken);
+          
+          const message = await client.messages.create({
+            body: `🎉 NEW REFERRAL!\n\nReferred: ${referredCustomer}\nPhone: ${referredPhone}\n\nReferrer: ${referrerName}\nPhone: ${referrerPhone}\n\n$99 discount applied to new customer\n$50 credit pending for referrer`,
+            from: fromNumber,
+            to: toNumber,
+          });
+          
+          console.log(`✅ SMS notification sent successfully (SID: ${message.sid})`);
+        } catch (smsError) {
+          console.error('❌ Error sending SMS notification:', smsError);
+        }
+      } else {
+        console.warn('⚠️  Twilio credentials not configured - SMS notification skipped');
+      }
       
     } catch (error) {
       console.error('Error sending referral notification:', error);

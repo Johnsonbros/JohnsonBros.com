@@ -746,6 +746,29 @@ $99 REFERRAL DISCOUNT APPLIES`,
         discountApplied: true
       });
 
+      // Send SMS notification
+      const accountSid = process.env.TWILIO_ACCOUNT_SID;
+      const authToken = process.env.TWILIO_AUTH_TOKEN;
+      const fromNumber = process.env.TWILIO_PHONE_NUMBER;
+      const toNumber = '+16174799911';
+      
+      if (accountSid && authToken && fromNumber) {
+        try {
+          const twilio = (await import('twilio')).default;
+          const client = twilio(accountSid, authToken);
+          
+          await client.messages.create({
+            body: `🎉 NEW REFERRAL!\n\nReferred: ${referredName}\nPhone: ${referredPhone}\n\nReferrer: ${referrerName}\nPhone: ${referrerPhone}\n\n$99 discount applied to new customer\n$50 credit pending for referrer`,
+            from: fromNumber,
+            to: toNumber,
+          });
+          
+          Logger.info('✅ Referral SMS notification sent successfully');
+        } catch (smsError) {
+          Logger.error('❌ Error sending referral SMS:', smsError);
+        }
+      }
+
       res.json({ 
         success: true, 
         referral,
