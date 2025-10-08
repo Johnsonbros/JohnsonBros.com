@@ -25,6 +25,18 @@ const customerLookupSchema = z.object({
   lastName: z.string().min(1, "Last name is required"),
 });
 
+// New customer signup schema
+const newCustomerSchema = z.object({
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  phone: z.string().min(10, "Phone number must be at least 10 digits"),
+  email: z.string().email("Invalid email format").optional().or(z.literal("")),
+  address: z.string().min(1, "Address is required"),
+  city: z.string().min(1, "City is required"),
+  state: z.string().min(1, "State is required"),
+  zip: z.string().min(5, "ZIP code must be at least 5 digits"),
+});
+
 // Referral form schema
 const referralFormSchema = z.object({
   referredFirstName: z.string().min(1, "First name is required"),
@@ -40,12 +52,14 @@ const referralFormSchema = z.object({
 });
 
 type CustomerLookupData = z.infer<typeof customerLookupSchema>;
+type NewCustomerData = z.infer<typeof newCustomerSchema>;
 type ReferralFormData = z.infer<typeof referralFormSchema>;
 
 export default function Referral() {
   const [currentCustomer, setCurrentCustomer] = useState<any>(null);
   const [isLookingUp, setIsLookingUp] = useState(false);
   const [lookupError, setLookupError] = useState<string | null>(null);
+  const [customerType, setCustomerType] = useState<'returning' | 'new' | null>(null);
   const { toast } = useToast();
 
   // Customer lookup form
@@ -55,6 +69,21 @@ export default function Referral() {
       phone: "",
       firstName: "",
       lastName: "",
+    },
+  });
+
+  // New customer signup form
+  const newCustomerForm = useForm<NewCustomerData>({
+    resolver: zodResolver(newCustomerSchema),
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      phone: "",
+      email: "",
+      address: "",
+      city: "Quincy",
+      state: "MA",
+      zip: "",
     },
   });
 
@@ -96,11 +125,63 @@ export default function Referral() {
       } else {
         setCurrentCustomer(null);
         setLookupError("Customer not found. Please verify that all three fields (first name, last name, and phone number) match exactly as they appear in our records.");
+        toast({
+          title: "Customer Not Found",
+          description: "We couldn't find your account. Please check your information or sign up as a new customer.",
+          variant: "destructive",
+        });
       }
     },
     onError: () => {
       setCurrentCustomer(null);
       setLookupError("An error occurred while looking up your information. Please try again.");
+      toast({
+        title: "Error",
+        description: "Unable to look up your account. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // New customer signup mutation
+  const newCustomerMutation = useMutation({
+    mutationFn: async (data: NewCustomerData) => {
+      const response = await apiRequest("POST", "/api/customers/create", {
+        first_name: data.firstName,
+        last_name: data.lastName,
+        mobile_number: data.phone,
+        email: data.email,
+        address: {
+          street: data.address,
+          city: data.city,
+          state: data.state,
+          zip: data.zip
+        }
+      });
+      return await response.json();
+    },
+    onSuccess: (data: any) => {
+      if (data.success && data.customer) {
+        setCurrentCustomer(data.customer);
+        setLookupError(null);
+        toast({
+          title: "Account Created",
+          description: `Welcome, ${data.customer.first_name} ${data.customer.last_name}! Your account has been created.`,
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: data.error || "Failed to create account. Please try again.",
+          variant: "destructive",
+        });
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to create account. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -156,6 +237,10 @@ export default function Referral() {
     setIsLookingUp(false);
   };
 
+  const handleNewCustomerSignup = (data: NewCustomerData) => {
+    newCustomerMutation.mutate(data);
+  };
+
   const handleReferralSubmit = (data: ReferralFormData) => {
     createReferralMutation.mutate(data);
   };
@@ -164,7 +249,9 @@ export default function Referral() {
   const handleResetLookup = () => {
     setCurrentCustomer(null);
     setLookupError(null);
+    setCustomerType(null);
     lookupForm.reset();
+    newCustomerForm.reset();
   };
 
   return (
@@ -254,91 +341,311 @@ export default function Referral() {
 
           {/* Main Content */}
           {!currentCustomer ? (
-            <Card data-testid="card-customer-lookup">
-              <CardHeader>
-                <CardTitle>Step 1: Find Your Account</CardTitle>
-                <CardDescription>
-                  Enter your information exactly as it appears in our records. All three fields must match to access your referral dashboard.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Form {...lookupForm}>
-                  <form onSubmit={lookupForm.handleSubmit(handleCustomerLookup)} className="space-y-6">
-                    <div className="grid md:grid-cols-3 gap-4">
-                      <FormField
-                        control={lookupForm.control}
-                        name="firstName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>First Name *</FormLabel>
-                            <FormControl>
-                              <Input placeholder="John" {...field} data-testid="input-firstname" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={lookupForm.control}
-                        name="lastName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Last Name *</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Doe" {...field} data-testid="input-lastname" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={lookupForm.control}
-                        name="phone"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Phone Number *</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="tel" 
-                                placeholder="617-555-1234" 
-                                {...field} 
-                                data-testid="input-phone"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+            <>
+              {/* Customer Type Selection */}
+              {!customerType && (
+                <Card data-testid="card-customer-type">
+                  <CardHeader>
+                    <CardTitle>Step 1: Select Customer Type</CardTitle>
+                    <CardDescription>
+                      Are you a returning customer or new to Johnson Bros. Plumbing?
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <Button
+                        size="lg"
+                        variant="outline"
+                        className="h-32 flex flex-col gap-2 border-2 hover:border-blue-600 hover:bg-blue-50"
+                        onClick={() => setCustomerType('returning')}
+                        data-testid="button-returning-customer"
+                      >
+                        <Users className="h-10 w-10 text-blue-600" />
+                        <span className="text-lg font-semibold">Returning Customer</span>
+                        <span className="text-sm text-gray-600">I've used your services before</span>
+                      </Button>
+                      <Button
+                        size="lg"
+                        variant="outline"
+                        className="h-32 flex flex-col gap-2 border-2 hover:border-green-600 hover:bg-green-50"
+                        onClick={() => setCustomerType('new')}
+                        data-testid="button-new-customer"
+                      >
+                        <Gift className="h-10 w-10 text-green-600" />
+                        <span className="text-lg font-semibold">New Customer</span>
+                        <span className="text-sm text-gray-600">I'm new to your services</span>
+                      </Button>
                     </div>
-                    
-                    <Alert>
-                      <AlertDescription>
-                        For security, all three fields must match your customer profile exactly. Please use the same phone number you provided during service.
-                      </AlertDescription>
-                    </Alert>
+                  </CardContent>
+                </Card>
+              )}
 
-                    {lookupError && (
-                      <Alert variant="destructive" data-testid="alert-lookup-error">
-                        <AlertTitle>Not Found</AlertTitle>
-                        <AlertDescription>{lookupError}</AlertDescription>
-                      </Alert>
-                    )}
+              {/* Returning Customer Lookup Form */}
+              {customerType === 'returning' && (
+                <Card data-testid="card-customer-lookup">
+                  <CardHeader>
+                    <CardTitle>Step 2: Find Your Account</CardTitle>
+                    <CardDescription>
+                      Enter your information exactly as it appears in our records. All three fields must match to access your referral dashboard.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Form {...lookupForm}>
+                      <form onSubmit={lookupForm.handleSubmit(handleCustomerLookup)} className="space-y-6">
+                        <div className="grid md:grid-cols-3 gap-4">
+                          <FormField
+                            control={lookupForm.control}
+                            name="firstName"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>First Name *</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="John" {...field} data-testid="input-firstname" />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={lookupForm.control}
+                            name="lastName"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Last Name *</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="Doe" {...field} data-testid="input-lastname" />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={lookupForm.control}
+                            name="phone"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Phone Number *</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    type="tel" 
+                                    placeholder="617-555-1234" 
+                                    {...field} 
+                                    data-testid="input-phone"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        
+                        <Alert>
+                          <AlertDescription>
+                            For security, all three fields must match your customer profile exactly. Please use the same phone number you provided during service.
+                          </AlertDescription>
+                        </Alert>
 
-                    <Button 
-                      type="submit" 
-                      size="lg" 
-                      disabled={lookupMutation.isPending}
-                      className="w-full md:w-auto"
-                      data-testid="button-lookup"
-                    >
-                      {lookupMutation.isPending ? "Looking up..." : "Find My Account"}
-                    </Button>
-                  </form>
-                </Form>
-              </CardContent>
-            </Card>
+                        {lookupError && (
+                          <Alert variant="destructive" data-testid="alert-lookup-error">
+                            <AlertTitle>Not Found</AlertTitle>
+                            <AlertDescription>{lookupError}</AlertDescription>
+                          </Alert>
+                        )}
+
+                        <div className="flex gap-4">
+                          <Button 
+                            type="button"
+                            variant="outline"
+                            onClick={() => setCustomerType(null)}
+                            data-testid="button-back"
+                          >
+                            Back
+                          </Button>
+                          <Button 
+                            type="submit" 
+                            size="lg" 
+                            disabled={lookupMutation.isPending}
+                            data-testid="button-lookup"
+                          >
+                            {lookupMutation.isPending ? "Looking up..." : "Find My Account"}
+                          </Button>
+                        </div>
+                      </form>
+                    </Form>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* New Customer Signup Form */}
+              {customerType === 'new' && (
+                <Card data-testid="card-new-customer-signup">
+                  <CardHeader>
+                    <CardTitle>Step 2: Create Your Account</CardTitle>
+                    <CardDescription>
+                      Fill in your information to create an account and start referring friends.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Form {...newCustomerForm}>
+                      <form onSubmit={newCustomerForm.handleSubmit(handleNewCustomerSignup)} className="space-y-6">
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <FormField
+                            control={newCustomerForm.control}
+                            name="firstName"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>First Name *</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="John" {...field} data-testid="input-new-firstname" />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={newCustomerForm.control}
+                            name="lastName"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Last Name *</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="Doe" {...field} data-testid="input-new-lastname" />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <FormField
+                            control={newCustomerForm.control}
+                            name="phone"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Phone Number *</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    type="tel" 
+                                    placeholder="617-555-1234" 
+                                    {...field} 
+                                    data-testid="input-new-phone"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={newCustomerForm.control}
+                            name="email"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Email (Optional)</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    type="email" 
+                                    placeholder="john@example.com" 
+                                    {...field} 
+                                    data-testid="input-new-email"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+
+                        <FormField
+                          control={newCustomerForm.control}
+                          name="address"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Street Address *</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  placeholder="123 Main St" 
+                                  {...field} 
+                                  data-testid="input-new-address"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <div className="grid md:grid-cols-3 gap-4">
+                          <FormField
+                            control={newCustomerForm.control}
+                            name="city"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>City *</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="Quincy" {...field} data-testid="input-new-city" />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={newCustomerForm.control}
+                            name="state"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>State *</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="MA" {...field} data-testid="input-new-state" />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={newCustomerForm.control}
+                            name="zip"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>ZIP Code *</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="02169" {...field} data-testid="input-new-zip" />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+
+                        <div className="flex gap-4">
+                          <Button 
+                            type="button"
+                            variant="outline"
+                            onClick={() => setCustomerType(null)}
+                            data-testid="button-back-new"
+                          >
+                            Back
+                          </Button>
+                          <Button 
+                            type="submit" 
+                            size="lg" 
+                            disabled={newCustomerMutation.isPending}
+                            data-testid="button-create-account"
+                          >
+                            {newCustomerMutation.isPending ? "Creating Account..." : "Create Account"}
+                          </Button>
+                        </div>
+                      </form>
+                    </Form>
+                  </CardContent>
+                </Card>
+              )}
+            </>
           ) : (
             <div className="space-y-8">
               {/* Customer Info Banner */}

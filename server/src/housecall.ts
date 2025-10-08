@@ -509,6 +509,31 @@ export class HousecallProClient {
     return customer;
   }
 
+  async getCustomer(customerId: string): Promise<any> {
+    Logger.debug(`[HousecallProClient] Getting customer ${customerId}`);
+    const customer = await this.callAPI(`/customers/${customerId}`, {}, { method: 'GET' });
+    Logger.debug(`[HousecallProClient] Customer retrieved: ${JSON.stringify(customer)}`);
+    return customer;
+  }
+
+  async updateCustomer(customerId: string, updateData: any): Promise<any> {
+    Logger.debug(`[HousecallProClient] Updating customer ${customerId}: ${JSON.stringify(updateData, null, 2)}`);
+    const customer = await this.callAPI(`/customers/${customerId}`, {}, { method: 'PUT', body: updateData });
+    Logger.debug(`[HousecallProClient] Customer updated: ${JSON.stringify(customer)}`);
+    return customer;
+  }
+
+  async addCustomerNote(customerId: string, note: string): Promise<void> {
+    Logger.debug(`[HousecallProClient] Adding note to customer ${customerId}: ${note}`);
+    try {
+      await this.callAPI(`/customers/${customerId}/notes`, {}, { method: 'POST', body: { content: note } });
+      Logger.debug('[HousecallProClient] Customer note added successfully');
+    } catch (error) {
+      console.error('[HousecallProClient] Failed to add customer note:', error);
+      throw error;
+    }
+  }
+
   async addJobNote(jobId: string, note: string): Promise<void> {
     Logger.debug(`[HousecallProClient] Adding note to job ${jobId}: ${note}`);
     try {

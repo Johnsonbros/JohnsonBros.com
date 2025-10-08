@@ -553,6 +553,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Create new customer in HousecallPro
+  app.post("/api/customers/create", customerLookupLimiter, async (req, res) => {
+    try {
+      const { first_name, last_name, mobile_number, email, address } = req.body;
+      
+      if (!first_name || !last_name || !mobile_number) {
+        return res.status(400).json({ error: "First name, last name, and phone number are required" });
+      }
+
+      const housecallClient = HousecallProClient.getInstance();
+      
+      // Create customer in HousecallPro
+      const customerData = {
+        first_name,
+        last_name,
+        mobile_number,
+        email,
+        address: address ? {
+          street: address.street,
+          city: address.city,
+          state: address.state,
+          zip: address.zip
+        } : undefined
+      };
+
+      Logger.info(`[Customer Create] Creating customer: ${first_name} ${last_name}, Phone: ${mobile_number}`);
+      const customer = await housecallClient.createCustomer(customerData);
+      Logger.info(`[Customer Create] Successfully created customer with ID: ${customer.id}`);
+
+      res.json({
+        success: true,
+        customer: {
+          id: customer.id,
+          first_name: customer.first_name,
+          last_name: customer.last_name,
+          email: customer.email,
+          phone: customer.mobile_number,
+          mobile_number: customer.mobile_number,
+          address: customer.address
+        }
+      });
+    } catch (error) {
+      Logger.error("[Customer Create] Error:", error);
+      res.status(500).json({ 
+        error: "Failed to create customer",
+        details: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
   // Lookup existing customer with rate limiting
   app.post("/api/customers/lookup", async (req, res) => {
     try {
@@ -697,7 +747,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const housecallClient = HousecallProClient.getInstance();
       const referredName = `${referredFirstName} ${referredLastName}`;
 
-      // Create lead in HousecallPro
+      // Create lead in HousecallPro with $50 discount tag
       const leadData = {
         customer: {
           first_name: referredFirstName,
@@ -705,11 +755,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           email: referredEmail,
           mobile_number: referredPhone,
           lead_source: "Customer Referral",
-          tags: [`referred-by-${referrerCustomerId}`, "referral-program"],
+          tags: [`referred-by-${referrerCustomerId}`, "referral-program", "$50-off"],
           notes: `Referred by: ${referrerName} (${referrerPhone})
 Customer ID: ${referrerCustomerId}
 Service Needed: ${serviceNeeded || 'General plumbing service'}
-$99 REFERRAL DISCOUNT APPLIES`,
+$50 REFERRAL CREDIT APPLIES - New customer receives $50 credit toward any service`,
           address: referredAddress ? {
             street: referredAddress,
             city: referredCity || "Quincy",
@@ -717,19 +767,44 @@ $99 REFERRAL DISCOUNT APPLIES`,
             zip: referredZip || ""
           } : undefined
         },
-        // Apply the $99 discount as a line item
+        // Apply the $50 credit as a line item
         line_items: [{
-          name: "Referral Discount",
-          description: `$99 off - Referred by ${referrerName}`,
+          name: "Referral Credit",
+          description: `$50 credit - Referred by ${referrerName}`,
           kind: "fixed discount",
-          unit_price: -9900, // Negative for discount
+          unit_price: -5000, // $50 in cents, negative for discount
           quantity: 1
         }],
-        notes: notes || `New customer referred by ${referrerName}. $99 referral discount applied.`
+        notes: notes || `New customer referred by ${referrerName}. $50 referral credit applied.`
       };
 
       // Create lead in HousecallPro
       const lead = await housecallClient.createLead(leadData);
+
+      // Add $50 credit tag and note to referrer customer
+      try {
+        // Get referrer customer to update tags/notes
+        const referrerCustomer = await housecallClient.getCustomer(referrerCustomerId);
+        
+        // Update referrer with $50 credit tag and note
+        const referrerUpdateData: any = {
+          tags: [...(referrerCustomer.tags || []), "$50-off", "referral-program"],
+        };
+
+        // Add note about the referral credit owed
+        const referralNote = `REFERRAL CREDIT: $50 credit owed for referring ${referredName} (${referredPhone}). Credit will be applied when referral completes first service.`;
+        
+        // Update referrer customer
+        await housecallClient.updateCustomer(referrerCustomerId, referrerUpdateData);
+        
+        // Add note to referrer customer (notes are added separately in HousecallPro)
+        await housecallClient.addCustomerNote(referrerCustomerId, referralNote);
+        
+        Logger.info(`[Referral] Added $50 credit tag and note to referrer customer ${referrerCustomerId}`);
+      } catch (error) {
+        Logger.error(`[Referral] Failed to update referrer customer:`, error);
+        // Continue even if tag/note update fails
+      }
 
       // Save referral to database (combine first and last name for storage)
       const referral = await storage.createReferral({
@@ -742,7 +817,7 @@ $99 REFERRAL DISCOUNT APPLIES`,
         referredEmail,
         notes: `Service: ${serviceNeeded || 'General plumbing'}. ${notes || ''}`,
         status: 'pending',
-        discountAmount: 9900,
+        discountAmount: 5000, // $50 in cents
         discountApplied: true
       });
 
@@ -758,7 +833,7 @@ $99 REFERRAL DISCOUNT APPLIES`,
           const client = twilio(accountSid, authToken);
           
           await client.messages.create({
-            body: `🎉 NEW REFERRAL!\n\nReferred: ${referredName}\nPhone: ${referredPhone}\n\nReferrer: ${referrerName}\nPhone: ${referrerPhone}\n\n$99 discount applied to new customer\n$50 credit pending for referrer`,
+            body: `🎉 NEW REFERRAL!\n\nReferred: ${referredName}\nPhone: ${referredPhone}\n\nReferrer: ${referrerName}\nPhone: ${referrerPhone}\n\n$50 credit for BOTH when referral completes first service`,
             from: fromNumber,
             to: toNumber,
           });
@@ -774,7 +849,7 @@ $99 REFERRAL DISCOUNT APPLIES`,
         referral,
         leadId: lead.id,
         referralCode: referral.referralCode,
-        message: "Referral created successfully! The new customer has been added to our system with a $99 discount."
+        message: "Referral created successfully! Both you and your friend will receive $50 credit when they complete their first service."
       });
 
     } catch (error) {
