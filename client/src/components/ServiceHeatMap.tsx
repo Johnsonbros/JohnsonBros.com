@@ -201,111 +201,138 @@ export function ServiceHeatMap() {
 
         mapInstanceRef.current = map;
 
-        // Use individual job locations as heat map points
-        // Each point represents an actual job location (with privacy offset applied on backend)
-        const heatmapData: any[] = heatMapData.map(location => ({
-          location: new google.maps.LatLng(location.lat, location.lng),
-          weight: location.intensity || 1 // Use consistent weight for trust signal
-        }));
-
-        // Blue to orange gradient matching company color scheme
-        const customGradient = [
-          'rgba(0, 0, 0, 0)',
-          'rgba(200, 230, 255, 0.1)',
-          'rgba(150, 210, 255, 0.3)',
-          'rgba(100, 180, 255, 0.5)',
-          'rgba(80, 160, 255, 0.6)',
-          'rgba(60, 140, 255, 0.7)',
-          'rgba(100, 130, 255, 0.75)',
-          'rgba(140, 120, 230, 0.8)',
-          'rgba(180, 110, 200, 0.85)',
-          'rgba(220, 100, 170, 0.9)',
-          'rgba(251, 146, 60, 0.95)',
-          'rgba(249, 115, 22, 1)',
-          'rgba(234, 88, 12, 1)',
-          'rgba(220, 60, 5, 1)'
-        ];
-
-        // Store intervals for cleanup
-        const intervals: NodeJS.Timeout[] = [];
+        // Sort areas by job count to show biggest areas first
+        const sortedAreas = [...heatMapData].sort((a, b) => b.count - a.count);
         
-        // Add pulsing markers for top service areas
-        const topAreas = heatMapData
-          .sort((a, b) => b.count - a.count)
-          .slice(0, 3); // Top 3 busiest areas
-        
-        topAreas.forEach((area, index) => {
-          const pulseCircle = new google.maps.Circle({
-            strokeColor: '#2563EB',
-            strokeOpacity: 0,
-            strokeWeight: 0,
-            fillColor: '#3B82F6',
-            fillOpacity: 0.1,
+        // Create clear visual markers for each service area
+        sortedAreas.forEach((area, index) => {
+          const jobCount = area.count;
+          
+          // Determine size and color based on job volume
+          let markerSize, fillColor, strokeColor, fillOpacity;
+          if (jobCount >= 100) {
+            markerSize = 3500;
+            fillColor = '#DC2626'; // Red for highest volume
+            strokeColor = '#991B1B';
+            fillOpacity = 0.35;
+          } else if (jobCount >= 50) {
+            markerSize = 2800;
+            fillColor = '#EA580C'; // Orange for high volume
+            strokeColor = '#C2410C';
+            fillOpacity = 0.30;
+          } else if (jobCount >= 25) {
+            markerSize = 2200;
+            fillColor = '#F59E0B'; // Amber for medium volume
+            strokeColor = '#D97706';
+            fillOpacity = 0.25;
+          } else {
+            markerSize = 1800;
+            fillColor = '#3B82F6'; // Blue for lower volume
+            strokeColor = '#2563EB';
+            fillOpacity = 0.20;
+          }
+
+          // Create area circle
+          const areaCircle = new google.maps.Circle({
+            strokeColor: strokeColor,
+            strokeOpacity: 0.8,
+            strokeWeight: 2,
+            fillColor: fillColor,
+            fillOpacity: fillOpacity,
             map: map,
             center: { lat: area.lat, lng: area.lng },
-            radius: 1500 - (index * 200),
+            radius: markerSize,
+            clickable: true,
           });
-          
-          // Subtle pulse animation
-          let opacity = 0.1;
-          let growing = true;
-          const intervalId = setInterval(() => {
-            if (growing) {
-              opacity += 0.005;
-              if (opacity >= 0.2) growing = false;
-            } else {
-              opacity -= 0.005;
-              if (opacity <= 0.05) growing = true;
-            }
-            pulseCircle.setOptions({ fillOpacity: opacity });
-          }, 150);
-          
-          intervals.push(intervalId);
-        });
-        
-        // Store intervals on map instance for cleanup
-        (mapInstanceRef.current as any).pulseIntervals = intervals;
-        
-        // Mobile-optimized heat map settings
-        // Adjust radius based on zoom level for privacy at max zoom
-        const getRadiusForZoom = () => {
-          const currentZoom = map.getZoom() || 10;
-          // Larger radius at higher zoom to maintain privacy
-          if (currentZoom >= 14) return 60; // Very blurry at street level
-          if (currentZoom >= 12) return 45;
-          if (currentZoom >= 10) return 30;
-          return 25;
-        };
-        
-        // Use circles instead of deprecated HeatmapLayer
-        const heatmapCircles: any[] = [];
-        
-        // Create circles for each data point with opacity based on intensity
-        heatMapData.forEach(point => {
-          const intensity = Math.min(point.count / 100, 1); // Normalize intensity
-          const circle = new google.maps.Circle({
-            strokeColor: '#EA580C',
-            strokeOpacity: 0,
-            strokeWeight: 0,
-            fillColor: intensity > 0.7 ? '#DC3C05' : intensity > 0.4 ? '#EA580C' : '#F97316',
-            fillOpacity: intensity * 0.3, // Max 30% opacity for layering
-            map: map,
-            center: { lat: point.lat, lng: point.lng },
-            radius: getRadiusForZoom() * 50, // Scale up radius for visibility
-          });
-          heatmapCircles.push(circle);
-        });
-        
-        // Update radius on zoom change to maintain privacy
-        map.addListener('zoom_changed', () => {
-          const newRadius = getRadiusForZoom() * 50;
-          heatmapCircles.forEach(circle => {
-            circle.setRadius(newRadius);
-          });
-        });
 
-        // Store circles reference for cleanup
-        (heatmapRef as any).current = heatmapCircles;
+          // Create custom marker with job count
+          const markerDiv = document.createElement('div');
+          markerDiv.className = 'custom-map-marker';
+          markerDiv.innerHTML = `
+            <div style="
+              background: white;
+              border: 3px solid ${strokeColor};
+              border-radius: 12px;
+              padding: 8px 16px;
+              box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+              font-weight: bold;
+              text-align: center;
+              cursor: pointer;
+              transform: translate(-50%, -50%);
+              white-space: nowrap;
+            ">
+              <div style="color: ${strokeColor}; font-size: 18px; line-height: 1.2;">
+                ${jobCount}+
+              </div>
+              <div style="color: #374151; font-size: 11px; margin-top: 2px;">
+                ${area.city}
+              </div>
+            </div>
+          `;
+
+          // Create custom overlay class for HTML marker
+          const CustomMarker = class extends google.maps.OverlayView {
+            position: any;
+            div: HTMLElement | null = null;
+
+            constructor(position: any, content: HTMLElement) {
+              super();
+              this.position = position;
+              this.div = content;
+            }
+
+            onAdd() {
+              const panes = (this as any).getPanes();
+              if (panes && this.div) {
+                panes.overlayMouseTarget.appendChild(this.div);
+              }
+            }
+
+            draw() {
+              if (!this.div) return;
+              const projection = (this as any).getProjection();
+              const position = projection.fromLatLngToDivPixel(this.position);
+              if (position) {
+                this.div.style.left = position.x + 'px';
+                this.div.style.top = position.y + 'px';
+                this.div.style.position = 'absolute';
+              }
+            }
+
+            onRemove() {
+              if (this.div && this.div.parentNode) {
+                this.div.parentNode.removeChild(this.div);
+              }
+            }
+          };
+
+          const overlay = new CustomMarker(
+            new google.maps.LatLng(area.lat, area.lng),
+            markerDiv
+          );
+          (overlay as any).setMap(map);
+
+          // Add hover effect
+          areaCircle.addListener('mouseover', () => {
+            setHoveredCity(area.city);
+          });
+          
+          areaCircle.addListener('mouseout', () => {
+            setHoveredCity(null);
+          });
+
+          markerDiv.addEventListener('mouseenter', () => {
+            setHoveredCity(area.city);
+            markerDiv.style.transform = 'translate(-50%, -50%) scale(1.1)';
+            markerDiv.style.zIndex = '1000';
+          });
+
+          markerDiv.addEventListener('mouseleave', () => {
+            setHoveredCity(null);
+            markerDiv.style.transform = 'translate(-50%, -50%) scale(1)';
+            markerDiv.style.zIndex = '1';
+          });
+        });
 
         // Add testimonial markers to the map using standard markers
         testimonials.forEach((testimonial, index) => {
@@ -440,7 +467,7 @@ export function ServiceHeatMap() {
         (mapInstanceRef.current as any).pulseIntervals.forEach((id: NodeJS.Timeout) => clearInterval(id));
       }
     };
-  }, [heatMapData]);
+  }, [heatMapData, isMapVisible]);
 
   if (isLoading) {
     return (
@@ -663,6 +690,34 @@ export function ServiceHeatMap() {
             </div>
           </div>
         )}
+      </div>
+
+      {/* Map Legend */}
+      <div className="bg-white py-6 px-4 border-t border-gray-200">
+        <div className="max-w-4xl mx-auto">
+          <h4 className="text-center font-bold text-gray-900 mb-4">Service Volume by Area</h4>
+          <div className="flex flex-wrap justify-center gap-4 md:gap-6">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-red-600 border-2 border-red-900"></div>
+              <span className="text-sm font-medium text-gray-700">100+ Jobs</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-orange-600 border-2 border-orange-800"></div>
+              <span className="text-sm font-medium text-gray-700">50-99 Jobs</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-amber-500 border-2 border-amber-700"></div>
+              <span className="text-sm font-medium text-gray-700">25-49 Jobs</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-blue-500 border-2 border-blue-700"></div>
+              <span className="text-sm font-medium text-gray-700">Under 25 Jobs</span>
+            </div>
+          </div>
+          <p className="text-center text-xs text-gray-500 mt-4">
+            Numbers shown are completed jobs in each service area. Larger circles = more customers served.
+          </p>
+        </div>
       </div>
 
       {/* Professional Trust Indicators */}
