@@ -78,7 +78,7 @@ export default function Header({ onBookService }: HeaderProps) {
       </a>
 
       {/* Main Header */}
-      <header className="bg-johnson-blue shadow-lg sticky top-0 z-50 border-t-2 border-johnson-blue">
+      <header className="bg-blue-900 lg:bg-johnson-blue shadow-lg sticky top-0 z-50 border-t-2 border-blue-900 lg:border-johnson-blue">
         {/* Mobile Layout - Simplified */}
         <div className="lg:hidden px-2 py-1 flex justify-between items-center gap-1">
           {/* Logo - Larger image that extends towards hamburger */}
