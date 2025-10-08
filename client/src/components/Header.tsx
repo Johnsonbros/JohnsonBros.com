@@ -103,33 +103,33 @@ export default function Header({ onBookService }: HeaderProps) {
 
         {/* Mobile Menu Overlay */}
         {isMobileMenuOpen && (
-          <div className="lg:hidden fixed inset-0 top-[120px] bg-johnson-blue z-40" style={{ height: 'calc(100vh - 120px - 70px)' }}>
-            <nav className="flex flex-col p-6 space-y-4">
+          <div className="lg:hidden fixed inset-0 top-[120px] bg-blue-900 z-40" style={{ height: 'calc(100vh - 120px - 70px)' }}>
+            <nav className="flex flex-col p-6 space-y-2">
               <Link 
                 href="/" 
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="text-white text-lg font-medium py-3 px-4 hover:bg-white/10 rounded-lg transition-colors"
+                className="text-white text-lg font-medium py-3 px-4 hover:bg-blue-800 rounded-lg transition-colors"
               >
                 Home
               </Link>
               <a 
                 href="/#services" 
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="text-white text-lg font-medium py-3 px-4 hover:bg-white/10 rounded-lg transition-colors"
+                className="text-white text-lg font-medium py-3 px-4 hover:bg-blue-800 rounded-lg transition-colors"
               >
                 Services
               </a>
               <a 
                 href="/#about" 
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="text-white text-lg font-medium py-3 px-4 hover:bg-white/10 rounded-lg transition-colors"
+                className="text-white text-lg font-medium py-3 px-4 hover:bg-blue-800 rounded-lg transition-colors"
               >
                 About Us
               </a>
               <Link 
                 href="/blog" 
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="text-white text-lg font-medium py-3 px-4 hover:bg-white/10 rounded-lg transition-colors"
+                className="text-white text-lg font-medium py-3 px-4 hover:bg-blue-800 rounded-lg transition-colors"
                 data-testid="mobile-nav-blog"
               >
                 Blog
@@ -137,14 +137,14 @@ export default function Header({ onBookService }: HeaderProps) {
               <a 
                 href="/#reviews" 
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="text-white text-lg font-medium py-3 px-4 hover:bg-white/10 rounded-lg transition-colors"
+                className="text-white text-lg font-medium py-3 px-4 hover:bg-blue-800 rounded-lg transition-colors"
               >
                 Reviews
               </a>
               <Link 
                 href="/contact" 
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="text-white text-lg font-medium py-3 px-4 hover:bg-white/10 rounded-lg transition-colors"
+                className="text-white text-lg font-medium py-3 px-4 hover:bg-blue-800 rounded-lg transition-colors"
                 data-testid="mobile-nav-contact"
               >
                 Contact
@@ -152,13 +152,13 @@ export default function Header({ onBookService }: HeaderProps) {
               <Link 
                 href="/referral" 
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="text-white text-lg font-medium py-3 px-4 hover:bg-white/10 rounded-lg transition-colors"
+                className="text-white text-lg font-medium py-3 px-4 hover:bg-blue-800 rounded-lg transition-colors"
                 data-testid="mobile-nav-referral"
               >
                 Referral Program
               </Link>
-              <div className="pt-4 border-t border-white/20">
-                <div className="flex items-center justify-center space-x-2 bg-white/10 px-4 py-3 rounded-lg">
+              <div className="pt-4 mt-4 border-t border-blue-700">
+                <div className="flex items-center justify-center space-x-2 bg-blue-800 px-4 py-3 rounded-lg">
                   <div className="flex text-yellow-400">
                     <Star className="h-4 w-4 fill-current" />
                     <Star className="h-4 w-4 fill-current" />
