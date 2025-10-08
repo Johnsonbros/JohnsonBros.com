@@ -6,6 +6,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useState, useEffect } from "react";
 import { formatTimeWindowEST } from "@/lib/timeUtils";
 import { format, addDays } from "date-fns";
+import plumberVideo from "@assets/5_1759938319119.mp4";
 
 interface HeroSectionProps {
   onBookService: () => void;
@@ -351,11 +352,15 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
           </div>
 
           <div className="relative mt-8 lg:mt-0">
-            {/* Professional plumber working on modern bathroom fixtures */}
-            <img 
-              src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600" 
-              alt="Professional plumber installing modern fixtures" 
+            {/* Professional plumber working video */}
+            <video 
+              src={plumberVideo}
+              autoPlay
+              loop
+              muted
+              playsInline
               className="rounded-xl shadow-2xl w-full"
+              aria-label="Professional plumber at work"
             />
             
             {/* Floating Service Badge */}
