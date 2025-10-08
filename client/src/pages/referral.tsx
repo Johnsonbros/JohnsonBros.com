@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { SEO } from "@/components/SEO";
+import heroImage from "@assets/stock_images/happy_friends_celebr_4fbee77b.jpg";
 
 // Customer lookup schema
 const customerLookupSchema = z.object({
@@ -127,7 +128,7 @@ export default function Referral() {
     onSuccess: (data: any) => {
       toast({
         title: "Referral Submitted!",
-        description: "Thank you for referring a friend! They'll receive $99 off their first service, and you'll earn $50 credit when they complete their booking.",
+        description: "Thank you for referring a friend! You'll both receive $50 credit toward any service when they complete their booking.",
       });
       referralForm.reset();
       // Invalidate any referral queries
@@ -170,61 +171,82 @@ export default function Referral() {
     <>
       <SEO
         title="Referral Program | Johnson Bros. Plumbing & Drain Cleaning"
-        description="Refer friends and family to Johnson Bros. Plumbing and earn rewards! Get $50 credit for each referral, and your friend saves $99 on their first service."
+        description="Refer friends and family to Johnson Bros. Plumbing and earn rewards! Both you and your friend get $50 credit toward any service."
         keywords={["referral program", "plumbing referral", "earn rewards", "discount plumbing", "Quincy MA"]}
         url="/referral"
         type="website"
       />
       
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
         <Header />
         
         <div className="container mx-auto px-4 py-12 max-w-6xl">
-          {/* Hero Section */}
-          <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">
-              Refer Friends, Earn Rewards
-            </h1>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Share the exceptional service you've experienced with Johnson Bros. Plumbing. 
-              Your friends save $99, and you earn $50 credit for each successful referral!
-            </p>
+          {/* Hero Section with Background */}
+          <div className="mb-12 relative">
+            <div className="grid md:grid-cols-2 gap-8 items-center bg-gradient-to-r from-blue-600/10 to-green-600/10 rounded-3xl p-8 md:p-12">
+              <div className="text-center md:text-left">
+                <h1 className="text-5xl font-bold text-gray-900 mb-4">
+                  Refer Friends, You Both Win!
+                </h1>
+                <p className="text-2xl text-gray-700 font-medium mb-4">
+                  Share the exceptional service you've experienced with Johnson Bros. Plumbing.
+                </p>
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 inline-block">
+                  <p className="text-3xl text-blue-700 font-bold">
+                    $50 + $50 = Win-Win! 🎉
+                  </p>
+                  <p className="text-lg text-gray-600 mt-2">
+                    You both get credit toward any service!
+                  </p>
+                </div>
+              </div>
+              <div className="relative">
+                <img 
+                  src={heroImage} 
+                  alt="Friends celebrating together" 
+                  className="rounded-2xl shadow-2xl w-full h-auto object-cover"
+                />
+                <div className="absolute -bottom-4 -right-4 bg-green-500 text-white rounded-full p-4 shadow-lg">
+                  <DollarSign className="h-12 w-12" />
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Benefits Cards */}
           <div className="grid md:grid-cols-3 gap-6 mb-12">
-            <Card data-testid="card-benefit-friend">
+            <Card data-testid="card-benefit-friend" className="border-blue-200 bg-gradient-to-br from-blue-50 to-white">
               <CardContent className="pt-6">
                 <div className="flex items-center space-x-3 mb-3">
                   <Gift className="h-8 w-8 text-blue-600" />
-                  <h3 className="text-lg font-semibold">Friend Saves $99</h3>
+                  <h3 className="text-lg font-semibold">Your Friend Gets $50</h3>
                 </div>
                 <p className="text-gray-600">
-                  Your referred friend receives an instant $99 discount on their first service.
+                  Your referred friend receives $50 credit toward any plumbing service we provide.
                 </p>
               </CardContent>
             </Card>
             
-            <Card data-testid="card-benefit-credit">
+            <Card data-testid="card-benefit-credit" className="border-green-200 bg-gradient-to-br from-green-50 to-white">
               <CardContent className="pt-6">
                 <div className="flex items-center space-x-3 mb-3">
                   <DollarSign className="h-8 w-8 text-green-600" />
-                  <h3 className="text-lg font-semibold">You Earn $50</h3>
+                  <h3 className="text-lg font-semibold">You Get $50 Too!</h3>
                 </div>
                 <p className="text-gray-600">
-                  Receive $50 credit toward your next service when your referral completes their booking.
+                  Receive $50 credit toward any service when your referral completes their booking.
                 </p>
               </CardContent>
             </Card>
             
-            <Card data-testid="card-benefit-unlimited">
+            <Card data-testid="card-benefit-unlimited" className="border-purple-200 bg-gradient-to-br from-purple-50 to-white">
               <CardContent className="pt-6">
                 <div className="flex items-center space-x-3 mb-3">
                   <Users className="h-8 w-8 text-purple-600" />
                   <h3 className="text-lg font-semibold">Unlimited Referrals</h3>
                 </div>
                 <p className="text-gray-600">
-                  No limits on referrals - the more friends you refer, the more you earn!
+                  No limits on referrals - the more friends you refer, the more you both earn!
                 </p>
               </CardContent>
             </Card>
@@ -480,7 +502,7 @@ export default function Referral() {
                               />
                             </FormControl>
                             <FormDescription>
-                              We'll send them details about their $99 discount
+                              We'll send them details about their $50 credit
                             </FormDescription>
                             <FormMessage />
                           </FormItem>
@@ -634,17 +656,39 @@ export default function Referral() {
           )}
 
           {/* Terms and Conditions */}
-          <Card className="mt-12 bg-gray-50" data-testid="card-terms">
+          <Card className="mt-12 bg-gradient-to-br from-gray-50 to-blue-50 border-blue-200" data-testid="card-terms">
             <CardHeader>
-              <CardTitle className="text-lg">Program Terms</CardTitle>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <CheckCircle className="h-5 w-5 text-blue-600" />
+                Program Terms & Conditions
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <ul className="text-sm text-gray-600 space-y-2">
-                <li>• Referred customers must be new to Johnson Bros. Plumbing</li>
-                <li>• $99 discount applies to first service only (minimum service of $200)</li>
-                <li>• $50 credit is issued after referred customer completes their first paid service</li>
-                <li>• Credits can be applied to future services and do not expire</li>
-                <li>• Program terms subject to change without notice</li>
+              <ul className="text-sm text-gray-700 space-y-3">
+                <li className="flex items-start gap-2">
+                  <span className="text-blue-600 font-bold">•</span>
+                  <span>Referred customers must be new to Johnson Bros. Plumbing & Drain Cleaning</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-blue-600 font-bold">•</span>
+                  <span><strong>Both parties receive $50 credit</strong> after the referred customer completes their first paid service</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-blue-600 font-bold">•</span>
+                  <span>Credits can be applied toward <strong>any and all services</strong> we provide (no minimum purchase required)</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-blue-600 font-bold">•</span>
+                  <span>Credits never expire and can be combined with other offers</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-blue-600 font-bold">•</span>
+                  <span>Unlimited referrals - refer as many friends as you'd like!</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-blue-600 font-bold">•</span>
+                  <span>Program terms subject to change; current customers will be notified of any changes</span>
+                </li>
               </ul>
             </CardContent>
           </Card>
