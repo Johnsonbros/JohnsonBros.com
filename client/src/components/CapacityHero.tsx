@@ -32,8 +32,8 @@ export default function CapacityHero({ onBookService }: HeroSectionProps) {
   // Fetch capacity data
   const { data: capacity, isLoading } = useQuery<CapacityData>({
     queryKey: ['/api/capacity/today'],
-    refetchInterval: 120000, // Refresh every 2 minutes
-    staleTime: 60000, // Consider data stale after 1 minute
+    refetchInterval: 300000, // Refresh every 5 minutes to reduce API costs
+    staleTime: 240000, // Consider data stale after 4 minutes
   });
 
   const handleBookNow = () => {

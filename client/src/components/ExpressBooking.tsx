@@ -54,8 +54,8 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
       const response = await apiRequest("GET", url);
       return response.json();
     },
-    refetchInterval: 60000, // Check every minute for updates
-    staleTime: 45000, // Consider data stale after 45 seconds
+    refetchInterval: 300000, // Check every 5 minutes to reduce API costs
+    staleTime: 240000, // Consider data stale after 4 minutes
     refetchIntervalInBackground: false, // Don't poll when tab is inactive
     refetchOnWindowFocus: true,
   });
@@ -73,8 +73,8 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
       return response.json();
     },
     enabled: shouldShowTomorrow,
-    refetchInterval: 60000, // Check every minute for updates
-    staleTime: 45000,
+    refetchInterval: 300000, // Check every 5 minutes to reduce API costs
+    staleTime: 240000,
     refetchIntervalInBackground: false, // Don't poll when tab is inactive
     refetchOnWindowFocus: true,
   });
