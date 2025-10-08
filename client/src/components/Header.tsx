@@ -207,64 +207,64 @@ export default function Header({ onBookService }: HeaderProps) {
         </div>
 
         {/* Desktop Layout */}
-        <div className="container mx-auto px-4 py-3">
-
-          {/* Desktop Layout */}
-          <div className="hidden lg:flex justify-between items-center">
-            {/* Logo */}
-            <div className="flex items-center">
-              <img 
-                src="/JB_logo_New_1756136293648.png" 
-                alt="Johnson Bros. Plumbing & Drain Cleaning" 
-                className="h-18 w-auto"
-                data-testid="company-logo-desktop"
-              />
-            </div>
-
-            {/* Desktop Navigation */}
-            <nav className="flex space-x-8">
-              <Link href="/" className="text-white hover:text-blue-200 transition-colors font-medium">Home</Link>
-              <a href="/#services" className="text-white hover:text-blue-200 transition-colors font-medium">Services</a>
-              <a href="/#about" className="text-white hover:text-blue-200 transition-colors font-medium">About</a>
-              <Link href="/blog" className="text-white hover:text-blue-200 transition-colors font-medium" data-testid="desktop-nav-blog">Blog</Link>
-              <a href="/#reviews" className="text-white hover:text-blue-200 transition-colors font-medium">Reviews</a>
-              <Link href="/contact" className="text-white hover:text-blue-200 transition-colors font-medium" data-testid="desktop-nav-contact">Contact</Link>
-              <Link href="/referral" className="text-white hover:text-blue-200 transition-colors font-medium" data-testid="desktop-nav-referral">Referral</Link>
-            </nav>
-
-            {/* Desktop CTA Buttons */}
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-3 bg-gradient-to-r from-white/20 to-white/10 backdrop-blur-sm px-4 py-3 rounded-xl border border-white/20 shadow-lg hover:from-white/25 hover:to-white/15 transition-all duration-300">
-                <div className="flex text-yellow-400 space-x-0.5">
-                  <Star className="h-5 w-5 fill-current drop-shadow-sm" />
-                  <Star className="h-5 w-5 fill-current drop-shadow-sm" />
-                  <Star className="h-5 w-5 fill-current drop-shadow-sm" />
-                  <Star className="h-5 w-5 fill-current drop-shadow-sm" />
-                  <Star className="h-5 w-5 fill-current drop-shadow-sm" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-white text-lg font-bold leading-none" data-testid="rating-display">4.8/5</span>
-                  <span className="text-blue-100 text-xs font-medium opacity-90">281 reviews</span>
-                </div>
+        <div className="hidden lg:block">
+          <div className="container mx-auto px-4 py-3">
+            <div className="flex justify-between items-center gap-8">
+              {/* Logo */}
+              <div className="flex items-center flex-shrink-0">
+                <img 
+                  src="/JB_logo_New_1756136293648.png" 
+                  alt="Johnson Bros. Plumbing & Drain Cleaning" 
+                  className="h-16 w-auto"
+                  data-testid="company-logo-desktop"
+                />
               </div>
-              {onBookService ? (
-                <Button 
-                  onClick={onBookService}
-                  className="bg-gradient-to-r from-johnson-orange to-orange-500 text-white px-6 py-3 rounded-lg font-bold hover:from-orange-500 hover:to-johnson-orange transition-all duration-300 transform hover:scale-105 shadow-lg text-base"
-                  data-testid="header-book-service-button-desktop"
-                >
-                  Book Service
-                </Button>
-              ) : (
-                <Link href="/#booking">
+
+              {/* Desktop Navigation */}
+              <nav className="flex items-center space-x-6 xl:space-x-8 flex-1 justify-center">
+                <Link href="/" className="text-white hover:text-blue-200 transition-colors font-medium text-sm xl:text-base whitespace-nowrap">Home</Link>
+                <a href="/#services" className="text-white hover:text-blue-200 transition-colors font-medium text-sm xl:text-base whitespace-nowrap">Services</a>
+                <a href="/#about" className="text-white hover:text-blue-200 transition-colors font-medium text-sm xl:text-base whitespace-nowrap">About</a>
+                <Link href="/blog" className="text-white hover:text-blue-200 transition-colors font-medium text-sm xl:text-base whitespace-nowrap" data-testid="desktop-nav-blog">Blog</Link>
+                <a href="/#reviews" className="text-white hover:text-blue-200 transition-colors font-medium text-sm xl:text-base whitespace-nowrap">Reviews</a>
+                <Link href="/contact" className="text-white hover:text-blue-200 transition-colors font-medium text-sm xl:text-base whitespace-nowrap" data-testid="desktop-nav-contact">Contact</Link>
+                <Link href="/referral" className="text-white hover:text-blue-200 transition-colors font-medium text-sm xl:text-base whitespace-nowrap" data-testid="desktop-nav-referral">Referral</Link>
+              </nav>
+
+              {/* Desktop CTA Buttons */}
+              <div className="flex items-center space-x-3 xl:space-x-4 flex-shrink-0">
+                <div className="flex items-center space-x-2 xl:space-x-3 bg-gradient-to-r from-white/20 to-white/10 backdrop-blur-sm px-3 xl:px-4 py-2 xl:py-3 rounded-xl border border-white/20 shadow-lg hover:from-white/25 hover:to-white/15 transition-all duration-300">
+                  <div className="flex text-yellow-400 space-x-0.5">
+                    <Star className="h-4 w-4 xl:h-5 xl:w-5 fill-current drop-shadow-sm" />
+                    <Star className="h-4 w-4 xl:h-5 xl:w-5 fill-current drop-shadow-sm" />
+                    <Star className="h-4 w-4 xl:h-5 xl:w-5 fill-current drop-shadow-sm" />
+                    <Star className="h-4 w-4 xl:h-5 xl:w-5 fill-current drop-shadow-sm" />
+                    <Star className="h-4 w-4 xl:h-5 xl:w-5 fill-current drop-shadow-sm" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-white text-base xl:text-lg font-bold leading-none" data-testid="rating-display">4.8/5</span>
+                    <span className="text-blue-100 text-xs font-medium opacity-90">281 reviews</span>
+                  </div>
+                </div>
+                {onBookService ? (
                   <Button 
-                    className="bg-gradient-to-r from-johnson-orange to-orange-500 text-white px-6 py-3 rounded-lg font-bold hover:from-orange-500 hover:to-johnson-orange transition-all duration-300 transform hover:scale-105 shadow-lg text-base"
-                    data-testid="header-book-service-link-desktop"
+                    onClick={onBookService}
+                    className="bg-gradient-to-r from-johnson-orange to-orange-500 text-white px-4 xl:px-6 py-2 xl:py-3 rounded-lg font-bold hover:from-orange-500 hover:to-johnson-orange transition-all duration-300 transform hover:scale-105 shadow-lg text-sm xl:text-base whitespace-nowrap"
+                    data-testid="header-book-service-button-desktop"
                   >
                     Book Service
                   </Button>
-                </Link>
-              )}
+                ) : (
+                  <Link href="/#booking">
+                    <Button 
+                      className="bg-gradient-to-r from-johnson-orange to-orange-500 text-white px-4 xl:px-6 py-2 xl:py-3 rounded-lg font-bold hover:from-orange-500 hover:to-johnson-orange transition-all duration-300 transform hover:scale-105 shadow-lg text-sm xl:text-base whitespace-nowrap"
+                      data-testid="header-book-service-link-desktop"
+                    >
+                      Book Service
+                    </Button>
+                  </Link>
+                )}
+              </div>
             </div>
           </div>
         </div>
