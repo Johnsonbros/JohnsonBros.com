@@ -46,7 +46,7 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
   const [userZip, setUserZip] = useState<string | null>(null);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<ExpressWindow | null>(null);
   
-  // Fetch today's capacity data with periodic updates
+  // Fetch today's capacity data
   const { data: todayCapacity } = useQuery<CapacityData>({
     queryKey: ['/api/capacity/today', userZip],
     queryFn: async () => {
@@ -54,9 +54,6 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
       const response = await apiRequest("GET", url);
       return response.json();
     },
-    refetchInterval: 300000, // Check every 5 minutes to reduce API costs
-    staleTime: 240000, // Consider data stale after 4 minutes
-    refetchIntervalInBackground: false, // Don't poll when tab is inactive
     refetchOnWindowFocus: true,
   });
 
@@ -73,9 +70,6 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
       return response.json();
     },
     enabled: shouldShowTomorrow,
-    refetchInterval: 300000, // Check every 5 minutes to reduce API costs
-    staleTime: 240000,
-    refetchIntervalInBackground: false, // Don't poll when tab is inactive
     refetchOnWindowFocus: true,
   });
 

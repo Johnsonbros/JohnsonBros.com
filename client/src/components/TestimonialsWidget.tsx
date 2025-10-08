@@ -16,9 +16,7 @@ interface Testimonial {
 export function TestimonialsWidget() {
   const { data: testimonials = [], isLoading } = useQuery<Testimonial[]>({
     queryKey: ["/api/social-proof/testimonials"],
-    refetchInterval: 180000, // Refresh every 3 minutes
-    staleTime: 120000, // Consider data stale after 2 minutes
-    refetchIntervalInBackground: false, // Don't poll when tab is inactive
+    refetchOnWindowFocus: true,
   });
 
   if (isLoading) {

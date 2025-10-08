@@ -16,9 +16,7 @@ interface LiveActivity {
 export function LiveActivityWidget() {
   const { data: activities = [], isLoading } = useQuery<LiveActivity[]>({
     queryKey: ["/api/social-proof/live-activity"],
-    refetchInterval: 180000, // Refresh every 3 minutes
-    staleTime: 120000, // Consider data stale after 2 minutes
-    refetchIntervalInBackground: false, // Don't poll when tab is inactive
+    refetchOnWindowFocus: true,
   });
 
   if (isLoading) {

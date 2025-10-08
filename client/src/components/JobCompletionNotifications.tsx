@@ -28,9 +28,7 @@ export function JobCompletionNotifications() {
 
   const { data: recentJobs = [] } = useQuery<RecentJob[]>({
     queryKey: ["/api/social-proof/recent-jobs"],
-    refetchInterval: 180000, // Refresh every 3 minutes
-    staleTime: 120000, // Consider data stale after 2 minutes
-    refetchIntervalInBackground: false, // Don't poll when tab is inactive
+    refetchOnWindowFocus: true,
   });
 
   useEffect(() => {

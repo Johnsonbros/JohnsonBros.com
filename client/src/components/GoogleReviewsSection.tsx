@@ -30,7 +30,7 @@ interface GoogleReviewsData {
 export default function GoogleReviewsSection() {
   const { data: googleData, isLoading, error } = useQuery<GoogleReviewsData>({
     queryKey: ["/api/google-reviews"],
-    refetchInterval: 300000, // Refresh every 5 minutes
+    refetchOnWindowFocus: true,
   });
 
   const formatTimeAgo = (dateString: string) => {
