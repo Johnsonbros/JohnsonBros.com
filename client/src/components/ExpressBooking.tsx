@@ -6,7 +6,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useState, useEffect } from "react";
 import { formatTimeWindowEST } from "@/lib/timeUtils";
 import { format, addDays } from "date-fns";
-import plumberVideo from "@assets/5_1759938319119.mp4";
+import plumberVideo from "@assets/Website video_1759942431968.mp4";
 
 interface HeroSectionProps {
   onBookService: () => void;
