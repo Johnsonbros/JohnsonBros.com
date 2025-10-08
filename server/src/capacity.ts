@@ -70,6 +70,7 @@ export class CapacityCalculator {
     const cacheKey = `capacity:${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
     const cached = this.cache.get(cacheKey);
     
+    // Cache for 5 minutes to reduce API costs
     if (cached && cached.expires > Date.now()) {
       Logger.debug('Capacity cache hit', { date: date.toISOString(), cacheHit: true });
       return cached.data;
@@ -223,8 +224,8 @@ export class CapacityCalculator {
     const uniqueExpressWindows = this.consolidateTimeSlots(expressWindows, techCapacities);
     Logger.debug(`[Express] Unique express windows count: ${uniqueExpressWindows.length}`, uniqueExpressWindows);
 
-    // Calculate expiration time (30 seconds for real-time updates)
-    const expiresAt = new Date(Date.now() + 30000);
+    // Calculate expiration time (5 minutes to reduce API costs)
+    const expiresAt = new Date(Date.now() + 300000);
 
     const response: CapacityResponse = {
       overall,
@@ -236,10 +237,10 @@ export class CapacityCalculator {
       unique_express_windows: uniqueExpressWindows,
     };
 
-    // Cache for 20 seconds to allow quick updates when jobs change
+    // Cache for 5 minutes to reduce API costs significantly
     this.cache.set(cacheKey, {
       data: response,
-      expires: Date.now() + 20000,
+      expires: Date.now() + 300000,
     });
 
     return response;

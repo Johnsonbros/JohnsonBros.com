@@ -222,7 +222,8 @@ export class HousecallProClient {
 
         // Only cache GET requests
         if (method === 'GET') {
-          const cacheTime = 60000 + Math.random() * 30000;
+          // Cache for 5 minutes + random jitter to prevent thundering herd
+          const cacheTime = 300000 + Math.random() * 60000; // 5-6 minutes
           this.cache.set(cacheKey, {
             data,
             expires: Date.now() + cacheTime,
