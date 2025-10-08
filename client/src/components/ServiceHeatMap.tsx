@@ -23,6 +23,8 @@ export function ServiceHeatMap() {
   const [totalCustomers, setTotalCustomers] = useState(0);
   const [isLocating, setIsLocating] = useState(false);
   const [activeTestimonial, setActiveTestimonial] = useState<number | null>(null);
+  const [isMapVisible, setIsMapVisible] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Customer testimonials for different service areas
   const testimonials = [
@@ -100,8 +102,34 @@ export function ServiceHeatMap() {
     return () => clearTimeout(initialTimer);
   }, [testimonials]);
 
+  // Lazy load map when it comes into view to reduce API costs
   useEffect(() => {
-    if (!heatMapData || heatMapData.length === 0 || !mapRef.current) return;
+    if (!containerRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && !isMapVisible) {
+            setIsMapVisible(true);
+            observer.disconnect();
+          }
+        });
+      },
+      {
+        rootMargin: '200px', // Load map 200px before it comes into view
+        threshold: 0.1
+      }
+    );
+
+    observer.observe(containerRef.current);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [isMapVisible]);
+
+  useEffect(() => {
+    if (!heatMapData || heatMapData.length === 0 || !mapRef.current || !isMapVisible) return;
 
     const initializeMap = async () => {
       const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
@@ -524,13 +552,22 @@ export function ServiceHeatMap() {
       </div>
 
       {/* Mobile-optimized map container */}
-      <div className="relative">
-        <div 
-          ref={mapRef}
-          className="h-[400px] sm:h-[450px] md:h-[500px] w-full"
-          data-testid="google-map-container"
-          style={{ touchAction: 'none' }} // Better mobile touch handling
-        />
+      <div className="relative" ref={containerRef}>
+        {!isMapVisible ? (
+          <div className="h-[400px] sm:h-[450px] md:h-[500px] w-full bg-gray-100 flex items-center justify-center">
+            <div className="text-center">
+              <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4 animate-pulse" />
+              <p className="text-gray-500">Scroll to view service map</p>
+            </div>
+          </div>
+        ) : (
+          <div 
+            ref={mapRef}
+            className="h-[400px] sm:h-[450px] md:h-[500px] w-full"
+            data-testid="google-map-container"
+            style={{ touchAction: 'none' }} // Better mobile touch handling
+          />
+        )}
 
         {/* Trust badge with last update time */}
         <div className="absolute top-2 right-2 md:top-4 md:right-4 z-10">
