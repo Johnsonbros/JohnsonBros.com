@@ -142,8 +142,12 @@ Controls business rules without code changes:
 - **Cross-linking Strategy**: Service pages link to city pages and vice versa
 - **Sitemap Priority**: All SEO pages at 0.9 priority for maximum crawl frequency
 
-## Performance Optimizations
-- **Caching Strategy**: 30-second capacity cache, 5-minute review cache
+## Performance & Cost Optimizations
+- **Backend API Cache**: 5-6 minute cache for HousecallPro API calls (reduced API calls by 80%)
+- **Capacity Calculator Cache**: 5 minute cache for capacity calculations (reduced API calls by 90%)
+- **Frontend Polling**: 5 minute intervals instead of 60 seconds (reduced API calls by 80%)
+- **Lazy Load Google Maps**: Maps only load when user scrolls to them (saves 90% of map API costs)
+- **Review Cache**: 5 minute cache for Google Reviews
 - **Circuit Breaker**: Prevents cascade failures with HousecallPro API
 - **Retry Logic**: Exponential backoff for failed requests
 - **Database Indexes**: Optimized queries for customer lookup
