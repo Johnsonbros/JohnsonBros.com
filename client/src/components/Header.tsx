@@ -78,7 +78,7 @@ export default function Header({ onBookService }: HeaderProps) {
       </a>
 
       {/* Main Header */}
-      <header className="bg-blue-900 lg:bg-johnson-blue shadow-lg sticky top-0 z-50 border-t-2 border-blue-900 lg:border-johnson-blue">
+      <header className="bg-johnson-blue shadow-lg sticky top-0 z-50 border-t-2 border-johnson-blue">
         {/* Mobile Layout - Simplified */}
         <div className="lg:hidden px-2 py-1 flex justify-between items-center gap-1">
           {/* Logo - Larger image that extends towards hamburger */}
@@ -103,33 +103,33 @@ export default function Header({ onBookService }: HeaderProps) {
 
         {/* Mobile Menu Overlay */}
         {isMobileMenuOpen && (
-          <div className="lg:hidden fixed inset-0 top-[120px] bg-blue-900 z-40" style={{ height: 'calc(100vh - 120px - 70px)' }}>
-            <nav className="flex flex-col p-6 space-y-2">
+          <div className="lg:hidden fixed inset-0 top-[120px] bg-gradient-to-b from-slate-900 to-slate-800 z-40" style={{ height: 'calc(100vh - 120px - 70px)' }}>
+            <nav className="flex flex-col p-4 space-y-1">
               <Link 
                 href="/" 
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="text-white text-lg font-medium py-3 px-4 hover:bg-blue-800 rounded-lg transition-colors"
+                className="text-white text-lg font-semibold py-4 px-5 hover:bg-white/10 active:bg-white/20 rounded-xl transition-all border-b border-white/5"
               >
                 Home
               </Link>
               <a 
                 href="/#services" 
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="text-white text-lg font-medium py-3 px-4 hover:bg-blue-800 rounded-lg transition-colors"
+                className="text-white text-lg font-semibold py-4 px-5 hover:bg-white/10 active:bg-white/20 rounded-xl transition-all border-b border-white/5"
               >
                 Services
               </a>
               <a 
                 href="/#about" 
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="text-white text-lg font-medium py-3 px-4 hover:bg-blue-800 rounded-lg transition-colors"
+                className="text-white text-lg font-semibold py-4 px-5 hover:bg-white/10 active:bg-white/20 rounded-xl transition-all border-b border-white/5"
               >
                 About Us
               </a>
               <Link 
                 href="/blog" 
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="text-white text-lg font-medium py-3 px-4 hover:bg-blue-800 rounded-lg transition-colors"
+                className="text-white text-lg font-semibold py-4 px-5 hover:bg-white/10 active:bg-white/20 rounded-xl transition-all border-b border-white/5"
                 data-testid="mobile-nav-blog"
               >
                 Blog
@@ -137,14 +137,14 @@ export default function Header({ onBookService }: HeaderProps) {
               <a 
                 href="/#reviews" 
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="text-white text-lg font-medium py-3 px-4 hover:bg-blue-800 rounded-lg transition-colors"
+                className="text-white text-lg font-semibold py-4 px-5 hover:bg-white/10 active:bg-white/20 rounded-xl transition-all border-b border-white/5"
               >
                 Reviews
               </a>
               <Link 
                 href="/contact" 
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="text-white text-lg font-medium py-3 px-4 hover:bg-blue-800 rounded-lg transition-colors"
+                className="text-white text-lg font-semibold py-4 px-5 hover:bg-white/10 active:bg-white/20 rounded-xl transition-all border-b border-white/5"
                 data-testid="mobile-nav-contact"
               >
                 Contact
@@ -152,21 +152,21 @@ export default function Header({ onBookService }: HeaderProps) {
               <Link 
                 href="/referral" 
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="text-white text-lg font-medium py-3 px-4 hover:bg-blue-800 rounded-lg transition-colors"
+                className="text-white text-lg font-semibold py-4 px-5 hover:bg-white/10 active:bg-white/20 rounded-xl transition-all border-b border-white/5"
                 data-testid="mobile-nav-referral"
               >
                 Referral Program
               </Link>
-              <div className="pt-4 mt-4 border-t border-blue-700">
-                <div className="flex items-center justify-center space-x-2 bg-blue-800 px-4 py-3 rounded-lg">
+              <div className="pt-6 mt-4">
+                <div className="flex items-center justify-center space-x-2 bg-gradient-to-r from-slate-700 to-slate-600 px-4 py-3.5 rounded-xl shadow-lg">
                   <div className="flex text-yellow-400">
-                    <Star className="h-4 w-4 fill-current" />
-                    <Star className="h-4 w-4 fill-current" />
-                    <Star className="h-4 w-4 fill-current" />
-                    <Star className="h-4 w-4 fill-current" />
-                    <Star className="h-4 w-4 fill-current" />
+                    <Star className="h-5 w-5 fill-current drop-shadow-sm" />
+                    <Star className="h-5 w-5 fill-current drop-shadow-sm" />
+                    <Star className="h-5 w-5 fill-current drop-shadow-sm" />
+                    <Star className="h-5 w-5 fill-current drop-shadow-sm" />
+                    <Star className="h-5 w-5 fill-current drop-shadow-sm" />
                   </div>
-                  <span className="text-white text-sm font-medium">4.8/5 (281 reviews)</span>
+                  <span className="text-white text-base font-bold">4.8/5 (281 reviews)</span>
                 </div>
               </div>
             </nav>
