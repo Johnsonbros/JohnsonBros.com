@@ -548,6 +548,115 @@ export type WebhookAnalytics = typeof webhookAnalytics.$inferSelect;
 export type InsertWebhookAnalytics = z.infer<typeof insertWebhookAnalyticsSchema>;
 
 // ============================================
+// JOB LOCATIONS & CHECK-INS SYSTEM
+// ============================================
+
+// Job Locations table - stores individual job locations for heat map
+export const jobLocations = pgTable('job_locations', {
+  id: serial('id').primaryKey(),
+  jobId: text('job_id').notNull(), // Housecall Pro job ID
+  customerId: text('customer_id'), // Housecall Pro customer ID
+  latitude: real('latitude').notNull(),
+  longitude: real('longitude').notNull(),
+  // Privacy offset coordinates for display
+  displayLat: real('display_lat').notNull(),
+  displayLng: real('display_lng').notNull(),
+  city: text('city'),
+  state: text('state'),
+  serviceType: text('service_type'),
+  jobDate: timestamp('job_date').notNull(),
+  source: text('source').notNull().default('webhook'), // 'webhook', 'historical', 'manual'
+  // Time-based weighting for heat map intensity
+  intensity: real('intensity').default(1.0).notNull(),
+  isActive: boolean('is_active').default(true).notNull(), // For soft deletes/archiving
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  jobIdIdx: index('job_id_idx').on(table.jobId),
+  coordsIdx: index('job_coords_idx').on(table.latitude, table.longitude),
+  jobDateIdx: index('job_date_idx').on(table.jobDate),
+  cityIdx: index('job_city_idx').on(table.city),
+  sourceIdx: index('job_source_idx').on(table.source),
+  activeIdx: index('job_active_idx').on(table.isActive),
+}));
+
+// Check-ins/Activity Feed table - for live activity display
+export const checkIns = pgTable('check_ins', {
+  id: serial('id').primaryKey(),
+  jobId: text('job_id').notNull(),
+  jobLocationId: integer('job_location_id').references(() => jobLocations.id),
+  technicianName: text('technician_name'),
+  customerName: text('customer_name'),
+  serviceType: text('service_type').notNull(),
+  city: text('city'),
+  state: text('state'),
+  status: text('status').notNull().default('completed'), // 'in_progress', 'completed', 'scheduled'
+  checkInTime: timestamp('check_in_time').notNull(),
+  completedAt: timestamp('completed_at'),
+  notes: text('notes'),
+  isVisible: boolean('is_visible').default(true).notNull(), // For public display control
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  jobIdIdx: index('checkin_job_id_idx').on(table.jobId),
+  checkInTimeIdx: index('checkin_time_idx').on(table.checkInTime),
+  statusIdx: index('checkin_status_idx').on(table.status),
+  visibleIdx: index('checkin_visible_idx').on(table.isVisible),
+  cityIdx: index('checkin_city_idx').on(table.city),
+}));
+
+// Heat map snapshots table - stores daily static map images
+export const heatMapSnapshots = pgTable('heat_map_snapshots', {
+  id: serial('id').primaryKey(),
+  snapshotDate: timestamp('snapshot_date').notNull(),
+  imageUrl: text('image_url').notNull(), // Path to static image
+  imageData: text('image_data'), // Base64 encoded image (optional)
+  dataPointCount: integer('data_point_count').default(0),
+  generatedAt: timestamp('generated_at').defaultNow().notNull(),
+  isActive: boolean('is_active').default(true).notNull(), // Only one active snapshot at a time
+  metadata: text('metadata'), // JSON with generation details
+}, (table) => ({
+  snapshotDateIdx: uniqueIndex('snapshot_date_idx').on(table.snapshotDate),
+  activeIdx: index('snapshot_active_idx').on(table.isActive),
+}));
+
+// Relations for job locations and check-ins
+export const jobLocationsRelations = relations(jobLocations, ({ many }) => ({
+  checkIns: many(checkIns),
+}));
+
+export const checkInsRelations = relations(checkIns, ({ one }) => ({
+  jobLocation: one(jobLocations, {
+    fields: [checkIns.jobLocationId],
+    references: [jobLocations.id],
+  }),
+}));
+
+// Insert schemas
+export const insertJobLocationSchema = createInsertSchema(jobLocations).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertCheckInSchema = createInsertSchema(checkIns).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertHeatMapSnapshotSchema = createInsertSchema(heatMapSnapshots).omit({
+  id: true,
+  generatedAt: true,
+});
+
+// Types
+export type JobLocation = typeof jobLocations.$inferSelect;
+export type InsertJobLocation = z.infer<typeof insertJobLocationSchema>;
+
+export type CheckIn = typeof checkIns.$inferSelect;
+export type InsertCheckIn = z.infer<typeof insertCheckInSchema>;
+
+export type HeatMapSnapshot = typeof heatMapSnapshots.$inferSelect;
+export type InsertHeatMapSnapshot = z.infer<typeof insertHeatMapSnapshotSchema>;
+
+// ============================================
 // REFERRAL SYSTEM
 // ============================================
 
