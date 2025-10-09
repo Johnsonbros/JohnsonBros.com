@@ -85,9 +85,20 @@ export class HeatMapService {
         // Process each job
         for (const job of jobs) {
           try {
-            // Only process completed jobs with valid addresses
-            if (job.work_status !== 'completed' || !job.address) {
+            // Check job completion status (API uses 'status' field, webhooks use 'work_status')
+            const status = (job.work_status ?? job.status ?? '').toLowerCase();
+            // Housecall Pro statuses: "complete rated", "complete unrated", "completed", "paid"
+            const isCompleted = status.startsWith('complete') || status === 'paid' || job.completed_on;
+            
+            if (!isCompleted) {
               skipped++;
+              Logger.debug(`[HeatMap] Skipping job ${job.id}: not completed (status: ${job.status || job.work_status})`);
+              continue;
+            }
+            
+            if (!job.address) {
+              skipped++;
+              Logger.debug(`[HeatMap] Skipping job ${job.id}: no address`);
               continue;
             }
 
@@ -109,6 +120,7 @@ export class HeatMapService {
             if (!lat || !lng) {
               // Skip if no coordinates available
               skipped++;
+              Logger.debug(`[HeatMap] Skipping job ${job.id}: no coordinates (lat: ${lat}, lng: ${lng})`);
               continue;
             }
 
