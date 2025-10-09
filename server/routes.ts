@@ -5,11 +5,12 @@ import {
   insertCustomerSchema, insertAppointmentSchema, type BookingFormData, 
   customerAddresses, serviceAreas, heatMapCache, syncStatus,
   insertBlogPostSchema, insertKeywordSchema, insertPostKeywordSchema,
-  type BlogPost, type Keyword, type PostKeyword, type KeywordRanking
+  type BlogPost, type Keyword, type PostKeyword, type KeywordRanking,
+  checkIns, jobLocations
 } from "@shared/schema";
 import { z } from "zod";
 import { db } from "./db";
-import { eq, sql, and } from "drizzle-orm";
+import { eq, sql, and, gte, desc } from "drizzle-orm";
 import { CapacityCalculator } from "./src/capacity";
 import { GoogleAdsBridge } from "./src/ads/bridge";
 import { HousecallProClient } from "./src/housecall";
@@ -1888,6 +1889,37 @@ Sitemap: ${siteUrl}/sitemap.xml
     } catch (error) {
       Logger.error("Error fetching heat map data:", error);
       res.status(500).json({ error: "Failed to fetch heat map data" });
+    }
+  });
+
+  // Get recent check-ins for public activity feed
+  app.get("/api/social-proof/check-ins", publicReadLimiter, async (_req, res) => {
+    try {
+      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      
+      const checkInsData = await db
+        .select({
+          id: checkIns.id,
+          jobId: checkIns.jobId,
+          customerName: checkIns.customerName,
+          serviceType: checkIns.serviceType,
+          status: checkIns.status,
+          checkInTime: checkIns.checkInTime,
+          city: checkIns.city,
+          state: checkIns.state
+        })
+        .from(checkIns)
+        .where(and(
+          gte(checkIns.checkInTime, oneDayAgo),
+          eq(checkIns.isVisible, true)
+        ))
+        .orderBy(desc(checkIns.checkInTime))
+        .limit(50);
+      
+      res.json({ checkIns: checkInsData });
+    } catch (error) {
+      Logger.error("Error fetching check-ins:", error);
+      res.status(500).json({ error: "Failed to fetch check-ins" });
     }
   });
 
