@@ -11,8 +11,10 @@ import BlogPost from "@/pages/blog-post";
 import Contact from "@/pages/contact";
 import Referral from "@/pages/referral";
 import Webhooks from "@/pages/webhooks";
+import CheckIns from "@/pages/CheckIns";
 import AdminLogin from "@/pages/admin/login";
 import AdminDashboard from "@/pages/admin/dashboard";
+import AdminHeatMap from "@/pages/admin/heatmap";
 import NotFound from "@/pages/not-found";
 import { JobCompletionNotifications } from "@/components/JobCompletionNotifications";
 import { VideoCallPopup } from "@/components/VideoCallPopup";
@@ -43,8 +45,10 @@ function Router() {
       <Route path="/contact" component={Contact} />
       <Route path="/referral" component={Referral} />
       <Route path="/webhooks" component={Webhooks} />
+      <Route path="/check-ins" component={CheckIns} />
       <Route path="/admin/login" component={AdminLogin} />
       <Route path="/admin/dashboard" component={AdminDashboard} />
+      <Route path="/admin/heatmap" component={AdminHeatMap} />
       
       {/* Service Pages */}
       <Route path="/services/general-plumbing" component={GeneralPlumbing} />

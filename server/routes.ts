@@ -2190,6 +2190,134 @@ Sitemap: ${siteUrl}/sitemap.xml
     }
   });
 
+  // ========== HEAT MAP ENDPOINTS ==========
+  
+  const { heatMapService } = await import('./src/heatmap');
+
+  // Import historical job data from Housecall Pro
+  app.post('/api/admin/heatmap/import', adminLimiter, async (req, res) => {
+    try {
+      const { startDate } = req.body;
+      const apiKey = process.env.HOUSECALL_PRO_API_KEY;
+
+      if (!apiKey) {
+        return res.status(400).json({ error: 'Housecall Pro API key not configured' });
+      }
+
+      Logger.info('[HeatMap] Starting historical import...');
+      
+      const result = await heatMapService.importHistoricalJobs(apiKey, startDate || '2022-01-01');
+      
+      res.json({
+        success: result.success,
+        imported: result.imported,
+        skipped: result.skipped,
+        error: result.error,
+        message: `Imported ${result.imported} jobs, skipped ${result.skipped}`
+      });
+    } catch (error) {
+      Logger.error('[HeatMap] Import error:', error);
+      res.status(500).json({ error: 'Failed to import historical data' });
+    }
+  });
+
+  // Get heat map data for admin dashboard (real-time)
+  app.get('/api/admin/heatmap/data', adminLimiter, async (req, res) => {
+    try {
+      const daysBack = parseInt(req.query.days as string) || 730;
+      const data = await heatMapService.getHeatMapData(daysBack);
+      
+      res.json({
+        dataPoints: data,
+        count: data.length
+      });
+    } catch (error) {
+      Logger.error('[HeatMap] Error fetching data:', error);
+      res.status(500).json({ error: 'Failed to fetch heat map data' });
+    }
+  });
+
+  // Get heat map statistics
+  app.get('/api/admin/heatmap/stats', adminLimiter, async (req, res) => {
+    try {
+      const stats = await heatMapService.getStatistics();
+      res.json(stats);
+    } catch (error) {
+      Logger.error('[HeatMap] Error fetching stats:', error);
+      res.status(500).json({ error: 'Failed to fetch heat map statistics' });
+    }
+  });
+
+  // Get recent check-ins for activity feed
+  app.get('/api/checkins', publicReadLimiter, async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 20;
+      const checkIns = await heatMapService.getRecentCheckIns(limit);
+      
+      res.json({
+        checkIns,
+        count: checkIns.length
+      });
+    } catch (error) {
+      Logger.error('[HeatMap] Error fetching check-ins:', error);
+      res.status(500).json({ error: 'Failed to fetch check-ins' });
+    }
+  });
+
+  // Generate heat map snapshot (admin only)
+  app.post('/api/admin/heatmap/snapshot', adminLimiter, async (req, res) => {
+    try {
+      const { imageUrl, imageData } = req.body;
+      
+      if (!imageUrl) {
+        return res.status(400).json({ error: 'Image URL is required' });
+      }
+
+      await heatMapService.generateSnapshot(imageUrl, imageData);
+      
+      res.json({
+        success: true,
+        message: 'Snapshot generated successfully',
+        imageUrl
+      });
+    } catch (error) {
+      Logger.error('[HeatMap] Error generating snapshot:', error);
+      res.status(500).json({ error: 'Failed to generate snapshot' });
+    }
+  });
+
+  // Get active heat map snapshot for public display
+  app.get('/api/heatmap/snapshot', publicReadLimiter, async (req, res) => {
+    try {
+      const snapshot = await heatMapService.getActiveSnapshot();
+      
+      if (!snapshot) {
+        return res.status(404).json({ error: 'No active snapshot available' });
+      }
+
+      res.json({
+        imageUrl: snapshot.imageUrl,
+        dataPointCount: snapshot.dataPointCount,
+        generatedAt: snapshot.generatedAt,
+        metadata: snapshot.metadata ? JSON.parse(snapshot.metadata) : null
+      });
+    } catch (error) {
+      Logger.error('[HeatMap] Error fetching snapshot:', error);
+      res.status(500).json({ error: 'Failed to fetch snapshot' });
+    }
+  });
+
+  // Update job intensities (background job)
+  app.post('/api/admin/heatmap/update-intensities', adminLimiter, async (req, res) => {
+    try {
+      await heatMapService.updateIntensities();
+      res.json({ success: true, message: 'Intensities updated successfully' });
+    } catch (error) {
+      Logger.error('[HeatMap] Error updating intensities:', error);
+      res.status(500).json({ error: 'Failed to update intensities' });
+    }
+  });
+
   // ========== MCP DISCOVERY ENDPOINTS ==========
   
   // Serve .well-known/mcp.json directly (ensure it works in all environments)

@@ -11,6 +11,7 @@ import {
 } from '@shared/schema';
 import { eq, and, desc, sql } from 'drizzle-orm';
 import crypto from 'crypto';
+import { heatMapService } from './heatmap';
 
 // Event type categories for organizing webhook events
 const EVENT_CATEGORIES = {
@@ -130,6 +131,11 @@ export class WebhookProcessor {
       // Send notification for referral leads
       if (eventType === 'lead.created' && processedData.notes === 'REFERRAL LEAD') {
         await this.notifyReferralLead(payload, processedData);
+      }
+
+      // Process job completion for heat map
+      if (eventType === 'job.completed' && payload.address) {
+        await heatMapService.processJobCompletion(payload);
       }
 
       // Mark event as processed

@@ -157,6 +157,14 @@ export default function Header({ onBookService }: HeaderProps) {
               >
                 Referral Program
               </Link>
+              <Link 
+                href="/check-ins" 
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="text-white text-base font-semibold py-3.5 px-4 hover:bg-white/15 active:bg-white/25 rounded-lg transition-all duration-200"
+                data-testid="mobile-nav-checkins"
+              >
+                Live Activity
+              </Link>
               
               {/* Reviews Section - Redesigned */}
               <div className="pt-4 pb-2">
@@ -235,6 +243,7 @@ export default function Header({ onBookService }: HeaderProps) {
                 <Link href="/blog" className="text-white hover:text-blue-200 transition-colors font-medium text-sm xl:text-base whitespace-nowrap" data-testid="desktop-nav-blog">Blog</Link>
                 <a href="/#reviews" className="text-white hover:text-blue-200 transition-colors font-medium text-sm xl:text-base whitespace-nowrap">Reviews</a>
                 <Link href="/contact" className="text-white hover:text-blue-200 transition-colors font-medium text-sm xl:text-base whitespace-nowrap" data-testid="desktop-nav-contact">Contact</Link>
+                <Link href="/check-ins" className="text-white hover:text-blue-200 transition-colors font-medium text-sm xl:text-base whitespace-nowrap" data-testid="desktop-nav-checkins">Activity</Link>
                 <Link href="/referral" className="text-white hover:text-blue-200 transition-colors font-medium text-sm xl:text-base whitespace-nowrap" data-testid="desktop-nav-referral">Referral</Link>
               </nav>
 
