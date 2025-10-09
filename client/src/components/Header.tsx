@@ -80,7 +80,7 @@ export default function Header({ onBookService }: HeaderProps) {
       {/* Main Header */}
       <header className="bg-johnson-blue shadow-lg sticky top-0 z-50 border-t-2 border-johnson-blue">
         {/* Mobile Layout - Simplified */}
-        <div className="lg:hidden px-2 py-1 flex justify-between items-center gap-1">
+        <div className="lg:hidden px-2 py-1 flex justify-between items-center gap-1 relative z-50">
           {/* Logo - Larger image that extends towards hamburger */}
           <img 
             src="/JB_logo_New_1756136293648.png" 
@@ -103,7 +103,7 @@ export default function Header({ onBookService }: HeaderProps) {
 
         {/* Mobile Menu Overlay */}
         {isMobileMenuOpen && (
-          <div className="lg:hidden fixed inset-0 top-[120px] bg-johnson-blue z-40 shadow-xl" style={{ height: 'calc(100vh - 120px - 70px)' }}>
+          <div className="lg:hidden absolute top-full left-0 right-0 bg-johnson-blue z-40 shadow-xl" style={{ height: 'calc(100vh - 120px - 70px)' }}>
             <nav className="flex flex-col p-3 space-y-0.5 h-full overflow-y-auto">
               <Link 
                 href="/" 
