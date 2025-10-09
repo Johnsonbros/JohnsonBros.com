@@ -103,33 +103,33 @@ export default function Header({ onBookService }: HeaderProps) {
 
         {/* Mobile Menu Overlay */}
         {isMobileMenuOpen && (
-          <div className="lg:hidden fixed inset-0 top-[120px] bg-gradient-to-b from-slate-900 to-slate-800 z-40" style={{ height: 'calc(100vh - 120px - 70px)' }}>
-            <nav className="flex flex-col p-4 space-y-1">
+          <div className="lg:hidden fixed inset-0 top-[120px] bg-johnson-blue z-40 shadow-xl" style={{ height: 'calc(100vh - 120px - 70px)' }}>
+            <nav className="flex flex-col p-3 space-y-0.5 h-full overflow-y-auto">
               <Link 
                 href="/" 
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="text-white text-lg font-semibold py-4 px-5 hover:bg-white/10 active:bg-white/20 rounded-xl transition-all border-b border-white/5"
+                className="text-white text-base font-semibold py-3.5 px-4 hover:bg-white/15 active:bg-white/25 rounded-lg transition-all duration-200"
               >
                 Home
               </Link>
               <a 
                 href="/#services" 
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="text-white text-lg font-semibold py-4 px-5 hover:bg-white/10 active:bg-white/20 rounded-xl transition-all border-b border-white/5"
+                className="text-white text-base font-semibold py-3.5 px-4 hover:bg-white/15 active:bg-white/25 rounded-lg transition-all duration-200"
               >
                 Services
               </a>
               <a 
                 href="/#about" 
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="text-white text-lg font-semibold py-4 px-5 hover:bg-white/10 active:bg-white/20 rounded-xl transition-all border-b border-white/5"
+                className="text-white text-base font-semibold py-3.5 px-4 hover:bg-white/15 active:bg-white/25 rounded-lg transition-all duration-200"
               >
                 About Us
               </a>
               <Link 
                 href="/blog" 
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="text-white text-lg font-semibold py-4 px-5 hover:bg-white/10 active:bg-white/20 rounded-xl transition-all border-b border-white/5"
+                className="text-white text-base font-semibold py-3.5 px-4 hover:bg-white/15 active:bg-white/25 rounded-lg transition-all duration-200"
                 data-testid="mobile-nav-blog"
               >
                 Blog
@@ -137,14 +137,14 @@ export default function Header({ onBookService }: HeaderProps) {
               <a 
                 href="/#reviews" 
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="text-white text-lg font-semibold py-4 px-5 hover:bg-white/10 active:bg-white/20 rounded-xl transition-all border-b border-white/5"
+                className="text-white text-base font-semibold py-3.5 px-4 hover:bg-white/15 active:bg-white/25 rounded-lg transition-all duration-200"
               >
                 Reviews
               </a>
               <Link 
                 href="/contact" 
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="text-white text-lg font-semibold py-4 px-5 hover:bg-white/10 active:bg-white/20 rounded-xl transition-all border-b border-white/5"
+                className="text-white text-base font-semibold py-3.5 px-4 hover:bg-white/15 active:bg-white/25 rounded-lg transition-all duration-200"
                 data-testid="mobile-nav-contact"
               >
                 Contact
@@ -152,21 +152,28 @@ export default function Header({ onBookService }: HeaderProps) {
               <Link 
                 href="/referral" 
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="text-white text-lg font-semibold py-4 px-5 hover:bg-white/10 active:bg-white/20 rounded-xl transition-all border-b border-white/5"
+                className="text-white text-base font-semibold py-3.5 px-4 hover:bg-white/15 active:bg-white/25 rounded-lg transition-all duration-200"
                 data-testid="mobile-nav-referral"
               >
                 Referral Program
               </Link>
-              <div className="pt-6 mt-4">
-                <div className="flex items-center justify-center space-x-2 bg-gradient-to-r from-slate-700 to-slate-600 px-4 py-3.5 rounded-xl shadow-lg">
-                  <div className="flex text-yellow-400">
-                    <Star className="h-5 w-5 fill-current drop-shadow-sm" />
-                    <Star className="h-5 w-5 fill-current drop-shadow-sm" />
-                    <Star className="h-5 w-5 fill-current drop-shadow-sm" />
-                    <Star className="h-5 w-5 fill-current drop-shadow-sm" />
-                    <Star className="h-5 w-5 fill-current drop-shadow-sm" />
+              
+              {/* Reviews Section - Redesigned */}
+              <div className="pt-4 pb-2">
+                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+                  <div className="flex flex-col items-center space-y-2">
+                    <div className="flex text-yellow-400 space-x-1">
+                      <Star className="h-6 w-6 fill-current drop-shadow-md" />
+                      <Star className="h-6 w-6 fill-current drop-shadow-md" />
+                      <Star className="h-6 w-6 fill-current drop-shadow-md" />
+                      <Star className="h-6 w-6 fill-current drop-shadow-md" />
+                      <Star className="h-6 w-6 fill-current drop-shadow-md" />
+                    </div>
+                    <div className="text-center">
+                      <span className="text-white text-xl font-black block">4.8 out of 5</span>
+                      <span className="text-blue-100 text-sm font-medium">281 Google Reviews</span>
+                    </div>
                   </div>
-                  <span className="text-white text-base font-bold">4.8/5 (281 reviews)</span>
                 </div>
               </div>
             </nav>
