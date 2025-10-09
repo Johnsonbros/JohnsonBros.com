@@ -378,7 +378,6 @@ export default function BookingModal({ isOpen, onClose }: BookingModalProps) {
                   {isFeeWaived ? (
                     <>
                       Our licensed technician will diagnose your issue and provide a repair quote
-                      <span className="ml-2 text-green-300 font-bold">• $99 SERVICE FEE WAIVED TODAY</span>
                     </>
                   ) : (
                     <>
@@ -387,6 +386,29 @@ export default function BookingModal({ isOpen, onClose }: BookingModalProps) {
                   )}
                 </p>
               </div>
+              
+              {/* HUGE Prominent Service Fee Waived Banner */}
+              {isFeeWaived && (
+                <div className="mt-3 sm:mt-4 animate-pulse">
+                  <div className="bg-gradient-to-r from-green-500 via-green-400 to-emerald-500 rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-2xl border-2 border-green-300 transform hover:scale-105 transition-transform">
+                    <div className="flex items-center justify-center gap-2 sm:gap-3">
+                      <Gift className="h-6 w-6 sm:h-8 sm:w-8 text-white drop-shadow-lg animate-bounce" />
+                      <div className="text-center">
+                        <div className="text-xl sm:text-3xl font-black text-white drop-shadow-md tracking-tight">
+                          $99 SERVICE FEE
+                        </div>
+                        <div className="text-2xl sm:text-4xl font-black text-white drop-shadow-md -mt-1">
+                          WAIVED TODAY!
+                        </div>
+                      </div>
+                      <Gift className="h-6 w-6 sm:h-8 sm:w-8 text-white drop-shadow-lg animate-bounce" />
+                    </div>
+                    <div className="text-center mt-1 sm:mt-2 text-xs sm:text-sm font-bold text-green-900 bg-white/30 rounded-lg px-2 py-1 backdrop-blur-sm">
+                      🎉 Limited Time Offer - Book Now to Save!
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
             <Button
               variant="ghost"
@@ -822,41 +844,47 @@ export default function BookingModal({ isOpen, onClose }: BookingModalProps) {
                     <p className="text-sm text-gray-600">{customer.address}</p>
                   </div>
 
-                  {/* Service Fee */}
-                  <div className={`border rounded-lg p-4 ${isFeeWaived ? 'bg-green-50 border-green-200' : 'bg-blue-50 border-blue-200'}`}>
-                    <div className="flex justify-between items-center mb-2">
-                      <div className="flex items-center gap-2">
-                        {isFeeWaived ? (
-                          <Gift className="h-5 w-5 text-green-600" />
-                        ) : (
-                          <DollarSign className="h-5 w-5 text-blue-600" />
-                        )}
-                        <span className="font-semibold text-gray-700">Service Call Fee</span>
+                  {/* Service Fee - Enhanced for Waived Display */}
+                  {isFeeWaived ? (
+                    <div className="bg-gradient-to-r from-green-500 via-green-400 to-emerald-500 border-4 border-green-300 rounded-2xl p-5 shadow-2xl animate-pulse">
+                      <div className="text-center">
+                        <div className="flex items-center justify-center gap-3 mb-3">
+                          <Gift className="h-8 w-8 text-white animate-bounce" />
+                          <div>
+                            <div className="text-3xl font-black text-white drop-shadow-lg">
+                              YOU SAVE $99!
+                            </div>
+                            <div className="text-sm font-bold text-green-900 bg-white/40 rounded-lg px-3 py-1 inline-block mt-1">
+                              Service Fee Waived Today
+                            </div>
+                          </div>
+                          <Gift className="h-8 w-8 text-white animate-bounce" />
+                        </div>
+                        <div className="flex items-center justify-center gap-2 text-white text-base font-semibold bg-white/20 rounded-lg p-2">
+                          <Info className="h-4 w-4 flex-shrink-0" />
+                          <span>
+                            This normally covers our technician's time to diagnose your issue and provide a repair quote
+                          </span>
+                        </div>
                       </div>
-                      <span className={`font-bold ${isFeeWaived ? 'text-green-600' : 'text-gray-900'}`}>
-                        {isFeeWaived ? (
-                          <>
-                            <span className="line-through text-gray-400 mr-2">$99</span>
-                            <span className="flex items-center gap-1">
-                              WAIVED
-                            </span>
-                          </>
-                        ) : (
-                          '$99.00'
-                        )}
-                      </span>
                     </div>
-                    <div className="text-xs text-gray-600 flex items-start gap-1">
-                      <Info className="h-3 w-3 mt-0.5 flex-shrink-0" />
-                      <span>
-                        {isFeeWaived ? (
-                          "Your service call fee has been waived! This normally covers our technician's time to diagnose your issue and provide a repair quote."
-                        ) : (
-                          "This fee covers our licensed technician's time to diagnose your plumbing issue and provide you with a detailed repair quote. The fee is applied toward any repairs you approve."
-                        )}
-                      </span>
+                  ) : (
+                    <div className="border rounded-lg p-4 bg-blue-50 border-blue-200">
+                      <div className="flex justify-between items-center mb-2">
+                        <div className="flex items-center gap-2">
+                          <DollarSign className="h-5 w-5 text-blue-600" />
+                          <span className="font-semibold text-gray-700">Service Call Fee</span>
+                        </div>
+                        <span className="font-bold text-gray-900">$99.00</span>
+                      </div>
+                      <div className="text-xs text-gray-600 flex items-start gap-1">
+                        <Info className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                        <span>
+                          This fee covers our licensed technician's time to diagnose your plumbing issue and provide you with a detailed repair quote. The fee is applied toward any repairs you approve.
+                        </span>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
             )}
