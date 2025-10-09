@@ -103,8 +103,8 @@ export default function Header({ onBookService }: HeaderProps) {
 
         {/* Mobile Menu Overlay */}
         {isMobileMenuOpen && (
-          <div className="lg:hidden absolute top-full left-0 right-0 bottom-[70px] bg-johnson-blue z-40 shadow-2xl overflow-y-auto">
-            <nav className="flex flex-col p-3 space-y-0.5 h-full">
+          <div className="lg:hidden fixed left-0 right-0 bg-johnson-blue z-40 shadow-2xl overflow-y-auto" style={{ top: '122px', bottom: '70px' }}>
+            <nav className="flex flex-col p-3 space-y-0.5">
               <Link 
                 href="/" 
                 onClick={() => setIsMobileMenuOpen(false)}
