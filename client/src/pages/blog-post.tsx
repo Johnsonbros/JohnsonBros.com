@@ -9,7 +9,8 @@ import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import { type BlogPost, type Keyword } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
-import { SEO, generateArticleStructuredData } from "@/components/SEO";
+import { SEO } from "@/components/SEO";
+import { generateArticleStructuredData } from "@/lib/structuredData";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 

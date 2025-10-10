@@ -6,8 +6,10 @@ import GoogleReviewsSection from "@/components/GoogleReviewsSection";
 import { SocialProofSection } from "@/components/SocialProofSection";
 import Footer from "@/components/Footer";
 import BookingModal from "@/components/BookingModal";
+import { MCPIntegrationBanner } from "@/components/MCPIntegrationBanner";
 import { useState } from "react";
-import { SEO, businessStructuredData } from "@/components/SEO";
+import { SEO } from "@/components/SEO";
+import { businessStructuredData } from "@/lib/structuredData";
 
 export default function Home() {
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
@@ -36,6 +38,9 @@ export default function Home() {
       <div className="min-h-screen bg-gray-50 pb-20 lg:pb-0">
         <Header onBookService={() => openBookingModal()} />
         <ExpressBooking onBookService={() => openBookingModal()} />
+        <div className="container mx-auto px-4">
+          <MCPIntegrationBanner variant="compact" />
+        </div>
         <ServicesSection onBookService={openBookingModal} />
         <TruckSection />
         <SocialProofSection />

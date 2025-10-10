@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { type BlogPost } from "@shared/schema";
 import { SEO } from "@/components/SEO";
+import { MCPIntegrationBanner } from "@/components/MCPIntegrationBanner";
 
 function BlogPostCard({ post }: { post: BlogPost }) {
   return (
@@ -167,6 +168,8 @@ export default function Blog() {
 
         <section className="py-12">
           <div className="container mx-auto px-4">
+            <MCPIntegrationBanner variant="compact" />
+            
             <div className="flex flex-col md:flex-row gap-4 mb-8">
               <Input
                 type="text"
