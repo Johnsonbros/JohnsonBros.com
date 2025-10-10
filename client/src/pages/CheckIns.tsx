@@ -168,28 +168,19 @@ export default function CheckInsPage() {
                                 {getStatusText(checkIn.status)}
                               </span>
                             </Badge>
-                            {checkIn.city && checkIn.state && (
-                              <div className="flex items-center gap-1 text-sm text-muted-foreground" data-testid={`text-location-${checkIn.id}`}>
-                                <MapPin className="h-3 w-3" />
-                                {checkIn.city}, {checkIn.state}
-                              </div>
-                            )}
-                          </div>
-
-                          <div className="font-medium text-lg mb-1" data-testid={`text-service-${checkIn.id}`}>
-                            {checkIn.serviceType}
-                          </div>
-
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            {checkIn.technicianName && (
-                              <div data-testid={`text-tech-${checkIn.id}`}>
-                                Technician: {checkIn.technicianName}
-                              </div>
-                            )}
                             <div className="flex items-center gap-1" data-testid={`text-time-${checkIn.id}`}>
                               <Clock className="h-3 w-3" />
                               {formatDistanceToNow(new Date(checkIn.checkInTime), { addSuffix: true })}
                             </div>
+                          </div>
+
+                          <div className="font-medium text-lg" data-testid={`text-service-${checkIn.id}`}>
+                            {checkIn.serviceType}
+                            {checkIn.city && (
+                              <span className="text-base text-muted-foreground font-normal">
+                                {' '}in {checkIn.city}
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
