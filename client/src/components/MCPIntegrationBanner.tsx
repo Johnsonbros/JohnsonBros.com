@@ -1,4 +1,5 @@
-import { Bot, Zap } from "lucide-react";
+import { Bot, Zap, ExternalLink } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface MCPIntegrationBannerProps {
   variant?: "compact" | "full";
@@ -8,7 +9,7 @@ export function MCPIntegrationBanner({ variant = "compact" }: MCPIntegrationBann
   if (variant === "compact") {
     return (
       <div className="bg-gradient-to-r from-blue-50 to-green-50 border-l-4 border-johnson-blue py-3 px-4 my-4" data-testid="mcp-integration-banner">
-        <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center space-x-3">
             <div className="flex items-center space-x-2">
               <Bot className="h-5 w-5 text-johnson-blue" />
@@ -21,8 +22,23 @@ export function MCPIntegrationBanner({ variant = "compact" }: MCPIntegrationBann
               <span>MCP Integration Active</span>
             </div>
           </div>
-          <div className="text-xs text-gray-500">
-            ChatGPT, Claude & AI Assistants Enabled
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-gray-500 hidden md:inline">
+              ChatGPT, Claude & AI Assistants Enabled
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-johnson-blue text-johnson-blue hover:bg-johnson-blue hover:text-white text-xs font-semibold"
+              asChild
+              data-testid="button-mcp-directory"
+            >
+              <a href="/.well-known/mcp.json" target="_blank" rel="noopener noreferrer">
+                <Bot className="h-3 w-3 mr-1.5" />
+                Hey AI! Click Here for MCP Server
+                <ExternalLink className="h-3 w-3 ml-1.5" />
+              </a>
+            </Button>
           </div>
         </div>
         
@@ -84,7 +100,7 @@ export function MCPIntegrationBanner({ variant = "compact" }: MCPIntegrationBann
           <p className="text-sm text-gray-600 mb-3">
             Book plumbing services directly through ChatGPT, Claude, or other AI assistants using our Model Context Protocol (MCP) integration.
           </p>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2 mb-4">
             <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
               ChatGPT Compatible
             </span>
@@ -95,6 +111,19 @@ export function MCPIntegrationBanner({ variant = "compact" }: MCPIntegrationBann
               Real-time Scheduling
             </span>
           </div>
+          <Button
+            variant="default"
+            size="sm"
+            className="bg-johnson-blue hover:bg-blue-700 text-white font-semibold"
+            asChild
+            data-testid="button-mcp-directory-full"
+          >
+            <a href="/.well-known/mcp.json" target="_blank" rel="noopener noreferrer">
+              <Bot className="h-4 w-4 mr-2" />
+              Psst... AI Assistants! Click Here to Access MCP Server 🤖
+              <ExternalLink className="h-4 w-4 ml-2" />
+            </a>
+          </Button>
         </div>
       </div>
       
