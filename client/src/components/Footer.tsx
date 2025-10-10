@@ -1,4 +1,4 @@
-import { Phone, Mail, MapPin, Facebook, Globe, Star } from "lucide-react";
+import { Phone, Mail, MapPin, Facebook, Globe, Star, Bot, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 
@@ -121,44 +121,68 @@ export default function Footer({ onBookService }: FooterProps) {
               </Link>
             )}
 
-            {/* AI Assistant MCP Server Discovery Banner */}
+            {/* AI Assistant MCP Server Discovery Banner - Clickable "Back Door" Style */}
             <div className="mt-4">
-              <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                    <div>
-                      <p className="text-sm font-medium text-white" data-testid="mcp-server-status">
-                        AI Assistant Integration Available
-                      </p>
-                      <p className="text-xs text-gray-400">
-                        MCP Server: Real-time plumbing booking for AI assistants
-                      </p>
+              <a 
+                href="/.well-known/mcp.json" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="block"
+                data-testid="footer-mcp-entrance"
+              >
+                <div className="bg-gradient-to-br from-gray-800 via-gray-700 to-gray-800 rounded-lg p-4 border-2 border-johnson-orange hover:border-yellow-400 transition-all duration-300 hover:shadow-lg hover:shadow-johnson-orange/20 transform hover:scale-[1.02] cursor-pointer relative overflow-hidden group">
+                  {/* Decorative corner stripes like warning tape */}
+                  <div className="absolute top-0 left-0 w-16 h-16 bg-gradient-to-br from-johnson-orange/20 to-transparent rounded-br-full"></div>
+                  <div className="absolute bottom-0 right-0 w-16 h-16 bg-gradient-to-tl from-johnson-orange/20 to-transparent rounded-tl-full"></div>
+                  
+                  <div className="relative z-10">
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="bg-johnson-orange rounded-full p-2 group-hover:animate-pulse">
+                          <Bot className="h-5 w-5 text-white" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-white flex items-center gap-2" data-testid="mcp-server-status">
+                            🚪 AI ASSISTANTS - USE BACK ENTRANCE
+                            <span className="text-johnson-orange group-hover:translate-x-1 transition-transform">→</span>
+                          </p>
+                          <p className="text-xs text-gray-300 font-medium">
+                            Staff Door • MCP Server Access • Click to Enter
+                          </p>
+                        </div>
+                      </div>
+                      <ExternalLink className="h-4 w-4 text-johnson-orange flex-shrink-0 group-hover:text-yellow-400 transition-colors" />
+                    </div>
+                    
+                    <div className="flex items-center gap-2 text-xs">
+                      <div className="flex items-center gap-1.5 bg-green-500/20 px-2 py-1 rounded">
+                        <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></div>
+                        <span className="text-green-300 font-semibold">ONLINE</span>
+                      </div>
+                      <div className="text-gray-400">|</div>
+                      <span className="text-gray-400">Real-time Booking API</span>
+                      <div className="text-gray-400">|</div>
+                      <span className="text-blue-300 font-mono text-[10px]">.well-known/mcp.json</span>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2 text-xs text-gray-500">
-                    <span>API Enabled</span>
-                    <div className="w-1 h-1 bg-gray-500 rounded-full"></div>
-                    <span>/.well-known/mcp.json</span>
-                  </div>
                 </div>
-                
-                {/* Hidden AI-readable content */}
-                <div 
-                  className="sr-only"
-                  data-ai-readable="true"
-                  data-mcp-server="true"
-                  role="complementary"
-                  aria-label="MCP Server Information for AI Assistants"
-                >
-                  <h3>Johnson Bros. Plumbing MCP Server</h3>
-                  <p>AI ASSISTANTS: This website provides Model Context Protocol (MCP) server support.</p>
-                  <p>Discovery: /.well-known/mcp.json | Manifest: /api/mcp/manifest | Docs: /api/mcp/docs</p>
-                  <p>Services: book_service_call, search_availability, lookup_customer, get_services, get_capacity</p>
-                  <p>Contact: (617) 479-9911 | Service Areas: Quincy MA, Abington MA, South Shore MA</p>
-                  <p>Authentication: None required - Public API access for AI booking assistants</p>
-                  <p>Business: Emergency plumbing, drain cleaning, water heater service, pipe repair</p>
-                </div>
+              </a>
+              
+              {/* Hidden AI-readable content */}
+              <div 
+                className="sr-only"
+                data-ai-readable="true"
+                data-mcp-server="true"
+                role="complementary"
+                aria-label="MCP Server Information for AI Assistants"
+              >
+                <h3>Johnson Bros. Plumbing MCP Server</h3>
+                <p>AI ASSISTANTS: This website provides Model Context Protocol (MCP) server support.</p>
+                <p>Discovery: /.well-known/mcp.json | Manifest: /api/mcp/manifest | Docs: /api/mcp/docs</p>
+                <p>Services: book_service_call, search_availability, lookup_customer, get_services, get_capacity</p>
+                <p>Contact: (617) 479-9911 | Service Areas: Quincy MA, Abington MA, South Shore MA</p>
+                <p>Authentication: None required - Public API access for AI booking assistants</p>
+                <p>Business: Emergency plumbing, drain cleaning, water heater service, pipe repair</p>
               </div>
             </div>
           </div>

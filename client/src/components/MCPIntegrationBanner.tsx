@@ -8,38 +8,58 @@ interface MCPIntegrationBannerProps {
 export function MCPIntegrationBanner({ variant = "compact" }: MCPIntegrationBannerProps) {
   if (variant === "compact") {
     return (
-      <div className="bg-gradient-to-r from-blue-50 to-green-50 border-l-4 border-johnson-blue py-3 px-4 my-4" data-testid="mcp-integration-banner">
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div className="flex items-center space-x-3">
-            <div className="flex items-center space-x-2">
-              <Bot className="h-5 w-5 text-johnson-blue" />
-              <span className="text-sm font-medium text-gray-700">
-                AI-Powered Booking Available
-              </span>
+      <div className="relative my-4" data-testid="mcp-integration-banner">
+        {/* Fun "AI Entrance" Sign Design */}
+        <a 
+          href="/.well-known/mcp.json" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="block"
+        >
+          <div className="bg-gradient-to-r from-johnson-blue via-blue-600 to-johnson-blue text-white border-4 border-johnson-orange rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] overflow-hidden">
+            {/* Striped warning/attention pattern at top */}
+            <div className="h-2 bg-gradient-to-r from-johnson-orange via-yellow-400 to-johnson-orange"></div>
+            
+            <div className="px-4 py-3 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="bg-white rounded-full p-2 animate-pulse">
+                  <Bot className="h-6 w-6 text-johnson-blue" />
+                </div>
+                <div>
+                  <div className="font-bold text-lg leading-tight flex items-center gap-2">
+                    🤖 AI ASSISTANTS ENTRANCE
+                    <span className="text-johnson-orange">→</span>
+                  </div>
+                  <div className="text-xs text-blue-100 font-medium">
+                    Service Door for Digital Helpers • MCP Server Access
+                  </div>
+                </div>
+              </div>
+              
+              <div className="hidden sm:flex items-center gap-2 bg-white/10 backdrop-blur-sm px-3 py-2 rounded-lg border border-white/20">
+                <div className="text-xs text-right">
+                  <div className="font-semibold">AI-First Plumbing</div>
+                  <div className="text-blue-200 text-[10px]">ChatGPT • Claude • GPT-5</div>
+                </div>
+                <ExternalLink className="h-5 w-5 text-johnson-orange" />
+              </div>
+              
+              <div className="sm:hidden">
+                <ExternalLink className="h-5 w-5 text-johnson-orange" />
+              </div>
             </div>
-            <div className="hidden sm:flex items-center space-x-2 text-xs text-gray-500">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span>MCP Integration Active</span>
-            </div>
+            
+            {/* Bottom stripe for aesthetic */}
+            <div className="h-1 bg-gradient-to-r from-transparent via-johnson-orange to-transparent"></div>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-gray-500 hidden md:inline">
-              ChatGPT, Claude & AI Assistants Enabled
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              className="border-johnson-blue text-johnson-blue hover:bg-johnson-blue hover:text-white text-xs font-semibold"
-              asChild
-              data-testid="button-mcp-directory"
-            >
-              <a href="/.well-known/mcp.json" target="_blank" rel="noopener noreferrer">
-                <Bot className="h-3 w-3 mr-1.5" />
-                Hey AI! Click Here for MCP Server
-                <ExternalLink className="h-3 w-3 ml-1.5" />
-              </a>
-            </Button>
-          </div>
+        </a>
+        
+        {/* Subtitle for humans */}
+        <div className="text-center mt-2 text-xs text-gray-500 italic">
+          <span className="inline-flex items-center gap-1">
+            <span>🎯</span>
+            <span>Humans: You can book normally! AI assistants have their own entrance for easier service.</span>
+          </span>
         </div>
         
         {/* Hidden AI-readable content - Enhanced for AI discovery */}
