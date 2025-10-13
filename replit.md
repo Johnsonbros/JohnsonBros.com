@@ -135,6 +135,15 @@ Controls business rules without code changes:
 
 # Recent Updates & Improvements
 
+## October 2024 OpenAI Apps SDK Integration
+- **MCP HTTP Server**: Converted MCP server from stdio to HTTP/SSE transport for ChatGPT integration
+- **Deployment Ready**: MCP server can now be deployed and accessed over HTTPS
+- **ChatGPT Apps SDK**: Ready for OpenAI Apps SDK when app submissions open
+- **Dual Interface**: Website booking and AI assistant booking work independently
+- **Session Management**: Tracks active MCP connections with UUID-based sessions
+- **Health Monitoring**: `/health` and `/` endpoints for server status
+- **Documentation**: Complete setup guide in `MCP_SETUP.md`
+
 ## December 2024 SEO Enhancements
 - **New Service Pages**: Added Emergency Plumbing, Water Heater, and Pipe Repair pages
 - **Schema Markup**: LocalBusiness and Service JSON-LD on all 13 pages

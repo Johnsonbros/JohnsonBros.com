@@ -711,17 +711,5 @@ server.registerTool(
   }
 );
 
-// Server startup with error handling
-async function startServer() {
-  try {
-    const transport = new StdioServerTransport();
-    await server.connect(transport);
-    log.info("MCP server started successfully");
-  } catch (err: any) {
-    log.error({ error: err.message, stack: err.stack }, "Failed to start MCP server");
-    process.exit(1);
-  }
-}
-
-// Start the server
-startServer();
+// Export the server for use in different transports
+export { server };
