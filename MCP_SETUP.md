@@ -43,17 +43,15 @@ MCP_PORT=8080 tsx src/mcp-http-server.ts
 - **Health Check**: `http://localhost:3001/health`
 - **Server Info**: `http://localhost:3001/`
 
-### As a Workflow
+### Automatic Startup (Configured)
 
-To run the MCP server as a Replit workflow:
+**The MCP server now starts automatically** with your main application! 
 
-1. Go to the Workflows panel in Replit
-2. Click "New Workflow"
-3. Name it "MCP Server"
-4. Add a task: "Execute Shell Command"
-5. Enter: `tsx src/mcp-http-server.ts`
-6. Set "Wait for port": `3001`
-7. Save and run
+When you run `npm run dev`, both servers start:
+- Main website on port 5000
+- MCP server on port 3001
+
+The MCP server is automatically spawned as a child process in development mode. No separate workflow needed!
 
 ## Deployment
 
