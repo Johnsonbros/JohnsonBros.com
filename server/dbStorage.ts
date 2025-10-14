@@ -29,14 +29,35 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCustomerByPhone(phone: string): Promise<Customer | undefined> {
-    // Note: For phone lookup, we'd need to implement a better search in the database
-    // For now, this is a simplified version
-    const [customer] = await db.select().from(customers).where(eq(customers.phone, phone)).limit(1);
+    // Normalize phone number for comparison (remove non-digits)
+    const normalizedPhone = phone.replace(/\D/g, '');
+    
+    // Use indexed normalizedPhone column for fast lookup
+    const [customer] = await db.select()
+      .from(customers)
+      .where(eq(customers.normalizedPhone, normalizedPhone))
+      .limit(1);
+    
+    // If not found and normalizedPhone might be NULL (legacy data), try regex fallback
+    if (!customer) {
+      const [fallbackCustomer] = await db.select()
+        .from(customers)
+        .where(sql`${customers.normalizedPhone} IS NULL AND regexp_replace(${customers.phone}, '[^0-9]', '', 'g') = ${normalizedPhone}`)
+        .limit(1);
+      return fallbackCustomer;
+    }
+    
     return customer;
   }
 
   async createCustomer(customer: InsertCustomer): Promise<Customer> {
-    const [newCustomer] = await db.insert(customers).values(customer).returning();
+    // Normalize phone for storage and indexing
+    const normalizedPhone = customer.phone ? customer.phone.replace(/\D/g, '') : null;
+    
+    const [newCustomer] = await db.insert(customers).values({
+      ...customer,
+      normalizedPhone
+    }).returning();
     return newCustomer;
   }
   

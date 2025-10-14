@@ -64,14 +64,15 @@ Preferred communication style: You are a Co-Founder of this plumbing business. Y
 - **Framework**: Express.js with TypeScript on Node.js.
 - **API Design**: RESTful API for services, time slots, bookings, and reviews.
 - **Database Integration**: Drizzle ORM with PostgreSQL (Neon serverless).
-- **Data Storage**: Configurable storage layer (in-memory for dev, database for production).
+- **Data Storage**: PostgreSQL database storage for all environments (production-ready persistence).
 - **Request Handling**: Middleware for JSON parsing, CORS, logging, and error handling.
 
 ## Data Storage Solutions
-- **Database**: PostgreSQL via Neon serverless connection.
+- **Database**: PostgreSQL via Neon serverless connection (Production-ready persistence).
 - **ORM**: Drizzle ORM for type-safe database operations and migrations.
-- **Schema**: Well-defined schema for customers, services, appointments, time slots, and reviews.
-- **Migration System**: Drizzle Kit for schema management.
+- **Schema**: Well-defined schema for customers, appointments, blog posts, keywords, referrals, webhooks, and analytics.
+- **Migration System**: Drizzle Kit for schema management (`npm run db:push`).
+- **Storage Implementation**: DatabaseStorage class using Drizzle ORM for all data persistence.
 
 ## Authentication and Authorization
 - **Session Management**: Express sessions with PostgreSQL session store.
@@ -134,6 +135,13 @@ Controls business rules without code changes:
 - Optional: Google Ads API credentials for automation
 
 # Recent Updates & Improvements
+
+## October 2024 Database Migration to PostgreSQL
+- **Production Persistence**: Migrated from in-memory storage to PostgreSQL for all data
+- **DatabaseStorage Implementation**: All CRUD operations now use Drizzle ORM with PostgreSQL
+- **Data Integrity**: Customers, appointments, blog posts, referrals, and webhook data now persist across server restarts
+- **Performance**: Database queries optimized with proper indexing for customer lookups
+- **Reliability**: Automatic schema synchronization with `npm run db:push`
 
 ## October 2024 OpenAI Apps SDK Integration
 - **MCP HTTP Server**: Converted MCP server from stdio to HTTP/SSE transport for ChatGPT integration

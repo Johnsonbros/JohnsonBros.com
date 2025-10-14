@@ -111,9 +111,12 @@ export const customers = pgTable('customers', {
   lastName: text('last_name').notNull(),
   email: text('email').notNull().unique(),
   phone: text('phone'),
+  normalizedPhone: text('normalized_phone'), // Normalized phone for fast lookups
   housecallProId: text('housecall_pro_id'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
-});
+}, (table) => ({
+  normalizedPhoneIdx: index('normalized_phone_idx').on(table.normalizedPhone),
+}));
 
 // Appointments table for booking system  
 export const appointments = pgTable('appointments', {
@@ -132,6 +135,7 @@ export const appointments = pgTable('appointments', {
 export const insertCustomerSchema = createInsertSchema(customers).omit({
   id: true,
   createdAt: true,
+  normalizedPhone: true, // Auto-populated from phone
 });
 
 export const insertAppointmentSchema = createInsertSchema(appointments).omit({
