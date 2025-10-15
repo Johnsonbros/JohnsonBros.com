@@ -44,3 +44,35 @@ The frontend is built with React and TypeScript, utilizing Radix UI primitives a
 - **Mapping/Location**: Google Maps API
 - **Form Management**: React Hook Form
 - **Session Store**: connect-pg-simple
+
+## Environment Variables Configuration
+
+### Required (Configured)
+- `DATABASE_URL` - PostgreSQL connection string ✅
+- `HOUSECALLPRO_API_KEY` - HousecallPro API integration ✅
+- `HOUSECALLPRO_COMPANY_ID` - HousecallPro company identifier ✅
+- `GOOGLE_MAPS_API_KEY` - Backend Google Maps integration ✅
+
+### Optional (Gracefully Degraded)
+- `VITE_GOOGLE_MAPS_API_KEY` - Frontend Google Maps for heat map visualization
+  - Status: Not configured
+  - Impact: Service heat map shows console warning but continues to function with limited features
+  - Code handles missing key gracefully (ServiceHeatMap.tsx lines 137-140)
+
+### Optional (Stub Mode)
+- Google Ads API credentials (not configured)
+  - `GOOGLE_ADS_CLIENT_ID`
+  - `GOOGLE_ADS_CLIENT_SECRET`
+  - `GOOGLE_ADS_DEVELOPER_TOKEN`
+  - `GOOGLE_ADS_REFRESH_TOKEN`
+  - Status: Application runs in STUB mode
+  - Impact: Google Ads automation simulated locally without actual API calls
+
+### Admin System
+- Super admin exists in database: `Sales@thejohnsonbros.com`
+- No environment variables needed for admin
+- Optional setup variables (only needed for auto-creation):
+  - `ADMIN_EMAIL` - Admin account email
+  - `ADMIN_DEFAULT_PASSWORD` - Secure password (min 12 chars)
+  - `ADMIN_FIRST_NAME` - Admin first name
+  - `ADMIN_LAST_NAME` - Admin last name
