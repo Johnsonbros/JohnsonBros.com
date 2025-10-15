@@ -7,6 +7,34 @@ import { configureSecurityMiddleware, getCsrfToken, csrfProtection } from "./src
 
 const app = express();
 
+// Unhandled rejection handler - crash process to maintain fail-fast behavior
+process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
+  console.error('[UNHANDLED REJECTION]', {
+    timestamp: new Date().toISOString(),
+    reason: reason instanceof Error ? reason.message : String(reason),
+    stack: reason instanceof Error ? reason.stack : undefined,
+  });
+  
+  // Exit process to prevent running in indeterminate state
+  setTimeout(() => {
+    process.exit(1);
+  }, 1000);
+});
+
+// Uncaught exception handler
+process.on('uncaughtException', (error: Error) => {
+  console.error('[UNCAUGHT EXCEPTION]', {
+    timestamp: new Date().toISOString(),
+    message: error.message,
+    stack: error.stack,
+  });
+  
+  // Give time to log before exiting
+  setTimeout(() => {
+    process.exit(1);
+  }, 1000);
+});
+
 // Fix trust proxy for rate limiting - trust only first hop (Replit proxy)
 // This prevents IP spoofing while allowing rate limiting to work correctly
 app.set('trust proxy', 1);
@@ -115,12 +143,27 @@ app.use((req, res, next) => {
 
   const server = await registerRoutes(app);
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  // Global error handler - must be last middleware
+  app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
 
-    res.status(status).json({ message });
-    throw err;
+    // Log error with context
+    console.error('[ERROR]', {
+      timestamp: new Date().toISOString(),
+      method: req.method,
+      path: req.path,
+      status,
+      message,
+      stack: err.stack,
+      ...(err.details && { details: err.details }),
+    });
+
+    // Send error response
+    res.status(status).json({ 
+      message,
+      ...(app.get("env") === "development" && { stack: err.stack })
+    });
   });
 
   // importantly only setup vite in development and after
