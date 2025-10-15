@@ -1,5 +1,6 @@
 import { Bot, Zap, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import feeWaivedImage from "@assets/generated_images/$99_fee_waived_promotional_graphic_f5d5b265.png";
 
 interface MCPIntegrationBannerProps {
   variant?: "compact" | "full";
@@ -70,9 +71,14 @@ export function MCPIntegrationBanner({ variant = "compact" }: MCPIntegrationBann
           role="complementary"
           aria-label="Model Context Protocol Server Information"
         >
-          <div className="flex items-start gap-3 mb-3">
-            <div className="bg-green-500 text-white px-3 py-1.5 rounded-lg font-bold text-lg shadow-md">
-              $99
+          <div className="flex flex-col md:flex-row items-center gap-4 mb-3">
+            <div className="w-full md:w-48 flex-shrink-0">
+              <img 
+                src={feeWaivedImage} 
+                alt="$99 Service Fee Waived" 
+                className="w-full h-auto rounded-lg shadow-md"
+                data-testid="img-fee-waived"
+              />
             </div>
             <div className="flex-1">
               <h3 className="font-bold text-gray-900 text-base mb-1">💰 Service Fee Waived for AI Assistants!</h3>
