@@ -13,8 +13,10 @@ This project delivers a comprehensive, AI-first plumbing business website for Jo
 
 ## Express Booking System
 - **Real-time Capacity Monitoring**: Continuously monitors technician availability via HousecallPro API
-- **Dynamic State Management**: Four capacity states (SAME_DAY_FEE_WAIVED, LIMITED_SAME_DAY, NEXT_DAY, EMERGENCY_ONLY)
-- **Smart Pricing**: Automatic $99 service fee waiver when high capacity
+- **Dynamic State Management**: Three primary capacity states (SAME_DAY_FEE_WAIVED, LIMITED_SAME_DAY, NEXT_DAY) with EMERGENCY_ONLY reserved for multi-day outages
+- **Smart Pricing**: Automatic $99 service fee waiver when high capacity  
+- **Time-Based Rules**: 12 PM (noon) cutoff - same-day slots before noon, next-day slots after noon
+- **Weekend Logic**: Weekends follow same capacity rules as weekdays (no automatic emergency mode)
 - **UI Adaptation**: Headlines, CTAs, and badges update based on capacity
 
 ## Smart Booking Modal
@@ -146,6 +148,16 @@ Controls business rules without code changes:
 - Optional: Google Ads API credentials for automation
 
 # Recent Updates & Improvements
+
+## October 2025 Express Booking Enhancements
+- **Noon Cutoff**: Changed express booking cutoff from 3 PM to 12 PM (noon EST) for better capacity management
+- **Weekend Optimization**: Weekends now follow same booking logic as weekdays (removed emergency-only restriction)
+- **Time-Based Logic**:
+  - Before noon: Show same-day waived slots if capacity ≥35%
+  - After noon: Show next-day waived slots
+  - No slots available: Regular booking with $99 fee
+- **BookingModal Fix**: Auto-selects express booking time slots from real API data for seamless user experience
+- **Capacity States**: Simplified to 3 primary states (SAME_DAY_FEE_WAIVED, LIMITED_SAME_DAY, NEXT_DAY) with frontend handling emergency UI
 
 ## October 2024 Database Migration to PostgreSQL
 - **Production Persistence**: Migrated from in-memory storage to PostgreSQL for all data

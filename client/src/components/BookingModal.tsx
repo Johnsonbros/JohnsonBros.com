@@ -110,6 +110,39 @@ export default function BookingModal({ isOpen, onClose }: BookingModalProps) {
     enabled: !!selectedDate,
   });
 
+  // Auto-select the express/next_day time slot when slots load
+  useEffect(() => {
+    if (timeSlots && timeSlots.length > 0 && selectedDate && !selectedTimeSlot) {
+      const bookingTimeSlot = sessionStorage.getItem('booking_time_slot') || localStorage.getItem('booking_time_slot');
+      
+      if (bookingTimeSlot) {
+        const [startTime, endTime] = bookingTimeSlot.split(' - ');
+        
+        // Find the matching slot from the API by comparing formatted times
+        const matchingSlot = timeSlots.find((slot: AvailableTimeSlot) => {
+          const slotStartTime = new Date(slot.startTime).toLocaleTimeString('en-US', {
+            timeZone: 'America/New_York',
+            hour12: false,
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+          const slotEndTime = new Date(slot.endTime).toLocaleTimeString('en-US', {
+            timeZone: 'America/New_York',
+            hour12: false,
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+          
+          return slotStartTime === startTime && slotEndTime === endTime;
+        });
+        
+        if (matchingSlot) {
+          setSelectedTimeSlot(matchingSlot);
+        }
+      }
+    }
+  }, [timeSlots, selectedDate, selectedTimeSlot]);
+
   // Create Customer Mutation
   const createCustomerMutation = useMutation({
     mutationFn: createCustomer,
@@ -184,6 +217,7 @@ export default function BookingModal({ isOpen, onClose }: BookingModalProps) {
       const bookingType = sessionStorage.getItem('booking_type') || localStorage.getItem('booking_type');
       const expressFeeWaived = sessionStorage.getItem('express_fee_waived') === 'true' || 
                                localStorage.getItem('express_fee_waived') === 'true';
+      const bookingTimeSlot = sessionStorage.getItem('booking_time_slot') || localStorage.getItem('booking_time_slot');
       
       if (bookingType === 'express') {
         setIsExpressBooking(true);
@@ -195,9 +229,15 @@ export default function BookingModal({ isOpen, onClose }: BookingModalProps) {
         estDate.setHours(0, 0, 0, 0);
         const today = estDate.toISOString().split('T')[0];
         setSelectedDate(today);
+        
+        // Time slot will be auto-selected when slots load (see useEffect below)
+        
         // Store in localStorage as backup
         localStorage.setItem('booking_type', 'express');
         localStorage.setItem('express_fee_waived', expressFeeWaived.toString());
+        if (bookingTimeSlot) {
+          localStorage.setItem('booking_time_slot', bookingTimeSlot);
+        }
       } else if (bookingType === 'next_day') {
         setIsFeeWaived(true);
         // Get tomorrow's date in EST/EDT
@@ -208,9 +248,15 @@ export default function BookingModal({ isOpen, onClose }: BookingModalProps) {
         estDate.setHours(0, 0, 0, 0);
         const tomorrow = estDate.toISOString().split('T')[0];
         setSelectedDate(tomorrow);
+        
+        // Time slot will be auto-selected when slots load (see useEffect below)
+        
         // Store in localStorage as backup
         localStorage.setItem('booking_type', 'next_day');
         localStorage.setItem('express_fee_waived', 'true');
+        if (bookingTimeSlot) {
+          localStorage.setItem('booking_time_slot', bookingTimeSlot);
+        }
       } else {
         setIsExpressBooking(false);
         setIsFeeWaived(false);
@@ -238,9 +284,11 @@ export default function BookingModal({ isOpen, onClose }: BookingModalProps) {
     sessionStorage.removeItem('booking_type');
     sessionStorage.removeItem('express_fee_waived');
     sessionStorage.removeItem('express_windows');
+    sessionStorage.removeItem('booking_time_slot');
     localStorage.removeItem('booking_type');
     localStorage.removeItem('express_fee_waived');
     localStorage.removeItem('express_windows');
+    localStorage.removeItem('booking_time_slot');
   };
 
   const handleProblemSubmit = (data: ProblemDescriptionFormValues) => {

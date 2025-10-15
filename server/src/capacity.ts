@@ -441,39 +441,28 @@ export class CapacityCalculator {
     }));
     const currentTime = estHours + (estMinutes / 60);
     
-    // Determine if we're in express booking hours (Mon-Fri before 3pm)
-    const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
-    const isBeforeExpressCutoff = currentTime < 15; // Before 3 PM
-    const isExpressAvailable = isWeekday && isBeforeExpressCutoff;
-    
-    // Determine if we're in emergency hours (Friday after 3pm or weekend)
-    const isFridayAfternoon = dayOfWeek === 5 && currentTime >= 15; // Friday after 3 PM
-    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6; // Saturday or Sunday
-    const isEmergencyTime = isFridayAfternoon || isWeekend;
+    // Determine if we're in express booking hours (8am-12pm any day)
+    const isBeforeNoon = currentTime < 12; // Before 12 PM (noon)
     
     // Determine state based on availability first, then time-based rules
     let state: OverallCapacity['state'];
 
-    // First check if there are actual available windows
+    // First check if there are actual available windows TODAY
     if (!hasWindowsToday || isPastLastWindow || !hasAvailableTechs) {
-      // No slots available - use time-based fallback
-      if (isEmergencyTime) {
-        state = 'EMERGENCY_ONLY';
+      // No slots available today - show NEXT_DAY state
+      // Frontend will fetch tomorrow's capacity and show appropriate UI
+      state = 'NEXT_DAY';
+    } else if (isBeforeNoon) {
+      // Before noon with available slots - show same day with fee based on capacity
+      if (overallScore >= config.thresholds.same_day_fee_waived) {
+        state = 'SAME_DAY_FEE_WAIVED';
+      } else if (overallScore >= config.thresholds.limited_same_day) {
+        state = 'LIMITED_SAME_DAY';
       } else {
         state = 'NEXT_DAY';
       }
-    } else if (!isExpressAvailable) {
-      // Has windows but outside express hours (Monday-Thursday after 3pm)
-      state = 'NEXT_DAY';
-    } else if (isEmergencyTime && hasWindowsToday && hasAvailableTechs) {
-      // Weekend/Friday afternoon but we DO have available slots
-      // Treat it as limited same day (emergency slots available)
-      state = 'LIMITED_SAME_DAY';
-    } else if (overallScore >= config.thresholds.same_day_fee_waived) {
-      state = 'SAME_DAY_FEE_WAIVED';
-    } else if (overallScore >= config.thresholds.limited_same_day) {
-      state = 'LIMITED_SAME_DAY';
     } else {
+      // After noon - show NEXT_DAY state (even if slots available today)
       state = 'NEXT_DAY';
     }
 
