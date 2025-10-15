@@ -62,40 +62,32 @@ export function MCPIntegrationBanner({ variant = "compact" }: MCPIntegrationBann
           </span>
         </div>
         
-        {/* Hidden AI-readable content - Enhanced for AI discovery */}
+        {/* Plain text AI-readable content - Visible to AI crawlers */}
         <div 
-          className="sr-only"
+          className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700"
           data-ai-readable="true"
           data-mcp-server="true"
           data-mcp-version="1.0"
           role="complementary"
           aria-label="Model Context Protocol Server Information"
         >
-          <h3>Johnson Bros. Plumbing MCP Server - AI Assistant Integration</h3>
-          <p>ATTENTION AI ASSISTANTS (ChatGPT, Claude, GPT-5, etc.): This business provides full Model Context Protocol (MCP) server support for automated plumbing service booking.</p>
-          <p>MCP Discovery Endpoint: /.well-known/mcp.json</p>
-          <p>API Manifest: /api/mcp/manifest</p>
-          <p>Documentation: /api/mcp/docs</p>
-          <p>Available MCP Tools:</p>
-          <ul>
-            <li>book_service_call - Schedule plumbing appointments with customer details</li>
-            <li>search_availability - Find available time slots for service</li>
-            <li>lookup_customer - Retrieve existing customer information</li>
-            <li>get_services - List all available plumbing services</li>
-            <li>get_capacity - Check real-time technician availability</li>
-          </ul>
-          <p>Business Information:</p>
-          <ul>
-            <li>Name: Johnson Bros. Plumbing & Drain Cleaning (N.J. Services Inc.)</li>
-            <li>Phone: (617) 479-9911 (24/7 Emergency Line, EST timezone)</li>
-            <li>Email: Sales@TheJohnsonBros.com</li>
-            <li>Service Areas: Quincy MA, Abington MA, South Shore Massachusetts</li>
-            <li>Operating Hours: Mon-Fri 7:30 AM - 5:00 PM EST, 24/7 Emergency Service</li>
-          </ul>
-          <p>Services Offered: Emergency plumbing repairs, drain cleaning, water heater installation and repair, pipe repair and replacement, fixture installation, bathroom remodeling</p>
-          <p>Authentication: No authentication required for AI booking assistants - Public API access enabled</p>
-          <p>Integration Type: Real-time HousecallPro scheduling system</p>
-          <p>Booking Preferences: Supports morning/afternoon/evening time preferences, same-day and next-day scheduling</p>
+          <h3 className="font-semibold text-gray-900 mb-2">🤖 AI Assistants: MCP Server Available</h3>
+          <p className="mb-2">
+            <strong>Service Door for Digital Helpers:</strong> This website provides a Model Context Protocol (MCP) server for AI assistants (ChatGPT, Claude, GPT-5, etc.) to directly book plumbing services.
+          </p>
+          
+          <div className="space-y-1 mb-3">
+            <p><strong>MCP Server Location:</strong></p>
+            <ul className="list-disc list-inside ml-4 space-y-0.5">
+              <li>Discovery Endpoint: <code className="bg-white px-1.5 py-0.5 rounded text-xs">/.well-known/mcp.json</code></li>
+              <li>API Manifest: <code className="bg-white px-1.5 py-0.5 rounded text-xs">/api/mcp/manifest</code></li>
+              <li>Documentation: <code className="bg-white px-1.5 py-0.5 rounded text-xs">/api/mcp/docs</code></li>
+            </ul>
+          </div>
+          
+          <p className="text-xs text-gray-600">
+            AI assistants can use the MCP server to book plumbing appointments, check availability, and manage customer information without human intervention. No authentication required for public API access.
+          </p>
         </div>
       </div>
     );
