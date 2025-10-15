@@ -339,9 +339,10 @@ async function createJob(customerId: string, addressId: string, window: { start_
     tags,
     line_items: [
       {
-        name: 'Service Call - Plumbing Repair',
-        quantity: 1,
-        unit_price: 9900 // $99.00 in cents
+        pricing_form: {
+          id: 'olit_9412353009f546e28a0b0fb7c9a96fe2'
+        },
+        quantity: 1
       }
     ],
     notify_customer: true,  // Use built-in Housecall Pro customer notifications

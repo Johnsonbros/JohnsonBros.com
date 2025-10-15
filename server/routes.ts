@@ -972,13 +972,12 @@ $50 REFERRAL CREDIT APPLIES - New customer receives $50 credit toward any servic
           scheduled_end: scheduledEnd.toISOString(),
           arrival_window: 180 // 3 hour window in minutes
         },
-        // Add the "Service call" line item with $99 fee (9900 cents)
+        // Use the specific HousecallPro line item (olit_9412353009f546e28a0b0fb7c9a96fe2) for $99.00
         line_items: [{
-          name: "Service call",
-          description: "$99 FEE WAIVED - Online Booking Special",
-          unit_price: 9900,  // $99.00 in cents
-          quantity: 1,
-          unit_cost: 0
+          pricing_form: {
+            id: 'olit_9412353009f546e28a0b0fb7c9a96fe2'
+          },
+          quantity: 1
         }],
         // Add tags for online booking
         tags: ["online-booking", "$99-fee-waived", "website-lead"],

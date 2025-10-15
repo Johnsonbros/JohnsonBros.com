@@ -158,6 +158,7 @@ Controls business rules without code changes:
   - No slots available: Regular booking with $99 fee
 - **BookingModal Fix**: Auto-selects express booking time slots from real API data for seamless user experience
 - **Capacity States**: Simplified to 3 primary states (SAME_DAY_FEE_WAIVED, LIMITED_SAME_DAY, NEXT_DAY) with frontend handling emergency UI
+- **Line Item Configuration**: All bookings now use specific HousecallPro line item ID `olit_9412353009f546e28a0b0fb7c9a96fe2` priced at $99.00 (9900 cents)
 
 ## October 2024 Database Migration to PostgreSQL
 - **Production Persistence**: Migrated from in-memory storage to PostgreSQL for all data
