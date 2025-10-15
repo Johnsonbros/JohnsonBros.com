@@ -51,11 +51,12 @@ class HealthChecker {
         responseTime,
       };
     } catch (error) {
-      Logger.error('Database health check failed', { error: error.message });
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      Logger.error('Database health check failed', { error: errorMessage });
       return {
         status: 'fail',
         message: 'Database connection failed',
-        details: error.message,
+        details: errorMessage,
       };
     }
   }
@@ -63,7 +64,7 @@ class HealthChecker {
   async checkHousecallPro(): Promise<CheckResult> {
     const start = Date.now();
     try {
-      const client = new HousecallProClient();
+      const client = HousecallProClient.getInstance();
       // Simple API call to check connectivity
       await client.getEmployees();
       const responseTime = Date.now() - start;
@@ -82,11 +83,12 @@ class HealthChecker {
         responseTime,
       };
     } catch (error) {
-      Logger.error('HousecallPro health check failed', { error: error.message });
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      Logger.error('HousecallPro health check failed', { error: errorMessage });
       return {
         status: 'warn', // Degraded, not failed - can still operate
         message: 'HousecallPro API unreachable',
-        details: error.message,
+        details: errorMessage,
       };
     }
   }
