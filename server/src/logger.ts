@@ -5,7 +5,41 @@ export interface LogContext {
   latency?: number;
   cacheHit?: boolean;
   error?: string;
+  stack?: string;
   [key: string]: any;
+}
+
+/**
+ * Normalize an unknown error to extract message and stack
+ */
+export function normalizeError(error: unknown): { message: string; stack?: string } {
+  if (error instanceof Error) {
+    return {
+      message: error.message,
+      stack: error.stack,
+    };
+  }
+  
+  if (typeof error === 'string') {
+    return { message: error };
+  }
+  
+  return { message: String(error) };
+}
+
+/**
+ * Get error message from unknown error (for response bodies)
+ */
+export function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  
+  if (typeof error === 'string') {
+    return error;
+  }
+  
+  return String(error);
 }
 
 export class Logger {
@@ -58,4 +92,16 @@ export class Logger {
   static debug(message: string, context?: LogContext) {
     this.log('debug', message, context);
   }
+}
+
+/**
+ * Convenience helper for logging errors with proper type normalization
+ */
+export function logError(message: string, error: unknown, context?: LogContext) {
+  const normalized = normalizeError(error);
+  Logger.error(message, {
+    ...context,
+    error: normalized.message,
+    stack: normalized.stack,
+  });
 }

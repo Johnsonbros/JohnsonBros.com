@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { HelmetProvider } from "react-helmet-async";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { lazy, Suspense } from "react";
 import Home from "@/pages/home";
 import Blog from "@/pages/blog";
 import BlogPost from "@/pages/blog-post";
@@ -17,7 +18,9 @@ import AdminDashboard from "@/pages/admin/dashboard";
 import AdminHeatMap from "@/pages/admin/heatmap";
 import NotFound from "@/pages/not-found";
 import { JobCompletionNotifications } from "@/components/JobCompletionNotifications";
-import { VideoCallPopup } from "@/components/VideoCallPopup";
+
+// Lazy load VideoCallPopup - not critical for initial render
+const VideoCallPopup = lazy(() => import("@/components/VideoCallPopup").then(module => ({ default: module.VideoCallPopup })));
 
 // Service Pages
 import GeneralPlumbing from "@/pages/services/general-plumbing";
@@ -156,7 +159,9 @@ function App() {
         <Toaster />
         <Router />
           <JobCompletionNotifications />
-          <VideoCallPopup />
+          <Suspense fallback={null}>
+            <VideoCallPopup />
+          </Suspense>
         </TooltipProvider>
         </HelmetProvider>
       </QueryClientProvider>
