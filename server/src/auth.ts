@@ -8,6 +8,8 @@ import { eq, and, gt } from 'drizzle-orm';
 
 // Session management
 const SESSION_DURATION = 24 * 60 * 60 * 1000; // 24 hours
+const MAX_LOGIN_ATTEMPTS = 5; // Lock account after 5 failed attempts
+const LOCKOUT_DURATION = 30 * 60 * 1000; // 30 minutes lockout
 
 // Permission definitions by role
 const ROLE_PERMISSIONS: Record<string, string[]> = {
@@ -76,6 +78,66 @@ export async function hashPassword(password: string): Promise<string> {
 // Verify password
 export async function verifyPassword(password: string, hash: string): Promise<boolean> {
   return bcrypt.compare(password, hash);
+}
+
+// Check if account is locked
+export async function isAccountLocked(userId: number): Promise<boolean> {
+  const [user] = await db.select()
+    .from(adminUsers)
+    .where(eq(adminUsers.id, userId))
+    .limit(1);
+  
+  if (!user || !user.lockedUntil) return false;
+  
+  // Check if lockout period has expired
+  if (new Date() > user.lockedUntil) {
+    // Reset lockout
+    await db.update(adminUsers)
+      .set({ 
+        lockedUntil: null, 
+        failedLoginAttempts: 0 
+      })
+      .where(eq(adminUsers.id, userId));
+    return false;
+  }
+  
+  return true;
+}
+
+// Record failed login attempt
+export async function recordFailedLogin(userId: number): Promise<void> {
+  const [user] = await db.select()
+    .from(adminUsers)
+    .where(eq(adminUsers.id, userId))
+    .limit(1);
+  
+  if (!user) return;
+  
+  const newAttempts = (user.failedLoginAttempts || 0) + 1;
+  
+  // Lock account if max attempts reached
+  if (newAttempts >= MAX_LOGIN_ATTEMPTS) {
+    await db.update(adminUsers)
+      .set({ 
+        failedLoginAttempts: newAttempts,
+        lockedUntil: new Date(Date.now() + LOCKOUT_DURATION)
+      })
+      .where(eq(adminUsers.id, userId));
+  } else {
+    await db.update(adminUsers)
+      .set({ failedLoginAttempts: newAttempts })
+      .where(eq(adminUsers.id, userId));
+  }
+}
+
+// Reset failed login attempts on successful login
+export async function resetFailedLogins(userId: number): Promise<void> {
+  await db.update(adminUsers)
+    .set({ 
+      failedLoginAttempts: 0,
+      lockedUntil: null
+    })
+    .where(eq(adminUsers.id, userId));
 }
 
 // Generate session token

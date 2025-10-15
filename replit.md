@@ -85,12 +85,23 @@ Preferred communication style: You are a Co-Founder of this plumbing business. Y
 - **Booking Workflow**: Integrates customer lookup/creation, address management, service selection, and job creation within HousecallPro.
 - **Pricing & Fees**: Automatic service fee waivers based on capacity thresholds, and premium pricing for emergency services.
 
-## Security Implementation
-- **Session Management**: Secure Express sessions with PostgreSQL store.
-- **Webhook Security**: HMAC-SHA256 signature verification and timing attack protection for HousecallPro webhooks.
-- **API Security**: Rate limiting (customer lookup), Zod schema input validation, Drizzle ORM for SQL injection prevention, and CORS.
-- **Data Protection**: Coordinate privacy (offset for display), PII handling, and secure API key storage.
-- **External API Security**: Bearer token authentication for HousecallPro, circuit breaker pattern, and request retry logic.
+## Security Implementation (Production-Ready)
+- **Trust Proxy Configuration**: Properly configured to trust only first hop (Replit proxy), preventing IP spoofing while enabling accurate rate limiting
+- **Security Headers**: Helmet.js for comprehensive security headers including CSP, HSTS, X-Frame-Options
+- **CORS Protection**: Strict origin validation in production, development-friendly in dev mode
+- **CSRF Protection**: Global double-submit cookie pattern protecting ALL state-changing endpoints (POST/PUT/DELETE/PATCH) including public endpoints (/api/customers, /api/bookings)
+  - Targeted exemptions: `/api/admin/auth/login` (pre-auth), `/api/webhooks/*` (HMAC validated), `/health` (health check)
+  - Internal server-to-server calls authenticated with X-Internal-Secret header
+  - No hardcoded fallback secrets - requires INTERNAL_SECRET env var for internal calls
+- **Account Lockout**: Automatic account lockout after 5 failed login attempts (30-minute lockout period, auto-reset on success)
+- **Rate Limiting**: Comprehensive rate limiting on all endpoints (public read: 100/15min, public write: 10/15min, customer lookup: 5/15min, admin: 20/15min, webhooks: 1000/15min)
+- **Session Management**: Secure Express sessions with PostgreSQL store, rolling expiration, and production secret enforcement (no hardcoded fallback)
+- **Webhook Security**: HMAC-SHA256 signature verification and timing attack protection for HousecallPro webhooks
+- **Input Validation**: XSS protection via query parameter sanitization, prototype pollution prevention, and Zod schema validation
+- **Request Size Limiting**: 10MB request body size limit to prevent DoS attacks
+- **Data Protection**: Coordinate privacy (offset for display), PII handling, secure API key storage
+- **External API Security**: Bearer token authentication for HousecallPro, circuit breaker pattern, request retry logic
+- **Production Requirements**: Requires SESSION_SECRET and INTERNAL_SECRET env vars in production (throws error if missing)
 
 ## SEO & Discoverability
 - **Dynamic Sitemap**: `/sitemap.xml` automatically includes all static pages and published blog posts from the database.

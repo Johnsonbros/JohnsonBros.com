@@ -1,13 +1,50 @@
 import express, { type Request, Response, NextFunction } from "express";
 import compression from "compression";
+import cookieParser from "cookie-parser";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { configureSecurityMiddleware, getCsrfToken, csrfProtection } from "./src/security";
 
 const app = express();
-app.set('trust proxy', true);
+
+// Fix trust proxy for rate limiting - trust only first hop (Replit proxy)
+// This prevents IP spoofing while allowing rate limiting to work correctly
+app.set('trust proxy', 1);
+
+// Cookie parser (required for CSRF protection)
+app.use(cookieParser());
+
+// Security middleware (helmet, CORS, etc.)
+configureSecurityMiddleware(app);
+
 app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// CSRF token endpoint (must be before routes)
+app.get('/api/csrf-token', getCsrfToken());
+
+// Global CSRF protection with targeted exemptions
+app.use((req, res, next) => {
+  // Exempt paths that don't require CSRF (pre-auth, webhooks with signature validation, health check)
+  const exemptPaths = [
+    '/api/admin/auth/login',  // Pre-authentication
+    '/api/webhooks',          // Webhooks use HMAC signature validation
+    '/health'                 // Health check
+  ];
+  
+  // Check for exact match or prefix match for webhook routes
+  const isExempt = exemptPaths.some(path => 
+    req.path === path || req.path.startsWith(path + '/')
+  );
+  
+  if (isExempt) {
+    return next();
+  }
+  
+  // Apply CSRF protection to all other routes
+  return csrfProtection()(req, res, next);
+});
 
 // MCP Discovery HTTP Headers Middleware
 app.use((req, res, next) => {

@@ -1800,9 +1800,17 @@ Sitemap: ${siteUrl}/sitemap.xml
       // Call the sync endpoint internally
       const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
       const host = process.env.NODE_ENV === 'production' ? req.get('host') : 'localhost:5000';
+      // Only include internal secret header if configured
+      const headers: Record<string, string> = { 
+        'Content-Type': 'application/json'
+      };
+      if (process.env.INTERNAL_SECRET) {
+        headers['X-Internal-Secret'] = process.env.INTERNAL_SECRET;
+      }
+      
       const response = await fetch(`${protocol}://${host}/api/admin/sync-customer-addresses`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers
       });
       
       const result = await response.json();
@@ -1824,9 +1832,17 @@ Sitemap: ${siteUrl}/sitemap.xml
       Logger.info("Running initial data sync on server start...");
       const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
       const host = process.env.NODE_ENV === 'production' ? process.env.REPL_SLUG ? `${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co` : 'localhost:5000' : 'localhost:5000';
+      // Only include internal secret header if configured
+      const headers: Record<string, string> = { 
+        'Content-Type': 'application/json'
+      };
+      if (process.env.INTERNAL_SECRET) {
+        headers['X-Internal-Secret'] = process.env.INTERNAL_SECRET;
+      }
+      
       await fetch(`${protocol}://${host}/api/admin/sync-customer-addresses`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers
       });
       Logger.info("Initial sync completed");
     } catch (error) {
@@ -1864,9 +1880,17 @@ Sitemap: ${siteUrl}/sitemap.xml
         // Trigger sync in background
         const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
         const host = process.env.NODE_ENV === 'production' ? process.env.REPL_SLUG ? `${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co` : 'localhost:5000' : 'localhost:5000';
+        // Only include internal secret header if configured
+        const headers: Record<string, string> = { 
+          'Content-Type': 'application/json'
+        };
+        if (process.env.INTERNAL_SECRET) {
+          headers['X-Internal-Secret'] = process.env.INTERNAL_SECRET;
+        }
+        
         fetch(`${protocol}://${host}/api/admin/sync-customer-addresses`, { 
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
+          headers
         }).catch(err => Logger.error("Background sync failed:", err));
         
         // Return empty for now

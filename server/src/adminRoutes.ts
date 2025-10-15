@@ -11,7 +11,8 @@ import {
 import { eq, desc, and, gte, lte, sql, or, like, inArray } from 'drizzle-orm';
 import {
   hashPassword, verifyPassword, createSession, authenticate,
-  requirePermission, logActivity, ensureSuperAdmin, initializePermissions
+  requirePermission, logActivity, ensureSuperAdmin, initializePermissions,
+  isAccountLocked, recordFailedLogin, resetFailedLogins
 } from './auth';
 
 const router = Router();
@@ -51,13 +52,32 @@ router.post('/auth/login', async (req, res) => {
       .where(eq(adminUsers.email, email))
       .limit(1);
     
-    if (!user || !await verifyPassword(password, user.passwordHash)) {
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    
+    // Check if account is locked
+    if (await isAccountLocked(user.id)) {
+      return res.status(423).json({ 
+        error: 'Account is locked due to too many failed login attempts. Please try again in 30 minutes.' 
+      });
+    }
+    
+    // Verify password
+    const isValidPassword = await verifyPassword(password, user.passwordHash);
+    
+    if (!isValidPassword) {
+      // Record failed login attempt
+      await recordFailedLogin(user.id);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
     
     if (!user.isActive) {
       return res.status(403).json({ error: 'Account is disabled' });
     }
+    
+    // Reset failed login attempts on successful login
+    await resetFailedLogins(user.id);
     
     const session = await createSession(user.id, req.ip, req.headers['user-agent']);
     

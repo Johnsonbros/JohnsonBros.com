@@ -757,6 +757,8 @@ export const adminUsers = pgTable('admin_users', {
   role: text('role').notNull().default('staff'), // 'super_admin', 'admin', 'tech', 'staff'
   isActive: boolean('is_active').default(true),
   lastLoginAt: timestamp('last_login_at'),
+  failedLoginAttempts: integer('failed_login_attempts').default(0).notNull(),
+  lockedUntil: timestamp('locked_until'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => ({

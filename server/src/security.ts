@@ -1,34 +1,45 @@
 import helmet from 'helmet';
 import cors from 'cors';
-import rateLimit from 'express-rate-limit';
+import crypto from 'crypto';
 import { Express, Request, Response, NextFunction } from 'express';
 
 // Production security configuration
+// Note: Rate limiting is handled in routes.ts to avoid conflicts
 export function configureSecurityMiddleware(app: Express) {
   const isProduction = process.env.NODE_ENV === 'production';
   
-  // Security headers with helmet - strict CSP for production
-  app.use(helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        // Remove unsafe-inline for production security - use nonce or hash-based CSP
-        scriptSrc: ["'self'", "https://maps.googleapis.com"],
-        styleSrc: ["'self'", "https://fonts.googleapis.com"],
-        fontSrc: ["'self'", "https://fonts.gstatic.com"],
-        imgSrc: ["'self'", "data:", "https:", "blob:"],
-        connectSrc: ["'self'", "https://api.housecallpro.com", "https://maps.googleapis.com"],
-        frameSrc: ["'self'", "https://maps.googleapis.com"],
-        objectSrc: ["'none'"],
-        upgradeInsecureRequests: [],
+  // Disable X-Powered-By header
+  app.disable('x-powered-by');
+  
+  // Security headers with helmet - relaxed CSP for development, strict for production
+  if (isProduction) {
+    app.use(helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'", "https://maps.googleapis.com"],
+          styleSrc: ["'self'", "https://fonts.googleapis.com"],
+          fontSrc: ["'self'", "https://fonts.gstatic.com"],
+          imgSrc: ["'self'", "data:", "https:", "blob:"],
+          connectSrc: ["'self'", "https://api.housecallpro.com", "https://maps.googleapis.com"],
+          frameSrc: ["'self'", "https://maps.googleapis.com"],
+          objectSrc: ["'none'"],
+          upgradeInsecureRequests: [],
+        },
       },
-    },
-    hsts: {
-      maxAge: 31536000,
-      includeSubDomains: true,
-      preload: true,
-    },
-  }));
+      hsts: {
+        maxAge: 31536000,
+        includeSubDomains: true,
+        preload: true,
+      },
+    }));
+  } else {
+    // Development mode - relaxed CSP for Vite HMR
+    app.use(helmet({
+      contentSecurityPolicy: false, // Disable CSP in dev for Vite
+      hsts: false,
+    }));
+  }
   
   // CORS configuration
   const corsOptions: cors.CorsOptions = {
@@ -37,7 +48,7 @@ export function configureSecurityMiddleware(app: Express) {
       if (isProduction) {
         const allowedOrigins = process.env.CORS_ORIGIN 
           ? process.env.CORS_ORIGIN.split(',') 
-          : ['https://yourdomain.com'];
+          : [];
         
         if (!origin || allowedOrigins.includes(origin)) {
           callback(null, true);
@@ -52,69 +63,10 @@ export function configureSecurityMiddleware(app: Express) {
     credentials: true,
     optionsSuccessStatus: 200,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
   };
   
   app.use(cors(corsOptions));
-  
-  // Global rate limiting
-  const globalLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: isProduction ? 100 : 1000, // Limit requests per IP
-    message: 'Too many requests from this IP, please try again later.',
-    standardHeaders: true,
-    legacyHeaders: false,
-    handler: (req: Request, res: Response) => {
-      res.status(429).json({
-        error: 'Too many requests',
-        message: 'Rate limit exceeded. Please try again later.',
-        retryAfter: req.rateLimit?.resetTime,
-      });
-    },
-  });
-  
-  app.use(globalLimiter);
-  
-  // Strict rate limiting for authentication endpoints
-  const authLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 5, // Max 5 login attempts per IP
-    skipSuccessfulRequests: true, // Don't count successful logins
-    message: 'Too many login attempts, please try again later.',
-  });
-  
-  app.use('/auth/login', authLimiter);
-  app.use('/admin/login', authLimiter);
-  
-  // API rate limiting
-  const apiLimiter = rateLimit({
-    windowMs: 1 * 60 * 1000, // 1 minute
-    max: isProduction ? 30 : 100, // 30 requests per minute in production
-    message: 'API rate limit exceeded.',
-  });
-  
-  app.use('/api/', apiLimiter);
-  
-  // Booking-specific rate limiting (prevent abuse)
-  const bookingLimiter = rateLimit({
-    windowMs: 60 * 60 * 1000, // 1 hour
-    max: 10, // Max 10 booking attempts per hour per IP
-    message: 'Too many booking attempts, please try again later.',
-  });
-  
-  app.use('/api/booking', bookingLimiter);
-  app.use('/api/lead', bookingLimiter);
-  
-  // Security middleware for production
-  if (isProduction) {
-    // Disable X-Powered-By header
-    app.disable('x-powered-by');
-    
-    // Trust proxy for accurate IP addresses behind reverse proxy
-    if (process.env.TRUST_PROXY === 'true') {
-      app.set('trust proxy', 1);
-    }
-  }
   
   // Request size limiting
   app.use((req: Request, res: Response, next: NextFunction) => {
@@ -126,14 +78,14 @@ export function configureSecurityMiddleware(app: Express) {
       size += chunk.length;
       if (size > maxSize) {
         res.status(413).json({ error: 'Request entity too large' });
-        req.connection.destroy();
+        req.destroy();
       }
     });
     
     next();
   });
   
-  // XSS Protection
+  // XSS Protection - sanitize query parameters
   app.use((req: Request, res: Response, next: NextFunction) => {
     // Sanitize query parameters - use Object.create(null) to prevent prototype pollution
     const sanitizedQuery = Object.create(null);
@@ -164,12 +116,80 @@ export function configureSecurityMiddleware(app: Express) {
   });
 }
 
+// CSRF Protection using double-submit cookie pattern
+export function csrfProtection() {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const isProduction = process.env.NODE_ENV === 'production';
+    
+    // Generate CSRF token if not present
+    if (!req.cookies || !req.cookies['csrf-token']) {
+      const token = crypto.randomBytes(32).toString('hex');
+      res.cookie('csrf-token', token, {
+        httpOnly: false, // Needs to be readable by frontend
+        secure: isProduction,
+        sameSite: isProduction ? 'strict' : 'lax',
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+      });
+    }
+    
+    // Verify CSRF token for state-changing requests
+    if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
+      // Allow internal server-to-server calls with shared secret (only if configured)
+      if (process.env.INTERNAL_SECRET) {
+        const internalSecret = req.headers['x-internal-secret'];
+        if (internalSecret === process.env.INTERNAL_SECRET) {
+          return next();
+        }
+      }
+      
+      const cookieToken = req.cookies?.['csrf-token'];
+      const headerToken = req.headers['x-csrf-token'];
+      
+      if (!cookieToken || !headerToken || cookieToken !== headerToken) {
+        return res.status(403).json({ error: 'CSRF token validation failed' });
+      }
+    }
+    
+    next();
+  };
+}
+
+// Get CSRF token endpoint
+export function getCsrfToken() {
+  return (req: Request, res: Response) => {
+    const token = req.cookies?.['csrf-token'] || crypto.randomBytes(32).toString('hex');
+    const isProduction = process.env.NODE_ENV === 'production';
+    
+    res.cookie('csrf-token', token, {
+      httpOnly: false,
+      secure: isProduction,
+      sameSite: isProduction ? 'strict' : 'lax',
+      maxAge: 24 * 60 * 60 * 1000
+    });
+    
+    res.json({ csrfToken: token });
+  };
+}
+
 // Session security configuration
 export function getSessionConfig() {
   const isProduction = process.env.NODE_ENV === 'production';
   
+  // Require SESSION_SECRET in production
+  if (isProduction && !process.env.SESSION_SECRET) {
+    throw new Error('SESSION_SECRET environment variable is required in production');
+  }
+  
+  // Use a dev-only fallback secret in development
+  const sessionSecret = process.env.SESSION_SECRET || 
+    (isProduction ? '' : 'dev-only-session-secret-not-for-production');
+  
+  if (!sessionSecret) {
+    throw new Error('SESSION_SECRET environment variable is required');
+  }
+  
   return {
-    secret: process.env.SESSION_SECRET || 'change-this-secret-in-production',
+    secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
     rolling: true, // Reset expiry on activity
