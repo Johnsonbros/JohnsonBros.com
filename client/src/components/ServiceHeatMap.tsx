@@ -581,10 +581,42 @@ export function ServiceHeatMap() {
       {/* Mobile-optimized map container */}
       <div className="relative" ref={containerRef}>
         {!isMapVisible ? (
-          <div className="h-[400px] sm:h-[450px] md:h-[500px] w-full bg-gray-100 flex items-center justify-center">
-            <div className="text-center">
-              <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4 animate-pulse" />
-              <p className="text-gray-500">Scroll to view service map</p>
+          <div className="h-[400px] sm:h-[450px] md:h-[500px] w-full bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center p-6">
+            <div className="max-w-2xl text-center">
+              <MapPin className="h-16 w-16 text-blue-600 mx-auto mb-6" />
+              <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">Our Service Area</h3>
+              <p className="text-lg text-gray-700 mb-6">
+                Proudly serving communities across Eastern Massachusetts
+              </p>
+              <div className="bg-white rounded-xl p-6 shadow-lg">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm text-gray-600">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <span>Boston</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <span>Quincy</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <span>Braintree</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <span>Weymouth</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <span>Milton</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <span>& Surrounding Areas</span>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500 mt-4">Scroll down to see our interactive service map</p>
+              </div>
             </div>
           </div>
         ) : (
