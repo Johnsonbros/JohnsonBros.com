@@ -22,53 +22,8 @@ export function ServiceHeatMap() {
   const [hoveredCity, setHoveredCity] = useState<string | null>(null);
   const [totalCustomers, setTotalCustomers] = useState(0);
   const [isLocating, setIsLocating] = useState(false);
-  const [activeTestimonial, setActiveTestimonial] = useState<number | null>(null);
   const [isMapVisible, setIsMapVisible] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-
-  // Customer testimonials for different service areas
-  const testimonials = [
-    {
-      id: 1,
-      name: "Sarah M.",
-      location: "Quincy, MA",
-      text: "Johnson Bros saved the day! Same-day emergency service and fixed our burst pipe perfectly.",
-      rating: 5,
-      service: "Emergency Plumbing",
-      lat: 42.2529,
-      lng: -71.0023
-    },
-    {
-      id: 2,
-      name: "Mike R.",
-      location: "Weymouth, MA", 
-      text: "Outstanding water heater installation. Professional, clean, and reasonably priced!",
-      rating: 5,
-      service: "Water Heater Install",
-      lat: 42.2176,
-      lng: -70.9395
-    },
-    {
-      id: 3,
-      name: "Linda K.",
-      location: "Braintree, MA",
-      text: "Best drain cleaning service we've ever used. They explained everything clearly.",
-      rating: 5,
-      service: "Drain Cleaning",
-      lat: 42.2076,
-      lng: -71.0014
-    },
-    {
-      id: 4,
-      name: "Tom H.",
-      location: "Hull, MA",
-      text: "Reliable, honest, and fast. They've been our go-to plumbers for 3 years now!",
-      rating: 5,
-      service: "General Plumbing",
-      lat: 42.3084,
-      lng: -70.8967
-    }
-  ];
   
   const { data: heatMapData, isLoading } = useQuery<HeatMapData[]>({
     queryKey: ['/api/social-proof/service-heat-map'],
@@ -81,26 +36,6 @@ export function ServiceHeatMap() {
       setTotalCustomers(total * 4); // Adjust multiplier for granular data
     }
   }, [heatMapData]);
-
-  // Auto-cycle testimonials for impressive social proof
-  useEffect(() => {
-    const cycleTestimonials = () => {
-      const nextTestimonial = testimonials[Math.floor(Math.random() * testimonials.length)];
-      setActiveTestimonial(nextTestimonial.id);
-      setTimeout(() => setActiveTestimonial(null), 4000); // Show for 4 seconds
-    };
-
-    // Start cycling after 3 seconds, then every 8 seconds
-    const initialTimer = setTimeout(() => {
-      cycleTestimonials();
-      const interval = setInterval(cycleTestimonials, 12000); // Every 12 seconds
-
-      // Cleanup interval
-      return () => clearInterval(interval);
-    }, 3000);
-
-    return () => clearTimeout(initialTimer);
-  }, [testimonials]);
 
   // Lazy load map when it comes into view to reduce API costs
   useEffect(() => {
@@ -201,49 +136,67 @@ export function ServiceHeatMap() {
 
         mapInstanceRef.current = map;
 
+        // Create polygon outlining the entire service area
+        const serviceAreaBoundary = new google.maps.Polygon({
+          paths: [
+            { lat: 42.45, lng: -71.15 },  // Newton area (northwest)
+            { lat: 42.42, lng: -70.82 },  // Winthrop area (northeast)
+            { lat: 42.35, lng: -70.87 },  // Hull area (east)
+            { lat: 42.05, lng: -70.65 },  // Marshfield area (southeast)
+            { lat: 42.0, lng: -71.15 },   // Canton area (southwest)
+            { lat: 42.15, lng: -71.2 },   // Needham area (west)
+          ],
+          strokeColor: '#2563EB',
+          strokeOpacity: 0.9,
+          strokeWeight: 4,
+          fillColor: '#3B82F6',
+          fillOpacity: 0.12,
+          map: map,
+          clickable: false,
+        });
+
+        // Add animated border effect
+        let borderOpacity = 0.9;
+        let increasing = false;
+        const borderInterval = setInterval(() => {
+          if (!serviceAreaBoundary) {
+            clearInterval(borderInterval);
+            return;
+          }
+          if (increasing) {
+            borderOpacity += 0.02;
+            if (borderOpacity >= 1) increasing = false;
+          } else {
+            borderOpacity -= 0.02;
+            if (borderOpacity <= 0.7) increasing = true;
+          }
+          serviceAreaBoundary.setOptions({ strokeOpacity: borderOpacity });
+        }, 100);
+
+        // Store interval for cleanup
+        if (!mapInstanceRef.current.pulseIntervals) {
+          mapInstanceRef.current.pulseIntervals = [];
+        }
+        mapInstanceRef.current.pulseIntervals.push(borderInterval);
+
         // Sort areas by job count to show biggest areas first
         const sortedAreas = [...heatMapData].sort((a, b) => b.count - a.count);
         
-        // Create clear visual markers for each service area
+        // Create clean markers for each service area (no circles, just markers)
         sortedAreas.forEach((area, index) => {
           const jobCount = area.count;
           
-          // Determine size and color based on job volume
-          let markerSize, fillColor, strokeColor, fillOpacity;
+          // Determine color based on job volume
+          let strokeColor;
           if (jobCount >= 100) {
-            markerSize = 3500;
-            fillColor = '#DC2626'; // Red for highest volume
-            strokeColor = '#991B1B';
-            fillOpacity = 0.35;
+            strokeColor = '#991B1B'; // Red for highest volume
           } else if (jobCount >= 50) {
-            markerSize = 2800;
-            fillColor = '#EA580C'; // Orange for high volume
-            strokeColor = '#C2410C';
-            fillOpacity = 0.30;
+            strokeColor = '#C2410C'; // Orange for high volume
           } else if (jobCount >= 25) {
-            markerSize = 2200;
-            fillColor = '#F59E0B'; // Amber for medium volume
-            strokeColor = '#D97706';
-            fillOpacity = 0.25;
+            strokeColor = '#D97706'; // Amber for medium volume
           } else {
-            markerSize = 1800;
-            fillColor = '#3B82F6'; // Blue for lower volume
-            strokeColor = '#2563EB';
-            fillOpacity = 0.20;
+            strokeColor = '#2563EB'; // Blue for lower volume
           }
-
-          // Create area circle
-          const areaCircle = new google.maps.Circle({
-            strokeColor: strokeColor,
-            strokeOpacity: 0.8,
-            strokeWeight: 2,
-            fillColor: fillColor,
-            fillOpacity: fillOpacity,
-            map: map,
-            center: { lat: area.lat, lng: area.lng },
-            radius: markerSize,
-            clickable: true,
-          });
 
           // Create custom marker with job count
           const markerDiv = document.createElement('div');
@@ -312,15 +265,7 @@ export function ServiceHeatMap() {
           );
           (overlay as any).setMap(map);
 
-          // Add hover effect
-          areaCircle.addListener('mouseover', () => {
-            setHoveredCity(area.city);
-          });
-          
-          areaCircle.addListener('mouseout', () => {
-            setHoveredCity(null);
-          });
-
+          // Add hover effect on marker only
           markerDiv.addEventListener('mouseenter', () => {
             setHoveredCity(area.city);
             markerDiv.style.transform = 'translate(-50%, -50%) scale(1.1)';
@@ -331,53 +276,6 @@ export function ServiceHeatMap() {
             setHoveredCity(null);
             markerDiv.style.transform = 'translate(-50%, -50%) scale(1)';
             markerDiv.style.zIndex = '1';
-          });
-        });
-
-        // Add testimonial markers to the map using standard markers
-        testimonials.forEach((testimonial, index) => {
-          const testimonialMarker = new google.maps.Marker({
-            position: { lat: testimonial.lat, lng: testimonial.lng },
-            map: map,
-            title: `${testimonial.name} - ${testimonial.service}`,
-            icon: {
-              path: google.maps.SymbolPath.CIRCLE,
-              scale: 8,
-              fillColor: '#3B82F6',
-              fillOpacity: 1,
-              strokeColor: '#1E40AF',
-              strokeWeight: 2
-            },
-            zIndex: 1000
-          });
-
-          // Add click listener for testimonial
-          testimonialMarker.addListener('click', () => {
-            setActiveTestimonial(testimonial.id);
-            setTimeout(() => setActiveTestimonial(null), 5000); // Auto-hide after 5 seconds
-          });
-
-          // Add hover effect
-          testimonialMarker.addListener('mouseover', () => {
-            testimonialMarker.setIcon({
-              path: google.maps.SymbolPath.CIRCLE,
-              scale: 10,
-              fillColor: '#10B981',
-              fillOpacity: 1,
-              strokeColor: '#047857',
-              strokeWeight: 3
-            });
-          });
-
-          testimonialMarker.addListener('mouseout', () => {
-            testimonialMarker.setIcon({
-              path: google.maps.SymbolPath.CIRCLE,
-              scale: 8,
-              fillColor: '#3B82F6',
-              fillOpacity: 1,
-              strokeColor: '#1E40AF',
-              strokeWeight: 2
-            });
           });
         });
 
@@ -660,48 +558,9 @@ export function ServiceHeatMap() {
             </div>
           </div>
         </div>
-        
-        {/* Enhanced testimonial popup */}
-        {activeTestimonial && (
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-30 pointer-events-none max-w-sm">
-            {(() => {
-              const testimonial = testimonials.find(t => t.id === activeTestimonial);
-              if (!testimonial) return null;
-              return (
-                <div className="bg-gradient-to-br from-white to-blue-50 p-6 rounded-2xl shadow-2xl border-2 border-blue-200 animate-fade-in-up">
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0">
-                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                        {testimonial.name.charAt(0)}
-                      </div>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h4 className="font-bold text-gray-800">{testimonial.name}</h4>
-                        <div className="flex">
-                          {[1,2,3,4,5].map(i => (
-                            <span key={i} className="text-yellow-500 text-sm">⭐</span>
-                          ))}
-                        </div>
-                      </div>
-                      <p className="text-sm text-gray-600 mb-2">📍 {testimonial.location}</p>
-                      <p className="text-sm text-gray-700 leading-relaxed mb-2">"{testimonial.text}"</p>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium">
-                          {testimonial.service}
-                        </span>
-                        <span className="text-xs text-gray-500">Verified Customer</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
-          </div>
-        )}
 
         {/* City popup on hover/click */}
-        {hoveredCity && !activeTestimonial && (
+        {hoveredCity && (
           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none">
             <div className="bg-white px-4 py-2 rounded-lg shadow-xl border-2 border-blue-500 animate-fade-in-up">
               <p className="text-sm font-bold text-gray-800">📍 {hoveredCity}</p>
