@@ -39,7 +39,7 @@ export default function Home() {
         <ExpressBooking onBookService={() => openBookingModal()} />
         <ServicesSection onBookService={openBookingModal} />
         <TruckSection />
-        <SocialProofSection />
+        <SocialProofSection onBookService={() => openBookingModal()} />
         <GoogleReviewsSection />
         <Footer onBookService={() => openBookingModal()} />
       </div>

@@ -2,7 +2,11 @@ import { RecentJobsWidget } from "./RecentJobsWidget";
 import { StatsWidget } from "./StatsWidget";
 import { ServiceHeatMap } from "./ServiceHeatMap";
 
-export function SocialProofSection() {
+interface SocialProofSectionProps {
+  onBookService?: () => void;
+}
+
+export function SocialProofSection({ onBookService }: SocialProofSectionProps) {
   return (
     <section className="py-16 bg-gradient-to-br from-blue-50 via-white to-green-50 bg-pipes-orange relative" style={{ backgroundBlendMode: 'multiply' }} data-testid="social-proof-section">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -19,7 +23,7 @@ export function SocialProofSection() {
         <div className="grid gap-6 md:gap-8 lg:gap-10">
           {/* Heat Map - Full Width */}
           <div className="animate-fade-in-up flex justify-center" style={{ animationDelay: '0.1s' }}>
-            <ServiceHeatMap />
+            <ServiceHeatMap onBookService={onBookService} />
           </div>
 
           {/* Success Story & Recent Completions - Side by Side on Desktop */}

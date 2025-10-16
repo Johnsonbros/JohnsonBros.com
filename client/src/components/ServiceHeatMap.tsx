@@ -13,7 +13,11 @@ interface HeatMapData {
   intensity: number;
 }
 
-export function ServiceHeatMap() {
+interface ServiceHeatMapProps {
+  onBookService?: () => void;
+}
+
+export function ServiceHeatMap({ onBookService }: ServiceHeatMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const heatmapRef = useRef<any>(null);
@@ -695,7 +699,11 @@ export function ServiceHeatMap() {
               Join thousands of satisfied customers across Massachusetts
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <button className="bg-white text-blue-600 px-8 py-4 rounded-xl font-bold text-lg hover:bg-gray-100 transition-colors duration-300 shadow-lg">
+              <button 
+                onClick={onBookService}
+                className="bg-white text-blue-600 px-8 py-4 rounded-xl font-bold text-lg hover:bg-gray-100 transition-colors duration-300 shadow-lg"
+                data-testid="button-book-service"
+              >
                 Book Service Online
               </button>
               <div className="flex items-center gap-2">
