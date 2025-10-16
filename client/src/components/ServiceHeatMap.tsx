@@ -87,7 +87,7 @@ export function ServiceHeatMap() {
         const isMobile = window.innerWidth <= 768;
         const map = new google.maps.Map(mapRef.current!, {
           zoom: isMobile ? 8 : 9, // Wider view on mobile
-          center: { lat: 42.2, lng: -70.95 }, // Center on South Shore area
+          center: { lat: 42.05, lng: -70.85 }, // Centered on service area
           mapTypeId: google.maps.MapTypeId.ROADMAP,
           minZoom: 7, // Wider minimum zoom for mobile
           maxZoom: 10, // Limited zoom for privacy - this is the farthest users can zoom
@@ -136,15 +136,24 @@ export function ServiceHeatMap() {
 
         mapInstanceRef.current = map;
 
-        // Create polygon outlining the entire service area
+        // Create polygon following route: Boston to Cape Cod Canal, down I-95, then I-495 south to canal
         const serviceAreaBoundary = new google.maps.Polygon({
           paths: [
-            { lat: 42.45, lng: -71.15 },  // Newton area (northwest)
-            { lat: 42.42, lng: -70.82 },  // Winthrop area (northeast)
-            { lat: 42.35, lng: -70.87 },  // Hull area (east)
-            { lat: 42.05, lng: -70.65 },  // Marshfield area (southeast)
-            { lat: 42.0, lng: -71.15 },   // Canton area (southwest)
-            { lat: 42.15, lng: -71.2 },   // Needham area (west)
+            { lat: 42.36, lng: -71.06 },  // Boston (starting point)
+            { lat: 42.35, lng: -70.92 },  // Quincy/Route 3 corridor
+            { lat: 42.25, lng: -70.88 },  // Weymouth
+            { lat: 42.15, lng: -70.78 },  // Hingham
+            { lat: 42.05, lng: -70.70 },  // Cohasset/Scituate
+            { lat: 41.95, lng: -70.65 },  // Marshfield
+            { lat: 41.85, lng: -70.62 },  // Duxbury
+            { lat: 41.75, lng: -70.62 },  // Plymouth/Cape Cod Canal (east)
+            { lat: 41.75, lng: -70.72 },  // Canal area
+            { lat: 41.90, lng: -70.88 },  // I-495 corridor - Wareham area
+            { lat: 42.00, lng: -71.02 },  // I-495 - Middleboro
+            { lat: 42.10, lng: -71.15 },  // I-495 - Easton/Brockton
+            { lat: 42.20, lng: -71.18 },  // I-495 - Stoughton
+            { lat: 42.28, lng: -71.16 },  // I-95 corridor - Canton/Dedham
+            { lat: 42.32, lng: -71.12 },  // I-95 - West Roxbury
           ],
           strokeColor: '#2563EB',
           strokeOpacity: 0.9,
