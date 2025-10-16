@@ -144,25 +144,40 @@ export function ServiceHeatMap({ onBookService }: ServiceHeatMapProps) {
         const serviceAreaBoundary = new google.maps.Polygon({
           paths: [
             { lat: 42.36, lng: -71.06 },  // Boston (starting point)
-            { lat: 42.35, lng: -70.92 },  // Quincy/Route 3 corridor
-            { lat: 42.25, lng: -70.88 },  // Weymouth
-            { lat: 42.15, lng: -70.78 },  // Hingham
-            { lat: 42.05, lng: -70.70 },  // Cohasset/Scituate
-            { lat: 41.95, lng: -70.65 },  // Marshfield
-            { lat: 41.85, lng: -70.62 },  // Duxbury
-            { lat: 41.75, lng: -70.62 },  // Plymouth/Cape Cod Canal (east)
-            { lat: 41.75, lng: -70.72 },  // Cape Cod Canal
+            { lat: 42.37, lng: -71.00 },  // Boston Harbor
+            { lat: 42.36, lng: -70.95 },  // Winthrop/coastal curve
+            { lat: 42.33, lng: -70.90 },  // Hull
+            { lat: 42.28, lng: -70.85 },  // Weymouth/Hingham Bay
+            { lat: 42.23, lng: -70.78 },  // Hingham
+            { lat: 42.18, lng: -70.70 },  // Cohasset
+            { lat: 42.12, lng: -70.62 },  // Scituate
+            { lat: 42.06, lng: -70.56 },  // Scituate Harbor
+            { lat: 42.00, lng: -70.52 },  // Marshfield coast
+            { lat: 41.94, lng: -70.50 },  // Marshfield south
+            { lat: 41.88, lng: -70.50 },  // Duxbury coast
+            { lat: 41.82, lng: -70.52 },  // Duxbury Bay
+            { lat: 41.76, lng: -70.54 },  // Plymouth coast
+            { lat: 41.73, lng: -70.56 },  // Plymouth Bay
+            { lat: 41.72, lng: -70.62 },  // Plymouth/Cape Cod Canal (east)
+            { lat: 41.73, lng: -70.68 },  // Cape Cod Canal area
+            { lat: 41.75, lng: -70.74 },  // Cape Cod Canal
             { lat: 41.78, lng: -70.82 },  // I-495 south - Wareham
+            { lat: 41.83, lng: -70.88 },  // I-495 - Middleboro approach
             { lat: 41.88, lng: -70.91 },  // I-495 - Middleboro
             { lat: 41.90, lng: -71.09 },  // I-495 - Taunton
             { lat: 41.93, lng: -71.04 },  // I-495 - Raynham
             { lat: 41.97, lng: -71.19 },  // I-495 - Norton
+            { lat: 42.03, lng: -71.23 },  // I-495 - Mansfield area
             { lat: 42.07, lng: -71.25 },  // I-495 - Foxboro
+            { lat: 42.13, lng: -71.26 },  // I-495 - Walpole approach
             { lat: 42.15, lng: -71.26 },  // I-495 - Walpole
-            { lat: 42.27, lng: -71.26 },  // I-495 - Norwood/Westwood
+            { lat: 42.21, lng: -71.26 },  // I-495 - Norwood
+            { lat: 42.27, lng: -71.26 },  // I-495 - Westwood
+            { lat: 42.32, lng: -71.25 },  // I-495 - Needham/Wellesley
             { lat: 42.38, lng: -71.24 },  // I-495 - Waltham (northwest point)
+            { lat: 42.38, lng: -71.18 },  // Newton area
             { lat: 42.38, lng: -71.15 },  // Newton/Watertown area
-            { lat: 42.37, lng: -71.08 },  // Cambridge/Somerville
+            { lat: 42.37, lng: -71.10 },  // Cambridge/Somerville
           ],
           strokeColor: '#2563EB',
           strokeOpacity: 0.9,
