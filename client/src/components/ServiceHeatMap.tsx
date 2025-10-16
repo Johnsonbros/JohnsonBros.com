@@ -623,34 +623,6 @@ export function ServiceHeatMap() {
         )}
       </div>
 
-      {/* Map Legend */}
-      <div className="bg-white py-6 px-4 border-t border-gray-200">
-        <div className="max-w-4xl mx-auto">
-          <h4 className="text-center font-bold text-gray-900 mb-4">Service Volume by Area</h4>
-          <div className="flex flex-wrap justify-center gap-4 md:gap-6">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-red-600 border-2 border-red-900"></div>
-              <span className="text-sm font-medium text-gray-700">100+ Jobs</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-orange-600 border-2 border-orange-800"></div>
-              <span className="text-sm font-medium text-gray-700">50-99 Jobs</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-amber-500 border-2 border-amber-700"></div>
-              <span className="text-sm font-medium text-gray-700">25-49 Jobs</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-blue-500 border-2 border-blue-700"></div>
-              <span className="text-sm font-medium text-gray-700">Under 25 Jobs</span>
-            </div>
-          </div>
-          <p className="text-center text-xs text-gray-500 mt-4">
-            Numbers shown are completed jobs in each service area. Larger circles = more customers served.
-          </p>
-        </div>
-      </div>
-
       {/* Professional Trust Indicators */}
       <div className="bg-gradient-to-r from-gray-50 to-blue-50 py-12 px-4 md:px-6">
         <div className="max-w-6xl mx-auto">
