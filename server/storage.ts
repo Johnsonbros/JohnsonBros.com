@@ -232,10 +232,12 @@ export class MemStorage implements IStorage {
 
   async createCustomer(insertCustomer: InsertCustomer): Promise<Customer> {
     const id = parseInt(randomUUID().replace(/-/g, '').substring(0, 8), 16);
+    const normalizedPhone = insertCustomer.phone ? insertCustomer.phone.replace(/\D/g, '') : null;
     const customer: Customer = {
       ...insertCustomer,
       id,
       phone: insertCustomer.phone || null,
+      normalizedPhone,
       housecallProId: null,
       createdAt: new Date(),
     };

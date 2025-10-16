@@ -429,7 +429,7 @@ export class HousecallProClient {
         Logger.debug(`[HousecallProClient] Jobs extraction failed: ${error.message}`);
       }
       
-      // Fallback to common plumbing services including Service Fee
+      // Fallback to common plumbing services - all use $99 service call fee
       Logger.debug('[HousecallProClient] Using fallback service definitions');
       const fallbackServices = [
         {
@@ -443,7 +443,7 @@ export class HousecallProClient {
         {
           id: 'drain_cleaning',
           name: 'Drain Cleaning',
-          price: 150.00,
+          price: 99.00,
           type: 'service',
           source: 'fallback',
           description: 'Professional drain cleaning service'
@@ -451,7 +451,7 @@ export class HousecallProClient {
         {
           id: 'emergency_repair',
           name: 'Emergency Plumbing Repair',
-          price: 200.00,
+          price: 99.00,
           type: 'service',
           source: 'fallback',
           description: '24/7 emergency plumbing repair'
@@ -459,7 +459,7 @@ export class HousecallProClient {
         {
           id: 'water_heater_service',
           name: 'Water Heater Service',
-          price: 175.00,
+          price: 99.00,
           type: 'service',
           source: 'fallback',
           description: 'Water heater repair and maintenance'
@@ -467,7 +467,7 @@ export class HousecallProClient {
         {
           id: 'pipe_repair',
           name: 'Pipe Repair',
-          price: 150.00,
+          price: 99.00,
           type: 'service',
           source: 'fallback',
           description: 'Professional pipe repair service'
