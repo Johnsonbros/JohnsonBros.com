@@ -453,7 +453,23 @@ export default function BookingModal({ isOpen, onClose }: BookingModalProps) {
     
     const days = [];
     
-    for (let i = 0; i < 30; i++) {
+    // Get the day of week for the first date (0 = Sunday, 6 = Saturday)
+    const firstDayOfWeek = todayEST.getDay();
+    
+    // Add empty cells for proper alignment
+    for (let i = 0; i < firstDayOfWeek; i++) {
+      days.push({
+        date: '',
+        dayOfWeek: '',
+        dayOfMonth: '',
+        isToday: false,
+        isWeekend: false,
+        isEmpty: true,
+      });
+    }
+    
+    // Add actual dates
+    for (let i = 0; i < 21; i++) {
       const date = new Date(todayEST);
       date.setDate(todayEST.getDate() + i);
       const dateStr = date.toISOString().split('T')[0];
@@ -466,6 +482,7 @@ export default function BookingModal({ isOpen, onClose }: BookingModalProps) {
         dayOfMonth,
         isToday: dateStr === todayESTStr,
         isWeekend: date.getDay() === 0 || date.getDay() === 6,
+        isEmpty: false,
       });
     }
     
@@ -690,22 +707,26 @@ export default function BookingModal({ isOpen, onClose }: BookingModalProps) {
                         ))}
                       </div>
                       <div className="grid grid-cols-7 gap-1">
-                        {generateCalendarDays().slice(0, 21).map((day) => (
-                          <button
-                            key={day.date}
-                            type="button"
-                            onClick={() => handleDateSelect(day.date)}
-                            className={`text-center py-2 sm:py-3 rounded transition-colors text-xs sm:text-base ${
-                              selectedDate === day.date
-                                ? 'bg-johnson-blue text-white'
-                                : day.isWeekend
-                                ? 'text-gray-400 hover:bg-gray-200'
-                                : 'hover:bg-johnson-blue hover:text-white'
-                            } ${day.isToday ? 'font-bold ring-2 ring-johnson-orange' : ''}`}
-                            data-testid={`calendar-day-${day.date}`}
-                          >
-                            {day.dayOfMonth}
-                          </button>
+                        {generateCalendarDays().map((day, index) => (
+                          day.isEmpty ? (
+                            <div key={`empty-${index}`} className="py-2 sm:py-3"></div>
+                          ) : (
+                            <button
+                              key={day.date}
+                              type="button"
+                              onClick={() => handleDateSelect(day.date)}
+                              className={`text-center py-2 sm:py-3 rounded transition-colors text-xs sm:text-base ${
+                                selectedDate === day.date
+                                  ? 'bg-johnson-blue text-white'
+                                  : day.isWeekend
+                                  ? 'text-gray-400 hover:bg-gray-200'
+                                  : 'hover:bg-johnson-blue hover:text-white'
+                              } ${day.isToday ? 'font-bold ring-2 ring-johnson-orange' : ''}`}
+                              data-testid={`calendar-day-${day.date}`}
+                            >
+                              {day.dayOfMonth}
+                            </button>
+                          )
                         ))}
                       </div>
                     </div>

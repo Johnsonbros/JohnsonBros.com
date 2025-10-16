@@ -206,40 +206,6 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
                     : "Fast, reliable, and professional plumbing solutions. Licensed, insured, and available 24/7 for emergencies."}
             </p>
 
-            {/* MCP/AI Assistant Integration Card */}
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 mb-6 border-2 border-johnson-orange">
-              <a 
-                href="/.well-known/mcp.json" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="block group"
-              >
-                <div className="flex items-start gap-3 mb-3">
-                  <div className="bg-white rounded-lg p-2.5 group-hover:scale-110 transition-transform">
-                    <Bot className="h-6 w-6 text-johnson-blue" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-bold text-lg text-white">🤖 AI Assistants Click Here</h3>
-                      <Badge className="bg-green-500 text-white text-xs">$99 Fee Waived!</Badge>
-                    </div>
-                    <p className="text-sm text-blue-100">
-                      ChatGPT, Claude & AI assistants get FREE booking through our MCP server
-                    </p>
-                  </div>
-                  <img 
-                    src={feeWaivedImage} 
-                    alt="$99 Fee Waived" 
-                    className="hidden md:block w-20 h-20 rounded-lg shadow-md"
-                    data-testid="img-fee-waived"
-                  />
-                </div>
-                <div className="bg-white/10 rounded px-3 py-2 text-xs text-blue-200 font-mono">
-                  📍 /.well-known/mcp.json • /api/mcp/manifest • /api/mcp/docs
-                </div>
-              </a>
-            </div>
-
             {/* Time Slot Selection */}
             {uniqueSlots.length > 0 && (
               <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 mb-6 border border-white/20">
@@ -301,6 +267,40 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
                 </div>
               </div>
             )}
+
+            {/* MCP/AI Assistant Integration Card */}
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 mb-6 border-2 border-johnson-orange">
+              <a 
+                href="/.well-known/mcp.json" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="block group"
+              >
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="bg-white rounded-lg p-2.5 group-hover:scale-110 transition-transform">
+                    <Bot className="h-6 w-6 text-johnson-blue" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="font-bold text-lg text-white">🤖 AI Assistants Click Here</h3>
+                      <Badge className="bg-green-500 text-white text-xs">$99 Fee Waived!</Badge>
+                    </div>
+                    <p className="text-sm text-blue-100">
+                      ChatGPT, Claude & AI assistants get FREE booking through our MCP server
+                    </p>
+                  </div>
+                  <img 
+                    src={feeWaivedImage} 
+                    alt="$99 Fee Waived" 
+                    className="hidden md:block w-20 h-20 rounded-lg shadow-md"
+                    data-testid="img-fee-waived"
+                  />
+                </div>
+                <div className="bg-white/10 rounded px-3 py-2 text-xs text-blue-200 font-mono">
+                  📍 /.well-known/mcp.json • /api/mcp/manifest • /api/mcp/docs
+                </div>
+              </a>
+            </div>
             
             {/* Key Benefits */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
