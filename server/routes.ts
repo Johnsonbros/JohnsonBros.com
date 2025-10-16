@@ -911,7 +911,8 @@ $50 REFERRAL CREDIT APPLIES - New customer receives $50 credit toward any servic
               street: customerInfo.address,
               city: customerInfo.city || "Quincy",
               state: customerInfo.state || "MA",
-              zip: customerInfo.zipCode || "02169"
+              zip: customerInfo.zipCode || "02169",
+              country: "USA"
             }]
           });
           Logger.info(`[Booking] Created new customer: ${customer.first_name} ${customer.last_name}`);
@@ -924,16 +925,44 @@ $50 REFERRAL CREDIT APPLIES - New customer receives $50 credit toward any servic
       // Step 2: Get customer address
       let addressId = customer.addresses?.[0]?.id;
       if (!addressId) {
+        // Try to fetch existing addresses for the customer from HousecallPro
+        try {
+          const customerAddresses = await housecallClient.callAPI(`/customers/${customer.id}/addresses`, {});
+          if (customerAddresses && (customerAddresses as any).addresses?.length > 0) {
+            addressId = (customerAddresses as any).addresses[0].id;
+            Logger.info(`[Booking] Using existing address from HousecallPro for customer`);
+          }
+        } catch (fetchError) {
+          Logger.debug(`[Booking] Could not fetch existing addresses, will try to create: ${getErrorMessage(fetchError)}`);
+        }
+      }
+      
+      // If still no address, try to create one with the provided info
+      if (!addressId) {
+        // Validate we have the required address info
+        if (!customerInfo.address || !customerInfo.address.trim()) {
+          return res.status(400).json({ 
+            error: "Missing street address", 
+            message: "Street address is required to create a booking. Please provide the full service address." 
+          });
+        }
+        
         try {
           addressId = await housecallClient.createCustomerAddress(customer.id, {
             street: customerInfo.address,
             city: customerInfo.city || "Quincy",
             state: customerInfo.state || "MA", 
-            zip: customerInfo.zipCode || "02169"
+            zip: customerInfo.zipCode || "02169",
+            country: "USA"
           });
+          Logger.info(`[Booking] Created new address for customer`);
         } catch (addressError) {
           logError("[Booking] Failed to create address:", addressError);
-          return res.status(500).json({ error: "Failed to create customer address" });
+          return res.status(500).json({ 
+            error: "Failed to create customer address",
+            message: "Unable to create address in HousecallPro. Please ensure all address information is valid.",
+            details: getErrorMessage(addressError)
+          });
         }
       }
       
@@ -970,6 +999,7 @@ $50 REFERRAL CREDIT APPLIES - New customer receives $50 credit toward any servic
         },
         // Use the specific HousecallPro line item (olit_9412353009f546e28a0b0fb7c9a96fe2) for $99.00
         line_items: [{
+          name: "Service Call - $99 Fee Waived",
           pricing_form: {
             id: 'olit_9412353009f546e28a0b0fb7c9a96fe2'
           },
