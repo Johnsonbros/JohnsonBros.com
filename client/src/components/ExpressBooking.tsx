@@ -385,14 +385,22 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
                     <Zap className="h-8 w-8 text-green-500 mx-auto mb-2 animate-bounce" />
                     <div className="text-xl sm:text-2xl font-bold text-green-600">EXPRESS</div>
                     <div className="text-xs sm:text-sm text-gray-600">Same-Day Service</div>
-                    <div className="text-xs text-green-600 font-medium mt-1">$99 Fee Waived!</div>
+                    <div className="mt-2 bg-green-50 rounded-lg p-2">
+                      <div className="text-base sm:text-lg font-bold text-gray-400 line-through">$99</div>
+                      <div className="text-lg sm:text-xl font-bold text-green-600">FREE</div>
+                      <div className="text-xs text-green-700">Service Fee Waived!</div>
+                    </div>
                   </>
                 ) : hasTomorrow ? (
                   <>
                     <Calendar className="h-8 w-8 text-blue-500 mx-auto mb-2" />
                     <div className="text-xl sm:text-2xl font-bold text-blue-600">NEXT DAY</div>
                     <div className="text-xs sm:text-sm text-gray-600">Guaranteed</div>
-                    <div className="text-xs text-green-600 font-medium mt-1">$99 Fee Waived!</div>
+                    <div className="mt-2 bg-green-50 rounded-lg p-2">
+                      <div className="text-base sm:text-lg font-bold text-gray-400 line-through">$99</div>
+                      <div className="text-lg sm:text-xl font-bold text-green-600">FREE</div>
+                      <div className="text-xs text-green-700">Service Fee Waived!</div>
+                    </div>
                   </>
                 ) : (
                   <>
