@@ -335,16 +335,8 @@ async function createJob(customerId: string, addressId: string, window: { start_
       scheduled_end
     },
     notes,
-    lead_source: lead_source || "Website",
-    tags,
-    line_items: [
-      {
-        pricing_form: {
-          id: 'olit_9412353009f546e28a0b0fb7c9a96fe2'
-        },
-        quantity: 1
-      }
-    ],
+    lead_source: lead_source || "AI Assistant",
+    tags: [...(tags || []), 'MCP Booking', 'Fee Waived'],
     notify_customer: true,  // Use built-in Housecall Pro customer notifications
     notify_pro: true        // Use built-in Housecall Pro technician notifications
   }, corrId) as any;
