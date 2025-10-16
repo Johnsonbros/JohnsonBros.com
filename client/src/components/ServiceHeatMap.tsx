@@ -136,7 +136,7 @@ export function ServiceHeatMap() {
 
         mapInstanceRef.current = map;
 
-        // Create polygon following route: Boston to Cape Cod Canal, down I-95, then I-495 south to canal
+        // Create polygon following route: Boston to Cape Cod Canal along coast, then I-495 north through Middleboro, Taunton, Raynham, Norton, Foxboro to Waltham
         const serviceAreaBoundary = new google.maps.Polygon({
           paths: [
             { lat: 42.36, lng: -71.06 },  // Boston (starting point)
@@ -147,13 +147,18 @@ export function ServiceHeatMap() {
             { lat: 41.95, lng: -70.65 },  // Marshfield
             { lat: 41.85, lng: -70.62 },  // Duxbury
             { lat: 41.75, lng: -70.62 },  // Plymouth/Cape Cod Canal (east)
-            { lat: 41.75, lng: -70.72 },  // Canal area
-            { lat: 41.90, lng: -70.88 },  // I-495 corridor - Wareham area
-            { lat: 42.00, lng: -71.02 },  // I-495 - Middleboro
-            { lat: 42.10, lng: -71.15 },  // I-495 - Easton/Brockton
-            { lat: 42.20, lng: -71.18 },  // I-495 - Stoughton
-            { lat: 42.28, lng: -71.16 },  // I-95 corridor - Canton/Dedham
-            { lat: 42.32, lng: -71.12 },  // I-95 - West Roxbury
+            { lat: 41.75, lng: -70.72 },  // Cape Cod Canal
+            { lat: 41.78, lng: -70.82 },  // I-495 south - Wareham
+            { lat: 41.88, lng: -70.91 },  // I-495 - Middleboro
+            { lat: 41.90, lng: -71.09 },  // I-495 - Taunton
+            { lat: 41.93, lng: -71.04 },  // I-495 - Raynham
+            { lat: 41.97, lng: -71.19 },  // I-495 - Norton
+            { lat: 42.07, lng: -71.25 },  // I-495 - Foxboro
+            { lat: 42.15, lng: -71.26 },  // I-495 - Walpole
+            { lat: 42.27, lng: -71.26 },  // I-495 - Norwood/Westwood
+            { lat: 42.38, lng: -71.24 },  // I-495 - Waltham (northwest point)
+            { lat: 42.38, lng: -71.15 },  // Newton/Watertown area
+            { lat: 42.37, lng: -71.08 },  // Cambridge/Somerville
           ],
           strokeColor: '#2563EB',
           strokeOpacity: 0.9,
