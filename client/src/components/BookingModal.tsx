@@ -11,7 +11,7 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "
 import { getTimeSlots, createBooking } from "@/lib/housecallApi";
 import { createCustomer, lookupCustomer } from "@/lib/customerApi";
 import { useToast } from "@/hooks/use-toast";
-import { Calendar, X, User, UserPlus, Clock, DollarSign, ChevronLeft, ClipboardList, Gift, Info, Upload, Image as ImageIcon } from "lucide-react";
+import { Calendar, X, User, UserPlus, Clock, DollarSign, ChevronLeft, ChevronRight, ClipboardList, Gift, Info, Upload, Image as ImageIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { z } from "zod";
 import { formatTimeWindowEST } from "@/lib/timeUtils";
@@ -75,6 +75,7 @@ export default function BookingModal({ isOpen, onClose }: BookingModalProps) {
   const [isExpressBooking, setIsExpressBooking] = useState(false);
   const [isFeeWaived, setIsFeeWaived] = useState(false);
   const [photos, setPhotos] = useState<Array<{ filename: string; mimeType: string; base64: string; preview: string }>>([]);
+  const [currentMonth, setCurrentMonth] = useState(0); // 0 = current month, 1 = next month
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -440,7 +441,7 @@ export default function BookingModal({ isOpen, onClose }: BookingModalProps) {
     }
   };
 
-  const generateCalendarDays = () => {
+  const generateCalendarDays = (monthOffset: number) => {
     // Get current date in EST/EDT timezone
     const now = new Date();
     const estString = now.toLocaleString('en-US', { timeZone: 'America/New_York' });
@@ -451,10 +452,18 @@ export default function BookingModal({ isOpen, onClose }: BookingModalProps) {
     todayEST.setHours(0, 0, 0, 0);
     const todayESTStr = todayEST.toISOString().split('T')[0];
     
-    const days = [];
+    // Calculate the month to display
+    const displayMonth = new Date(todayEST);
+    displayMonth.setMonth(displayMonth.getMonth() + monthOffset);
+    
+    // Get first day of the display month
+    const firstDayOfMonth = new Date(displayMonth.getFullYear(), displayMonth.getMonth(), 1);
+    const lastDayOfMonth = new Date(displayMonth.getFullYear(), displayMonth.getMonth() + 1, 0);
     
     // Get the day of week for the first date (0 = Sunday, 6 = Saturday)
-    const firstDayOfWeek = todayEST.getDay();
+    const firstDayOfWeek = firstDayOfMonth.getDay();
+    
+    const days = [];
     
     // Add empty cells for proper alignment
     for (let i = 0; i < firstDayOfWeek; i++) {
@@ -466,30 +475,63 @@ export default function BookingModal({ isOpen, onClose }: BookingModalProps) {
         isToday: false,
         isWeekend: false,
         isEmpty: true,
+        isSelectable: false,
       });
     }
     
-    // Add actual dates for 30 days
-    for (let i = 0; i < 30; i++) {
-      const date = new Date(todayEST);
-      date.setDate(todayEST.getDate() + i);
+    // Calculate the 30-day booking window end date
+    const maxBookingDate = new Date(todayEST);
+    maxBookingDate.setDate(maxBookingDate.getDate() + 29); // 30 days from today (0-indexed)
+    
+    // Add actual dates for the month
+    for (let day = 1; day <= lastDayOfMonth.getDate(); day++) {
+      const date = new Date(displayMonth.getFullYear(), displayMonth.getMonth(), day);
       const dateStr = date.toISOString().split('T')[0];
       const dayOfWeek = date.toLocaleDateString('en-US', { weekday: 'short' });
-      const dayOfMonth = date.getDate();
       const month = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+      
+      // Check if this date is within the 30-day booking window
+      const isSelectable = date >= todayEST && date <= maxBookingDate;
       
       days.push({
         date: dateStr,
         dayOfWeek,
-        dayOfMonth,
+        dayOfMonth: day,
         month,
         isToday: dateStr === todayESTStr,
         isWeekend: date.getDay() === 0 || date.getDay() === 6,
         isEmpty: false,
+        isSelectable,
       });
     }
     
     return days;
+  };
+
+  const getMonthInfo = (monthOffset: number) => {
+    const now = new Date();
+    const estString = now.toLocaleString('en-US', { timeZone: 'America/New_York' });
+    const estDate = new Date(estString);
+    const displayMonth = new Date(estDate);
+    displayMonth.setMonth(displayMonth.getMonth() + monthOffset);
+    return displayMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  };
+
+  const canGoToPreviousMonth = () => currentMonth > 0;
+  
+  const canGoToNextMonth = () => {
+    const now = new Date();
+    const estString = now.toLocaleString('en-US', { timeZone: 'America/New_York' });
+    const estDate = new Date(estString);
+    const nextMonth = new Date(estDate);
+    nextMonth.setMonth(nextMonth.getMonth() + currentMonth + 1);
+    
+    // Check if next month contains any dates within 30-day window
+    const maxBookingDate = new Date(estDate);
+    maxBookingDate.setDate(maxBookingDate.getDate() + 29);
+    
+    const firstDayOfNextMonth = new Date(nextMonth.getFullYear(), nextMonth.getMonth(), 1);
+    return firstDayOfNextMonth <= maxBookingDate;
   };
 
   const progressSteps = [
@@ -702,20 +744,39 @@ export default function BookingModal({ isOpen, onClose }: BookingModalProps) {
                   <div>
                     <h5 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base">Select Date</h5>
                     <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
-                      {/* Month Header */}
-                      <div className="mb-3">
+                      {/* Month Header with Navigation */}
+                      <div className="flex items-center justify-between mb-3">
+                        <button
+                          type="button"
+                          onClick={() => setCurrentMonth(currentMonth - 1)}
+                          disabled={!canGoToPreviousMonth()}
+                          className={`p-2 rounded-lg transition-colors ${
+                            canGoToPreviousMonth()
+                              ? 'hover:bg-gray-200 text-gray-700'
+                              : 'text-gray-300 cursor-not-allowed'
+                          }`}
+                          data-testid="prev-month-button"
+                        >
+                          <ChevronLeft className="h-5 w-5" />
+                        </button>
+                        
                         <h6 className="text-center text-base sm:text-lg font-bold text-gray-700">
-                          {(() => {
-                            const calendarDays = generateCalendarDays();
-                            const firstRealDay = calendarDays.find(d => !d.isEmpty);
-                            const lastDay = calendarDays[calendarDays.length - 1];
-                            
-                            if (firstRealDay && lastDay && firstRealDay.month !== lastDay.month) {
-                              return `${firstRealDay.month} - ${lastDay.month}`;
-                            }
-                            return firstRealDay?.month || '';
-                          })()}
+                          {getMonthInfo(currentMonth)}
                         </h6>
+                        
+                        <button
+                          type="button"
+                          onClick={() => setCurrentMonth(currentMonth + 1)}
+                          disabled={!canGoToNextMonth()}
+                          className={`p-2 rounded-lg transition-colors ${
+                            canGoToNextMonth()
+                              ? 'hover:bg-gray-200 text-gray-700'
+                              : 'text-gray-300 cursor-not-allowed'
+                          }`}
+                          data-testid="next-month-button"
+                        >
+                          <ChevronRight className="h-5 w-5" />
+                        </button>
                       </div>
                       
                       <div className="grid grid-cols-7 gap-1 mb-2">
@@ -725,17 +786,20 @@ export default function BookingModal({ isOpen, onClose }: BookingModalProps) {
                           </div>
                         ))}
                       </div>
-                      <div className="grid grid-cols-7 gap-1 max-h-80 overflow-y-auto">
-                        {generateCalendarDays().map((day, index) => (
+                      <div className="grid grid-cols-7 gap-1">
+                        {generateCalendarDays(currentMonth).map((day, index) => (
                           day.isEmpty ? (
                             <div key={`empty-${index}`} className="py-2 sm:py-3"></div>
                           ) : (
                             <button
                               key={day.date}
                               type="button"
-                              onClick={() => handleDateSelect(day.date)}
+                              onClick={() => day.isSelectable && handleDateSelect(day.date)}
+                              disabled={!day.isSelectable}
                               className={`text-center py-2 sm:py-3 rounded transition-colors text-xs sm:text-base ${
-                                selectedDate === day.date
+                                !day.isSelectable
+                                  ? 'text-gray-300 cursor-not-allowed'
+                                  : selectedDate === day.date
                                   ? 'bg-johnson-blue text-white'
                                   : day.isWeekend
                                   ? 'text-gray-400 hover:bg-gray-200'
