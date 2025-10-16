@@ -304,6 +304,121 @@ export function ServiceHeatMap() {
           }
         });
 
+        // Add Google Business Profile markers for office locations
+        const officeLocations = [
+          {
+            name: "Quincy Office",
+            address: "75 East Elm Ave, Quincy, MA 02170",
+            lat: 42.2529,
+            lng: -71.0023,
+            googleUrl: "https://maps.app.goo.gl/65wd4toecNfd1Qeo7",
+            rating: 4.8,
+            reviews: 281
+          },
+          {
+            name: "Abington Office",
+            address: "55 Brighton St, Abington, MA 02351",
+            lat: 42.1049,
+            lng: -70.9453,
+            googleUrl: "https://maps.app.goo.gl/GPfqvtdFTxTuZXui6",
+            rating: 4.8,
+            reviews: 281
+          }
+        ];
+
+        officeLocations.forEach((office) => {
+          // Create custom office marker
+          const officeMarkerDiv = document.createElement('div');
+          officeMarkerDiv.className = 'office-marker';
+          officeMarkerDiv.innerHTML = `
+            <a href="${office.googleUrl}" target="_blank" rel="noopener noreferrer" style="
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              gap: 4px;
+              text-decoration: none;
+              transform: translate(-50%, -100%);
+              cursor: pointer;
+            ">
+              <div style="
+                background: linear-gradient(135deg, #4285f4 0%, #34a853 100%);
+                border: 3px solid white;
+                border-radius: 50%;
+                width: 48px;
+                height: 48px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                position: relative;
+              ">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="white">
+                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                </svg>
+                <div style="
+                  position: absolute;
+                  top: -6px;
+                  right: -6px;
+                  background: white;
+                  border-radius: 50%;
+                  width: 20px;
+                  height: 20px;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                ">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="#4285f4">
+                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                  </svg>
+                </div>
+              </div>
+              <div style="
+                background: white;
+                padding: 6px 12px;
+                border-radius: 8px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+                white-space: nowrap;
+                font-weight: 600;
+                font-size: 13px;
+                color: #1f2937;
+              ">
+                <div style="display: flex; align-items: center; gap: 4px;">
+                  <span>⭐ ${office.rating}</span>
+                  <span style="color: #6b7280; font-weight: 500;">(${office.reviews})</span>
+                </div>
+                <div style="font-size: 11px; color: #4285f4; margin-top: 2px;">
+                  View on Google
+                </div>
+              </div>
+            </a>
+          `;
+
+          const officeOverlay = new CustomMarker(
+            new google.maps.LatLng(office.lat, office.lng),
+            officeMarkerDiv
+          );
+          (officeOverlay as any).setMap(map);
+
+          // Add hover effect
+          officeMarkerDiv.addEventListener('mouseenter', () => {
+            const pinElement = officeMarkerDiv.querySelector('div[style*="linear-gradient"]') as HTMLElement;
+            if (pinElement) {
+              pinElement.style.transform = 'scale(1.1)';
+            }
+          });
+
+          officeMarkerDiv.addEventListener('mouseleave', () => {
+            const pinElement = officeMarkerDiv.querySelector('div[style*="linear-gradient"]') as HTMLElement;
+            if (pinElement) {
+              pinElement.style.transform = 'scale(1)';
+            }
+          });
+        });
+
         // Add "Find My Location" functionality
         const locationButton = document.createElement('button');
         locationButton.innerHTML = `
