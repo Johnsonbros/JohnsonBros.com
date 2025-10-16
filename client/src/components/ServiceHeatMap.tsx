@@ -179,6 +179,42 @@ export function ServiceHeatMap() {
         }
         mapInstanceRef.current.pulseIntervals.push(borderInterval);
 
+        // Define custom overlay class for HTML markers (used by both service areas and offices)
+        const CustomMarker = class extends google.maps.OverlayView {
+          position: any;
+          div: HTMLElement | null = null;
+
+          constructor(position: any, content: HTMLElement) {
+            super();
+            this.position = position;
+            this.div = content;
+          }
+
+          onAdd() {
+            const panes = (this as any).getPanes();
+            if (panes && this.div) {
+              panes.overlayMouseTarget.appendChild(this.div);
+            }
+          }
+
+          draw() {
+            if (!this.div) return;
+            const projection = (this as any).getProjection();
+            const position = projection.fromLatLngToDivPixel(this.position);
+            if (position) {
+              this.div.style.left = position.x + 'px';
+              this.div.style.top = position.y + 'px';
+              this.div.style.position = 'absolute';
+            }
+          }
+
+          onRemove() {
+            if (this.div && this.div.parentNode) {
+              this.div.parentNode.removeChild(this.div);
+            }
+          }
+        };
+
         // Sort areas by job count to show biggest areas first
         const sortedAreas = [...heatMapData].sort((a, b) => b.count - a.count);
         
@@ -222,42 +258,6 @@ export function ServiceHeatMap() {
               </div>
             </div>
           `;
-
-          // Create custom overlay class for HTML marker
-          const CustomMarker = class extends google.maps.OverlayView {
-            position: any;
-            div: HTMLElement | null = null;
-
-            constructor(position: any, content: HTMLElement) {
-              super();
-              this.position = position;
-              this.div = content;
-            }
-
-            onAdd() {
-              const panes = (this as any).getPanes();
-              if (panes && this.div) {
-                panes.overlayMouseTarget.appendChild(this.div);
-              }
-            }
-
-            draw() {
-              if (!this.div) return;
-              const projection = (this as any).getProjection();
-              const position = projection.fromLatLngToDivPixel(this.position);
-              if (position) {
-                this.div.style.left = position.x + 'px';
-                this.div.style.top = position.y + 'px';
-                this.div.style.position = 'absolute';
-              }
-            }
-
-            onRemove() {
-              if (this.div && this.div.parentNode) {
-                this.div.parentNode.removeChild(this.div);
-              }
-            }
-          };
 
           const overlay = new CustomMarker(
             new google.maps.LatLng(area.lat, area.lng),
@@ -320,9 +320,9 @@ export function ServiceHeatMap() {
             address: "55 Brighton St, Abington, MA 02351",
             lat: 42.1049,
             lng: -70.9453,
-            googleUrl: "https://maps.app.goo.gl/GPfqvtdFTxTuZXui6",
-            rating: 4.8,
-            reviews: 281
+            googleUrl: "https://maps.app.goo.gl/4J1fqFee3JWa9ofX8",
+            rating: 5.0,
+            reviews: 21
           }
         ];
 
