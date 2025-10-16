@@ -817,7 +817,7 @@ export default function BookingModal({ isOpen, onClose }: BookingModalProps) {
 
                   {/* Time Selection */}
                   <div>
-                    <h5 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base">Available Times (EST)</h5>
+                    <h5 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base">Available Times</h5>
                     {selectedDate ? (
                       <div className="space-y-2 max-h-64 overflow-y-auto">
                         {timeSlotsLoading ? (
