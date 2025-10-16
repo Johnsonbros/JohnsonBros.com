@@ -462,24 +462,27 @@ export default function BookingModal({ isOpen, onClose }: BookingModalProps) {
         date: '',
         dayOfWeek: '',
         dayOfMonth: '',
+        month: '',
         isToday: false,
         isWeekend: false,
         isEmpty: true,
       });
     }
     
-    // Add actual dates
-    for (let i = 0; i < 21; i++) {
+    // Add actual dates for 30 days
+    for (let i = 0; i < 30; i++) {
       const date = new Date(todayEST);
       date.setDate(todayEST.getDate() + i);
       const dateStr = date.toISOString().split('T')[0];
       const dayOfWeek = date.toLocaleDateString('en-US', { weekday: 'short' });
       const dayOfMonth = date.getDate();
+      const month = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
       
       days.push({
         date: dateStr,
         dayOfWeek,
         dayOfMonth,
+        month,
         isToday: dateStr === todayESTStr,
         isWeekend: date.getDay() === 0 || date.getDay() === 6,
         isEmpty: false,
@@ -699,6 +702,22 @@ export default function BookingModal({ isOpen, onClose }: BookingModalProps) {
                   <div>
                     <h5 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base">Select Date</h5>
                     <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
+                      {/* Month Header */}
+                      <div className="mb-3">
+                        <h6 className="text-center text-base sm:text-lg font-bold text-gray-700">
+                          {(() => {
+                            const calendarDays = generateCalendarDays();
+                            const firstRealDay = calendarDays.find(d => !d.isEmpty);
+                            const lastDay = calendarDays[calendarDays.length - 1];
+                            
+                            if (firstRealDay && lastDay && firstRealDay.month !== lastDay.month) {
+                              return `${firstRealDay.month} - ${lastDay.month}`;
+                            }
+                            return firstRealDay?.month || '';
+                          })()}
+                        </h6>
+                      </div>
+                      
                       <div className="grid grid-cols-7 gap-1 mb-2">
                         {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
                           <div key={`weekday-${index}`} className="text-center text-[10px] sm:text-sm font-medium text-gray-500 py-1">
@@ -706,7 +725,7 @@ export default function BookingModal({ isOpen, onClose }: BookingModalProps) {
                           </div>
                         ))}
                       </div>
-                      <div className="grid grid-cols-7 gap-1">
+                      <div className="grid grid-cols-7 gap-1 max-h-80 overflow-y-auto">
                         {generateCalendarDays().map((day, index) => (
                           day.isEmpty ? (
                             <div key={`empty-${index}`} className="py-2 sm:py-3"></div>
