@@ -994,6 +994,25 @@ Special Promotion: $99 service fee waived for online bookings`,
       const job = await housecallClient.createJob(jobData);
       Logger.info(`[Booking] Created scheduled job in Housecall Pro: ${job.id} for ${scheduledDate.toISOString()}`);
       
+      // Step 4: Upload photos if provided
+      if (bookingData.photos && Array.isArray(bookingData.photos) && bookingData.photos.length > 0) {
+        Logger.info(`[Booking] Uploading ${bookingData.photos.length} photos to job ${job.id}`);
+        
+        for (let i = 0; i < bookingData.photos.length; i++) {
+          const photo = bookingData.photos[i];
+          try {
+            await housecallClient.uploadAttachment(job.id, {
+              filename: photo.filename || `photo-${i + 1}.jpg`,
+              mimeType: photo.mimeType || 'image/jpeg',
+              base64: photo.base64
+            });
+            Logger.info(`[Booking] Successfully uploaded photo ${i + 1} to job ${job.id}`);
+          } catch (photoError) {
+            logError(`[Booking] Failed to upload photo ${i + 1} to job ${job.id}:`, photoError);
+          }
+        }
+      }
+      
       res.json({
         success: true,
         jobId: job.id,

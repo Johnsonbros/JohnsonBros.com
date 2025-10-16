@@ -11,7 +11,7 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "
 import { getTimeSlots, createBooking } from "@/lib/housecallApi";
 import { createCustomer, lookupCustomer } from "@/lib/customerApi";
 import { useToast } from "@/hooks/use-toast";
-import { Calendar, X, User, UserPlus, Clock, DollarSign, ChevronLeft, ClipboardList, Gift, Info } from "lucide-react";
+import { Calendar, X, User, UserPlus, Clock, DollarSign, ChevronLeft, ClipboardList, Gift, Info, Upload, Image as ImageIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { z } from "zod";
 import { formatTimeWindowEST } from "@/lib/timeUtils";
@@ -74,6 +74,7 @@ export default function BookingModal({ isOpen, onClose }: BookingModalProps) {
   const [problemDescription, setProblemDescription] = useState<string>("");
   const [isExpressBooking, setIsExpressBooking] = useState(false);
   const [isFeeWaived, setIsFeeWaived] = useState(false);
+  const [photos, setPhotos] = useState<Array<{ filename: string; mimeType: string; base64: string; preview: string }>>([]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -277,6 +278,7 @@ export default function BookingModal({ isOpen, onClose }: BookingModalProps) {
     setCustomerType(null);
     setCustomer(null);
     setProblemDescription("");
+    setPhotos([]);
     problemForm.reset();
     newCustomerForm.reset();
     returningCustomerForm.reset();
@@ -289,6 +291,65 @@ export default function BookingModal({ isOpen, onClose }: BookingModalProps) {
     localStorage.removeItem('express_fee_waived');
     localStorage.removeItem('express_windows');
     localStorage.removeItem('booking_time_slot');
+  };
+
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    const maxPhotos = 5;
+    const maxSize = 5 * 1024 * 1024; // 5MB
+
+    if (photos.length + files.length > maxPhotos) {
+      toast({
+        title: "Too Many Photos",
+        description: `You can only upload up to ${maxPhotos} photos`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid File Type",
+          description: "Please upload only image files",
+          variant: "destructive",
+        });
+        continue;
+      }
+
+      if (file.size > maxSize) {
+        toast({
+          title: "File Too Large",
+          description: `${file.name} is too large. Maximum size is 5MB`,
+          variant: "destructive",
+        });
+        continue;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const base64 = e.target?.result as string;
+        const base64Data = base64.split(',')[1];
+        
+        setPhotos(prev => [...prev, {
+          filename: file.name,
+          mimeType: file.type,
+          base64: base64Data,
+          preview: base64
+        }]);
+      };
+      reader.readAsDataURL(file);
+    }
+
+    event.target.value = '';
+  };
+
+  const removePhoto = (index: number) => {
+    setPhotos(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleProblemSubmit = (data: ProblemDescriptionFormValues) => {
@@ -356,7 +417,12 @@ export default function BookingModal({ isOpen, onClose }: BookingModalProps) {
       },
       selectedDate: selectedDate,
       selectedTime: formattedTime,
-      problemDescription: problemDescription
+      problemDescription: problemDescription,
+      photos: photos.map(p => ({
+        filename: p.filename,
+        mimeType: p.mimeType,
+        base64: p.base64
+      }))
     };
 
     createBookingMutation.mutate(bookingData);
@@ -535,6 +601,69 @@ export default function BookingModal({ isOpen, onClose }: BookingModalProps) {
                         </FormItem>
                       )}
                     />
+
+                    {/* Photo Upload Section */}
+                    <div className="space-y-3">
+                      <Label className="text-sm sm:text-base flex items-center gap-2">
+                        <ImageIcon className="h-4 w-4" />
+                        Add Photos (Optional)
+                      </Label>
+                      <p className="text-xs sm:text-sm text-gray-600">
+                        Photos help our technicians prepare for your service. Up to 5 photos, max 5MB each.
+                      </p>
+
+                      <div className="space-y-3">
+                        {/* Upload Button */}
+                        {photos.length < 5 && (
+                          <label 
+                            htmlFor="photo-upload" 
+                            className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-johnson-blue hover:bg-blue-50 transition-colors"
+                            data-testid="photo-upload-button"
+                          >
+                            <Upload className="h-5 w-5 text-gray-500" />
+                            <span className="text-sm text-gray-700">Click to upload photos</span>
+                            <input
+                              id="photo-upload"
+                              type="file"
+                              accept="image/*"
+                              multiple
+                              onChange={handlePhotoUpload}
+                              className="hidden"
+                            />
+                          </label>
+                        )}
+
+                        {/* Photo Previews */}
+                        {photos.length > 0 && (
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                            {photos.map((photo, index) => (
+                              <div 
+                                key={index} 
+                                className="relative group rounded-lg overflow-hidden border border-gray-200"
+                                data-testid={`photo-preview-${index}`}
+                              >
+                                <img
+                                  src={photo.preview}
+                                  alt={`Upload ${index + 1}`}
+                                  className="w-full h-24 object-cover"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => removePhoto(index)}
+                                  className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  data-testid={`remove-photo-${index}`}
+                                >
+                                  <X className="h-4 w-4" />
+                                </button>
+                                <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 truncate">
+                                  {photo.filename}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </form>
                 </Form>
               </div>

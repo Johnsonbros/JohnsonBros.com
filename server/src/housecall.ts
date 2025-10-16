@@ -488,6 +488,48 @@ export class HousecallProClient {
     return job;
   }
 
+  async uploadAttachment(jobId: string, fileData: { filename: string; mimeType: string; base64: string }): Promise<any> {
+    Logger.debug(`[HousecallProClient] Uploading attachment to job ${jobId}: ${fileData.filename}`);
+    
+    if (!API_KEY) {
+      const errorMsg = 'CRITICAL: HousecallPro API key not configured for attachment upload';
+      Logger.error(errorMsg);
+      throw new Error(errorMsg);
+    }
+    
+    try {
+      const buffer = Buffer.from(fileData.base64, 'base64');
+      const FormData = (await import('undici')).FormData;
+      const formData = new FormData();
+      
+      const blob = new Blob([buffer], { type: fileData.mimeType });
+      formData.append('file', blob, fileData.filename);
+      
+      const authHeader = API_KEY.startsWith('Token ') ? API_KEY : `Bearer ${API_KEY}`;
+      const url = `${HCP_API_BASE}/jobs/${jobId}/attachments`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': authHeader,
+        },
+        body: formData as any,
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to upload attachment: ${response.status} ${errorText}`);
+      }
+      
+      const result = await response.json();
+      Logger.debug(`[HousecallProClient] Attachment uploaded successfully: ${JSON.stringify(result)}`);
+      return result;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      Logger.error(`[HousecallProClient] Failed to upload attachment to job ${jobId}: ${errorMessage}`);
+      throw error;
+    }
+  }
+
   async createAppointment(jobId: string, appointmentData: any): Promise<any> {
     Logger.debug(`[HousecallProClient] Creating appointment for job ${jobId}: ${JSON.stringify(appointmentData, null, 2)}`);
     const appointment = await this.callAPI(`/jobs/${jobId}/appointments`, {}, { method: 'POST', body: appointmentData });
