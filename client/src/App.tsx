@@ -39,6 +39,11 @@ import PlymouthPlumbing from "@/pages/service-areas/plymouth";
 import MarshfieldPlumbing from "@/pages/service-areas/marshfield";
 import HinghamPlumbing from "@/pages/service-areas/hingham";
 
+// Landing Pages
+import EmergencyLandingPage from "@/pages/landing/emergency";
+import DrainCleaningLandingPage from "@/pages/landing/drain-cleaning";
+import WinterPrepLandingPage from "@/pages/landing/winter-prep";
+
 function Router() {
   return (
     <Switch>
@@ -69,6 +74,11 @@ function Router() {
       <Route path="/service-areas/plymouth" component={PlymouthPlumbing} />
       <Route path="/service-areas/marshfield" component={MarshfieldPlumbing} />
       <Route path="/service-areas/hingham" component={HinghamPlumbing} />
+      
+      {/* Landing Pages */}
+      <Route path="/landing/emergency" component={EmergencyLandingPage} />
+      <Route path="/landing/drain-cleaning" component={DrainCleaningLandingPage} />
+      <Route path="/landing/winter-prep" component={WinterPrepLandingPage} />
       
       <Route component={NotFound} />
     </Switch>
