@@ -51,12 +51,16 @@ import PipeRepairServiceLanding from "@/pages/service/pipe-repair-landing";
 import EmergencyPlumbingServiceLanding from "@/pages/service/emergency-plumbing-landing";
 import SewerLineServiceLanding from "@/pages/service/sewer-line-landing";
 
+// AI Booking Page
+import AIBooking from "@/pages/ai-booking";
+
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/blog" component={Blog} />
       <Route path="/blog/:slug" component={BlogPost} />
+      <Route path="/ai-booking" component={AIBooking} />
       <Route path="/contact" component={Contact} />
       <Route path="/referral" component={Referral} />
       <Route path="/webhooks" component={Webhooks} />
