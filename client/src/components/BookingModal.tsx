@@ -251,7 +251,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
 
   // Auto-select the express/next_day time slot when slots load
   useEffect(() => {
-    if (timeSlots && timeSlots.length > 0 && selectedDate && !selectedTimeSlot) {
+    if (timeSlots && timeSlots.length > 0 && bookingData.selectedDate && !bookingData.selectedTimeSlot) {
       const bookingTimeSlot = sessionStorage.getItem('booking_time_slot') || localStorage.getItem('booking_time_slot');
       
       if (bookingTimeSlot) {
@@ -276,11 +276,11 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
         });
         
         if (matchingSlot) {
-          setSelectedTimeSlot(matchingSlot);
+          setBookingData(prev => ({ ...prev, selectedTimeSlot: matchingSlot }));
         }
       }
     }
-  }, [timeSlots, selectedDate, selectedTimeSlot]);
+  }, [timeSlots, bookingData.selectedDate, bookingData.selectedTimeSlot]);
 
   // Create Customer Mutation
   const createCustomerMutation = useMutation({
@@ -367,7 +367,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
         const estDate = new Date(estString);
         estDate.setHours(0, 0, 0, 0);
         const today = estDate.toISOString().split('T')[0];
-        setSelectedDate(today);
+        setBookingData(prev => ({ ...prev, selectedDate: today }));
         
         // Time slot will be auto-selected when slots load (see useEffect below)
         
@@ -386,7 +386,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
         estDate.setDate(estDate.getDate() + 1);
         estDate.setHours(0, 0, 0, 0);
         const tomorrow = estDate.toISOString().split('T')[0];
-        setSelectedDate(tomorrow);
+        setBookingData(prev => ({ ...prev, selectedDate: tomorrow }));
         
         // Time slot will be auto-selected when slots load (see useEffect below)
         
@@ -411,8 +411,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
 
   const resetForm = () => {
     setCurrentStep(1);
-    setSelectedDate("");
-    setSelectedTimeSlot(null);
+    setBookingData(prev => ({ ...prev, selectedDate: "", selectedTimeSlot: null }));
     setCustomerType(null);
     setCustomer(null);
     setProblemDescription("");
@@ -496,12 +495,11 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
   };
 
   const handleDateSelect = (date: string) => {
-    setSelectedDate(date);
-    setSelectedTimeSlot(null);
+    setBookingData(prev => ({ ...prev, selectedDate: date, selectedTimeSlot: null }));
   };
 
   const handleTimeSelect = (timeSlot: AvailableTimeSlot) => {
-    setSelectedTimeSlot(timeSlot);
+    setBookingData(prev => ({ ...prev, selectedTimeSlot: timeSlot }));
   };
 
   const handleNewCustomerSubmit = (data: NewCustomerFormValues) => {
@@ -513,13 +511,13 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
   };
 
   const handleFinalBookingSubmit = async () => {
-    if (!selectedTimeSlot || !customer || !problemDescription) return;
+    if (!bookingData.selectedTimeSlot || !customer || !problemDescription) return;
 
     // Re-validate that the time slot is still available
     try {
-      const currentSlots = await getTimeSlots(selectedDate);
+      const currentSlots = await getTimeSlots(bookingData.selectedDate);
       const slotStillAvailable = currentSlots.some(
-        (slot: AvailableTimeSlot) => slot.id === selectedTimeSlot.id && slot.isAvailable
+        (slot: AvailableTimeSlot) => slot.id === bookingData.selectedTimeSlot.id && slot.isAvailable
       );
       
       if (!slotStillAvailable) {
@@ -529,8 +527,8 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
           variant: "destructive",
         });
         setCurrentStep(2); // Go back to time selection
-        setSelectedTimeSlot(null);
-        queryClient.invalidateQueries({ queryKey: ["/api/v1/timeslots", selectedDate] });
+        setBookingData(prev => ({ ...prev, selectedTimeSlot: null }));
+        queryClient.invalidateQueries({ queryKey: ["/api/v1/timeslots", bookingData.selectedDate] });
         return;
       }
     } catch (error) {
@@ -539,7 +537,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
     }
 
     // Extract time in HH:MM format from the ISO string
-    const timeObj = new Date(selectedTimeSlot.startTime);
+    const timeObj = new Date(bookingData.selectedTimeSlot.startTime);
     const formattedTime = `${timeObj.getHours().toString().padStart(2, '0')}:${timeObj.getMinutes().toString().padStart(2, '0')}`;
 
     const bookingData: any = {
@@ -553,7 +551,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
         state: customer.state || "MA",
         zipCode: customer.zipCode || "02169"
       },
-      selectedDate: selectedDate,
+      selectedDate: bookingData.selectedDate,
       selectedTime: formattedTime,
       problemDescription: problemDescription,
       photos: photos.map(p => ({
@@ -567,7 +565,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
   };
 
   const nextStep = () => {
-    if (currentStep === 2 && selectedDate && selectedTimeSlot) {
+    if (currentStep === 2 && bookingData.selectedDate && bookingData.selectedTimeSlot) {
       setCurrentStep(3); // Go to customer info
     }
   };
@@ -936,7 +934,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                               className={`text-center py-2 sm:py-3 rounded transition-colors text-xs sm:text-base ${
                                 !day.isSelectable
                                   ? 'text-gray-300 cursor-not-allowed'
-                                  : selectedDate === day.date
+                                  : bookingData.selectedDate === day.date
                                   ? 'bg-johnson-blue text-white'
                                   : day.isWeekend
                                   ? 'text-gray-400 hover:bg-gray-200'
@@ -955,7 +953,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                   {/* Time Selection */}
                   <div>
                     <h5 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base">Available Times</h5>
-                    {selectedDate ? (
+                    {bookingData.selectedDate ? (
                       <div className="space-y-2 max-h-64 overflow-y-auto">
                         {timeSlotsLoading ? (
                           <div className="text-center py-8">
@@ -964,7 +962,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                           </div>
                         ) : timeSlots && timeSlots.length > 0 ? (
                           timeSlots.map((slot: AvailableTimeSlot) => {
-                            const isSelected = selectedTimeSlot?.id === slot.id;
+                            const isSelected = bookingData.selectedTimeSlot?.id === slot.id;
                             const startTimeOnly = new Date(slot.startTime).toLocaleTimeString('en-US', {
                               hour12: false,
                               hour: '2-digit',
@@ -1233,17 +1231,17 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                   <div className="bg-gray-50 rounded-lg p-4">
                     <h5 className="font-semibold text-sm text-gray-700 mb-2">Appointment Time</h5>
                     <p className="text-sm text-gray-600">
-                      {new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+                      {new Date(bookingData.selectedDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
                     </p>
-                    {selectedTimeSlot && (
+                    {bookingData.selectedTimeSlot && (
                       <p className="text-sm text-gray-600 mt-1">
                         {formatTimeWindowEST(
-                          new Date(selectedTimeSlot.startTime).toLocaleTimeString('en-US', {
+                          new Date(bookingData.selectedTimeSlot.startTime).toLocaleTimeString('en-US', {
                             hour12: false,
                             hour: '2-digit',
                             minute: '2-digit',
                           }),
-                          new Date(selectedTimeSlot.endTime).toLocaleTimeString('en-US', {
+                          new Date(bookingData.selectedTimeSlot.endTime).toLocaleTimeString('en-US', {
                             hour12: false,
                             hour: '2-digit',
                             minute: '2-digit',
@@ -1338,7 +1336,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
               </Button>
               <Button
                 onClick={nextStep}
-                disabled={!selectedDate || !selectedTimeSlot}
+                disabled={!bookingData.selectedDate || !bookingData.selectedTimeSlot}
                 className="bg-gradient-to-r from-johnson-blue to-johnson-teal text-white px-6 py-3 rounded-lg font-bold hover:from-johnson-teal hover:to-johnson-blue transition-all duration-300 shadow-lg disabled:opacity-50 disabled:shadow-none flex-1 text-sm sm:text-base"
                 data-testid="step2-continue-button"
               >
