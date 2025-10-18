@@ -11,7 +11,7 @@ import {
   abTestEvents
 } from '@shared/schema';
 import { eq, and, sql, gte, lte, desc } from 'drizzle-orm';
-import { logger } from './logger';
+import { enhancedLogger as logger } from './monitoring/logger';
 
 const router = Router();
 

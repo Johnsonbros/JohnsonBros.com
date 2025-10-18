@@ -12,7 +12,7 @@ import {
   updateAbTestSchema
 } from '@shared/schema';
 import { eq, and, sql, gte, lte, desc, asc, isNull } from 'drizzle-orm';
-import { logger } from './logger';
+import { enhancedLogger as logger } from './monitoring/logger';
 import { authenticate } from './auth';
 
 const router = Router();

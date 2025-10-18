@@ -9,7 +9,7 @@ import {
   insertAbTestEventSchema 
 } from '@shared/schema';
 import { eq, and, sql } from 'drizzle-orm';
-import { logger } from './logger';
+import { enhancedLogger as logger } from './monitoring/logger';
 
 const router = Router();
 
