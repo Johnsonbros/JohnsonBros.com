@@ -16,6 +16,17 @@ async function setupAdmin() {
   console.log('=== Admin Setup Script ===\n');
 
   try {
+    // Check if environment variables are set
+    const envEmail = process.env.SUPER_ADMIN_EMAIL || process.env.ADMIN_EMAIL;
+    const envPassword = process.env.SUPER_ADMIN_PASSWORD || process.env.ADMIN_DEFAULT_PASSWORD;
+    const envName = process.env.SUPER_ADMIN_NAME;
+    const envFirstName = process.env.ADMIN_FIRST_NAME;
+    const envLastName = process.env.ADMIN_LAST_NAME;
+    
+    if (envEmail && envPassword) {
+      console.log('📋 Environment variables detected. Using them for setup...\n');
+    }
+
     // Check if any admins exist
     const existingAdmins = await db.select()
       .from(adminUsers)
@@ -24,6 +35,13 @@ async function setupAdmin() {
 
     if (existingAdmins.length > 0) {
       console.log('⚠️  A super admin already exists.');
+      
+      // If env vars are set and admin exists, skip creation
+      if (envEmail && envPassword) {
+        console.log('Skipping creation as super admin already exists.');
+        process.exit(0);
+      }
+      
       const overwrite = await rl.question('Do you want to create another super admin? (y/N): ');
       
       if (overwrite.toLowerCase() !== 'y') {
@@ -32,38 +50,67 @@ async function setupAdmin() {
       }
     }
 
-    // Collect admin information
-    console.log('\nPlease provide the following information:\n');
+    // Collect admin information (use env vars as defaults)
+    let email: string;
+    let firstName: string;
+    let lastName: string;
+    let password: string;
 
-    const email = await rl.question('Email address: ');
+    if (envEmail) {
+      email = envEmail;
+      console.log(`Using email from environment: ${email}`);
+    } else {
+      console.log('\nPlease provide the following information:\n');
+      email = await rl.question('Email address: ');
+    }
+    
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       throw new Error('Invalid email address');
     }
 
-    const firstName = await rl.question('First name: ');
+    // Handle name parsing
+    if (envName) {
+      const nameParts = envName.split(' ');
+      firstName = nameParts[0] || 'Admin';
+      lastName = nameParts.slice(1).join(' ') || 'User';
+      console.log(`Using name from SUPER_ADMIN_NAME: ${firstName} ${lastName}`);
+    } else if (envFirstName || envLastName) {
+      firstName = envFirstName || await rl.question('First name: ');
+      lastName = envLastName || await rl.question('Last name: ');
+    } else {
+      firstName = await rl.question('First name: ');
+      lastName = await rl.question('Last name: ');
+    }
+
     if (!firstName || firstName.length < 1) {
       throw new Error('First name is required');
     }
-
-    const lastName = await rl.question('Last name: ');
     if (!lastName || lastName.length < 1) {
       throw new Error('Last name is required');
     }
 
-    // Generate secure password or allow custom
-    const useCustomPassword = await rl.question('Use custom password? (y/N): ');
-    let password: string;
-
-    if (useCustomPassword.toLowerCase() === 'y') {
-      password = await rl.question('Password (min 12 characters): ');
+    // Handle password
+    if (envPassword) {
+      password = envPassword;
+      console.log('Using password from environment variable');
       if (password.length < 12) {
-        throw new Error('Password must be at least 12 characters');
+        throw new Error('Password from environment must be at least 12 characters');
       }
     } else {
-      // Generate secure random password
-      password = crypto.randomBytes(16).toString('base64');
-      console.log(`\n🔐 Generated secure password: ${password}`);
-      console.log('⚠️  SAVE THIS PASSWORD - IT WILL NOT BE SHOWN AGAIN\n');
+      // Generate secure password or allow custom
+      const useCustomPassword = await rl.question('Use custom password? (y/N): ');
+      
+      if (useCustomPassword.toLowerCase() === 'y') {
+        password = await rl.question('Password (min 12 characters): ');
+        if (password.length < 12) {
+          throw new Error('Password must be at least 12 characters');
+        }
+      } else {
+        // Generate secure random password
+        password = crypto.randomBytes(16).toString('base64');
+        console.log(`\n🔐 Generated secure password: ${password}`);
+        console.log('⚠️  SAVE THIS PASSWORD - IT WILL NOT BE SHOWN AGAIN\n');
+      }
     }
 
     // Hash password

@@ -49,7 +49,7 @@ export default function LeadForm({ onSuccess, leadSource = "Website Contact Form
   // Lead creation mutation
   const createLeadMutation = useMutation({
     mutationFn: async (data: LeadFormData) => {
-      return apiRequest("POST", "/api/leads", {
+      return apiRequest("POST", "/api/v1/leads", {
         customer: {
           first_name: data.firstName,
           last_name: data.lastName,

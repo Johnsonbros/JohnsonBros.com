@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 
 export default function JobBoard() {
   const { data: jobs, isLoading } = useQuery({
-    queryKey: ['/api/admin/dashboard/job-board'],
+    queryKey: ['/api/v1/admin/dashboard/job-board'],
     refetchInterval: 120000, // Refresh every 2 minutes
     staleTime: 60000, // Consider data stale after 1 minute
     refetchIntervalInBackground: false, // Don't poll when tab is inactive

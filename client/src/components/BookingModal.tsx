@@ -107,7 +107,7 @@ export default function BookingModal({ isOpen, onClose }: BookingModalProps) {
   });
 
   const { data: timeSlots, isLoading: timeSlotsLoading } = useQuery({
-    queryKey: ["/api/timeslots", selectedDate],
+    queryKey: ["/api/v1/timeslots", selectedDate],
     queryFn: () => getTimeSlots(selectedDate),
     enabled: !!selectedDate,
   });
@@ -200,7 +200,7 @@ export default function BookingModal({ isOpen, onClose }: BookingModalProps) {
         title: "Booking Confirmed!",
         description: "Your service appointment has been scheduled. You'll receive a confirmation email shortly.",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/appointments"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v1/appointments"] });
       onClose();
       resetForm();
     },
@@ -393,7 +393,7 @@ export default function BookingModal({ isOpen, onClose }: BookingModalProps) {
         });
         setCurrentStep(2); // Go back to time selection
         setSelectedTimeSlot(null);
-        queryClient.invalidateQueries({ queryKey: ["/api/timeslots", selectedDate] });
+        queryClient.invalidateQueries({ queryKey: ["/api/v1/timeslots", selectedDate] });
         return;
       }
     } catch (error) {

@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 
 export default function TechnicianStatus() {
   const { data: operations, isLoading } = useQuery({
-    queryKey: ['/api/admin/dashboard/operations'],
+    queryKey: ['/api/v1/admin/dashboard/operations'],
     refetchInterval: 120000, // Refresh every 2 minutes
     staleTime: 60000, // Consider data stale after 1 minute
     refetchIntervalInBackground: false, // Don't poll when tab is inactive

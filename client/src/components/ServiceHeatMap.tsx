@@ -30,7 +30,7 @@ export function ServiceHeatMap({ onBookService }: ServiceHeatMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   
   const { data: heatMapData, isLoading } = useQuery<HeatMapData[]>({
-    queryKey: ['/api/social-proof/service-heat-map'],
+    queryKey: ['/api/v1/social-proof/service-heat-map'],
   });
 
   // Calculate total customers from heat map data

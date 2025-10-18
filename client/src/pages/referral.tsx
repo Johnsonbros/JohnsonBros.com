@@ -107,7 +107,7 @@ export default function Referral() {
   // Customer lookup mutation
   const lookupMutation = useMutation({
     mutationFn: async (data: CustomerLookupData) => {
-      const response = await apiRequest("POST", "/api/customers/lookup", {
+      const response = await apiRequest("POST", "/api/v1/customers/lookup", {
         firstName: data.firstName,
         lastName: data.lastName,
         phone: data.phone
@@ -146,7 +146,7 @@ export default function Referral() {
   // New customer signup mutation
   const newCustomerMutation = useMutation({
     mutationFn: async (data: NewCustomerData) => {
-      const response = await apiRequest("POST", "/api/customers/create", {
+      const response = await apiRequest("POST", "/api/v1/customers/create", {
         first_name: data.firstName,
         last_name: data.lastName,
         mobile_number: data.phone,
@@ -198,7 +198,7 @@ export default function Referral() {
       const firstName = currentCustomer.firstName || currentCustomer.first_name;
       const lastName = currentCustomer.lastName || currentCustomer.last_name;
       
-      const response = await apiRequest("POST", "/api/referrals", {
+      const response = await apiRequest("POST", "/api/v1/referrals", {
         referrerCustomerId: currentCustomer.id,
         referrerName: `${firstName} ${lastName}`,
         referrerPhone: referrerPhone,
@@ -213,7 +213,7 @@ export default function Referral() {
       });
       referralForm.reset();
       // Invalidate any referral queries
-      queryClient.invalidateQueries({ queryKey: ["/api/referrals"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v1/referrals"] });
     },
     onError: (error: any) => {
       const errorMessage = error?.message || "Failed to submit referral. Please try again.";
@@ -227,7 +227,7 @@ export default function Referral() {
 
   // Fetch existing referrals if customer is logged in
   const { data: referralsData, isLoading: referralsLoading } = useQuery<{ success: boolean; referrals: any[] }>({
-    queryKey: ["/api/referrals", currentCustomer?.id],
+    queryKey: ["/api/v1/referrals", currentCustomer?.id],
     enabled: !!currentCustomer?.id,
   });
 

@@ -28,7 +28,7 @@ const serviceImages = {
 
 export default function ServicesSection({ onBookService }: ServicesSectionProps) {
   const { data: services, isLoading, error } = useQuery({
-    queryKey: ["/api/services"],
+    queryKey: ["/api/v1/services"],
     queryFn: getServices,
   });
 

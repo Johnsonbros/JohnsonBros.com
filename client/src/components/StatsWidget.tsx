@@ -12,7 +12,7 @@ interface BusinessStats {
 
 export function StatsWidget() {
   const { data: stats, isLoading } = useQuery<BusinessStats>({
-    queryKey: ["/api/social-proof/stats"],
+    queryKey: ["/api/v1/social-proof/stats"],
     refetchOnWindowFocus: true,
   });
 

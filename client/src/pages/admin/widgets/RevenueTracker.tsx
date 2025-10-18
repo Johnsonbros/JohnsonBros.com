@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 
 export default function RevenueTracker() {
   const { data: metrics, isLoading } = useQuery({
-    queryKey: ['/api/admin/dashboard/housecall-metrics'],
+    queryKey: ['/api/v1/admin/dashboard/housecall-metrics'],
     refetchInterval: 120000, // Refresh every 2 minutes
     staleTime: 60000, // Consider data stale after 1 minute
     refetchIntervalInBackground: false, // Don't poll when tab is inactive

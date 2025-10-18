@@ -69,7 +69,7 @@ export default function AdminDashboard() {
 
   // Fetch dashboard stats
   const { data: stats, isLoading: statsLoading, refetch, isRefetching } = useQuery<DashboardStats>({
-    queryKey: ['/api/admin/dashboard/stats'],
+    queryKey: ['/api/v1/admin/dashboard/stats'],
     queryFn: () => authenticatedFetch('/api/admin/dashboard/stats'),
     enabled: isAuthenticated(),
     refetchInterval: 120000, // Refresh every 2 minutes

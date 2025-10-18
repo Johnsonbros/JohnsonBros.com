@@ -123,7 +123,7 @@ export default function Blog() {
   const limit = 9;
 
   const { data: posts, isLoading, error } = useQuery<BlogPost[]>({
-    queryKey: ["/api/blog/posts", { status: "published", limit, offset: page * limit }],
+    queryKey: ["/api/v1/blog/posts", { status: "published", limit, offset: page * limit }],
     queryFn: async ({ queryKey }) => {
       const [_, params] = queryKey as [string, any];
       const searchParams = new URLSearchParams(params);

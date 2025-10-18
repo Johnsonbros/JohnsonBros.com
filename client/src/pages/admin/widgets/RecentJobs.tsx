@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 
 export default function RecentJobs() {
   const { data: jobs, isLoading } = useQuery({
-    queryKey: ['/api/social-proof/recent-jobs'],
+    queryKey: ['/api/v1/social-proof/recent-jobs'],
     refetchInterval: 180000, // Refresh every 3 minutes
     staleTime: 120000, // Consider data stale after 2 minutes
     refetchIntervalInBackground: false, // Don't poll when tab is inactive

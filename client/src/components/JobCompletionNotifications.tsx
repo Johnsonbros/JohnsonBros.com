@@ -27,7 +27,7 @@ export function JobCompletionNotifications() {
   const [activeTimeouts, setActiveTimeouts] = useState<Set<NodeJS.Timeout>>(new Set());
 
   const { data: recentJobs = [] } = useQuery<RecentJob[]>({
-    queryKey: ["/api/social-proof/recent-jobs"],
+    queryKey: ["/api/v1/social-proof/recent-jobs"],
     refetchOnWindowFocus: true,
   });
 

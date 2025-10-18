@@ -16,7 +16,7 @@ export default function AdminHeatMap() {
 
   // Fetch heat map data
   const { data: heatMapData } = useQuery<{ dataPoints: Array<{ lat: number; lng: number; intensity: number }>, count: number }>({
-    queryKey: ['/api/admin/heatmap/data'],
+    queryKey: ['/api/v1/admin/heatmap/data'],
     refetchInterval: 30000, // Refresh every 30 seconds
   });
 
@@ -27,7 +27,7 @@ export default function AdminHeatMap() {
     citiesCovered: number;
     activeDataPoints: number;
   }>({
-    queryKey: ['/api/admin/heatmap/stats'],
+    queryKey: ['/api/v1/admin/heatmap/stats'],
     refetchInterval: 30000,
   });
 
@@ -44,8 +44,8 @@ export default function AdminHeatMap() {
         title: 'Import Complete',
         description: 'Historical job data has been imported successfully',
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/heatmap/data'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/heatmap/stats'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v1/admin/heatmap/data'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v1/admin/heatmap/stats'] });
     },
     onError: (error: Error) => {
       toast({
@@ -94,7 +94,7 @@ export default function AdminHeatMap() {
         title: 'Intensities Updated',
         description: 'Job intensities have been recalculated based on age',
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/heatmap/data'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v1/admin/heatmap/data'] });
     },
   });
 

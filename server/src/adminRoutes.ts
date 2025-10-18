@@ -8,11 +8,12 @@ import {
   webhookEvents, webhookAnalytics, customers, blogPosts,
   InsertAdminTask, InsertAdminDocument, InsertAiChatMessage
 } from '@shared/schema';
-import { eq, desc, and, gte, lte, sql, or, like, inArray } from 'drizzle-orm';
+import { eq, desc, and, gte, lte, sql, or, like, inArray, isNull, ne } from 'drizzle-orm';
 import {
   hashPassword, verifyPassword, createSession, authenticate,
   requirePermission, logActivity, ensureSuperAdmin, initializePermissions,
-  isAccountLocked, recordFailedLogin, resetFailedLogins
+  isAccountLocked, recordFailedLogin, resetFailedLogins,
+  revokeSession, revokeUserSessions, revokeAllSessions, rotateSession, shouldRotateSession
 } from './auth';
 
 const router = Router();
@@ -106,8 +107,15 @@ router.post('/auth/logout', authenticate, async (req, res) => {
     const token = req.headers.authorization?.replace('Bearer ', '');
     
     if (token) {
-      await db.delete(adminSessions)
-        .where(eq(adminSessions.sessionToken, token));
+      // Find session and revoke it instead of deleting
+      const [session] = await db.select()
+        .from(adminSessions)
+        .where(eq(adminSessions.sessionToken, token))
+        .limit(1);
+      
+      if (session) {
+        await revokeSession(session.id, 'User logout');
+      }
     }
     
     await logActivity((req as any).user.id, 'logout', undefined, undefined, undefined, req.ip);
@@ -134,6 +142,151 @@ router.get('/auth/me', authenticate, async (req, res) => {
     },
     permissions
   });
+});
+
+// ============================================
+// SESSION MANAGEMENT
+// ============================================
+
+// Get all active sessions for current user
+router.get('/auth/sessions', authenticate, async (req, res) => {
+  try {
+    const userId = (req as any).user.id;
+    
+    const sessions = await db.select({
+      id: adminSessions.id,
+      ipAddress: adminSessions.ipAddress,
+      userAgent: adminSessions.userAgent,
+      createdAt: adminSessions.createdAt,
+      lastActivityAt: adminSessions.lastActivityAt,
+      expiresAt: adminSessions.expiresAt,
+      isCurrent: sql<boolean>`${adminSessions.sessionToken} = ${req.headers.authorization?.replace('Bearer ', '')}`
+    })
+    .from(adminSessions)
+    .where(
+      and(
+        eq(adminSessions.userId, userId),
+        isNull(adminSessions.revokedAt)
+      )
+    )
+    .orderBy(desc(adminSessions.lastActivityAt));
+    
+    res.json(sessions);
+  } catch (error) {
+    console.error('Get sessions error:', error);
+    res.status(500).json({ error: 'Failed to get sessions' });
+  }
+});
+
+// Revoke a specific session
+router.delete('/auth/sessions/:sessionId', authenticate, async (req, res) => {
+  try {
+    const userId = (req as any).user.id;
+    const sessionId = parseInt(req.params.sessionId);
+    
+    // Verify session belongs to user
+    const [session] = await db.select()
+      .from(adminSessions)
+      .where(
+        and(
+          eq(adminSessions.id, sessionId),
+          eq(adminSessions.userId, userId)
+        )
+      )
+      .limit(1);
+    
+    if (!session) {
+      return res.status(404).json({ error: 'Session not found' });
+    }
+    
+    await revokeSession(sessionId, 'User revoked session');
+    
+    await logActivity(userId, 'revoke_session', 'session', sessionId.toString(), undefined, req.ip);
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Revoke session error:', error);
+    res.status(500).json({ error: 'Failed to revoke session' });
+  }
+});
+
+// Revoke all sessions except current
+router.post('/auth/sessions/revoke-others', authenticate, async (req, res) => {
+  try {
+    const userId = (req as any).user.id;
+    const currentToken = req.headers.authorization?.replace('Bearer ', '');
+    
+    // Revoke all sessions except the current one
+    await db.update(adminSessions)
+      .set({
+        revokedAt: new Date(),
+        revokedReason: 'User revoked all other sessions'
+      })
+      .where(
+        and(
+          eq(adminSessions.userId, userId),
+          ne(adminSessions.sessionToken, currentToken),
+          isNull(adminSessions.revokedAt)
+        )
+      );
+    
+    await logActivity(userId, 'revoke_all_sessions', undefined, undefined, undefined, req.ip);
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Revoke all sessions error:', error);
+    res.status(500).json({ error: 'Failed to revoke sessions' });
+  }
+});
+
+// Admin: Get all sessions (Super Admin only)
+router.get('/sessions', authenticate, requirePermission('settings.edit'), async (req, res) => {
+  try {
+    const sessions = await db.select({
+      id: adminSessions.id,
+      userId: adminSessions.userId,
+      userEmail: adminUsers.email,
+      userName: sql<string>`${adminUsers.firstName} || ' ' || ${adminUsers.lastName}`,
+      ipAddress: adminSessions.ipAddress,
+      userAgent: adminSessions.userAgent,
+      createdAt: adminSessions.createdAt,
+      lastActivityAt: adminSessions.lastActivityAt,
+      expiresAt: adminSessions.expiresAt,
+      revokedAt: adminSessions.revokedAt
+    })
+    .from(adminSessions)
+    .leftJoin(adminUsers, eq(adminSessions.userId, adminUsers.id))
+    .orderBy(desc(adminSessions.lastActivityAt))
+    .limit(100);
+    
+    res.json(sessions);
+  } catch (error) {
+    console.error('Get all sessions error:', error);
+    res.status(500).json({ error: 'Failed to get sessions' });
+  }
+});
+
+// Admin: Revoke any session (Super Admin only)
+router.delete('/sessions/:sessionId', authenticate, requirePermission('settings.edit'), async (req, res) => {
+  try {
+    const sessionId = parseInt(req.params.sessionId);
+    
+    await revokeSession(sessionId, `Revoked by admin: ${(req as any).user.email}`);
+    
+    await logActivity(
+      (req as any).user.id,
+      'admin_revoke_session',
+      'session',
+      sessionId.toString(),
+      undefined,
+      req.ip
+    );
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Admin revoke session error:', error);
+    res.status(500).json({ error: 'Failed to revoke session' });
+  }
 });
 
 // ============================================

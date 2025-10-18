@@ -1,4 +1,5 @@
 import type { Express } from "express";
+import { Router } from "express";
 import { createServer, type Server } from "http";
 import { dbStorage as storage } from "./dbStorage";
 import { 
@@ -20,6 +21,7 @@ import { generateSitemap } from "./src/sitemap";
 import { healthChecker } from "./src/healthcheck";
 import { Logger, logError, getErrorMessage } from "./src/logger";
 import { cachePresets } from "./src/cachingMiddleware";
+import { authenticate } from "./src/auth";
 
 // Housecall Pro API client
 const HOUSECALL_API_BASE = 'https://api.housecallpro.com';
@@ -237,7 +239,16 @@ const blogLimiter = rateLimit({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // ========== API VERSIONING SETUP ==========
+  // Import API versioning utilities
+  const { setupBackwardCompatibleRedirects, setupVersionEndpoint } = await import('./src/api-v1');
+  
+  // Set up API versioning
+  setupVersionEndpoint(app);
+  setupBackwardCompatibleRedirects(app);
+  
   // Register admin routes with /api/admin prefix and rate limiting
+  // Admin routes stay at /api/admin (not versioned) for backward compatibility
   app.use('/api/admin', adminLimiter, adminRoutes);
 
   // Seed blog data on startup (only in development)
@@ -252,7 +263,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ========== BLOG ROUTES ==========
   
   // Get all blog posts (with pagination and filtering)
-  app.get("/api/blog/posts", blogLimiter, async (req, res) => {
+  app.get("/api/v1/blog/posts", blogLimiter, async (req, res) => {
     try {
       const { status, limit = 10, offset = 0 } = req.query;
       
@@ -270,7 +281,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get a single blog post by slug
-  app.get("/api/blog/posts/:slug", blogLimiter, async (req, res) => {
+  app.get("/api/v1/blog/posts/:slug", blogLimiter, async (req, res) => {
     try {
       const { slug } = req.params;
       const post = await storage.getBlogPostBySlug(slug);
@@ -298,8 +309,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Create a new blog post
-  app.post("/api/blog/posts", adminLimiter, async (req, res) => {
+  // Create a new blog post (ADMIN ONLY)
+  app.post("/api/v1/blog/posts", adminLimiter, authenticate, async (req, res) => {
     try {
       const postData = insertBlogPostSchema.parse(req.body);
       const post = await storage.createBlogPost(postData);
@@ -329,8 +340,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Update a blog post
-  app.put("/api/blog/posts/:id", adminLimiter, async (req, res) => {
+  // Update a blog post (ADMIN ONLY)
+  app.put("/api/v1/blog/posts/:id", adminLimiter, authenticate, async (req, res) => {
     try {
       const postId = parseInt(req.params.id);
       const postData = req.body;
@@ -348,8 +359,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Delete a blog post
-  app.delete("/api/blog/posts/:id", adminLimiter, async (req, res) => {
+  // Delete a blog post (ADMIN ONLY)
+  app.delete("/api/v1/blog/posts/:id", adminLimiter, authenticate, async (req, res) => {
     try {
       const postId = parseInt(req.params.id);
       const deleted = await storage.deleteBlogPost(postId);
@@ -366,7 +377,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get all keywords
-  app.get("/api/blog/keywords", blogLimiter, async (req, res) => {
+  app.get("/api/v1/blog/keywords", blogLimiter, async (req, res) => {
     try {
       const keywords = await storage.getAllKeywords();
       res.json(keywords);
@@ -376,8 +387,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Create a new keyword
-  app.post("/api/blog/keywords", adminLimiter, async (req, res) => {
+  // Create a new keyword (ADMIN ONLY)
+  app.post("/api/v1/blog/keywords", adminLimiter, authenticate, async (req, res) => {
     try {
       const keywordData = insertKeywordSchema.parse(req.body);
       const keyword = await storage.createKeyword(keywordData);
@@ -391,8 +402,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Track keyword rankings
-  app.post("/api/blog/keywords/:id/track", adminLimiter, async (req, res) => {
+  // Track keyword rankings (ADMIN ONLY)
+  app.post("/api/v1/blog/keywords/:id/track", adminLimiter, authenticate, async (req, res) => {
     try {
       const keywordId = parseInt(req.params.id);
       const { position, url, impressions, clicks, ctr } = req.body;
@@ -414,7 +425,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get keyword rankings
-  app.get("/api/blog/keywords/:id/rankings", blogLimiter, async (req, res) => {
+  app.get("/api/v1/blog/keywords/:id/rankings", blogLimiter, async (req, res) => {
     try {
       const keywordId = parseInt(req.params.id);
       const { limit = 30 } = req.query;
@@ -432,7 +443,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get blog analytics
-  app.get("/api/blog/posts/:id/analytics", blogLimiter, async (req, res) => {
+  app.get("/api/v1/blog/posts/:id/analytics", blogLimiter, async (req, res) => {
     try {
       const postId = parseInt(req.params.id);
       const { startDate, endDate } = req.query;
@@ -453,7 +464,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ========== END BLOG ROUTES ==========
 
   // Get available time slots for a specific date
-  app.get("/api/timeslots/:date", publicReadLimiter, async (req, res) => {
+  app.get("/api/v1/timeslots/:date", publicReadLimiter, async (req, res) => {
     try {
       const { date } = req.params;
       
@@ -501,7 +512,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create a new customer
-  app.post("/api/customers", publicWriteLimiter, async (req, res) => {
+  app.post("/api/v1/customers", publicWriteLimiter, async (req, res) => {
     try {
       const customerData = insertCustomerSchema.parse(req.body);
       
@@ -556,7 +567,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Create new customer in HousecallPro
-  app.post("/api/customers/create", customerLookupLimiter, async (req, res) => {
+  app.post("/api/v1/customers/create", customerLookupLimiter, async (req, res) => {
     try {
       const { first_name, last_name, mobile_number, email, address } = req.body;
       
@@ -606,7 +617,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Lookup existing customer with rate limiting
-  app.post("/api/customers/lookup", async (req, res) => {
+  app.post("/api/v1/customers/lookup", async (req, res) => {
     try {
       const { phone, name, firstName, lastName } = req.body;
       
@@ -659,7 +670,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============================================
 
   // Create a new lead
-  app.post("/api/leads", customerLookupLimiter, async (req, res) => {
+  app.post("/api/v1/leads", customerLookupLimiter, async (req, res) => {
     try {
       const { customer } = req.body;
 
@@ -711,7 +722,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============================================
 
   // Get referrals for a customer
-  app.get("/api/referrals/:customerId", customerLookupLimiter, async (req, res) => {
+  app.get("/api/v1/referrals/:customerId", customerLookupLimiter, async (req, res) => {
     try {
       const customerId = req.params.customerId;
       const referrals = await storage.getReferralsByCustomer(customerId);
@@ -723,7 +734,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create a new referral
-  app.post("/api/referrals", customerLookupLimiter, async (req, res) => {
+  app.post("/api/v1/referrals", customerLookupLimiter, async (req, res) => {
     try {
       const {
         referrerCustomerId,
@@ -861,7 +872,7 @@ $50 REFERRAL CREDIT APPLIES - New customer receives $50 credit toward any servic
   });
 
   // Get referral by code
-  app.get("/api/referrals/code/:code", async (req, res) => {
+  app.get("/api/v1/referrals/code/:code", async (req, res) => {
     try {
       const referral = await storage.getReferralByCode(req.params.code);
       if (referral) {
@@ -876,7 +887,7 @@ $50 REFERRAL CREDIT APPLIES - New customer receives $50 credit toward any servic
   });
 
   // Create a new booking
-  app.post("/api/bookings", publicWriteLimiter, async (req, res) => {
+  app.post("/api/v1/bookings", publicWriteLimiter, async (req, res) => {
     try {
       const bookingData = req.body;
       
@@ -885,7 +896,7 @@ $50 REFERRAL CREDIT APPLIES - New customer receives $50 credit toward any servic
         return res.status(400).json({ error: "Missing required booking information" });
       }
       
-      Logger.info(`[Booking] Creating real booking in Housecall Pro:`, JSON.stringify(bookingData, null, 2));
+      Logger.info(`[Booking] Creating real booking in Housecall Pro:`, { bookingData });
       
       const customerInfo = bookingData.customerInfo;
       const housecallClient = HousecallProClient.getInstance();
@@ -1070,7 +1081,7 @@ Special Promotion: $99 service fee waived for online bookings`,
   });
 
   // Test simple route
-  app.get("/api/test", publicReadLimiter, (_req, res) => {
+  app.get("/api/v1/test", publicReadLimiter, (_req, res) => {
     Logger.info("TEST ROUTE CALLED");
     res.json({ message: "Test route working" });
   });
@@ -1081,7 +1092,7 @@ Special Promotion: $99 service fee waived for online bookings`,
     res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
   });
 
-  app.get("/api/health", async (_req, res) => {
+  app.get("/api/v1/health", async (_req, res) => {
     // Detailed health check with dependency checks
     try {
       const health = await healthChecker.getHealthStatus();
@@ -1097,12 +1108,12 @@ Special Promotion: $99 service fee waived for online bookings`,
     }
   });
 
-  app.get("/api/health/live", async (_req, res) => {
+  app.get("/api/v1/health/live", async (_req, res) => {
     // Kubernetes liveness probe - checks if the server is alive
     res.status(200).json({ alive: true });
   });
 
-  app.get("/api/health/ready", async (_req, res) => {
+  app.get("/api/v1/health/ready", async (_req, res) => {
     // Kubernetes readiness probe - checks if the server is ready to serve traffic
     try {
       const health = await healthChecker.getHealthStatus();
@@ -1117,7 +1128,7 @@ Special Promotion: $99 service fee waived for online bookings`,
   });
 
   // Get services from Housecall Pro
-  app.get("/api/services", publicReadLimiter, cachePresets.long(), async (_req, res) => {
+  app.get("/api/v1/services", publicReadLimiter, cachePresets.long(), async (_req, res) => {
     Logger.info("[Services API] Route handler called");
     try {
       Logger.info("[Services API] Starting services fetch...");
@@ -1154,7 +1165,7 @@ Special Promotion: $99 service fee waived for online bookings`,
   });
 
   // Get customer reviews (from Google Reviews API)
-  app.get("/api/reviews", publicReadLimiter, cachePresets.medium(), async (_req, res) => {
+  app.get("/api/v1/reviews", publicReadLimiter, cachePresets.medium(), async (_req, res) => {
     try {
       // Reviews come from Google API - return empty array for now
       res.json([]);
@@ -1164,7 +1175,7 @@ Special Promotion: $99 service fee waived for online bookings`,
   });
 
   // Capacity API Routes
-  app.get("/api/capacity/today", publicReadLimiter, cachePresets.short(), async (req, res) => {
+  app.get("/api/v1/capacity/today", publicReadLimiter, cachePresets.short(), async (req, res) => {
     try {
       const userZip = req.query.zip as string | undefined;
       const calculator = CapacityCalculator.getInstance();
@@ -1186,7 +1197,7 @@ Special Promotion: $99 service fee waived for online bookings`,
     }
   });
 
-  app.get("/api/capacity/tomorrow", publicReadLimiter, async (req, res) => {
+  app.get("/api/v1/capacity/tomorrow", publicReadLimiter, async (req, res) => {
     try {
       const userZip = req.query.zip as string | undefined;
       const calculator = CapacityCalculator.getInstance();
@@ -1311,7 +1322,7 @@ Sitemap: ${siteUrl}/sitemap.xml
   });
 
   // Google Business Reviews endpoint
-  app.get("/api/google-reviews", publicReadLimiter, async (_req, res) => {
+  app.get("/api/v1/google-reviews", publicReadLimiter, async (_req, res) => {
     try {
       const apiKey = process.env.GOOGLE_PLACES_API_KEY;
       if (!apiKey) {
@@ -1391,7 +1402,7 @@ Sitemap: ${siteUrl}/sitemap.xml
   });
 
   // Get appointment details
-  app.get("/api/appointments/:id", publicReadLimiter, async (req, res) => {
+  app.get("/api/v1/appointments/:id", publicReadLimiter, async (req, res) => {
     try {
       const { id } = req.params;
       const appointment = await storage.getAppointment(id);
@@ -1415,7 +1426,7 @@ Sitemap: ${siteUrl}/sitemap.xml
   });
 
   // Check service area (mock implementation)
-  app.post("/api/check-service-area", publicWriteLimiter, async (req, res) => {
+  app.post("/api/v1/check-service-area", publicWriteLimiter, async (req, res) => {
     try {
       const { address } = req.body;
       
@@ -1448,7 +1459,7 @@ Sitemap: ${siteUrl}/sitemap.xml
   // Social Proof API Routes
   
   // Get recent completed jobs for social proof
-  app.get("/api/social-proof/recent-jobs", publicReadLimiter, async (_req, res) => {
+  app.get("/api/v1/social-proof/recent-jobs", publicReadLimiter, async (_req, res) => {
     try {
       const data = await callHousecallAPI('/jobs', {
         page_size: 10,
@@ -1512,7 +1523,7 @@ Sitemap: ${siteUrl}/sitemap.xml
   });
 
   // Get overall business stats for social proof
-  app.get("/api/social-proof/stats", publicReadLimiter, async (_req, res) => {
+  app.get("/api/v1/social-proof/stats", publicReadLimiter, async (_req, res) => {
     try {
       const [completedJobs, allCustomers] = await Promise.all([
         callHousecallAPI('/jobs', {
@@ -1548,7 +1559,7 @@ Sitemap: ${siteUrl}/sitemap.xml
   });
 
   // Get current live activity for social proof
-  app.get("/api/social-proof/live-activity", publicReadLimiter, async (_req, res) => {
+  app.get("/api/v1/social-proof/live-activity", publicReadLimiter, async (_req, res) => {
     try {
       const data = await callHousecallAPI('/jobs', {
         page_size: 8,
@@ -1574,7 +1585,7 @@ Sitemap: ${siteUrl}/sitemap.xml
   });
 
   // Get customer testimonials/reviews from recent jobs
-  app.get("/api/social-proof/testimonials", publicReadLimiter, async (_req, res) => {
+  app.get("/api/v1/social-proof/testimonials", publicReadLimiter, async (_req, res) => {
     try {
       // Fetch recent jobs with high total amounts (satisfied customers)
       const data = await callHousecallAPI('/jobs', {
@@ -1601,8 +1612,8 @@ Sitemap: ${siteUrl}/sitemap.xml
     }
   });
 
-  // Sync customer addresses from Housecall Pro to database
-  app.post("/api/admin/sync-customer-addresses", adminLimiter, async (_req, res) => {
+  // Sync customer addresses from Housecall Pro to database (ADMIN ONLY)
+  app.post("/api/admin/sync-customer-addresses", adminLimiter, authenticate, async (_req, res) => {
     try {
       // Update sync status
       await db.insert(syncStatus).values({
@@ -1836,8 +1847,8 @@ Sitemap: ${siteUrl}/sitemap.xml
     }
   }
 
-  // Daily sync endpoint - can be called by a cron job or scheduler
-  app.post("/api/admin/daily-sync", adminLimiter, async (req, res) => {
+  // Daily sync endpoint - can be called by a cron job or scheduler (ADMIN ONLY)
+  app.post("/api/admin/daily-sync", adminLimiter, authenticate, async (req, res) => {
     try {
       Logger.info(`Running daily sync at ${new Date().toISOString()}`);
       
@@ -1895,7 +1906,7 @@ Sitemap: ${siteUrl}/sitemap.xml
   }, 5000); // Wait 5 seconds after server start
 
   // Get optimized heat map data from database
-  app.get("/api/social-proof/service-heat-map", publicReadLimiter, async (_req, res) => {
+  app.get("/api/v1/social-proof/service-heat-map", publicReadLimiter, async (_req, res) => {
     try {
       // First check if we have cached data
       const cachedData = await db.select().from(heatMapCache);
@@ -1961,7 +1972,7 @@ Sitemap: ${siteUrl}/sitemap.xml
   });
 
   // Get recent check-ins for public activity feed
-  app.get("/api/social-proof/check-ins", publicReadLimiter, async (_req, res) => {
+  app.get("/api/v1/social-proof/check-ins", publicReadLimiter, async (_req, res) => {
     try {
       const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
       
@@ -2294,8 +2305,8 @@ Sitemap: ${siteUrl}/sitemap.xml
   
   const { heatMapService } = await import('./src/heatmap');
 
-  // Import historical job data from Housecall Pro
-  app.post('/api/admin/heatmap/import', adminLimiter, async (req, res) => {
+  // Import historical job data from Housecall Pro (ADMIN ONLY)
+  app.post('/api/admin/heatmap/import', adminLimiter, authenticate, async (req, res) => {
     try {
       const { startDate } = req.body;
       const apiKey = process.env.HOUSECALL_PRO_API_KEY;
@@ -2321,8 +2332,8 @@ Sitemap: ${siteUrl}/sitemap.xml
     }
   });
 
-  // Get heat map data for admin dashboard (real-time)
-  app.get('/api/admin/heatmap/data', adminLimiter, async (req, res) => {
+  // Get heat map data for admin dashboard (real-time) (ADMIN ONLY)
+  app.get('/api/admin/heatmap/data', adminLimiter, authenticate, async (req, res) => {
     try {
       const daysBack = parseInt(req.query.days as string) || 730;
       const data = await heatMapService.getHeatMapData(daysBack);
@@ -2337,8 +2348,8 @@ Sitemap: ${siteUrl}/sitemap.xml
     }
   });
 
-  // Get heat map statistics
-  app.get('/api/admin/heatmap/stats', adminLimiter, async (req, res) => {
+  // Get heat map statistics (ADMIN ONLY)
+  app.get('/api/admin/heatmap/stats', adminLimiter, authenticate, async (req, res) => {
     try {
       const stats = await heatMapService.getStatistics();
       res.json(stats);
@@ -2364,8 +2375,8 @@ Sitemap: ${siteUrl}/sitemap.xml
     }
   });
 
-  // Generate heat map snapshot (admin only)
-  app.post('/api/admin/heatmap/snapshot', adminLimiter, async (req, res) => {
+  // Generate heat map snapshot (ADMIN ONLY)
+  app.post('/api/admin/heatmap/snapshot', adminLimiter, authenticate, async (req, res) => {
     try {
       const { imageUrl, imageData } = req.body;
       
@@ -2407,8 +2418,8 @@ Sitemap: ${siteUrl}/sitemap.xml
     }
   });
 
-  // Update job intensities (background job)
-  app.post('/api/admin/heatmap/update-intensities', adminLimiter, async (req, res) => {
+  // Update job intensities (background job) (ADMIN ONLY)
+  app.post('/api/admin/heatmap/update-intensities', adminLimiter, authenticate, async (req, res) => {
     try {
       await heatMapService.updateIntensities();
       res.json({ success: true, message: 'Intensities updated successfully' });

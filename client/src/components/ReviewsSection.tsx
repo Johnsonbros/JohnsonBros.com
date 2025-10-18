@@ -6,7 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function ReviewsSection() {
   const { data: reviews, isLoading, error } = useQuery({
-    queryKey: ["/api/reviews"],
+    queryKey: ["/api/v1/reviews"],
     queryFn: getReviews,
   });
 

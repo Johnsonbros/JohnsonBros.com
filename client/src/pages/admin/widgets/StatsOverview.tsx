@@ -3,7 +3,7 @@ import { Users, Briefcase, Star, TrendingUp } from 'lucide-react';
 
 export default function StatsOverview() {
   const { data: stats, isLoading } = useQuery({
-    queryKey: ['/api/admin/dashboard/stats'],
+    queryKey: ['/api/v1/admin/dashboard/stats'],
     refetchInterval: 120000, // Refresh every 2 minutes
     staleTime: 60000, // Consider data stale after 1 minute
     refetchIntervalInBackground: false, // Don't poll when tab is inactive

@@ -4,10 +4,12 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { db } from '../db';
 import { adminUsers, adminSessions, adminPermissions, adminActivityLogs } from '@shared/schema';
-import { eq, and, gt } from 'drizzle-orm';
+import { eq, and, gt, isNull, ne } from 'drizzle-orm';
 
 // Session management
 const SESSION_DURATION = 24 * 60 * 60 * 1000; // 24 hours
+const SESSION_ROTATION_INTERVAL = 60 * 60 * 1000; // Rotate every hour
+const SESSION_ACTIVITY_EXTEND = 30 * 60 * 1000; // Extend by 30 minutes on activity
 const MAX_LOGIN_ATTEMPTS = 5; // Lock account after 5 failed attempts
 const LOCKOUT_DURATION = 30 * 60 * 1000; // 30 minutes lockout
 
@@ -149,31 +151,35 @@ export function generateSessionToken(): string {
 export async function createSession(userId: number, ipAddress?: string, userAgent?: string) {
   const token = generateSessionToken();
   const expiresAt = new Date(Date.now() + SESSION_DURATION);
+  const now = new Date();
   
   await db.insert(adminSessions).values({
     userId,
     sessionToken: token,
     expiresAt,
     ipAddress,
-    userAgent
+    userAgent,
+    lastRotatedAt: now,
+    lastActivityAt: now
   });
   
   // Update last login
   await db.update(adminUsers)
-    .set({ lastLoginAt: new Date() })
+    .set({ lastLoginAt: now })
     .where(eq(adminUsers.id, userId));
   
   return { token, expiresAt };
 }
 
 // Validate session
-export async function validateSession(token: string) {
+export async function validateSession(token: string, shouldExtend: boolean = true) {
   const [session] = await db.select()
     .from(adminSessions)
     .where(
       and(
         eq(adminSessions.sessionToken, token),
-        gt(adminSessions.expiresAt, new Date())
+        gt(adminSessions.expiresAt, new Date()),
+        isNull(adminSessions.revokedAt) // Check session not revoked
       )
     )
     .limit(1);
@@ -191,6 +197,26 @@ export async function validateSession(token: string) {
     .from(adminPermissions)
     .where(eq(adminPermissions.role, user.role))
     .limit(1);
+  
+  // Sliding expiration - extend session on activity
+  if (shouldExtend) {
+    const now = new Date();
+    const timeSinceLastActivity = now.getTime() - session.lastActivityAt.getTime();
+    
+    // Extend session if active within the last 30 minutes
+    if (timeSinceLastActivity < SESSION_ACTIVITY_EXTEND) {
+      const newExpiresAt = new Date(now.getTime() + SESSION_DURATION);
+      await db.update(adminSessions)
+        .set({ 
+          expiresAt: newExpiresAt,
+          lastActivityAt: now
+        })
+        .where(eq(adminSessions.id, session.id));
+      
+      session.expiresAt = newExpiresAt;
+      session.lastActivityAt = now;
+    }
+  }
   
   return {
     user,
@@ -252,6 +278,82 @@ export function requirePermission(permission: string) {
   };
 }
 
+// Session rotation - rotate token on privileged actions or after interval
+export async function rotateSession(sessionId: number): Promise<string | null> {
+  try {
+    const [session] = await db.select()
+      .from(adminSessions)
+      .where(
+        and(
+          eq(adminSessions.id, sessionId),
+          isNull(adminSessions.revokedAt)
+        )
+      )
+      .limit(1);
+    
+    if (!session) return null;
+    
+    // Generate new token
+    const newToken = generateSessionToken();
+    const now = new Date();
+    
+    // Update session with new token
+    await db.update(adminSessions)
+      .set({
+        sessionToken: newToken,
+        lastRotatedAt: now
+      })
+      .where(eq(adminSessions.id, sessionId));
+    
+    return newToken;
+  } catch (error) {
+    console.error('Session rotation error:', error);
+    return null;
+  }
+}
+
+// Revoke a specific session
+export async function revokeSession(sessionId: number, reason?: string): Promise<void> {
+  await db.update(adminSessions)
+    .set({
+      revokedAt: new Date(),
+      revokedReason: reason || 'Manual revocation'
+    })
+    .where(eq(adminSessions.id, sessionId));
+}
+
+// Revoke all sessions for a user
+export async function revokeUserSessions(userId: number, reason?: string): Promise<void> {
+  await db.update(adminSessions)
+    .set({
+      revokedAt: new Date(),
+      revokedReason: reason || 'All user sessions revoked'
+    })
+    .where(
+      and(
+        eq(adminSessions.userId, userId),
+        isNull(adminSessions.revokedAt)
+      )
+    );
+}
+
+// Revoke all sessions (emergency)
+export async function revokeAllSessions(reason?: string): Promise<void> {
+  await db.update(adminSessions)
+    .set({
+      revokedAt: new Date(),
+      revokedReason: reason || 'Emergency: All sessions revoked'
+    })
+    .where(isNull(adminSessions.revokedAt));
+}
+
+// Check if session needs rotation
+export function shouldRotateSession(session: any): boolean {
+  const now = new Date();
+  const timeSinceRotation = now.getTime() - session.lastRotatedAt.getTime();
+  return timeSinceRotation > SESSION_ROTATION_INTERVAL;
+}
+
 // Log activity
 export async function logActivity(
   userId: number,
@@ -287,17 +389,40 @@ export async function ensureSuperAdmin() {
     console.warn('  npm run setup:admin');
     console.warn('');
     console.warn('Or set these environment variables for automatic setup:');
-    console.warn('  ADMIN_EMAIL - Email for the admin account');
-    console.warn('  ADMIN_DEFAULT_PASSWORD - Secure password (min 12 chars)');
-    console.warn('  ADMIN_FIRST_NAME - Admin first name');
-    console.warn('  ADMIN_LAST_NAME - Admin last name');
+    console.warn('  SUPER_ADMIN_EMAIL - Email for the super admin account');
+    console.warn('  SUPER_ADMIN_PASSWORD - Secure password (min 12 chars)');
+    console.warn('  SUPER_ADMIN_NAME - Admin full name (optional)');
+    console.warn('');
+    console.warn('For backward compatibility, these are also checked:');
+    console.warn('  ADMIN_EMAIL, ADMIN_DEFAULT_PASSWORD, ADMIN_FIRST_NAME, ADMIN_LAST_NAME');
     console.warn('═══════════════════════════════════════════════════════════');
     
-    // Only create admin if all required env vars are set
-    const adminEmail = process.env.ADMIN_EMAIL;
-    const defaultPassword = process.env.ADMIN_DEFAULT_PASSWORD;
-    const firstName = process.env.ADMIN_FIRST_NAME || 'Admin';
-    const lastName = process.env.ADMIN_LAST_NAME || 'User';
+    // Check new environment variables first, then fall back to old ones
+    const adminEmail = process.env.SUPER_ADMIN_EMAIL || 
+                      process.env.ADMIN_EMAIL;
+    
+    const defaultPassword = process.env.SUPER_ADMIN_PASSWORD || 
+                           process.env.ADMIN_DEFAULT_PASSWORD;
+    
+    // Parse name from SUPER_ADMIN_NAME or use individual name env vars
+    let firstName = 'Admin';
+    let lastName = 'User';
+    
+    if (process.env.SUPER_ADMIN_NAME) {
+      const nameParts = process.env.SUPER_ADMIN_NAME.split(' ');
+      firstName = nameParts[0] || 'Admin';
+      lastName = nameParts.slice(1).join(' ') || 'User';
+    } else {
+      firstName = process.env.ADMIN_FIRST_NAME || 'Admin';
+      lastName = process.env.ADMIN_LAST_NAME || 'User';
+    }
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (adminEmail && !emailRegex.test(adminEmail)) {
+      console.error('❌ Invalid SUPER_ADMIN_EMAIL format');
+      return;
+    }
     
     if (adminEmail && defaultPassword && defaultPassword.length >= 12) {
       const hashedPassword = await hashPassword(defaultPassword);
@@ -313,7 +438,8 @@ export async function ensureSuperAdmin() {
       
       console.log('✅ Super admin created automatically');
       console.log(`   Email: ${adminEmail}`);
-      console.log('   Password: [Set via ADMIN_DEFAULT_PASSWORD]');
+      console.log(`   Name: ${firstName} ${lastName}`);
+      console.log('   Password: [Set via environment variable]');
     }
   }
 }

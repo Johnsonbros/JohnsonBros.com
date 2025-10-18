@@ -20,7 +20,7 @@ interface CheckIn {
 
 export default function CheckInsPage() {
   const { data: checkInsData, isLoading } = useQuery<{ checkIns: CheckIn[]; count: number }>({
-    queryKey: ['/api/checkins'],
+    queryKey: ['/api/v1/checkins'],
     refetchInterval: 15000, // Refresh every 15 seconds
   });
 

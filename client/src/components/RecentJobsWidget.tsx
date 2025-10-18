@@ -18,7 +18,7 @@ interface RecentJob {
 
 export function RecentJobsWidget() {
   const { data: recentJobs = [], isLoading } = useQuery<RecentJob[]>({
-    queryKey: ["/api/social-proof/recent-jobs"],
+    queryKey: ["/api/v1/social-proof/recent-jobs"],
     refetchOnWindowFocus: true,
   });
 

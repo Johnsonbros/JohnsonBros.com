@@ -774,10 +774,15 @@ export const adminSessions = pgTable('admin_sessions', {
   expiresAt: timestamp('expires_at').notNull(),
   ipAddress: text('ip_address'),
   userAgent: text('user_agent'),
+  lastRotatedAt: timestamp('last_rotated_at').defaultNow().notNull(),
+  revokedAt: timestamp('revoked_at'),
+  revokedReason: text('revoked_reason'),
+  lastActivityAt: timestamp('last_activity_at').defaultNow().notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 }, (table) => ({
   tokenIdx: uniqueIndex('session_token_idx').on(table.sessionToken),
   userIdx: index('session_user_idx').on(table.userId),
+  revokedIdx: index('session_revoked_idx').on(table.revokedAt),
 }));
 
 // Admin permissions table

@@ -29,7 +29,7 @@ interface GoogleReviewsData {
 
 export default function GoogleReviewsSection() {
   const { data: googleData, isLoading, error } = useQuery<GoogleReviewsData>({
-    queryKey: ["/api/google-reviews"],
+    queryKey: ["/api/v1/google-reviews"],
     refetchOnWindowFocus: true,
   });
 

@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 
 export default function CapacityGauge() {
   const { data: capacity, isLoading } = useQuery({
-    queryKey: ['/api/capacity/today'],
+    queryKey: ['/api/v1/capacity/today'],
     refetchInterval: 120000, // Refresh every 2 minutes
     staleTime: 60000, // Consider data stale after 1 minute
     refetchIntervalInBackground: false, // Don't poll when tab is inactive

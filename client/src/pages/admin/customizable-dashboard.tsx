@@ -70,7 +70,7 @@ export default function CustomizableDashboard() {
 
   // Fetch widget configurations
   const { data: widgets, isLoading } = useQuery({
-    queryKey: ['/api/admin/dashboard/widgets'],
+    queryKey: ['/api/v1/admin/dashboard/widgets'],
     refetchInterval: false,
   });
 
@@ -84,7 +84,7 @@ export default function CustomizableDashboard() {
         title: 'Layout saved',
         description: 'Your dashboard layout has been updated successfully.',
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/dashboard/widgets'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v1/admin/dashboard/widgets'] });
       setEditMode(false);
     },
     onError: () => {
@@ -102,7 +102,7 @@ export default function CustomizableDashboard() {
       return apiRequest(`/api/admin/dashboard/widgets/${widgetType}/visibility`, 'PUT', { isVisible });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/dashboard/widgets'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v1/admin/dashboard/widgets'] });
     },
   });
 
@@ -116,7 +116,7 @@ export default function CustomizableDashboard() {
         title: 'Reset successful',
         description: 'Dashboard has been reset to default layout.',
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/dashboard/widgets'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v1/admin/dashboard/widgets'] });
       setShowSettings(false);
     },
   });

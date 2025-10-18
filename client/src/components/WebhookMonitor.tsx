@@ -73,7 +73,7 @@ export default function WebhookMonitor() {
 
   // Fetch webhook configuration
   const { data: config } = useQuery<WebhookConfig>({
-    queryKey: ['/api/webhooks/config'],
+    queryKey: ['/api/v1/webhooks/config'],
     queryFn: async () => {
       const response = await fetch('/api/webhooks/config');
       if (!response.ok) throw new Error('Failed to fetch config');
@@ -83,7 +83,7 @@ export default function WebhookMonitor() {
 
   // Fetch webhook events
   const { data: events = [], isLoading: eventsLoading, refetch: refetchEvents } = useQuery<WebhookEvent[]>({
-    queryKey: ['/api/webhooks/events', selectedCategory],
+    queryKey: ['/api/v1/webhooks/events', selectedCategory],
     queryFn: async () => {
       const url = selectedCategory === 'all' 
         ? '/api/webhooks/events?limit=100'
@@ -96,7 +96,7 @@ export default function WebhookMonitor() {
 
   // Fetch webhook analytics
   const { data: analytics = [], isLoading: analyticsLoading } = useQuery<WebhookAnalytics[]>({
-    queryKey: ['/api/webhooks/analytics'],
+    queryKey: ['/api/v1/webhooks/analytics'],
     queryFn: async () => {
       const response = await fetch('/api/webhooks/analytics?days=7');
       if (!response.ok) throw new Error('Failed to fetch analytics');
@@ -128,7 +128,7 @@ export default function WebhookMonitor() {
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await queryClient.invalidateQueries({ queryKey: ['/api/webhooks'] });
+    await queryClient.invalidateQueries({ queryKey: ['/api/v1/webhooks'] });
     setRefreshing(false);
   };
 

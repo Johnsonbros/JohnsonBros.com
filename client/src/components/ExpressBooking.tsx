@@ -49,7 +49,7 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
   
   // Fetch today's capacity data
   const { data: todayCapacity } = useQuery<CapacityData>({
-    queryKey: ['/api/capacity/today', userZip],
+    queryKey: ['/api/v1/capacity/today', userZip],
     queryFn: async () => {
       const url = userZip ? `/api/capacity/today?zip=${userZip}` : '/api/capacity/today';
       const response = await apiRequest("GET", url);
@@ -64,7 +64,7 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
   
   // Fetch tomorrow's capacity data if today has no slots
   const { data: tomorrowCapacity } = useQuery<CapacityData>({
-    queryKey: ['/api/capacity/tomorrow', userZip],
+    queryKey: ['/api/v1/capacity/tomorrow', userZip],
     queryFn: async () => {
       const url = userZip ? `/api/capacity/tomorrow?zip=${userZip}` : '/api/capacity/tomorrow';
       const response = await apiRequest("GET", url);

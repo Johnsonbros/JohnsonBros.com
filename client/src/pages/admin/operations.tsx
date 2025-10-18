@@ -109,7 +109,7 @@ export default function OperationsDashboard() {
 
   // Fetch operations data
   const { data: operations, isLoading: opsLoading, refetch: refetchOps } = useQuery<OperationsData>({
-    queryKey: ['/api/admin/dashboard/operations'],
+    queryKey: ['/api/v1/admin/dashboard/operations'],
     queryFn: () => authenticatedFetch('/api/admin/dashboard/operations'),
     refetchInterval: autoRefresh ? 60000 : false, // Auto-refresh every 60 seconds
     staleTime: 30000, // Consider data stale after 30 seconds
@@ -118,7 +118,7 @@ export default function OperationsDashboard() {
 
   // Fetch job board data
   const { data: jobBoard, isLoading: jobsLoading, refetch: refetchJobs } = useQuery<JobBoardData>({
-    queryKey: ['/api/admin/dashboard/job-board'],
+    queryKey: ['/api/v1/admin/dashboard/job-board'],
     queryFn: () => authenticatedFetch('/api/admin/dashboard/job-board'),
     refetchInterval: autoRefresh ? 120000 : false, // Auto-refresh every 2 minutes
     staleTime: 60000, // Consider data stale after 1 minute
@@ -135,7 +135,7 @@ export default function OperationsDashboard() {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v1/admin/dashboard'] });
     }
   });
 

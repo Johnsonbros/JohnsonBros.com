@@ -31,7 +31,7 @@ interface CapacityData {
 export default function CapacityHero({ onBookService }: HeroSectionProps) {
   // Fetch capacity data
   const { data: capacity, isLoading } = useQuery<CapacityData>({
-    queryKey: ['/api/capacity/today'],
+    queryKey: ['/api/v1/capacity/today'],
     refetchOnWindowFocus: true,
   });
 
