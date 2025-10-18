@@ -14,11 +14,11 @@ import { PricingCalculator } from "./PricingCalculator";
 import { UrgencyIndicator } from "./UrgencyIndicator";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import SEO from "@/components/SEO";
+import { SEO } from "@/components/SEO";
 import BookingModal from "@/components/BookingModal";
-import { ServiceAreaSection } from "@/components/ServiceAreaSection";
-import { ReviewsSection } from "@/components/ReviewsSection";
-import { ServicesSection } from "@/components/ServicesSection";
+import ServiceAreaSection from "@/components/ServiceAreaSection";
+import ReviewsSection from "@/components/ReviewsSection";
+import ServicesSection from "@/components/ServicesSection";
 import { Separator } from "@/components/ui/separator";
 
 type HeroType = 'emergency' | 'service' | 'seasonal' | 'location';

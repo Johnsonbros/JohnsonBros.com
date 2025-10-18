@@ -3336,7 +3336,7 @@ Sitemap: ${siteUrl}/sitemap.xml
   });
 
   // Revenue metrics endpoint
-  app.get('/api/admin/revenue-metrics', requireAuth, requireAdmin, async (req, res) => {
+  app.get('/api/admin/revenue-metrics', authenticate, async (req, res) => {
     try {
       // Get subscription metrics
       const subscriptions = await storage.getSubscriptions();
