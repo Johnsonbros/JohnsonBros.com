@@ -4,6 +4,10 @@ import cookieParser from "cookie-parser";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { configureSecurityMiddleware, getCsrfToken, csrfProtection } from "./src/security";
+import { EnvValidator } from "./src/envValidator";
+
+// Validate environment variables on startup
+EnvValidator.validateOnStartup();
 
 const app = express();
 

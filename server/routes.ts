@@ -1295,6 +1295,41 @@ Special Promotion: $99 service fee waived for online bookings`,
     });
   });
 
+  // Environment configuration status (only in development)
+  app.get("/api/v1/env-status", publicReadLimiter, async (_req, res) => {
+    // Only allow in development mode for security
+    if (process.env.NODE_ENV === 'production') {
+      return res.status(404).json({ error: 'Not found' });
+    }
+
+    const { EnvValidator } = await import('./src/envValidator');
+    const validationResult = EnvValidator.validate();
+
+    const status = {
+      valid: validationResult.valid,
+      environment: process.env.NODE_ENV || 'development',
+      configuration: {
+        database: !!process.env.DATABASE_URL,
+        housecallApi: !!(process.env.HOUSECALL_PRO_API_KEY || process.env.HCP_COMPANY_API_KEY),
+        housecallWebhook: !!process.env.HOUSECALL_WEBHOOK_SECRET,
+        googleMaps: !!process.env.GOOGLE_MAPS_API_KEY,
+        googleMapsVite: !!process.env.VITE_GOOGLE_MAPS_API_KEY,
+        twilio: !!process.env.TWILIO_ACCOUNT_SID,
+        sessionSecret: !!process.env.SESSION_SECRET,
+        siteUrl: process.env.SITE_URL || 'auto-detected',
+        corsOrigin: process.env.CORS_ORIGIN || 'not-configured',
+        adminConfigured: !!process.env.SUPER_ADMIN_EMAIL,
+        googleAds: !!process.env.GOOGLE_ADS_CLIENT_ID,
+        mcpPort: process.env.MCP_PORT || '3001',
+        port: process.env.PORT || '5000'
+      },
+      errors: validationResult.errors,
+      warnings: validationResult.warnings
+    };
+
+    res.json(status);
+  });
+
   // Sitemap.xml for SEO
   app.get("/sitemap.xml", publicReadLimiter, async (_req, res) => {
     try {
