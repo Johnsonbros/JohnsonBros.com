@@ -5,7 +5,7 @@ import TruckSection from "@/components/TruckSection";
 import GoogleReviewsSection from "@/components/GoogleReviewsSection";
 import { SocialProofSection } from "@/components/SocialProofSection";
 import Footer from "@/components/Footer";
-import BookingModal from "@/components/BookingModal";
+import BookingModalEnhanced from "@/components/BookingModalEnhanced";
 import { useState } from "react";
 import { SEO } from "@/components/SEO";
 import { businessStructuredData } from "@/lib/structuredData";
@@ -44,7 +44,7 @@ export default function Home() {
         <Footer onBookService={() => openBookingModal()} />
       </div>
       
-      <BookingModal 
+      <BookingModalEnhanced 
         isOpen={isBookingModalOpen}
         onClose={closeBookingModal}
         preSelectedService={selectedService}

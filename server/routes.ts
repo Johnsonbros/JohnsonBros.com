@@ -901,6 +901,16 @@ $50 REFERRAL CREDIT APPLIES - New customer receives $50 credit toward any servic
       const customerInfo = bookingData.customerInfo;
       const housecallClient = HousecallProClient.getInstance();
       
+      // Extract enhanced data from booking request
+      const {
+        selectedService,
+        problemDetails,
+        photos,
+        estimatedPrice,
+        isExpressBooking,
+        isFeeWaived
+      } = bookingData;
+      
       // Step 1: Find or create customer
       let customer;
       try {
@@ -1023,13 +1033,20 @@ $50 REFERRAL CREDIT APPLIES - New customer receives $50 credit toward any servic
         // Enable notifications
         notify_customer: true,
         notify_pro: true,
-        // Add comprehensive notes about online booking
-        internal_memo: `ONLINE BOOKING - $99 Service Fee Waived
-Customer Problem: ${bookingData.problemDescription || "Service requested"}
+        // Add comprehensive notes about online booking with enhanced details
+        internal_memo: `ONLINE BOOKING - ${isFeeWaived ? '$99 Service Fee Waived' : 'Standard Service Call'}
+Service: ${selectedService?.name || 'General Service'}
+Severity: ${problemDetails?.severity || 'Not specified'}
+Duration: ${problemDetails?.duration || 'Not specified'}
+Common Issues: ${problemDetails?.commonIssues?.join(', ') || 'None selected'}
+Customer Problem: ${bookingData.problemDescription || problemDetails?.description || "Service requested"}
+Photos Attached: ${photos?.length || 0}
+Estimated Price: $${estimatedPrice?.total || 'TBD'}
+Booking Type: ${isExpressBooking ? 'EXPRESS BOOKING' : 'Standard Booking'}
 Booked via: Johnson Bros Website
-Special Promotion: $99 service fee waived for online bookings`,
+Special Promotion: ${isFeeWaived ? '$99 service fee waived for online bookings' : 'Standard pricing applies'}`,
         // Add job description visible to customer
-        description: "Online Booking - Service Call ($99 Fee Waived)"
+        description: `${selectedService?.name || 'Service Call'} - ${problemDetails?.severity === 'emergency' ? 'EMERGENCY' : 'Scheduled Service'} ${isFeeWaived ? '($99 Fee Waived)' : ''}`
       };
       
       const job = await housecallClient.createJob(jobData);

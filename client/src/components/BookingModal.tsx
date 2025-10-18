@@ -8,13 +8,24 @@ import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
-import { getTimeSlots, createBooking } from "@/lib/housecallApi";
+import { getTimeSlots, createBooking, getServices } from "@/lib/housecallApi";
 import { createCustomer, lookupCustomer } from "@/lib/customerApi";
 import { useToast } from "@/hooks/use-toast";
-import { Calendar, X, User, UserPlus, Clock, DollarSign, ChevronLeft, ChevronRight, ClipboardList, Gift, Info, Upload, Image as ImageIcon } from "lucide-react";
+import { 
+  Calendar, X, User, UserPlus, Clock, DollarSign, ChevronLeft, ChevronRight, 
+  ClipboardList, Gift, Info, Upload, Image as ImageIcon, AlertTriangle,
+  Droplets, Flame, Wrench, Settings, Home, Camera, Trash2, CheckCircle,
+  AlertCircle, MapPin, FileText
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
 import { z } from "zod";
 import { formatTimeWindowEST } from "@/lib/timeUtils";
+import { PricingEstimate } from "./PricingEstimate";
 
 // Types
 interface AvailableTimeSlot {
@@ -37,9 +48,102 @@ interface Customer {
   zipCode?: string;
 }
 
+interface PhotoUpload {
+  id: string;
+  filename: string;
+  mimeType: string;
+  base64: string;
+  preview: string;
+  size: number;
+}
+
+interface BookingData {
+  selectedService: any;
+  problemDetails: {
+    description: string;
+    commonIssues: string[];
+    severity: string;
+    duration: string;
+  };
+  photos: PhotoUpload[];
+  selectedDate: string;
+  selectedTimeSlot: AvailableTimeSlot | null;
+  customer: Customer | null;
+  estimatedPrice: {
+    base: number;
+    additionalFees: number;
+    total: number;
+  };
+}
+
+// Common issues by service type
+const commonIssuesByService: Record<string, string[]> = {
+  "emergency-repair": [
+    "Burst pipe",
+    "Major leak",
+    "No water",
+    "Sewage backup",
+    "Water heater failure",
+    "Flooding"
+  ],
+  "drain-cleaning": [
+    "Slow draining sink",
+    "Clogged toilet",
+    "Multiple drain backups",
+    "Bad odors from drains",
+    "Standing water",
+    "Gurgling sounds"
+  ],
+  "water-heater": [
+    "No hot water",
+    "Insufficient hot water",
+    "Water too hot/cold",
+    "Leaking water heater",
+    "Strange noises",
+    "Rusty water"
+  ],
+  "pipe-repair": [
+    "Visible leak",
+    "Low water pressure",
+    "Frozen pipes",
+    "Pipe corrosion",
+    "Water discoloration",
+    "Banging pipes"
+  ],
+  "fixtures": [
+    "Leaky faucet",
+    "Running toilet",
+    "Broken fixture",
+    "Installation needed",
+    "Replacement needed",
+    "Poor water flow"
+  ],
+  "remodeling": [
+    "Bathroom renovation",
+    "Kitchen plumbing",
+    "Adding fixtures",
+    "Moving plumbing lines",
+    "Updating old plumbing",
+    "Full system upgrade"
+  ]
+};
+
+// Service icons mapping
+const serviceIcons: Record<string, any> = {
+  emergency: AlertTriangle,
+  maintenance: Droplets,
+  installation: Flame,
+  repair: Settings,
+  renovation: Home,
+  default: Wrench,
+};
+
 // Form Schemas
-const problemDescriptionSchema = z.object({
-  problemDescription: z.string().min(10, "Please describe your plumbing issue (at least 10 characters)"),
+const problemDetailsSchema = z.object({
+  description: z.string().min(10, "Please describe your plumbing issue (at least 10 characters)"),
+  commonIssues: z.array(z.string()).optional(),
+  severity: z.string().min(1, "Please select severity level"),
+  duration: z.string().min(1, "Please indicate how long this has been an issue"),
 });
 
 const newCustomerSchema = z.object({
@@ -55,7 +159,7 @@ const returningCustomerSchema = z.object({
   phone: z.string().min(10, "Phone number must be at least 10 digits"),
 });
 
-type ProblemDescriptionFormValues = z.infer<typeof problemDescriptionSchema>;
+type ProblemDetailsFormValues = z.infer<typeof problemDetailsSchema>;
 type NewCustomerFormValues = z.infer<typeof newCustomerSchema>;
 type ReturningCustomerFormValues = z.infer<typeof returningCustomerSchema>;
 
@@ -65,25 +169,57 @@ interface BookingModalProps {
   preSelectedService?: string | null;
 }
 
-export default function BookingModal({ isOpen, onClose }: BookingModalProps) {
+export default function BookingModal({ isOpen, onClose, preSelectedService }: BookingModalProps) {
   const [currentStep, setCurrentStep] = useState(1);
-  const [selectedDate, setSelectedDate] = useState<string>("");
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState<AvailableTimeSlot | null>(null);
+  const [bookingData, setBookingData] = useState<BookingData>({
+    selectedService: null,
+    problemDetails: {
+      description: "",
+      commonIssues: [],
+      severity: "",
+      duration: "",
+    },
+    photos: [],
+    selectedDate: "",
+    selectedTimeSlot: null,
+    customer: null,
+    estimatedPrice: {
+      base: 0,
+      additionalFees: 0,
+      total: 0,
+    },
+  });
   const [customerType, setCustomerType] = useState<"new" | "returning" | null>(null);
-  const [customer, setCustomer] = useState<Customer | null>(null);
-  const [problemDescription, setProblemDescription] = useState<string>("");
   const [isExpressBooking, setIsExpressBooking] = useState(false);
   const [isFeeWaived, setIsFeeWaived] = useState(false);
-  const [photos, setPhotos] = useState<Array<{ filename: string; mimeType: string; base64: string; preview: string }>>([]);
-  const [currentMonth, setCurrentMonth] = useState(0); // 0 = current month, 1 = next month
+  const [currentMonth, setCurrentMonth] = useState(0);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  const steps = [
+    { id: 1, name: "Service", icon: Wrench },
+    { id: 2, name: "Problem", icon: ClipboardList },
+    { id: 3, name: "Photos", icon: Camera },
+    { id: 4, name: "Schedule", icon: Calendar },
+    { id: 5, name: "Pricing", icon: DollarSign },
+    { id: 6, name: "Info", icon: User },
+    { id: 7, name: "Confirm", icon: CheckCircle },
+  ];
+
+  // Load services
+  const { data: services, isLoading: servicesLoading } = useQuery({
+    queryKey: ["/api/v1/services"],
+    queryFn: getServices,
+  });
+
   // Forms
-  const problemForm = useForm<ProblemDescriptionFormValues>({
-    resolver: zodResolver(problemDescriptionSchema),
+  const problemForm = useForm<ProblemDetailsFormValues>({
+    resolver: zodResolver(problemDetailsSchema),
     defaultValues: {
-      problemDescription: "",
+      description: "",
+      commonIssues: [],
+      severity: "",
+      duration: "",
     },
   });
 
@@ -106,10 +242,11 @@ export default function BookingModal({ isOpen, onClose }: BookingModalProps) {
     },
   });
 
+  // Load time slots
   const { data: timeSlots, isLoading: timeSlotsLoading } = useQuery({
-    queryKey: ["/api/v1/timeslots", selectedDate],
-    queryFn: () => getTimeSlots(selectedDate),
-    enabled: !!selectedDate,
+    queryKey: ["/api/v1/timeslots", bookingData.selectedDate],
+    queryFn: () => getTimeSlots(bookingData.selectedDate),
+    enabled: !!bookingData.selectedDate,
   });
 
   // Auto-select the express/next_day time slot when slots load
