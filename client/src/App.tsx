@@ -44,6 +44,13 @@ import EmergencyLandingPage from "@/pages/landing/emergency";
 import DrainCleaningLandingPage from "@/pages/landing/drain-cleaning";
 import WinterPrepLandingPage from "@/pages/landing/winter-prep";
 
+// Service Landing Pages
+import DrainCleaningServiceLanding from "@/pages/service/drain-cleaning-landing";
+import WaterHeaterServiceLanding from "@/pages/service/water-heater-landing";
+import PipeRepairServiceLanding from "@/pages/service/pipe-repair-landing";
+import EmergencyPlumbingServiceLanding from "@/pages/service/emergency-plumbing-landing";
+import SewerLineServiceLanding from "@/pages/service/sewer-line-landing";
+
 function Router() {
   return (
     <Switch>
@@ -79,6 +86,13 @@ function Router() {
       <Route path="/landing/emergency" component={EmergencyLandingPage} />
       <Route path="/landing/drain-cleaning" component={DrainCleaningLandingPage} />
       <Route path="/landing/winter-prep" component={WinterPrepLandingPage} />
+      
+      {/* Service Landing Pages */}
+      <Route path="/service/drain-cleaning-landing" component={DrainCleaningServiceLanding} />
+      <Route path="/service/water-heater-landing" component={WaterHeaterServiceLanding} />
+      <Route path="/service/pipe-repair-landing" component={PipeRepairServiceLanding} />
+      <Route path="/service/emergency-plumbing-landing" component={EmergencyPlumbingServiceLanding} />
+      <Route path="/service/sewer-line-landing" component={SewerLineServiceLanding} />
       
       <Route component={NotFound} />
     </Switch>
