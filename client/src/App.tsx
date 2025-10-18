@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { HelmetProvider } from "react-helmet-async";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ABTestingProvider } from "@/contexts/ABTestingContext";
 import { lazy, Suspense, useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import MobileBottomNav from "@/components/MobileBottomNav";
@@ -19,6 +20,7 @@ import CheckIns from "@/pages/CheckIns";
 import AdminLogin from "@/pages/admin/login";
 import AdminDashboard from "@/pages/admin/dashboard";
 import AdminHeatMap from "@/pages/admin/heatmap";
+import ExperimentsPage from "@/pages/admin/experiments";
 import NotFound from "@/pages/not-found";
 import { JobCompletionNotifications } from "@/components/JobCompletionNotifications";
 
@@ -77,6 +79,7 @@ function Router() {
       <Route path="/admin/login" component={AdminLogin} />
       <Route path="/admin/dashboard" component={AdminDashboard} />
       <Route path="/admin/heatmap" component={AdminHeatMap} />
+      <Route path="/admin/experiments" component={ExperimentsPage} />
       
       {/* Service Pages */}
       <Route path="/services/general-plumbing" component={GeneralPlumbing} />
@@ -117,7 +120,8 @@ function App() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <HelmetProvider>
-          <TooltipProvider>
+          <ABTestingProvider>
+            <TooltipProvider>
         {/* AI Assistant MCP Server Information - Hidden from visual users */}
         <div 
           id="ai-mcp-server-info" 
@@ -199,7 +203,8 @@ function App() {
           <Suspense fallback={null}>
             <VideoCallPopup />
           </Suspense>
-        </TooltipProvider>
+            </TooltipProvider>
+          </ABTestingProvider>
         </HelmetProvider>
       </QueryClientProvider>
     </ErrorBoundary>

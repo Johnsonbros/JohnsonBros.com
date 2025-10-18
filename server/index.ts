@@ -194,29 +194,39 @@ app.use((req, res, next) => {
 
   // Start MCP Server automatically in development
   if (app.get("env") === "development") {
-    const { spawn } = await import('child_process');
+    const { spawn, exec } = await import('child_process');
+    const { promisify } = await import('util');
+    const execAsync = promisify(exec);
     const mcpPort = process.env.MCP_PORT || '3001';
     
-    const mcpServer = spawn('tsx', ['src/mcp-http-server.ts'], {
-      env: { ...process.env, MCP_PORT: mcpPort },
-      stdio: 'inherit'
-    });
+    // Check if port is already in use
+    try {
+      await execAsync(`lsof -i :${mcpPort}`);
+      log(`MCP server already running on port ${mcpPort}`);
+    } catch (error) {
+      // Port is not in use, start the MCP server
+      const mcpServer = spawn('tsx', ['src/mcp-http-server.ts'], {
+        env: { ...process.env, MCP_PORT: mcpPort },
+        stdio: 'inherit',
+        detached: false
+      });
 
-    mcpServer.on('error', (error) => {
-      console.error('Failed to start MCP server:', error);
-    });
+      mcpServer.on('error', (error) => {
+        console.error('Failed to start MCP server:', error);
+      });
 
-    // Cleanup on exit
-    process.on('SIGTERM', () => {
-      mcpServer.kill();
-      process.exit(0);
-    });
+      // Cleanup on exit
+      process.on('SIGTERM', () => {
+        mcpServer.kill();
+        process.exit(0);
+      });
 
-    process.on('SIGINT', () => {
-      mcpServer.kill();
-      process.exit(0);
-    });
+      process.on('SIGINT', () => {
+        mcpServer.kill();
+        process.exit(0);
+      });
 
-    log(`MCP server starting on port ${mcpPort}`);
+      log(`MCP server starting on port ${mcpPort}`);
+    }
   }
 })();

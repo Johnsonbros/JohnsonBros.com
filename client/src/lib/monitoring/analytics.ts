@@ -150,6 +150,8 @@ class GoogleAnalytics {
     bookingType: 'ai' | 'traditional' | 'express';
     timePreference?: string;
     customerId?: string;
+    variantId?: string;
+    testId?: string;
   }) {
     this.trackEvent('booking_completed', {
       transaction_id: bookingData.bookingId,
@@ -158,13 +160,33 @@ class GoogleAnalytics {
       service_type: bookingData.serviceType,
       booking_type: bookingData.bookingType,
       time_preference: bookingData.timePreference,
-      customer_id: bookingData.customerId
+      customer_id: bookingData.customerId,
+      ab_test_id: bookingData.testId,
+      ab_variant_id: bookingData.variantId
     });
+
+    // Track enhanced e-commerce conversion
+    if (window.gtag) {
+      window.gtag('event', 'purchase', {
+        transaction_id: bookingData.bookingId,
+        value: bookingData.value,
+        currency: 'USD',
+        items: [{
+          item_id: bookingData.serviceType,
+          item_name: bookingData.serviceType,
+          price: bookingData.value,
+          quantity: 1,
+          item_category: 'service'
+        }]
+      });
+    }
 
     // Track conversion funnel step
     this.trackFunnelStep('booking', 'completed', {
       booking_type: bookingData.bookingType,
-      value: bookingData.value
+      value: bookingData.value,
+      ab_test_id: bookingData.testId,
+      ab_variant_id: bookingData.variantId
     });
   }
 
@@ -175,6 +197,8 @@ class GoogleAnalytics {
     planTier: string;
     monthlyValue: number;
     customerId?: string;
+    variantId?: string;
+    testId?: string;
   }) {
     this.trackEvent('plan_signup', {
       plan_id: planData.planId,
@@ -182,8 +206,19 @@ class GoogleAnalytics {
       plan_tier: planData.planTier,
       value: planData.monthlyValue * 12, // Annual value
       currency: 'USD',
-      customer_id: planData.customerId
+      customer_id: planData.customerId,
+      ab_test_id: planData.testId,
+      ab_variant_id: planData.variantId
     });
+
+    // Track as conversion goal
+    if (window.gtag) {
+      window.gtag('event', 'conversion', {
+        send_to: `${this.measurementId}/plan_signup`,
+        value: planData.monthlyValue * 12,
+        currency: 'USD'
+      });
+    }
   }
 
   // Track upsell conversions

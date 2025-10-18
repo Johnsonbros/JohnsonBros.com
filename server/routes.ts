@@ -17,6 +17,9 @@ import { GoogleAdsBridge } from "./src/ads/bridge";
 import { HousecallProClient } from "./src/housecall";
 import rateLimit from "express-rate-limit";
 import adminRoutes from "./src/adminRoutes";
+import abTestingRoutes from "./src/abTestingRoutes";
+import conversionRoutes from "./src/conversionRoutes";
+import experimentManagementRoutes from "./src/experimentManagement";
 import { generateSitemap } from "./src/sitemap";
 import { healthChecker } from "./src/healthcheck";
 import { Logger, logError, getErrorMessage } from "./src/logger";
@@ -250,6 +253,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register admin routes with /api/admin prefix and rate limiting
   // Admin routes stay at /api/admin (not versioned) for backward compatibility
   app.use('/api/admin', adminLimiter, adminRoutes);
+  
+  // A/B Testing routes (public endpoints for tracking, admin endpoints for management)
+  app.use(abTestingRoutes);
+  
+  // Conversion tracking routes
+  app.use(conversionRoutes);
+  
+  // Experiment management routes (authenticated)
+  app.use(experimentManagementRoutes);
 
   // Seed blog data on startup (only in development)
   if (process.env.NODE_ENV === 'development') {

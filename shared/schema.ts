@@ -67,6 +67,63 @@ export const syncStatus = pgTable('sync_status', {
   error: text('error'),
 });
 
+// Conversion Tracking Tables
+export const conversionFunnels = pgTable('conversion_funnels', {
+  id: serial('id').primaryKey(),
+  funnelId: text('funnel_id').notNull().unique(),
+  name: text('name').notNull(),
+  stages: json('stages').notNull(), // Array of stage definitions
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const conversionEvents = pgTable('conversion_events', {
+  id: serial('id').primaryKey(),
+  sessionId: text('session_id').notNull(),
+  eventType: text('event_type').notNull(),
+  eventValue: real('event_value'),
+  properties: json('properties'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  sessionIdx: index('conversion_session_idx').on(table.sessionId),
+  eventTypeIdx: index('conversion_event_type_idx').on(table.eventType),
+  createdAtIdx: index('conversion_created_at_idx').on(table.createdAt),
+}));
+
+export const microConversions = pgTable('micro_conversions', {
+  id: serial('id').primaryKey(),
+  sessionId: text('session_id').notNull(),
+  eventType: text('event_type').notNull(),
+  properties: json('properties'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  sessionIdx: index('micro_session_idx').on(table.sessionId),
+  eventTypeIdx: index('micro_event_type_idx').on(table.eventType),
+}));
+
+export const attributionData = pgTable('attribution_data', {
+  id: serial('id').primaryKey(),
+  sessionId: text('session_id').notNull(),
+  conversionEventId: integer('conversion_event_id').references(() => conversionEvents.id),
+  source: text('source').notNull(),
+  medium: text('medium').notNull(),
+  campaign: text('campaign'),
+  term: text('term'),
+  content: text('content'),
+  gclid: text('gclid'),
+  fbclid: text('fbclid'),
+  msclkid: text('msclkid'),
+  utmId: text('utm_id'),
+  referrer: text('referrer'),
+  landingPage: text('landing_page'),
+  entryTime: timestamp('entry_time'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  sessionIdx: index('attribution_session_idx').on(table.sessionId),
+  sourceIdx: index('attribution_source_idx').on(table.source),
+  mediumIdx: index('attribution_medium_idx').on(table.medium),
+  campaignIdx: index('attribution_campaign_idx').on(table.campaign),
+}));
+
 // Relations
 export const customerAddressesRelations = relations(customerAddresses, ({ one }) => ({
   serviceArea: one(serviceAreas, {
@@ -92,6 +149,28 @@ export const insertHeatMapCacheSchema = createInsertSchema(heatMapCache).omit({
   updatedAt: true,
 });
 
+// Insert schemas for conversion tracking
+export const insertConversionFunnelSchema = createInsertSchema(conversionFunnels).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertConversionEventSchema = createInsertSchema(conversionEvents).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertMicroConversionSchema = createInsertSchema(microConversions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertAttributionDataSchema = createInsertSchema(attributionData).omit({
+  id: true,
+  createdAt: true,
+});
+
+
 // Types
 export type CustomerAddress = typeof customerAddresses.$inferSelect;
 export type InsertCustomerAddress = z.infer<typeof insertCustomerAddressSchema>;
@@ -103,6 +182,19 @@ export type HeatMapCache = typeof heatMapCache.$inferSelect;
 export type InsertHeatMapCache = z.infer<typeof insertHeatMapCacheSchema>;
 
 export type SyncStatus = typeof syncStatus.$inferSelect;
+
+// Conversion tracking types
+export type ConversionFunnel = typeof conversionFunnels.$inferSelect;
+export type InsertConversionFunnel = z.infer<typeof insertConversionFunnelSchema>;
+
+export type ConversionEvent = typeof conversionEvents.$inferSelect;
+export type InsertConversionEvent = z.infer<typeof insertConversionEventSchema>;
+
+export type MicroConversion = typeof microConversions.$inferSelect;
+export type InsertMicroConversion = z.infer<typeof insertMicroConversionSchema>;
+
+export type AttributionData = typeof attributionData.$inferSelect;
+export type InsertAttributionData = z.infer<typeof insertAttributionDataSchema>;
 
 // Customer table for booking system
 export const customers = pgTable('customers', {
@@ -171,6 +263,127 @@ export type AvailableTimeSlot = {
   isAvailable: boolean;
   employeeIds?: string[];
 };
+
+// A/B Testing Tables
+export const abTests = pgTable('ab_tests', {
+  id: serial('id').primaryKey(),
+  testId: text('test_id').notNull().unique(),
+  name: text('name').notNull(),
+  description: text('description'),
+  status: text('status').notNull().default('draft'), // draft, active, paused, completed
+  trafficAllocation: real('traffic_allocation').notNull().default(1.0),
+  startDate: timestamp('start_date'),
+  endDate: timestamp('end_date'),
+  winnerVariantId: text('winner_variant_id'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  testIdIdx: uniqueIndex('test_id_idx').on(table.testId),
+  statusIdx: index('ab_test_status_idx').on(table.status),
+}));
+
+export const abTestVariants = pgTable('ab_test_variants', {
+  id: serial('id').primaryKey(),
+  testId: integer('test_id').references(() => abTests.id).notNull(),
+  variantId: text('variant_id').notNull(),
+  name: text('name').notNull(),
+  weight: integer('weight').notNull().default(50),
+  isControl: boolean('is_control').notNull().default(false),
+  changes: json('changes').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  testVariantIdx: uniqueIndex('test_variant_idx').on(table.testId, table.variantId),
+}));
+
+export const abTestAssignments = pgTable('ab_test_assignments', {
+  id: serial('id').primaryKey(),
+  testId: text('test_id').notNull(),
+  variantId: text('variant_id').notNull(),
+  visitorId: text('visitor_id').notNull(),
+  assignedAt: timestamp('assigned_at').defaultNow().notNull(),
+  sessionId: text('session_id'),
+}, (table) => ({
+  visitorTestIdx: uniqueIndex('visitor_test_idx').on(table.visitorId, table.testId),
+  testVariantIdx: index('assignment_test_variant_idx').on(table.testId, table.variantId),
+}));
+
+export const abTestEvents = pgTable('ab_test_events', {
+  id: serial('id').primaryKey(),
+  testId: text('test_id').notNull(),
+  variantId: text('variant_id').notNull(),
+  visitorId: text('visitor_id').notNull(),
+  eventType: text('event_type').notNull(), // impression, click, conversion, engagement
+  eventAction: text('event_action'),
+  eventValue: real('event_value'),
+  metadata: json('metadata'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  testVariantEventIdx: index('test_variant_event_idx').on(table.testId, table.variantId, table.eventType),
+  visitorEventIdx: index('visitor_event_idx').on(table.visitorId, table.eventType),
+  createdAtIdx: index('event_created_at_idx').on(table.createdAt),
+}));
+
+export const abTestMetrics = pgTable('ab_test_metrics', {
+  id: serial('id').primaryKey(),
+  testId: text('test_id').notNull(),
+  variantId: text('variant_id').notNull(),
+  impressions: integer('impressions').notNull().default(0),
+  conversions: integer('conversions').notNull().default(0),
+  conversionRate: real('conversion_rate').notNull().default(0),
+  bounceRate: real('bounce_rate').notNull().default(0),
+  avgTimeOnPage: real('avg_time_on_page'),
+  revenue: real('revenue').notNull().default(0),
+  statisticalSignificance: real('statistical_significance'),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  testVariantMetricsIdx: uniqueIndex('test_variant_metrics_idx').on(table.testId, table.variantId),
+}));
+
+// Relations for A/B Testing
+export const abTestRelations = relations(abTests, ({ many }) => ({
+  variants: many(abTestVariants),
+}));
+
+export const abTestVariantRelations = relations(abTestVariants, ({ one }) => ({
+  test: one(abTests, {
+    fields: [abTestVariants.testId],
+    references: [abTests.id],
+  }),
+}));
+
+// Insert schemas for A/B Testing  
+export const insertAbTestSchema = createInsertSchema(abTests).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertAbTestVariantSchema = createInsertSchema(abTestVariants).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const updateAbTestSchema = createInsertSchema(abTests).omit({
+  id: true,
+  testId: true,
+  createdAt: true,
+}).partial();
+
+export const insertAbTestEventSchema = createInsertSchema(abTestEvents).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Types for A/B Testing
+export type AbTest = typeof abTests.$inferSelect;
+export type InsertAbTest = z.infer<typeof insertAbTestSchema>;
+
+export type AbTestVariant = typeof abTestVariants.$inferSelect;
+export type InsertAbTestVariant = z.infer<typeof insertAbTestVariantSchema>;
+
+export type AbTestAssignment = typeof abTestAssignments.$inferSelect;
+export type AbTestEvent = typeof abTestEvents.$inferSelect;
+export type AbTestMetric = typeof abTestMetrics.$inferSelect;
 
 // Review type for testimonials
 export type Review = {
