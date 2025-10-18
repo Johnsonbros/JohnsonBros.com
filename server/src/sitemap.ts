@@ -41,6 +41,18 @@ export async function generateSitemap(): Promise<string> {
     priority: 0.7
   });
 
+  urls.push({
+    loc: `${SITE_URL}/maintenance-plans`,
+    changefreq: 'weekly',
+    priority: 0.8
+  });
+
+  urls.push({
+    loc: `${SITE_URL}/ai-booking`,
+    changefreq: 'monthly',
+    priority: 0.6
+  });
+
   // Add service pages
   const services = [
     'general-plumbing',
@@ -57,6 +69,38 @@ export async function generateSitemap(): Promise<string> {
       loc: `${SITE_URL}/services/${service}`,
       changefreq: 'monthly',
       priority: 0.9
+    });
+  });
+
+  // Add service landing pages
+  const serviceLandingPages = [
+    'drain-cleaning-landing',
+    'emergency-plumbing-landing',
+    'water-heater-landing',
+    'pipe-repair-landing',
+    'sewer-line-landing'
+  ];
+
+  serviceLandingPages.forEach(page => {
+    urls.push({
+      loc: `${SITE_URL}/service/${page}`,
+      changefreq: 'monthly',
+      priority: 0.85
+    });
+  });
+
+  // Add general landing pages
+  const landingPages = [
+    'emergency',
+    'winter-prep',
+    'drain-cleaning'
+  ];
+
+  landingPages.forEach(page => {
+    urls.push({
+      loc: `${SITE_URL}/landing/${page}`,
+      changefreq: 'monthly',
+      priority: 0.85
     });
   });
 

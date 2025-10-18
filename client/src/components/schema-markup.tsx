@@ -229,3 +229,142 @@ export function BreadcrumbSchema({ items }: BreadcrumbSchemaProps) {
     </Helmet>
   );
 }
+
+interface FAQSchemaProps {
+  questions: Array<{
+    question: string;
+    answer: string;
+  }>;
+}
+
+export function FAQSchema({ questions }: FAQSchemaProps) {
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": questions.map(item => ({
+      "@type": "Question",
+      "name": item.question,
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": item.answer
+      }
+    }))
+  };
+
+  return (
+    <Helmet>
+      <script type="application/ld+json">
+        {JSON.stringify(schema)}
+      </script>
+    </Helmet>
+  );
+}
+
+interface ReviewSchemaProps {
+  reviews: Array<{
+    author: string;
+    rating: number;
+    datePublished: string;
+    reviewBody: string;
+  }>;
+  aggregateRating?: {
+    ratingValue: number;
+    reviewCount: number;
+  };
+}
+
+export function ReviewSchema({ reviews, aggregateRating }: ReviewSchemaProps) {
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": "Johnson Bros. Plumbing Services",
+    "description": "Professional plumbing and drain cleaning services in South Shore MA",
+    "brand": {
+      "@type": "Brand",
+      "name": "Johnson Bros. Plumbing & Drain Cleaning"
+    },
+    ...(aggregateRating && {
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": aggregateRating.ratingValue,
+        "reviewCount": aggregateRating.reviewCount,
+        "bestRating": "5",
+        "worstRating": "1"
+      }
+    }),
+    "review": reviews.map(review => ({
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": review.author
+      },
+      "datePublished": review.datePublished,
+      "reviewBody": review.reviewBody,
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": review.rating,
+        "bestRating": "5",
+        "worstRating": "1"
+      }
+    }))
+  };
+
+  return (
+    <Helmet>
+      <script type="application/ld+json">
+        {JSON.stringify(schema)}
+      </script>
+    </Helmet>
+  );
+}
+
+interface ServiceAreaSchemaProps {
+  areaName: string;
+  services: Array<{
+    name: string;
+    description: string;
+  }>;
+}
+
+export function ServiceAreaSchema({ areaName, services }: ServiceAreaSchemaProps) {
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "ServiceArea",
+    "name": `Plumbing Services in ${areaName}, MA`,
+    "description": `Professional plumbing and drain cleaning services available in ${areaName} and surrounding areas`,
+    "provider": {
+      "@type": "Plumber",
+      "name": "Johnson Bros. Plumbing & Drain Cleaning",
+      "telephone": "+16174799911",
+      "url": "https://johnsonbrosplumbing.com"
+    },
+    "areaServed": {
+      "@type": "City",
+      "name": areaName,
+      "containedInPlace": {
+        "@type": "State",
+        "name": "Massachusetts"
+      }
+    },
+    "hasOfferCatalog": {
+      "@type": "OfferCatalog",
+      "name": `Plumbing Services in ${areaName}`,
+      "itemListElement": services.map(service => ({
+        "@type": "Offer",
+        "itemOffered": {
+          "@type": "Service",
+          "name": service.name,
+          "description": service.description
+        }
+      }))
+    }
+  };
+
+  return (
+    <Helmet>
+      <script type="application/ld+json">
+        {JSON.stringify(schema)}
+      </script>
+    </Helmet>
+  );
+}

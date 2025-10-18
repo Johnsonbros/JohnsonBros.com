@@ -113,7 +113,7 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
   const dateDisplay = format(appointmentDate, 'EEEE, MMMM d');
 
   return (
-    <section className="bg-gradient-to-br from-johnson-blue to-johnson-teal text-white py-12 sm:py-16 lg:py-20 bg-pipes-blue relative overflow-hidden" style={{ backgroundBlendMode: 'overlay' }}>
+    <section className="bg-gradient-to-br from-johnson-blue to-johnson-teal text-white py-8 sm:py-12 md:py-16 lg:py-20 bg-pipes-blue relative overflow-hidden" style={{ backgroundBlendMode: 'overlay' }}>
       {/* Animated background for express availability */}
       {(hasToday || hasTomorrow || isEmergency) && (
         <div className="absolute inset-0 opacity-20">
@@ -121,8 +121,8 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
         </div>
       )}
       
-      <div className="container mx-auto px-4 relative z-10">
-        <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+      <div className="container mx-auto px-3 sm:px-4 relative z-10">
+        <div className="grid lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-12 items-center">
           <div>
             {/* Express, Next Day, or Emergency Badge */}
             {activeCapacity && (

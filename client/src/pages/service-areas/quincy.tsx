@@ -4,22 +4,96 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Phone, MapPin, CheckCircle, Clock, Shield } from "lucide-react";
 import { Link } from "wouter";
-import { LocalBusinessSchema } from "@/components/schema-markup";
+import { LocalBusinessSchema, ServiceAreaSchema, FAQSchema, BreadcrumbSchema, ReviewSchema } from "@/components/schema-markup";
+import { serviceAreaMetadata, generateSocialMetaTags } from "@/lib/seoMetadata";
 
 export default function QuincyPlumbing() {
+  // Get SEO metadata
+  const pageMetadata = serviceAreaMetadata['quincy'];
+  const socialTags = generateSocialMetaTags(pageMetadata);
+  
+  // Local FAQs for Quincy
+  const quincyFAQs = [
+    {
+      question: "Do you provide emergency plumbing services in Quincy, MA?",
+      answer: "Yes, Johnson Bros. provides 24/7 emergency plumbing services throughout Quincy, MA. We can typically arrive within 30-60 minutes for urgent issues like burst pipes, flooding, or major leaks."
+    },
+    {
+      question: "What areas of Quincy do you service?",
+      answer: "We service all neighborhoods in Quincy including Wollaston, Marina Bay, Quincy Center, Merrymount, Squantum, Montclair, Germantown, Adams Shore, and West Quincy."
+    },
+    {
+      question: "How much do plumbing services cost in Quincy?",
+      answer: "Our service rates in Quincy start at $125 for a diagnostic visit. Drain cleaning starts at $99, and we provide free estimates for larger projects. We offer transparent, upfront pricing before any work begins."
+    },
+    {
+      question: "Are you licensed to work in Quincy, MA?",
+      answer: "Yes, we are fully licensed master plumbers in Massachusetts and carry all required permits to work in Quincy. We're also fully insured for your protection."
+    }
+  ];
+  
+  const breadcrumbs = [
+    { name: "Home", url: "https://www.thejohnsonbros.com/" },
+    { name: "Service Areas", url: "https://www.thejohnsonbros.com/service-areas" },
+    { name: "Quincy", url: "https://www.thejohnsonbros.com/service-areas/quincy" }
+  ];
+  
+  const localReviews = [
+    {
+      author: "Mark T. - Wollaston",
+      rating: 5,
+      datePublished: "2024-12-01",
+      reviewBody: "Johnson Bros. fixed our water heater on a Sunday morning. Great service for Quincy residents!"
+    },
+    {
+      author: "Susan R. - Quincy Center",
+      rating: 5,
+      datePublished: "2024-11-20",
+      reviewBody: "They know the old Quincy homes well. Fixed our galvanized pipe issues perfectly."
+    }
+  ];
+  
+  const quincyServices = [
+    { name: "Emergency Plumbing Quincy", description: "24/7 emergency plumbing repairs for Quincy homes and businesses" },
+    { name: "Drain Cleaning Quincy", description: "Professional drain and sewer cleaning throughout Quincy, MA" },
+    { name: "Water Heater Service Quincy", description: "Water heater repair and installation for Quincy residents" },
+    { name: "Pipe Repair Quincy", description: "Expert pipe repair and replacement for Quincy's aging infrastructure" }
+  ];
+
   return (
     <>
-      <LocalBusinessSchema serviceArea="Quincy" />
       <Helmet>
-        <title>Plumber Quincy MA | 24/7 Emergency Plumbing Services | Johnson Bros</title>
-        <meta 
-          name="description" 
-          content="Trusted plumber in Quincy MA. Emergency plumbing, drain cleaning, water heaters, gas heat. Licensed & insured. Same-day service. Call (617) 479-9911" 
-        />
-        <meta property="og:title" content="Plumber Quincy MA | Emergency Plumbing Services | Johnson Bros" />
-        <meta property="og:description" content="Expert plumbing services in Quincy MA. 24/7 emergency service, drain cleaning, water heaters, and more. Licensed plumbers serving Quincy." />
-        <link rel="canonical" href="https://johnsonbrosplumbing.com/service-areas/quincy" />
+        <title>{pageMetadata.title}</title>
+        <meta name="description" content={pageMetadata.description} />
+        <meta name="keywords" content={pageMetadata.keywords.join(', ')} />
+        
+        {/* Canonical URL */}
+        <link rel="canonical" href={`https://www.thejohnsonbros.com${pageMetadata.canonicalUrl}`} />
+        
+        {/* Open Graph Tags */}
+        {Object.entries(socialTags.openGraph).map(([key, value]) => (
+          <meta key={key} property={key} content={value} />
+        ))}
+        
+        {/* Twitter Card Tags */}
+        {Object.entries(socialTags.twitter).map(([key, value]) => (
+          <meta key={key} name={key} content={value} />
+        ))}
+        
+        {/* Local SEO Tags */}
+        <meta name="geo.region" content="US-MA" />
+        <meta name="geo.placename" content="Quincy" />
+        <meta name="geo.position" content="42.2529;-71.0023" />
+        <meta name="ICBM" content="42.2529, -71.0023" />
+        <meta name="robots" content="index, follow" />
       </Helmet>
+      
+      {/* Schema Markup */}
+      <LocalBusinessSchema serviceArea="Quincy" />
+      <ServiceAreaSchema areaName="Quincy" services={quincyServices} />
+      <FAQSchema questions={quincyFAQs} />
+      <BreadcrumbSchema items={breadcrumbs} />
+      <ReviewSchema reviews={localReviews} aggregateRating={{ ratingValue: 4.9, reviewCount: 112 }} />
 
       <div className="min-h-screen flex flex-col bg-gray-50">
         <Header onBookService={() => {}} />

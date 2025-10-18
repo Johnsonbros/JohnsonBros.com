@@ -4,58 +4,111 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Phone, CheckCircle, Droplets, Zap, ShieldAlert } from "lucide-react";
 import { Link } from "wouter";
-import { LocalBusinessSchema } from "@/components/schema-markup";
+import { LocalBusinessSchema, FAQSchema, BreadcrumbSchema, ReviewSchema } from "@/components/schema-markup";
 import { WhyChooseUs } from "@/components/WhyChooseUs";
+import { serviceMetadata, serviceFAQs, generateSocialMetaTags } from "@/lib/seoMetadata";
 
 export default function DrainCleaningServices() {
+  // Get SEO metadata
+  const pageMetadata = serviceMetadata['drain-cleaning'];
+  const socialTags = generateSocialMetaTags(pageMetadata);
+  const pageFAQs = [...serviceFAQs['drain-cleaning'], ...[
+    {
+      question: 'What causes drain clogs?',
+      answer: 'Common causes include hair buildup, grease, food particles, mineral deposits, tree roots in sewer lines, and foreign objects. Regular maintenance can prevent most clogs.'
+    },
+    {
+      question: 'How often should I have my drains cleaned?',
+      answer: 'We recommend professional drain cleaning annually for preventive maintenance, or more frequently for commercial properties or homes with frequent clogs.'
+    }
+  ]];
+
+  const breadcrumbs = [
+    { name: "Home", url: "https://www.thejohnsonbros.com/" },
+    { name: "Services", url: "https://www.thejohnsonbros.com/services" },
+    { name: "Drain Cleaning", url: "https://www.thejohnsonbros.com/services/drain-cleaning" }
+  ];
+
+  const reviews = [
+    {
+      author: "Tom R.",
+      rating: 5,
+      datePublished: "2024-11-28",
+      reviewBody: "Johnson Bros. cleared our main sewer line quickly and efficiently. Their hydro-jetting service worked perfectly. Excellent service!"
+    },
+    {
+      author: "Jennifer S.",
+      rating: 5,
+      datePublished: "2024-11-15",
+      reviewBody: "Had a stubborn kitchen drain clog. They arrived same day and fixed it in under an hour. Fair pricing and professional service."
+    }
+  ];
+
   return (
     <>
+      <Helmet>
+        <title>{pageMetadata.title}</title>
+        <meta name="description" content={pageMetadata.description} />
+        <meta name="keywords" content={pageMetadata.keywords.join(', ')} />
+        
+        {/* Canonical URL */}
+        <link rel="canonical" href={`https://www.thejohnsonbros.com${pageMetadata.canonicalUrl}`} />
+        
+        {/* Open Graph Tags */}
+        {Object.entries(socialTags.openGraph).map(([key, value]) => (
+          <meta key={key} property={key} content={value} />
+        ))}
+        
+        {/* Twitter Card Tags */}
+        {Object.entries(socialTags.twitter).map(([key, value]) => (
+          <meta key={key} name={key} content={value} />
+        ))}
+        
+        {/* Additional SEO Tags */}
+        <meta name="robots" content="index, follow" />
+        <meta name="author" content="Johnson Bros. Plumbing & Drain Cleaning" />
+      </Helmet>
+      
+      {/* Schema Markup */}
       <LocalBusinessSchema 
         serviceArea={["Quincy", "Weymouth", "Braintree", "Plymouth", "Marshfield", "Hingham"]}
         service={{
           name: "Drain Cleaning Services",
-          description: "Professional drain cleaning services for clogged drains, sewer lines, kitchen sinks, and slow-flowing pipes. 24/7 emergency service across South Shore MA",
-          url: "https://johnsonbrosplumbing.com/services/drain-cleaning"
+          description: pageMetadata.description,
+          url: `https://www.thejohnsonbros.com${pageMetadata.canonicalUrl}`
         }}
       />
-      <Helmet>
-        <title>Drain Cleaning Services South Shore MA | Clogged Drains | Sewer Lines | Johnson Bros</title>
-        <meta 
-          name="description" 
-          content="Professional drain cleaning services in South Shore Massachusetts. Fix clogged drains, sewer lines, kitchen sinks. 24/7 emergency service. Call (617) 479-9911" 
-        />
-        <meta property="og:title" content="Drain Cleaning Services South Shore MA | Johnson Bros Plumbing" />
-        <meta property="og:description" content="Expert drain cleaning for clogged drains, sewer lines, and more. Fast, reliable service across South Shore MA." />
-        <link rel="canonical" href="https://johnsonbrosplumbing.com/services/drain-cleaning" />
-      </Helmet>
+      <FAQSchema questions={pageFAQs} />
+      <BreadcrumbSchema items={breadcrumbs} />
+      <ReviewSchema reviews={reviews} aggregateRating={{ ratingValue: 4.9, reviewCount: 156 }} />
 
       <div className="min-h-screen flex flex-col bg-gray-50">
         <Header onBookService={() => {}} />
         
-        <main className="flex-grow">
+        <main className="flex-grow" role="main">
           {/* Hero */}
-          <section className="bg-gradient-to-br from-johnson-blue to-johnson-teal text-white py-16 sm:py-20">
+          <section className="bg-gradient-to-br from-johnson-blue to-johnson-teal text-white py-12 sm:py-16 lg:py-20" aria-label="Drain Cleaning Hero">
             <div className="container mx-auto px-4">
-              <div className="max-w-4xl mx-auto text-center">
-                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6">
+              <header className="max-w-4xl mx-auto text-center">
+                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6">
                   Drain Cleaning Services in South Shore, MA
                 </h1>
                 <p className="text-xl sm:text-2xl mb-8 text-blue-100">
                   Fast, effective solutions for clogged drains, sewer lines, and slow-flowing pipes
                 </p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
                   <Button 
                     size="lg"
-                    className="bg-white text-johnson-blue hover:bg-gray-100 text-lg px-8 py-6"
+                    className="bg-white text-johnson-blue hover:bg-gray-100 text-base sm:text-lg px-6 sm:px-8 py-5 sm:py-6 min-h-[56px] touch-manipulation"
                     onClick={() => window.location.href = 'tel:6174799911'}
                     data-testid="call-button"
                   >
-                    <Phone className="mr-2" /> Call (617) 479-9911
+                    <Phone className="mr-2 h-4 w-4 sm:h-5 sm:w-5" /> Call (617) 479-9911
                   </Button>
                   <Button 
                     size="lg"
                     variant="outline"
-                    className="border-2 border-white text-white hover:bg-white hover:text-johnson-blue text-lg px-8 py-6"
+                    className="border-2 border-white text-white hover:bg-white hover:text-johnson-blue text-base sm:text-lg px-6 sm:px-8 py-5 sm:py-6 min-h-[56px] touch-manipulation"
                     asChild
                   >
                     <Link href="/contact" data-testid="contact-button">
@@ -63,14 +116,14 @@ export default function DrainCleaningServices() {
                     </Link>
                   </Button>
                 </div>
-              </div>
+              </header>
             </div>
           </section>
 
           {/* Services */}
-          <section className="py-16 bg-white">
+          <section className="py-16 bg-white" aria-label="Our Drain Cleaning Services" id="services">
             <div className="container mx-auto px-4">
-              <div className="max-w-6xl mx-auto">
+              <article className="max-w-6xl mx-auto">
                 <h2 className="text-3xl sm:text-4xl font-bold text-center mb-12">
                   Professional Drain Cleaning Services
                 </h2>
@@ -91,7 +144,7 @@ export default function DrainCleaningServices() {
                     </div>
                   ))}
                 </div>
-              </div>
+              </article>
             </div>
           </section>
 

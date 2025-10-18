@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useNavigate } from "wouter";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -50,7 +50,7 @@ export default function MaintenancePlans() {
   const [averageServiceCost, setAverageServiceCost] = useState([150]);
   const [servicesPerYear, setServicesPerYear] = useState([3]);
   const { toast } = useToast();
-  const navigate = useNavigate();
+  const [, setLocation] = useLocation();
 
   // Fetch maintenance plans
   const { data: plans, isLoading } = useQuery<MaintenancePlan[]>({
@@ -126,7 +126,7 @@ export default function MaintenancePlans() {
         description: "You've successfully signed up for the maintenance plan. Check your email for details.",
       });
       setShowSignupDialog(false);
-      navigate("/my-plan");
+      setLocation("/my-plan");
     },
     onError: () => {
       toast({

@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, MobileDialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog-mobile";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useSwipe } from "@/hooks/use-swipe";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -184,6 +186,7 @@ interface BookingModalProps {
 }
 
 export default function BookingModalEnhanced({ isOpen, onClose, preSelectedService }: BookingModalProps) {
+  const isMobile = useIsMobile();
   const [currentStep, setCurrentStep] = useState(1);
   const [bookingData, setBookingData] = useState<BookingData>({
     selectedService: null,
@@ -634,14 +637,43 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
     return days;
   };
 
+  // Handle navigation between steps
+  const handleNextStep = () => {
+    if (currentStep < steps.length) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const handlePreviousStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  // Swipe gesture handlers for mobile
+  const swipeHandlers = useSwipe({
+    onSwipeLeft: handleNextStep,
+    onSwipeRight: handlePreviousStep,
+    threshold: 75
+  });
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-johnson-blue">
-            Book Your Service
-          </DialogTitle>
-        </DialogHeader>
+      <MobileDialogContent 
+        className={`${isMobile ? '' : 'max-w-4xl max-h-[90vh] overflow-y-auto'}`}
+        fullScreen={isMobile}
+        title={isMobile ? steps.find(s => s.id === currentStep)?.name || "Book Service" : undefined}
+        showBackButton={isMobile && currentStep > 1}
+        onBack={handlePreviousStep}
+        {...(isMobile ? swipeHandlers.handlers : {})}
+      >
+        {!isMobile && (
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-johnson-blue">
+              Book Your Service
+            </DialogTitle>
+          </DialogHeader>
+        )}
 
         {renderStepIndicator()}
 
@@ -653,7 +685,7 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
             {servicesLoading ? (
               <div className="text-center py-8">Loading services...</div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'md:grid-cols-2 gap-4'}`}>
                 {services?.map((service: any) => {
                   const IconComponent = serviceIcons[service.category as keyof typeof serviceIcons] || serviceIcons.default;
                   const isSelected = bookingData.selectedService?.id === service.id;
@@ -1412,7 +1444,7 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
             </div>
           </div>
         )}
-      </DialogContent>
+      </MobileDialogContent>
     </Dialog>
   );
 }
