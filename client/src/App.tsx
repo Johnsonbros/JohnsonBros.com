@@ -54,6 +54,10 @@ import SewerLineServiceLanding from "@/pages/service/sewer-line-landing";
 // AI Booking Page
 import AIBooking from "@/pages/ai-booking";
 
+// Maintenance Plans & Member Portal Pages
+import MaintenancePlans from "@/pages/maintenance-plans";
+import MyPlan from "@/pages/my-plan";
+
 function Router() {
   return (
     <Switch>
@@ -63,6 +67,8 @@ function Router() {
       <Route path="/ai-booking" component={AIBooking} />
       <Route path="/contact" component={Contact} />
       <Route path="/referral" component={Referral} />
+      <Route path="/maintenance-plans" component={MaintenancePlans} />
+      <Route path="/my-plan" component={MyPlan} />
       <Route path="/webhooks" component={Webhooks} />
       <Route path="/check-ins" component={CheckIns} />
       <Route path="/admin/login" component={AdminLogin} />

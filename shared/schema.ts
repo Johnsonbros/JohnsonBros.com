@@ -1070,3 +1070,198 @@ export type InsertWebsiteAnalytics = z.infer<typeof insertWebsiteAnalyticsSchema
 
 export type DashboardWidget = typeof dashboardWidgets.$inferSelect;
 export type InsertDashboardWidget = z.infer<typeof insertDashboardWidgetSchema>;
+
+// ========== MAINTENANCE PLANS & SUBSCRIPTIONS ==========
+
+// Maintenance Plans table - stores the different plan tiers
+export const maintenancePlans = pgTable('maintenance_plans', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull(), // Basic, Standard, Premium
+  tier: text('tier').notNull().unique(), // basic, standard, premium
+  price: real('price').notNull(), // Annual price
+  billingCycle: text('billing_cycle').notNull().default('annual'), // annual, monthly
+  inspectionsPerYear: integer('inspections_per_year').notNull(),
+  discountPercentage: integer('discount_percentage').notNull().default(0),
+  priorityLevel: text('priority_level').notNull(), // normal, priority, emergency
+  features: json('features').$type<string[]>().notNull(), // Array of feature strings
+  description: text('description'),
+  isActive: boolean('is_active').default(true).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  tierIdx: index('tier_idx').on(table.tier),
+}));
+
+// Member Subscriptions - tracks customer subscriptions to plans
+export const memberSubscriptions = pgTable('member_subscriptions', {
+  id: serial('id').primaryKey(),
+  customerId: integer('customer_id').references(() => customers.id).notNull(),
+  planId: integer('plan_id').references(() => maintenancePlans.id).notNull(),
+  status: text('status').notNull().default('active'), // active, cancelled, expired, paused
+  startDate: timestamp('start_date').notNull(),
+  endDate: timestamp('end_date'),
+  nextInspectionDate: timestamp('next_inspection_date'),
+  lastInspectionDate: timestamp('last_inspection_date'),
+  inspectionsUsed: integer('inspections_used').notNull().default(0),
+  totalSavings: real('total_savings').notNull().default(0),
+  referralCode: text('referral_code').unique(),
+  referredBy: integer('referred_by').references(() => customers.id),
+  freeMonthsEarned: integer('free_months_earned').notNull().default(0),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  customerIdx: index('member_sub_customer_idx').on(table.customerId),
+  statusIdx: index('member_sub_status_idx').on(table.status),
+  referralCodeIdx: index('member_sub_referral_code_idx').on(table.referralCode),
+}));
+
+// Member Benefits Usage - tracks usage of member benefits
+export const memberBenefits = pgTable('member_benefits', {
+  id: serial('id').primaryKey(),
+  subscriptionId: integer('subscription_id').references(() => memberSubscriptions.id).notNull(),
+  benefitType: text('benefit_type').notNull(), // discount, inspection, priority, etc
+  usedDate: timestamp('used_date').notNull(),
+  serviceId: text('service_id'),
+  amountSaved: real('amount_saved'),
+  details: json('details').$type<Record<string, any>>(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  subscriptionIdx: index('member_benefit_subscription_idx').on(table.subscriptionId),
+  benefitTypeIdx: index('member_benefit_type_idx').on(table.benefitType),
+}));
+
+// Email Templates - for automated follow-ups
+export const emailTemplates = pgTable('email_templates', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull().unique(), // 24hr_followup, 7day_followup, etc
+  subject: text('subject').notNull(),
+  content: text('content').notNull(), // HTML content with placeholders
+  triggerType: text('trigger_type').notNull(), // post_service, scheduled, manual
+  triggerDelay: integer('trigger_delay'), // Hours after trigger event
+  category: text('category').notNull(), // followup, upsell, reminder, etc
+  variables: json('variables').$type<string[]>(), // List of available variables
+  isActive: boolean('is_active').default(true).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  nameIdx: index('template_name_idx').on(table.name),
+  categoryIdx: index('template_category_idx').on(table.category),
+}));
+
+// Upsell Offers - configurable upsell rules
+export const upsellOffers = pgTable('upsell_offers', {
+  id: serial('id').primaryKey(),
+  triggerService: text('trigger_service').notNull(), // Service that triggers the upsell
+  upsellService: text('upsell_service').notNull(), // Service being offered
+  bundlePrice: real('bundle_price'), // Special bundle price if bought together
+  savingsAmount: real('savings_amount'), // Amount saved with bundle
+  displayOrder: integer('display_order').notNull().default(0),
+  title: text('title').notNull(),
+  description: text('description'),
+  isActive: boolean('is_active').default(true).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  triggerIdx: index('trigger_service_idx').on(table.triggerService),
+  activeIdx: index('upsell_active_offers_idx').on(table.isActive),
+}));
+
+// Revenue Metrics - tracks revenue performance
+export const revenueMetrics = pgTable('revenue_metrics', {
+  id: serial('id').primaryKey(),
+  date: timestamp('date').notNull(),
+  metricType: text('metric_type').notNull(), // recurring, one_time, upsell, total
+  amount: real('amount').notNull(),
+  transactionCount: integer('transaction_count').notNull().default(0),
+  averageValue: real('average_value'),
+  planConversions: integer('plan_conversions').default(0),
+  upsellConversions: integer('upsell_conversions').default(0),
+  customerLifetimeValue: real('customer_lifetime_value'),
+  metadata: json('metadata').$type<Record<string, any>>(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  dateIdx: index('date_idx').on(table.date),
+  metricTypeIdx: index('metric_type_idx').on(table.metricType),
+}));
+
+// Relations
+export const maintenancePlansRelations = relations(maintenancePlans, ({ many }) => ({
+  subscriptions: many(memberSubscriptions),
+}));
+
+export const memberSubscriptionsRelations = relations(memberSubscriptions, ({ one, many }) => ({
+  customer: one(customers, {
+    fields: [memberSubscriptions.customerId],
+    references: [customers.id],
+  }),
+  plan: one(maintenancePlans, {
+    fields: [memberSubscriptions.planId],
+    references: [maintenancePlans.id],
+  }),
+  referrer: one(customers, {
+    fields: [memberSubscriptions.referredBy],
+    references: [customers.id],
+  }),
+  benefits: many(memberBenefits),
+}));
+
+export const memberBenefitsRelations = relations(memberBenefits, ({ one }) => ({
+  subscription: one(memberSubscriptions, {
+    fields: [memberBenefits.subscriptionId],
+    references: [memberSubscriptions.id],
+  }),
+}));
+
+// Insert schemas
+export const insertMaintenancePlanSchema = createInsertSchema(maintenancePlans).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertMemberSubscriptionSchema = createInsertSchema(memberSubscriptions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertMemberBenefitSchema = createInsertSchema(memberBenefits).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertEmailTemplateSchema = createInsertSchema(emailTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertUpsellOfferSchema = createInsertSchema(upsellOffers).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertRevenueMetricSchema = createInsertSchema(revenueMetrics).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Types
+export type MaintenancePlan = typeof maintenancePlans.$inferSelect;
+export type InsertMaintenancePlan = z.infer<typeof insertMaintenancePlanSchema>;
+
+export type MemberSubscription = typeof memberSubscriptions.$inferSelect;
+export type InsertMemberSubscription = z.infer<typeof insertMemberSubscriptionSchema>;
+
+export type MemberBenefit = typeof memberBenefits.$inferSelect;
+export type InsertMemberBenefit = z.infer<typeof insertMemberBenefitSchema>;
+
+export type EmailTemplate = typeof emailTemplates.$inferSelect;
+export type InsertEmailTemplate = z.infer<typeof insertEmailTemplateSchema>;
+
+export type UpsellOffer = typeof upsellOffers.$inferSelect;
+export type InsertUpsellOffer = z.infer<typeof insertUpsellOfferSchema>;
+
+export type RevenueMetric = typeof revenueMetrics.$inferSelect;
+export type InsertRevenueMetric = z.infer<typeof insertRevenueMetricSchema>;

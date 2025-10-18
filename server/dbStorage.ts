@@ -9,8 +9,15 @@ import {
   type AvailableTimeSlot,
   type Referral, type InsertReferral,
   type CustomerCredit, type InsertCustomerCredit,
+  type MaintenancePlan, type InsertMaintenancePlan,
+  type MemberSubscription, type InsertMemberSubscription,
+  type MemberBenefit, type InsertMemberBenefit,
+  type EmailTemplate, type InsertEmailTemplate,
+  type UpsellOffer, type InsertUpsellOffer,
+  type RevenueMetric, type InsertRevenueMetric,
   customers, appointments, blogPosts, keywords, postKeywords, keywordRankings, blogAnalytics,
-  referrals, customerCredits
+  referrals, customerCredits, maintenancePlans, memberSubscriptions, memberBenefits,
+  emailTemplates, upsellOffers, revenueMetrics
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, lte, desc, asc, sql } from "drizzle-orm";
@@ -341,6 +348,139 @@ export class DatabaseStorage implements IStorage {
       ))
       .returning();
     return credit;
+  }
+
+  // Maintenance Plan methods
+  async getMaintenancePlans(): Promise<MaintenancePlan[]> {
+    return await db.select().from(maintenancePlans)
+      .where(eq(maintenancePlans.isActive, true))
+      .orderBy(asc(maintenancePlans.price));
+  }
+
+  async getMaintenancePlanById(id: number): Promise<MaintenancePlan | undefined> {
+    const [plan] = await db.select().from(maintenancePlans)
+      .where(eq(maintenancePlans.id, id))
+      .limit(1);
+    return plan;
+  }
+
+  async getMaintenancePlanByTier(tier: string): Promise<MaintenancePlan | undefined> {
+    const [plan] = await db.select().from(maintenancePlans)
+      .where(and(
+        eq(maintenancePlans.tier, tier),
+        eq(maintenancePlans.isActive, true)
+      ))
+      .limit(1);
+    return plan;
+  }
+
+  async createMaintenancePlan(plan: InsertMaintenancePlan): Promise<MaintenancePlan> {
+    const [newPlan] = await db.insert(maintenancePlans).values(plan).returning();
+    return newPlan;
+  }
+
+  // Member Subscription methods
+  async getMemberSubscription(customerId: number): Promise<MemberSubscription | undefined> {
+    const [subscription] = await db.select().from(memberSubscriptions)
+      .where(and(
+        eq(memberSubscriptions.customerId, customerId),
+        eq(memberSubscriptions.status, 'active')
+      ))
+      .limit(1);
+    return subscription;
+  }
+
+  async createMemberSubscription(subscription: InsertMemberSubscription): Promise<MemberSubscription> {
+    const [newSubscription] = await db.insert(memberSubscriptions).values(subscription).returning();
+    return newSubscription;
+  }
+
+  async updateMemberSubscription(id: number, updates: Partial<MemberSubscription>): Promise<MemberSubscription | undefined> {
+    const [updated] = await db.update(memberSubscriptions)
+      .set(updates)
+      .where(eq(memberSubscriptions.id, id))
+      .returning();
+    return updated;
+  }
+
+  // Member Benefits methods
+  async recordMemberBenefit(benefit: InsertMemberBenefit): Promise<MemberBenefit> {
+    const [newBenefit] = await db.insert(memberBenefits).values(benefit).returning();
+    return newBenefit;
+  }
+
+  async getMemberBenefits(subscriptionId: number): Promise<MemberBenefit[]> {
+    return await db.select().from(memberBenefits)
+      .where(eq(memberBenefits.subscriptionId, subscriptionId))
+      .orderBy(desc(memberBenefits.usedDate));
+  }
+
+  // Email Template methods
+  async getEmailTemplates(category?: string): Promise<EmailTemplate[]> {
+    if (category) {
+      return await db.select().from(emailTemplates)
+        .where(and(
+          eq(emailTemplates.category, category),
+          eq(emailTemplates.isActive, true)
+        ));
+    }
+    return await db.select().from(emailTemplates)
+      .where(eq(emailTemplates.isActive, true));
+  }
+
+  async getEmailTemplateByName(name: string): Promise<EmailTemplate | undefined> {
+    const [template] = await db.select().from(emailTemplates)
+      .where(and(
+        eq(emailTemplates.name, name),
+        eq(emailTemplates.isActive, true)
+      ))
+      .limit(1);
+    return template;
+  }
+
+  async createEmailTemplate(template: InsertEmailTemplate): Promise<EmailTemplate> {
+    const [newTemplate] = await db.insert(emailTemplates).values(template).returning();
+    return newTemplate;
+  }
+
+  // Upsell Offer methods
+  async getUpsellOffersForService(serviceName: string): Promise<UpsellOffer[]> {
+    return await db.select().from(upsellOffers)
+      .where(and(
+        eq(upsellOffers.triggerService, serviceName),
+        eq(upsellOffers.isActive, true)
+      ))
+      .orderBy(asc(upsellOffers.displayOrder));
+  }
+
+  async createUpsellOffer(offer: InsertUpsellOffer): Promise<UpsellOffer> {
+    const [newOffer] = await db.insert(upsellOffers).values(offer).returning();
+    return newOffer;
+  }
+
+  // Revenue Metrics methods
+  async getRevenueMetrics(startDate: Date, endDate: Date): Promise<RevenueMetric[]> {
+    return await db.select().from(revenueMetrics)
+      .where(and(
+        gte(revenueMetrics.date, startDate),
+        lte(revenueMetrics.date, endDate)
+      ))
+      .orderBy(desc(revenueMetrics.date));
+  }
+
+  async createRevenueMetric(metric: InsertRevenueMetric): Promise<RevenueMetric> {
+    const [newMetric] = await db.insert(revenueMetrics).values(metric).returning();
+    return newMetric;
+  }
+
+  async getLatestRevenueMetrics(): Promise<RevenueMetric[]> {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    return await db.select().from(revenueMetrics)
+      .where(gte(revenueMetrics.date, thirtyDaysAgo))
+      .orderBy(desc(revenueMetrics.date))
+      .limit(30);
   }
 }
 

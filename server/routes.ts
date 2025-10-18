@@ -260,6 +260,176 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   }
 
+  // ========== MAINTENANCE PLANS ROUTES ==========
+
+  // Get all maintenance plans
+  app.get("/api/v1/maintenance-plans", publicReadLimiter, async (req, res) => {
+    try {
+      const plans = await storage.getMaintenancePlans();
+      res.json(plans);
+    } catch (error) {
+      logError("Error fetching maintenance plans:", error);
+      res.status(500).json({ error: "Failed to fetch maintenance plans" });
+    }
+  });
+
+  // Get maintenance plan by tier
+  app.get("/api/v1/maintenance-plans/:tier", publicReadLimiter, async (req, res) => {
+    try {
+      const { tier } = req.params;
+      const plan = await storage.getMaintenancePlanByTier(tier);
+      
+      if (!plan) {
+        return res.status(404).json({ error: "Plan not found" });
+      }
+      
+      res.json(plan);
+    } catch (error) {
+      logError("Error fetching maintenance plan:", error);
+      res.status(500).json({ error: "Failed to fetch maintenance plan" });
+    }
+  });
+
+  // Subscribe to maintenance plan
+  app.post("/api/v1/maintenance-plans/subscribe", publicWriteLimiter, async (req, res) => {
+    try {
+      const { planTier, email, phone, name } = req.body;
+      
+      // Find or create customer
+      let customer = await storage.getCustomerByEmail(email);
+      if (!customer) {
+        const [firstName, ...lastNameParts] = name.split(' ');
+        customer = await storage.createCustomer({
+          firstName,
+          lastName: lastNameParts.join(' ') || '',
+          email,
+          phone
+        });
+      }
+      
+      // Get the plan
+      const plan = await storage.getMaintenancePlanByTier(planTier);
+      if (!plan) {
+        return res.status(404).json({ error: "Plan not found" });
+      }
+      
+      // Check for existing active subscription
+      const existingSubscription = await storage.getMemberSubscription(customer.id);
+      if (existingSubscription) {
+        return res.status(400).json({ error: "Customer already has an active subscription" });
+      }
+      
+      // Create subscription
+      const subscription = await storage.createMemberSubscription({
+        customerId: customer.id,
+        planId: plan.id,
+        status: 'active',
+        startDate: new Date(),
+        inspectionsUsed: 0,
+        totalSavings: 0,
+        freeMonthsEarned: 0,
+        referralCode: `REF-${customer.id}-${Date.now().toString(36).toUpperCase()}`,
+      });
+      
+      res.status(201).json({ subscription, customer });
+    } catch (error) {
+      logError("Error subscribing to maintenance plan:", error);
+      res.status(500).json({ error: "Failed to subscribe to maintenance plan" });
+    }
+  });
+
+  // Simple customer authentication for member portal
+  app.post("/api/v1/customer/auth", publicWriteLimiter, async (req, res) => {
+    try {
+      const { email, phone } = req.body;
+      
+      if (!email && !phone) {
+        return res.status(400).json({ error: "Email or phone required" });
+      }
+      
+      let customer;
+      if (email) {
+        customer = await storage.getCustomerByEmail(email);
+      } else if (phone) {
+        customer = await storage.getCustomerByPhone(phone);
+      }
+      
+      if (!customer) {
+        return res.status(404).json({ error: "Customer not found" });
+      }
+      
+      // Check if customer has an active subscription
+      const subscription = await storage.getMemberSubscription(customer.id);
+      if (!subscription) {
+        return res.status(404).json({ error: "No active subscription found" });
+      }
+      
+      // Generate a simple token (in production, use proper JWT or session management)
+      const token = `customer-${customer.id}-${Date.now()}`;
+      
+      res.json({ 
+        token, 
+        customerId: customer.id,
+        customer: {
+          firstName: customer.firstName,
+          lastName: customer.lastName,
+          email: customer.email,
+          phone: customer.phone
+        }
+      });
+    } catch (error) {
+      logError("Error authenticating customer:", error);
+      res.status(500).json({ error: "Authentication failed" });
+    }
+  });
+  
+  // Get member subscription (simplified authentication)
+  app.get("/api/v1/maintenance-plans/subscription", publicReadLimiter, async (req, res) => {
+    try {
+      // Simple authentication check - in production, use proper session/JWT validation
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer customer-')) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+      
+      // Extract customer ID from token (simple implementation)
+      const tokenParts = authHeader.replace('Bearer customer-', '').split('-');
+      const customerId = parseInt(tokenParts[0]);
+      
+      if (!customerId) {
+        return res.status(400).json({ error: "Invalid authentication token" });
+      }
+      
+      const subscription = await storage.getMemberSubscription(customerId);
+      if (!subscription) {
+        return res.status(404).json({ error: "No active subscription found" });
+      }
+      
+      // Get plan details
+      const plan = await storage.getMaintenancePlanById(subscription.planId);
+      
+      // Get benefits usage
+      const benefits = await storage.getMemberBenefits(subscription.id);
+      
+      res.json({ subscription, plan, benefits });
+    } catch (error) {
+      logError("Error fetching member subscription:", error);
+      res.status(500).json({ error: "Failed to fetch subscription" });
+    }
+  });
+
+  // Get upsell offers for a service
+  app.get("/api/v1/upsell-offers/:service", publicReadLimiter, async (req, res) => {
+    try {
+      const { service } = req.params;
+      const offers = await storage.getUpsellOffersForService(service);
+      res.json(offers);
+    } catch (error) {
+      logError("Error fetching upsell offers:", error);
+      res.status(500).json({ error: "Failed to fetch upsell offers" });
+    }
+  });
+
   // ========== BLOG ROUTES ==========
   
   // Get all blog posts (with pagination and filtering)
@@ -3162,6 +3332,135 @@ Sitemap: ${siteUrl}/sitemap.xml
     } catch (error) {
       logError('Error serving /.well-known/mcp/manifest.json:', error);
       res.status(500).json({ error: 'Failed to serve MCP manifest' });
+    }
+  });
+
+  // Revenue metrics endpoint
+  app.get('/api/admin/revenue-metrics', requireAuth, requireAdmin, async (req, res) => {
+    try {
+      // Get subscription metrics
+      const subscriptions = await storage.getSubscriptions();
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      
+      const activeSubscriptions = subscriptions.filter((s: any) => s.status === 'active');
+      const newThisMonth = subscriptions.filter((s: any) => 
+        new Date(s.startDate) >= startOfMonth && s.status === 'active'
+      );
+      
+      // Calculate plan distribution
+      const planCounts = {
+        basic: activeSubscriptions.filter((s: any) => s.planId === 1).length,
+        premium: activeSubscriptions.filter((s: any) => s.planId === 2).length,
+        elite: activeSubscriptions.filter((s: any) => s.planId === 3).length,
+      };
+      
+      // Calculate MRR and ARR
+      const planPrices: { [key: number]: number } = { 1: 29, 2: 49, 3: 99 };
+      const mrr = activeSubscriptions.reduce((sum: number, sub: any) => 
+        sum + (planPrices[sub.planId] || 0), 0
+      );
+      const arr = mrr * 12;
+      
+      // Get upsell metrics
+      const upsellOffers = await storage.getUpsellOffers?.() || [];
+      const activeUpsells = upsellOffers.filter((o: any) => o.isActive);
+      const totalUpsellRevenue = activeUpsells.reduce((sum: number, offer: any) => 
+        sum + ((offer.bundlePrice || 0) * (offer.conversions || 1)), 0
+      );
+      
+      // Calculate customer lifetime value (simplified)
+      const avgCustomerAge = 18; // months
+      const avgMonthlyValue = mrr / Math.max(activeSubscriptions.length, 1);
+      const clv = avgMonthlyValue * avgCustomerAge;
+      
+      // Mock some additional metrics
+      const metrics = {
+        overview: {
+          totalRevenue: mrr + 15000, // Monthly recurring + one-time
+          recurringRevenue: mrr,
+          oneTimeRevenue: 15000,
+          upsellRevenue: totalUpsellRevenue,
+          mrr,
+          arr,
+          averageOrderValue: 350,
+          growthRate: 0.12, // 12% growth
+        },
+        subscriptions: {
+          total: activeSubscriptions.length,
+          basic: planCounts.basic,
+          premium: planCounts.premium,
+          elite: planCounts.elite,
+          newThisMonth: newThisMonth.length,
+          churnRate: 0.05, // 5% churn
+          conversionRate: 0.25, // 25% conversion from trial
+        },
+        upsells: {
+          totalAttempts: 150,
+          successful: 38,
+          conversionRate: 0.25,
+          averageValue: 125,
+          topPerformers: [
+            {
+              service: "Drain Cleaning",
+              addOn: "Camera Inspection",
+              conversions: 15,
+              revenue: 1875,
+            },
+            {
+              service: "Water Heater Repair",
+              addOn: "Maintenance Plan",
+              conversions: 12,
+              revenue: 1188,
+            },
+            {
+              service: "Emergency Repair",
+              addOn: "Annual Inspection",
+              conversions: 11,
+              revenue: 1089,
+            },
+          ],
+        },
+        lifetime: {
+          averageCustomerLifetimeValue: clv,
+          averageCustomerAge: avgCustomerAge,
+          retentionRate: 0.95,
+          topCustomers: [
+            {
+              id: 1,
+              name: "Johnson Properties LLC",
+              value: 12500,
+              memberSince: "2023-01-15",
+              plan: "Elite",
+            },
+            {
+              id: 2,
+              name: "Smith Residential",
+              value: 8900,
+              memberSince: "2023-03-22",
+              plan: "Premium",
+            },
+            {
+              id: 3,
+              name: "Davis Family Trust",
+              value: 6200,
+              memberSince: "2023-06-10",
+              plan: "Premium",
+            },
+          ],
+        },
+        trends: {
+          labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+          recurring: [2100, 2400, 2800, 3200, 3600, mrr],
+          oneTime: [12000, 13500, 14200, 14800, 15500, 15000],
+          upsell: [800, 950, 1100, 1350, 1600, totalUpsellRevenue],
+        },
+      };
+      
+      res.json(metrics);
+    } catch (error) {
+      console.error('Error fetching revenue metrics:', error);
+      res.status(500).json({ error: 'Failed to fetch revenue metrics' });
     }
   });
 

@@ -14,6 +14,7 @@ import {
 import { authenticatedFetch } from '@/lib/auth';
 import { queryClient } from '@/lib/queryClient';
 import { cn } from '@/lib/utils';
+import RevenueAnalytics from './widgets/RevenueAnalytics';
 
 interface OperationsData {
   timestamp: string;
@@ -472,6 +473,12 @@ export default function OperationsDashboard() {
             </CardContent>
           </Card>
         </div>
+      </div>
+
+      {/* Revenue Analytics Section */}
+      <div className="mt-8">
+        <h3 className="text-2xl font-bold text-gray-900 mb-4">Revenue Analytics</h3>
+        <RevenueAnalytics />
       </div>
     </div>
   );

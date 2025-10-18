@@ -58,8 +58,20 @@ interface PhotoUpload {
   size: number;
 }
 
+interface UpsellOffer {
+  id: number;
+  triggerService: string;
+  upsellService: string;
+  bundlePrice?: number;
+  savingsAmount?: number;
+  title: string;
+  description: string;
+  isActive: boolean;
+}
+
 interface BookingData {
   selectedService: any;
+  selectedAddOns: UpsellOffer[];
   problemDetails: {
     description: string;
     commonIssues: string[];
@@ -73,6 +85,7 @@ interface BookingData {
   estimatedPrice: {
     base: number;
     additionalFees: number;
+    addOnsTotal: number;
     total: number;
   };
 }
@@ -174,6 +187,7 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
   const [currentStep, setCurrentStep] = useState(1);
   const [bookingData, setBookingData] = useState<BookingData>({
     selectedService: null,
+    selectedAddOns: [],
     problemDetails: {
       description: "",
       commonIssues: [],
@@ -187,6 +201,7 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
     estimatedPrice: {
       base: 0,
       additionalFees: 0,
+      addOnsTotal: 0,
       total: 0,
     },
   });
@@ -211,6 +226,18 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
   const { data: services, isLoading: servicesLoading } = useQuery({
     queryKey: ["/api/v1/services"],
     queryFn: getServices,
+  });
+
+  // Load upsell offers based on selected service
+  const { data: upsellOffers, isLoading: upsellLoading } = useQuery<UpsellOffer[]>({
+    queryKey: ["/api/v1/upsell-offers", bookingData.selectedService?.id],
+    queryFn: async () => {
+      if (!bookingData.selectedService?.id) return [];
+      const response = await fetch(`/api/v1/upsell-offers/${bookingData.selectedService.id}`);
+      if (!response.ok) return [];
+      return response.json();
+    },
+    enabled: !!bookingData.selectedService?.id,
   });
 
   // Forms
@@ -301,6 +328,14 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
     if (bookingData.selectedService && bookingData.selectedTimeSlot) {
       const basePrice = bookingData.selectedService.price || 150;
       let additionalFees = 0;
+      let addOnsTotal = 0;
+
+      // Calculate add-ons pricing
+      bookingData.selectedAddOns.forEach(addOn => {
+        if (addOn.bundlePrice) {
+          addOnsTotal += addOn.bundlePrice;
+        }
+      });
 
       // Emergency fee
       if (bookingData.problemDetails.severity === 'emergency') {
@@ -677,6 +712,74 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
                 <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
             </div>
+
+            {/* Upsell Section */}
+            {bookingData.selectedService && upsellOffers && upsellOffers.length > 0 && (
+              <div className="mt-8 p-4 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg border-2 border-orange-200">
+                <div className="flex items-center gap-2 mb-4">
+                  <Gift className="w-5 h-5 text-johnson-orange" />
+                  <h4 className="font-semibold text-lg">Frequently Added Together</h4>
+                </div>
+                
+                <div className="space-y-3">
+                  {upsellOffers.map((offer) => {
+                    const isSelected = bookingData.selectedAddOns.some(a => a.id === offer.id);
+                    return (
+                      <div
+                        key={offer.id}
+                        className={`p-4 bg-white rounded-lg border-2 cursor-pointer transition-all ${
+                          isSelected ? 'border-johnson-orange bg-orange-50' : 'border-gray-200 hover:border-orange-300'
+                        }`}
+                        onClick={() => {
+                          setBookingData(prev => ({
+                            ...prev,
+                            selectedAddOns: isSelected
+                              ? prev.selectedAddOns.filter(a => a.id !== offer.id)
+                              : [...prev.selectedAddOns, offer]
+                          }));
+                        }}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <h5 className="font-semibold">{offer.title}</h5>
+                              {offer.savingsAmount && (
+                                <Badge variant="secondary" className="bg-green-50 text-green-700">
+                                  Save ${offer.savingsAmount}
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-sm text-gray-600 mt-1">{offer.description}</p>
+                            {offer.bundlePrice && (
+                              <p className="text-sm font-semibold mt-2 text-johnson-orange">
+                                Bundle price: ${offer.bundlePrice}
+                              </p>
+                            )}
+                          </div>
+                          <Checkbox
+                            checked={isSelected}
+                            className="mt-1"
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                
+                {bookingData.selectedAddOns.length > 0 && (
+                  <div className="mt-4 p-3 bg-green-50 rounded-lg border border-green-200">
+                    <div className="flex items-center justify-between">
+                      <span className="text-green-800 font-semibold">
+                        Total savings with bundles:
+                      </span>
+                      <span className="text-lg font-bold text-green-700">
+                        ${bookingData.selectedAddOns.reduce((sum, offer) => sum + (offer.savingsAmount || 0), 0)}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 

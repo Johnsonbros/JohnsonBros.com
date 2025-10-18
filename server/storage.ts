@@ -67,6 +67,21 @@ export interface IStorage {
   createCustomerCredit(credit: InsertCustomerCredit): Promise<CustomerCredit>;
   getCustomerCredits(customerId: string): Promise<CustomerCredit[]>;
   applyCredit(creditId: number, jobId: string): Promise<CustomerCredit | undefined>;
+  
+  // Maintenance Plan methods
+  getMaintenancePlans(): Promise<any[]>;
+  getMaintenancePlanById(id: number): Promise<any | undefined>;
+  getMaintenancePlanByTier(tier: string): Promise<any | undefined>;
+  createMaintenancePlan(plan: any): Promise<any>;
+  
+  // Member Subscription methods
+  getMemberSubscription(customerId: number): Promise<any | undefined>;
+  createMemberSubscription(subscription: any): Promise<any>;
+  updateMemberSubscription(id: number, updates: any): Promise<any | undefined>;
+  
+  // Member Benefits methods
+  recordMemberBenefit(benefit: any): Promise<any>;
+  getMemberBenefits(subscriptionId: number): Promise<any[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -652,6 +667,54 @@ export class MemStorage implements IStorage {
       return credit;
     }
     return undefined;
+  }
+  
+  // Maintenance Plan methods (stubs for MemStorage - actual implementation is in dbStorage)
+  async getMaintenancePlans(): Promise<any[]> {
+    // MemStorage doesn't implement maintenance plans - use dbStorage
+    return [];
+  }
+  
+  async getMaintenancePlanById(id: number): Promise<any | undefined> {
+    // MemStorage doesn't implement maintenance plans - use dbStorage
+    return undefined;
+  }
+  
+  async getMaintenancePlanByTier(tier: string): Promise<any | undefined> {
+    // MemStorage doesn't implement maintenance plans - use dbStorage
+    return undefined;
+  }
+  
+  async createMaintenancePlan(plan: any): Promise<any> {
+    // MemStorage doesn't implement maintenance plans - use dbStorage
+    throw new Error("MemStorage doesn't support maintenance plans");
+  }
+  
+  // Member Subscription methods (stubs for MemStorage)
+  async getMemberSubscription(customerId: number): Promise<any | undefined> {
+    // MemStorage doesn't implement subscriptions - use dbStorage
+    return undefined;
+  }
+  
+  async createMemberSubscription(subscription: any): Promise<any> {
+    // MemStorage doesn't implement subscriptions - use dbStorage
+    throw new Error("MemStorage doesn't support member subscriptions");
+  }
+  
+  async updateMemberSubscription(id: number, updates: any): Promise<any | undefined> {
+    // MemStorage doesn't implement subscriptions - use dbStorage
+    return undefined;
+  }
+  
+  // Member Benefits methods (stubs for MemStorage)
+  async recordMemberBenefit(benefit: any): Promise<any> {
+    // MemStorage doesn't implement benefits - use dbStorage
+    throw new Error("MemStorage doesn't support member benefits");
+  }
+  
+  async getMemberBenefits(subscriptionId: number): Promise<any[]> {
+    // MemStorage doesn't implement benefits - use dbStorage
+    return [];
   }
 }
 
