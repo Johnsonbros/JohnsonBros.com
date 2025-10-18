@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LocalBusinessSchema } from '@/components/schema-markup';
 import { MCPIntegrationBanner } from '@/components/MCPIntegrationBanner';
+import { WhyChooseUs } from '@/components/WhyChooseUs';
 
 export default function EmergencyPlumbing() {
   return (

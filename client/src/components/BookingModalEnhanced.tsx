@@ -15,7 +15,7 @@ import {
   Calendar, X, User, UserPlus, Clock, DollarSign, ChevronLeft, ChevronRight, 
   ClipboardList, Gift, Info, Upload, Image as ImageIcon, AlertTriangle,
   Droplets, Flame, Wrench, Settings, Home, Camera, Trash2, CheckCircle,
-  AlertCircle, MapPin, FileText
+  AlertCircle, MapPin, FileText, Lock, Shield
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -1005,6 +1005,21 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
           <div className="space-y-4">
             <h3 className="text-lg font-semibold mb-4">Service Estimate</h3>
             
+            {/* Trust Indicators for Pricing */}
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+              <div className="flex items-start gap-3">
+                <Shield className="h-5 w-5 text-green-600 mt-0.5" />
+                <div>
+                  <h4 className="font-semibold text-green-900">Our Price Guarantee</h4>
+                  <p className="text-sm text-green-700 mt-1">
+                    ✓ No hidden fees - price shown is final<br/>
+                    ✓ Price match guarantee on comparable services<br/>
+                    ✓ Upfront pricing approved before work begins
+                  </p>
+                </div>
+              </div>
+            </div>
+            
             <PricingEstimate
               service={bookingData.selectedService}
               selectedDate={bookingData.selectedDate}
@@ -1037,6 +1052,15 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
         {currentStep === 6 && (
           <div className="space-y-4">
             <h3 className="text-lg font-semibold mb-4">Your Information</h3>
+
+            {/* Security Badge */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+              <div className="flex items-center gap-2">
+                <Lock className="h-4 w-4 text-blue-600" />
+                <span className="text-sm text-blue-900 font-medium">Your information is secure and encrypted</span>
+                <Badge variant="secondary" className="text-xs">256-bit SSL</Badge>
+              </div>
+            </div>
 
             <Tabs value={customerType || 'new'} onValueChange={(v) => setCustomerType(v as 'new' | 'returning')}>
               <TabsList className="grid w-full grid-cols-2">

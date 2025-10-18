@@ -4,6 +4,7 @@ import { Phone, Droplets, Thermometer, Clock, Shield, CheckCircle, AlertTriangle
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LocalBusinessSchema } from '@/components/schema-markup';
+import { WhyChooseUs } from '@/components/WhyChooseUs';
 
 export default function WaterHeater() {
   return (
@@ -405,6 +406,9 @@ export default function WaterHeater() {
           </div>
         </div>
       </section>
+
+      {/* Why Choose Johnson Bros Section */}
+      <WhyChooseUs serviceName="water-heater" />
 
       {/* Final CTA */}
       <section className="py-16 px-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white">

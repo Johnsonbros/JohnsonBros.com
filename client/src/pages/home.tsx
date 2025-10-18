@@ -9,6 +9,9 @@ import BookingModalEnhanced from "@/components/BookingModalEnhanced";
 import { useState } from "react";
 import { SEO } from "@/components/SEO";
 import { businessStructuredData } from "@/lib/structuredData";
+import { WhyTrustUs } from "@/components/WhyTrustUs";
+import FeaturedProjects from "@/components/FeaturedProjects";
+import VideoTestimonials from "@/components/VideoTestimonials";
 
 export default function Home() {
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
@@ -38,6 +41,9 @@ export default function Home() {
         <Header onBookService={() => openBookingModal()} />
         <ExpressBooking onBookService={() => openBookingModal()} />
         <ServicesSection onBookService={openBookingModal} />
+        <WhyTrustUs />
+        <FeaturedProjects />
+        <VideoTestimonials />
         <TruckSection />
         <SocialProofSection onBookService={() => openBookingModal()} />
         <GoogleReviewsSection />

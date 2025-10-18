@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Phone, CheckCircle, Flame, ShieldCheck, Wrench } from "lucide-react";
 import { Link } from "wouter";
 import { LocalBusinessSchema } from "@/components/schema-markup";
+import { WhyChooseUs } from "@/components/WhyChooseUs";
 
 export default function GasHeatServices() {
   return (
@@ -208,6 +209,8 @@ export default function GasHeatServices() {
               </Button>
             </div>
           </section>
+          {/* Why Choose Johnson Bros Section */}
+          <WhyChooseUs serviceName="gas-heat" />
         </main>
 
         <Footer />

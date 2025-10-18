@@ -4,6 +4,7 @@ import { Phone, Wrench, Droplet, Shield, Clock, CheckCircle, AlertCircle } from 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LocalBusinessSchema } from '@/components/schema-markup';
+import { WhyChooseUs } from '@/components/WhyChooseUs';
 
 export default function PipeRepair() {
   return (
@@ -436,6 +437,9 @@ export default function PipeRepair() {
           </div>
         </div>
       </section>
+
+      {/* Why Choose Johnson Bros Section */}
+      <WhyChooseUs serviceName="pipe-repair" />
 
       {/* Final CTA */}
       <section className="py-16 px-4 bg-gradient-to-r from-slate-700 to-slate-800 text-white">

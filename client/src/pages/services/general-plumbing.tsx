@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Phone, CheckCircle, Clock, Shield, Star } from "lucide-react";
 import { Link } from "wouter";
 import { LocalBusinessSchema } from "@/components/schema-markup";
+import { WhyChooseUs } from "@/components/WhyChooseUs";
 
 export default function GeneralPlumbing() {
   return (
@@ -201,6 +202,8 @@ export default function GeneralPlumbing() {
               </Button>
             </div>
           </section>
+          {/* Why Choose Johnson Bros Section */}
+          <WhyChooseUs serviceName="general" />
         </main>
 
         <Footer />

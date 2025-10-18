@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Phone, CheckCircle, Droplets, Zap, ShieldAlert } from "lucide-react";
 import { Link } from "wouter";
 import { LocalBusinessSchema } from "@/components/schema-markup";
+import { WhyChooseUs } from "@/components/WhyChooseUs";
 
 export default function DrainCleaningServices() {
   return (
@@ -221,6 +222,8 @@ export default function DrainCleaningServices() {
               </Button>
             </div>
           </section>
+          {/* Why Choose Johnson Bros Section */}
+          <WhyChooseUs serviceName="drain-cleaning" />
         </main>
 
         <Footer />
