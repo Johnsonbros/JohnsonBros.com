@@ -11,6 +11,19 @@ Preferred communication style: You are a Co-Founder of this plumbing business. Y
 ## UI/UX Decisions
 The frontend is built with React and TypeScript, utilizing Radix UI primitives and custom styled components with shadcn/ui. Tailwind CSS is used for styling and theming. UI elements adapt dynamically based on real-time capacity, including headlines, CTAs, and badges.
 
+### Navigation
+- **Desktop Navigation**: Dropdown menus for Services (7 options) and Service Areas (6 locations) using shadcn DropdownMenu components
+- **Mobile Navigation**: Accordion-style expandable menus for Services and Service Areas with smooth animations
+- **Direct Links**: Quick access to The Family Discount membership program in main navigation
+
+### Homepage Layout (Streamlined)
+1. **Express Booking** - Dynamic booking with real-time capacity-based messaging
+2. **Services Section** - Overview of all plumbing services with quick booking
+3. **Why Choose Us & Reviews** - Consolidated trust section with badges (Licensed & Insured, 4.9/5 Rating, 25+ Years Experience) and embedded Google reviews
+4. **The Family Discount Promo** - Prominent CTA section highlighting $99/year membership benefits
+5. **Customer Success Stories** - Combined video testimonials and featured projects
+6. **Service Fleet** - Showcase of professional service vehicles
+
 ## Technical Implementations
 - **Frontend**: React with TypeScript, Vite, Wouter for routing, React Query for state management, React Hook Form with Zod for forms.
 - **Backend**: Express.js with TypeScript on Node.js, RESTful API design.
@@ -22,6 +35,7 @@ The frontend is built with React and TypeScript, utilizing Radix UI primitives a
 ## Feature Specifications
 - **Express Booking System**: Real-time capacity monitoring via HousecallPro, dynamic capacity states (SAME_DAY_FEE_WAIVED, LIMITED_SAME_DAY, NEXT_DAY), smart pricing (fee waivers), time-based rules (e.g., 12 PM cutoff), and weekend logic.
 - **Smart Booking Modal**: Multi-step flow for service selection, date/time, customer info, and confirmation, with new/returning customer detection and direct HousecallPro job creation.
+- **The Family Discount Membership**: $99/year program offering priority scheduling, waived service call fees, 10% discount on all jobs, and 1 referral gift ability per year. Managed through dedicated page at /family-discount with customer portal at /my-plan.
 - **MCP Server**: Enables AI assistants (ChatGPT, Claude) to book services via `book_service_call` and `search_availability` tools, handling customer preferences and matching.
 - **Admin Dashboard**: Provides real-time analytics, operations monitoring, customer management, task management, AI chat interface, webhook monitoring, and document management.
 - **Social Proof**: Integration of Google reviews, service heat map, live stats widget, and recent jobs widget.
