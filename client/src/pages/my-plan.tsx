@@ -131,7 +131,7 @@ export default function MyPlan() {
 
   // Fetch member subscription data from API
   const { data: memberData, isLoading, error } = useQuery<MemberData>({
-    queryKey: ['/api/v1/maintenance-plans/subscription'],
+    queryKey: ['/api/v1/family-discount/subscription'],
     queryFn: async () => {
       const customerToken = localStorage.getItem('customerToken');
       const customerId = localStorage.getItem('customerId');
@@ -140,7 +140,7 @@ export default function MyPlan() {
         throw new Error('Not authenticated');
       }
 
-      const response = await fetch('/api/v1/maintenance-plans/subscription', {
+      const response = await fetch('/api/v1/family-discount/subscription', {
         headers: {
           'Authorization': `Bearer ${customerToken}`,
         },
@@ -290,7 +290,7 @@ export default function MyPlan() {
       <div className="min-h-screen bg-gray-50">
         <SEO 
           title="My Plan | Johnson Bros. Plumbing & Heating"
-          description="Manage your maintenance plan membership and track your savings."
+          description="Manage your Family Discount membership and track your savings."
         />
         <Header />
         
@@ -314,7 +314,7 @@ export default function MyPlan() {
       <div className="min-h-screen bg-gray-50">
         <SEO 
           title="My Plan | Johnson Bros. Plumbing & Heating"
-          description="Manage your maintenance plan membership and track your savings."
+          description="Manage your Family Discount membership and track your savings."
         />
         <Header />
         
@@ -330,7 +330,7 @@ export default function MyPlan() {
               To view your maintenance plan details, please sign up for a plan first or contact us if you're already a member.
             </p>
             <div className="flex gap-4 justify-center">
-              <Button onClick={() => window.location.href = '/maintenance-plans'}>View Plans</Button>
+              <Button onClick={() => window.location.href = '/family-discount'}>View The Family Discount</Button>
               <Button variant="outline" onClick={() => setShowLoginDialog(true)}>Member Login</Button>
               <Button variant="outline" onClick={() => window.location.href = '/contact'}>Contact Us</Button>
             </div>

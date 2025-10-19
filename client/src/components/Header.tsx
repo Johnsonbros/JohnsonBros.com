@@ -1,7 +1,13 @@
-import { Phone, Star, Menu, X, Calendar, Shield, Award, Home as HomeIcon } from "lucide-react";
+import { Phone, Star, Menu, X, Calendar, Shield, Award, Home as HomeIcon, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { Link } from "wouter";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface HeaderProps {
   onBookService?: () => void;
@@ -10,6 +16,8 @@ interface HeaderProps {
 export default function Header({ onBookService }: HeaderProps) {
   const [isBusinessHours, setIsBusinessHours] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [mobileServicesOpen, setMobileServicesOpen] = useState(false);
+  const [mobileAreasOpen, setMobileAreasOpen] = useState(false);
 
   const checkBusinessHours = () => {
     const now = new Date();
@@ -52,6 +60,25 @@ export default function Header({ onBookService }: HeaderProps) {
       document.body.style.overflow = '';
     };
   }, [isMobileMenuOpen]);
+
+  const services = [
+    { name: "Drain Cleaning", href: "/services/drain-cleaning" },
+    { name: "Emergency Plumbing", href: "/services/emergency-plumbing" },
+    { name: "Water Heater Service", href: "/services/water-heater" },
+    { name: "Pipe Repair", href: "/services/pipe-repair" },
+    { name: "General Plumbing", href: "/services/general-plumbing" },
+    { name: "New Construction", href: "/services/new-construction" },
+    { name: "Gas & Heat", href: "/services/gas-heat" },
+  ];
+
+  const serviceAreas = [
+    { name: "Quincy, MA", href: "/service-areas/quincy" },
+    { name: "Braintree, MA", href: "/service-areas/braintree" },
+    { name: "Weymouth, MA", href: "/service-areas/weymouth" },
+    { name: "Plymouth, MA", href: "/service-areas/plymouth" },
+    { name: "Marshfield, MA", href: "/service-areas/marshfield" },
+    { name: "Hingham, MA", href: "/service-areas/hingham" },
+  ];
 
   return (
     <>
@@ -148,20 +175,65 @@ export default function Header({ onBookService }: HeaderProps) {
               >
                 Home
               </Link>
-              <a 
-                href="/#services" 
+
+              {/* Mobile Services Dropdown */}
+              <div className="text-white">
+                <button
+                  onClick={() => setMobileServicesOpen(!mobileServicesOpen)}
+                  className="w-full text-left text-base font-semibold py-3.5 px-4 hover:bg-white/15 active:bg-white/25 rounded-lg transition-all duration-200 flex items-center justify-between"
+                >
+                  <span>Services</span>
+                  <ChevronDown className={`h-4 w-4 transition-transform ${mobileServicesOpen ? 'rotate-180' : ''}`} />
+                </button>
+                {mobileServicesOpen && (
+                  <div className="pl-4 space-y-0.5 mt-1">
+                    {services.map((service) => (
+                      <Link
+                        key={service.href}
+                        href={service.href}
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className="block text-blue-100 text-sm py-2.5 px-4 hover:bg-white/10 rounded-lg transition-all duration-200"
+                      >
+                        {service.name}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Mobile Service Areas Dropdown */}
+              <div className="text-white">
+                <button
+                  onClick={() => setMobileAreasOpen(!mobileAreasOpen)}
+                  className="w-full text-left text-base font-semibold py-3.5 px-4 hover:bg-white/15 active:bg-white/25 rounded-lg transition-all duration-200 flex items-center justify-between"
+                >
+                  <span>Service Areas</span>
+                  <ChevronDown className={`h-4 w-4 transition-transform ${mobileAreasOpen ? 'rotate-180' : ''}`} />
+                </button>
+                {mobileAreasOpen && (
+                  <div className="pl-4 space-y-0.5 mt-1">
+                    {serviceAreas.map((area) => (
+                      <Link
+                        key={area.href}
+                        href={area.href}
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className="block text-blue-100 text-sm py-2.5 px-4 hover:bg-white/10 rounded-lg transition-all duration-200"
+                      >
+                        {area.name}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <Link 
+                href="/family-discount" 
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="text-white text-base font-semibold py-3.5 px-4 hover:bg-white/15 active:bg-white/25 rounded-lg transition-all duration-200"
+                data-testid="mobile-nav-family-discount"
               >
-                Services
-              </a>
-              <a 
-                href="/#about" 
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="text-white text-base font-semibold py-3.5 px-4 hover:bg-white/15 active:bg-white/25 rounded-lg transition-all duration-200"
-              >
-                About Us
-              </a>
+                The Family Discount
+              </Link>
               <Link 
                 href="/blog" 
                 onClick={() => setIsMobileMenuOpen(false)}
@@ -170,13 +242,6 @@ export default function Header({ onBookService }: HeaderProps) {
               >
                 Blog
               </Link>
-              <a 
-                href="/#reviews" 
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="text-white text-base font-semibold py-3.5 px-4 hover:bg-white/15 active:bg-white/25 rounded-lg transition-all duration-200"
-              >
-                Reviews
-              </a>
               <Link 
                 href="/contact" 
                 onClick={() => setIsMobileMenuOpen(false)}
@@ -272,15 +337,57 @@ export default function Header({ onBookService }: HeaderProps) {
               </div>
 
               {/* Desktop Navigation */}
-              <nav className="flex items-center space-x-6 xl:space-x-8 flex-1 justify-center">
-                <Link href="/" className="text-white hover:text-blue-200 transition-colors font-medium text-sm xl:text-base whitespace-nowrap">Home</Link>
-                <a href="/#services" className="text-white hover:text-blue-200 transition-colors font-medium text-sm xl:text-base whitespace-nowrap">Services</a>
-                <a href="/#about" className="text-white hover:text-blue-200 transition-colors font-medium text-sm xl:text-base whitespace-nowrap">About</a>
-                <Link href="/blog" className="text-white hover:text-blue-200 transition-colors font-medium text-sm xl:text-base whitespace-nowrap" data-testid="desktop-nav-blog">Blog</Link>
-                <a href="/#reviews" className="text-white hover:text-blue-200 transition-colors font-medium text-sm xl:text-base whitespace-nowrap">Reviews</a>
-                <Link href="/contact" className="text-white hover:text-blue-200 transition-colors font-medium text-sm xl:text-base whitespace-nowrap" data-testid="desktop-nav-contact">Contact</Link>
-                <Link href="/check-ins" className="text-white hover:text-blue-200 transition-colors font-medium text-sm xl:text-base whitespace-nowrap" data-testid="desktop-nav-checkins">Activity</Link>
-                <Link href="/referral" className="text-white hover:text-blue-200 transition-colors font-medium text-sm xl:text-base whitespace-nowrap" data-testid="desktop-nav-referral">Referral</Link>
+              <nav className="flex items-center space-x-4 xl:space-x-6 flex-1 justify-center">
+                <Link href="/" className="text-white hover:text-blue-200 transition-colors font-medium text-sm xl:text-base whitespace-nowrap">
+                  Home
+                </Link>
+
+                {/* Desktop Services Dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger className="text-white hover:text-blue-200 transition-colors font-medium text-sm xl:text-base whitespace-nowrap flex items-center gap-1 outline-none">
+                    Services
+                    <ChevronDown className="h-3 w-3" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56">
+                    {services.map((service) => (
+                      <DropdownMenuItem key={service.href} asChild>
+                        <Link href={service.href} className="cursor-pointer">
+                          {service.name}
+                        </Link>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                {/* Desktop Service Areas Dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger className="text-white hover:text-blue-200 transition-colors font-medium text-sm xl:text-base whitespace-nowrap flex items-center gap-1 outline-none">
+                    Service Areas
+                    <ChevronDown className="h-3 w-3" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56">
+                    {serviceAreas.map((area) => (
+                      <DropdownMenuItem key={area.href} asChild>
+                        <Link href={area.href} className="cursor-pointer">
+                          {area.name}
+                        </Link>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                <Link href="/family-discount" className="text-white hover:text-blue-200 transition-colors font-medium text-sm xl:text-base whitespace-nowrap" data-testid="desktop-nav-family-discount">
+                  Family Discount
+                </Link>
+                <Link href="/blog" className="text-white hover:text-blue-200 transition-colors font-medium text-sm xl:text-base whitespace-nowrap" data-testid="desktop-nav-blog">
+                  Blog
+                </Link>
+                <Link href="/contact" className="text-white hover:text-blue-200 transition-colors font-medium text-sm xl:text-base whitespace-nowrap" data-testid="desktop-nav-contact">
+                  Contact
+                </Link>
+                <Link href="/referral" className="text-white hover:text-blue-200 transition-colors font-medium text-sm xl:text-base whitespace-nowrap" data-testid="desktop-nav-referral">
+                  Referral
+                </Link>
               </nav>
 
               {/* Desktop CTA Buttons */}

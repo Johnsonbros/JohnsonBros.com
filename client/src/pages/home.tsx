@@ -3,7 +3,6 @@ import ExpressBooking from "@/components/ExpressBooking";
 import ServicesSection from "@/components/ServicesSection";
 import TruckSection from "@/components/TruckSection";
 import GoogleReviewsSection from "@/components/GoogleReviewsSection";
-import { SocialProofSection } from "@/components/SocialProofSection";
 import Footer from "@/components/Footer";
 import BookingModalEnhanced from "@/components/BookingModalEnhanced";
 import { useState, useEffect } from "react";
@@ -15,6 +14,9 @@ import VideoTestimonials from "@/components/VideoTestimonials";
 import { Helmet } from "react-helmet-async";
 import { LocalBusinessSchema, FAQSchema, ReviewSchema, BreadcrumbSchema } from "@/components/schema-markup";
 import { commonFAQs, generateSocialMetaTags, staticPageMetadata } from "@/lib/seoMetadata";
+import { Shield, Star, Award, ArrowRight, Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Link } from "wouter";
 
 export default function Home() {
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
@@ -132,37 +134,182 @@ export default function Home() {
         <Header onBookService={() => openBookingModal()} />
         
         <main role="main">
+          {/* Express Booking Section */}
           <section aria-label="Express Booking">
             <ExpressBooking onBookService={() => openBookingModal()} />
           </section>
           
+          {/* Services Section */}
           <section aria-label="Our Services" id="services">
             <ServicesSection onBookService={openBookingModal} />
           </section>
           
-          <section aria-label="Why Choose Us">
-            <WhyTrustUs />
+          {/* Consolidated Trust & Reviews Section */}
+          <section aria-label="Why Choose Us & Reviews" className="bg-white py-16">
+            <div className="container mx-auto px-4">
+              {/* Trust Badges */}
+              <div className="text-center mb-12">
+                <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                  Why Choose Johnson Bros. Plumbing?
+                </h2>
+                <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                  Family-owned and trusted by thousands of homeowners across Massachusetts since 1997
+                </p>
+              </div>
+
+              <div className="grid md:grid-cols-3 gap-8 mb-16">
+                <div className="text-center p-6 bg-gradient-to-br from-blue-50 to-white rounded-xl border border-blue-100 hover:shadow-lg transition-shadow">
+                  <div className="w-16 h-16 bg-johnson-blue rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Shield className="h-8 w-8 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">Licensed & Insured</h3>
+                  <p className="text-gray-600">
+                    MA License #PC1673. Fully insured and bonded for your protection and peace of mind.
+                  </p>
+                </div>
+
+                <div className="text-center p-6 bg-gradient-to-br from-yellow-50 to-white rounded-xl border border-yellow-100 hover:shadow-lg transition-shadow">
+                  <div className="w-16 h-16 bg-johnson-orange rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Star className="h-8 w-8 text-white fill-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">4.9/5 Google Rating</h3>
+                  <p className="text-gray-600">
+                    Over 200+ five-star reviews from satisfied customers across the South Shore.
+                  </p>
+                </div>
+
+                <div className="text-center p-6 bg-gradient-to-br from-green-50 to-white rounded-xl border border-green-100 hover:shadow-lg transition-shadow">
+                  <div className="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Award className="h-8 w-8 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">25+ Years Experience</h3>
+                  <p className="text-gray-600">
+                    Three generations of master plumbers serving families throughout Massachusetts.
+                  </p>
+                </div>
+              </div>
+
+              {/* Google Reviews Embed */}
+              <div className="max-w-4xl mx-auto">
+                <GoogleReviewsSection />
+              </div>
+            </div>
+          </section>
+
+          {/* The Family Discount Promo */}
+          <section aria-label="Family Discount Membership" className="bg-gradient-to-br from-johnson-blue to-blue-800 py-16">
+            <div className="container mx-auto px-4">
+              <div className="max-w-4xl mx-auto">
+                <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+                  <div className="md:flex items-center">
+                    <div className="md:w-1/2 p-8 md:p-12">
+                      <div className="flex items-center gap-2 mb-4">
+                        <Users className="h-8 w-8 text-johnson-orange" />
+                        <span className="text-sm font-semibold text-johnson-orange uppercase tracking-wide">
+                          Member Benefits
+                        </span>
+                      </div>
+                      <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                        Join The Family Discount
+                      </h2>
+                      <p className="text-lg text-gray-600 mb-6">
+                        Get priority scheduling, no service call fees, 10% off all jobs, and exclusive member perks for just $99/year.
+                      </p>
+                      <ul className="space-y-3 mb-8">
+                        <li className="flex items-start gap-3">
+                          <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          </div>
+                          <span className="text-gray-700">Priority scheduling - get first choice of time slots</span>
+                        </li>
+                        <li className="flex items-start gap-3">
+                          <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          </div>
+                          <span className="text-gray-700">No $99 service call fees - save on every visit</span>
+                        </li>
+                        <li className="flex items-start gap-3">
+                          <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          </div>
+                          <span className="text-gray-700">10% discount on all plumbing work</span>
+                        </li>
+                        <li className="flex items-start gap-3">
+                          <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          </div>
+                          <span className="text-gray-700">Give away 1 referral gift per year</span>
+                        </li>
+                      </ul>
+                      <Link href="/family-discount">
+                        <Button 
+                          size="lg" 
+                          className="bg-gradient-to-r from-johnson-orange to-orange-500 hover:from-orange-500 hover:to-johnson-orange text-white font-bold shadow-lg hover:shadow-xl transition-all duration-300 group"
+                          data-testid="button-family-discount-cta"
+                        >
+                          Learn More About The Family Discount
+                          <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                        </Button>
+                      </Link>
+                    </div>
+                    <div className="md:w-1/2 bg-gradient-to-br from-blue-600 to-blue-800 p-8 md:p-12 text-white">
+                      <div className="text-center">
+                        <div className="inline-block bg-white/10 backdrop-blur-sm rounded-2xl p-8 mb-6">
+                          <div className="text-6xl font-black mb-2">$99</div>
+                          <div className="text-xl font-semibold opacity-90">/year</div>
+                        </div>
+                        <p className="text-lg opacity-90 mb-6">
+                          Join hundreds of families saving money on plumbing services
+                        </p>
+                        <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
+                          <p className="text-sm font-medium">
+                            Membership pays for itself after just one service call!
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Combined Customer Success Stories - Projects & Testimonials */}
+          <section aria-label="Customer Success Stories" className="bg-gray-50 py-16">
+            <div className="container mx-auto px-4">
+              <div className="text-center mb-12">
+                <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                  Customer Success Stories
+                </h2>
+                <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                  See what our customers are saying and view our recent work
+                </p>
+              </div>
+
+              {/* Video Testimonials */}
+              <div className="mb-16">
+                <VideoTestimonials />
+              </div>
+
+              {/* Featured Projects */}
+              <div>
+                <FeaturedProjects />
+              </div>
+            </div>
           </section>
           
-          <section aria-label="Featured Projects">
-            <FeaturedProjects />
-          </section>
-          
-          <section aria-label="Customer Testimonials">
-            <VideoTestimonials />
-          </section>
-          
+          {/* Truck Section */}
           <aside aria-label="Service Fleet">
             <TruckSection />
           </aside>
-          
-          <section aria-label="Social Proof">
-            <SocialProofSection onBookService={() => openBookingModal()} />
-          </section>
-          
-          <section aria-label="Google Reviews">
-            <GoogleReviewsSection />
-          </section>
         </main>
         
         <Footer onBookService={() => openBookingModal()} />

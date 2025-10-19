@@ -59,8 +59,8 @@ import SewerLineServiceLanding from "@/pages/service/sewer-line-landing";
 // AI Booking Page
 import AIBooking from "@/pages/ai-booking";
 
-// Maintenance Plans & Member Portal Pages
-import MaintenancePlans from "@/pages/maintenance-plans";
+// The Family Discount & Member Portal Pages
+import FamilyDiscount from "@/pages/family-discount";
 import MyPlan from "@/pages/my-plan";
 
 function Router() {
@@ -72,7 +72,7 @@ function Router() {
       <Route path="/ai-booking" component={AIBooking} />
       <Route path="/contact" component={Contact} />
       <Route path="/referral" component={Referral} />
-      <Route path="/maintenance-plans" component={MaintenancePlans} />
+      <Route path="/family-discount" component={FamilyDiscount} />
       <Route path="/my-plan" component={MyPlan} />
       <Route path="/webhooks" component={Webhooks} />
       <Route path="/check-ins" component={CheckIns} />
