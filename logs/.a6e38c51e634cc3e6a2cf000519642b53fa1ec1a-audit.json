@@ -14,6 +14,31 @@
             "date": 1760838149341,
             "name": "/home/runner/workspace/logs/application-2025-10-19.log",
             "hash": "a09fe291becd06405a117e00ba53579202a6131070f1f669520a976e90ee141b"
+        },
+        {
+            "date": 1760935409936,
+            "name": "/home/runner/workspace/logs/application-2025-10-20.log",
+            "hash": "b3e69766de8b89286db5b13b0c6019bb69a3683b9ed31906ccef97d88161fb6a"
+        },
+        {
+            "date": 1761140534688,
+            "name": "/home/runner/workspace/logs/application-2025-10-22.log",
+            "hash": "5ed9f0520886b2e584d1be1a67ed9e66404fb90d25950fd9e662775e6d7b4ddd"
+        },
+        {
+            "date": 1761224350636,
+            "name": "/home/runner/workspace/logs/application-2025-10-23.log",
+            "hash": "33db50529176eba3784558d42473f882af5be9164eca7ce120b6e2bbd6d6f0dc"
+        },
+        {
+            "date": 1761329547446,
+            "name": "/home/runner/workspace/logs/application-2025-10-24.log",
+            "hash": "458f0a40e7585ffe66101ad546c3bd8e6db3edf1bc17e1db3a798e54d5a43add"
+        },
+        {
+            "date": 1761647547043,
+            "name": "/home/runner/workspace/logs/application-2025-10-28.log",
+            "hash": "c7cddc43aef1f85b592b8572741c51d46e79d9cbb062afa4e051884cac2967f8"
         }
     ],
     "hashType": "sha256"
