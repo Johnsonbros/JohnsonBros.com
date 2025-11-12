@@ -48,6 +48,7 @@ import HinghamPlumbing from "@/pages/service-areas/hingham";
 import EmergencyLandingPage from "@/pages/landing/emergency";
 import DrainCleaningLandingPage from "@/pages/landing/drain-cleaning";
 import WinterPrepLandingPage from "@/pages/landing/winter-prep";
+import GablesCondoLanding from "@/pages/landing/gables-condo";
 
 // Service Landing Pages
 import DrainCleaningServiceLanding from "@/pages/service/drain-cleaning-landing";
@@ -102,6 +103,7 @@ function Router() {
       <Route path="/landing/emergency" component={EmergencyLandingPage} />
       <Route path="/landing/drain-cleaning" component={DrainCleaningLandingPage} />
       <Route path="/landing/winter-prep" component={WinterPrepLandingPage} />
+      <Route path="/landing/gables-condo" component={GablesCondoLanding} />
       
       {/* Service Landing Pages */}
       <Route path="/service/drain-cleaning-landing" component={DrainCleaningServiceLanding} />

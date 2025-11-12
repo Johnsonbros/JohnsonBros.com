@@ -7,7 +7,8 @@ import {
   customerAddresses, serviceAreas, heatMapCache, syncStatus,
   insertBlogPostSchema, insertKeywordSchema, insertPostKeywordSchema,
   type BlogPost, type Keyword, type PostKeyword, type KeywordRanking,
-  checkIns, jobLocations
+  checkIns, jobLocations,
+  insertLeadSchema
 } from "@shared/schema";
 import { z } from "zod";
 import { db } from "./db";
@@ -644,6 +645,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // ========== END BLOG ROUTES ==========
+
+  // ========== LEAD CAPTURE ROUTES ==========
+  
+  // Submit lead from landing page
+  app.post("/api/lead", publicWriteLimiter, async (req, res) => {
+    try {
+      // Validate the lead data
+      const leadData = insertLeadSchema.parse(req.body);
+      
+      // Create the lead
+      const lead = await storage.createLead(leadData);
+      
+      Logger.info('Lead captured', {
+        leadId: lead.id,
+        landingPage: lead.landingPage,
+        campaignName: lead.campaignName,
+        phone: lead.phone.substring(0, 3) + '***' // Partial phone for logging
+      });
+      
+      res.status(201).json({ 
+        success: true, 
+        leadId: lead.id,
+        message: 'Thank you! We will contact you shortly.'
+      });
+    } catch (error) {
+      logError("Error creating lead:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          error: "Invalid form data", 
+          details: error.errors 
+        });
+      }
+      res.status(500).json({ error: "Failed to submit form. Please try again." });
+    }
+  });
+  
+  // ========== END LEAD CAPTURE ROUTES ==========
 
   // Get available time slots for a specific date
   app.get("/api/v1/timeslots/:date", publicReadLimiter, async (req, res) => {

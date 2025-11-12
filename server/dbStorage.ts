@@ -9,6 +9,7 @@ import {
   type AvailableTimeSlot,
   type Referral, type InsertReferral,
   type CustomerCredit, type InsertCustomerCredit,
+  type Lead, type InsertLead,
   type MaintenancePlan, type InsertMaintenancePlan,
   type MemberSubscription, type InsertMemberSubscription,
   type MemberBenefit, type InsertMemberBenefit,
@@ -16,7 +17,7 @@ import {
   type UpsellOffer, type InsertUpsellOffer,
   type RevenueMetric, type InsertRevenueMetric,
   customers, appointments, blogPosts, keywords, postKeywords, keywordRankings, blogAnalytics,
-  referrals, customerCredits, maintenancePlans, memberSubscriptions, memberBenefits,
+  referrals, customerCredits, leads, maintenancePlans, memberSubscriptions, memberBenefits,
   emailTemplates, upsellOffers, revenueMetrics
 } from "@shared/schema";
 import { db } from "./db";
@@ -481,6 +482,37 @@ export class DatabaseStorage implements IStorage {
       .where(gte(revenueMetrics.date, thirtyDaysAgo))
       .orderBy(desc(revenueMetrics.date))
       .limit(30);
+  }
+
+  // Lead methods
+  async createLead(lead: InsertLead): Promise<Lead> {
+    const [newLead] = await db.insert(leads).values(lead).returning();
+    return newLead;
+  }
+
+  async getLead(id: number): Promise<Lead | undefined> {
+    const [lead] = await db.select().from(leads).where(eq(leads.id, id)).limit(1);
+    return lead;
+  }
+
+  async getLeadsByLandingPage(landingPage: string): Promise<Lead[]> {
+    return await db.select().from(leads)
+      .where(eq(leads.landingPage, landingPage))
+      .orderBy(desc(leads.createdAt));
+  }
+
+  async getLeadsByCampaign(campaignName: string): Promise<Lead[]> {
+    return await db.select().from(leads)
+      .where(eq(leads.campaignName, campaignName))
+      .orderBy(desc(leads.createdAt));
+  }
+
+  async updateLeadStatus(id: number, status: string): Promise<Lead | undefined> {
+    const [updatedLead] = await db.update(leads)
+      .set({ status })
+      .where(eq(leads.id, id))
+      .returning();
+    return updatedLead;
   }
 }
 
