@@ -1,0 +1,153 @@
+Goal
+
+Create a highly converting landing page specifically designed for Johnson Bros. Plumbing & Drain Cleaning. The page should drive visitors in our target markets (Quincy, Greater Boston, and South Shore condo communities) to schedule service or call us immediately.
+
+🖼 Brand & Tone Guidelines
+
+Color palette:
+
+Primary: Deep Blue and Bright Orange (our main brand colors).
+
+Secondary: White and Silver for contrast and modern polish.
+
+Accent: Red only sparingly for urgency (e.g., emergency call-outs or buttons).
+
+Visual style:
+
+Clean and professional, with subtle “cartoon‑realism” touches in illustrative elements.
+
+Use high‑quality images that show happy families, friendly plumbers, vans, and modern equipment.
+
+Use icons for services (drain cleaning, water heater repair, leak detection).
+
+All imagery must reflect diversity (e.g., families of different backgrounds), and be consistent with Johnson Bros.’ customer‑centric brand.
+
+Messaging tone:
+
+Trustworthy, family‑oriented, and down‑to‑earth.
+
+Highlight that we are family‑owned, fully licensed & insured, and serve the community “There when it matters most.”
+
+Emphasize professionalism, reliability, and understanding of unique customer needs.
+
+Typography:
+
+Use modern, easy‑to‑read fonts (e.g., a bold sans-serif for headlines, a friendly serif or sans-serif for body text).
+
+Ensure text contrasts well with backgrounds for accessibility.
+
+🏗 Page Structure & Content
+
+Above the Fold (Hero Section)
+
+Striking headline: “There When It Matters Most – Trusted Plumbing & Drain Experts”.
+
+Brief subheading: “Johnson Bros. Plumbing & Drain Cleaning has you covered 24/7 in Quincy, Greater Boston & South Shore.”
+
+CTA buttons:
+
+Primary: “Schedule Service Now” (linked to a simple booking form).
+
+Secondary: “Call 617‑479‑9911” (a tel: link visible on mobile).
+
+Supporting image or background video: a smiling technician shaking hands with a homeowner outside a condo building.
+
+Why Choose Johnson Bros.
+
+Use a three‑column layout with icons:
+
+Fast & Reliable – Describe rapid response times.
+
+Family‑Owned & Local – Emphasize community roots and personalized service.
+
+Top‑Quality Workmanship – Highlight licensed techs and satisfaction guarantees.
+
+Add a testimonial slider beneath these to showcase 5‑star reviews from actual customers (real quotes, first names and towns).
+
+Our Services
+
+Summarize core services: Drain Cleaning, Water Heater Repair/Installation, Leak Detection & Repair, Plumbing for Condo Complexes.
+
+Use icons or images for each, with brief descriptions and a “Learn More” link (scrolls down or triggers a modal with details).
+
+Special Offer for Condo Communities
+
+Section tailored to homeowners/HOA managers: “Residents of Gables Condominium Trust, Village Drive, and Leisurewoods get 10% off any service when you book this month.”
+
+Include a small form to collect unit number, phone, and email; integrate with Housecall Pro via a POST endpoint (e.g., /api/lead) so submissions are captured and the office is notified instantly.
+
+About Us
+
+Short company history: mention that Nate and Nick Johnson co‑own the business; family of plumbers for two generations; core values of integrity, innovation, and excellence.
+
+Include a photo of the founders or team in branded attire (dark blue shirts, orange accents).
+
+Customer Reviews & Social Proof
+
+Star rating section showing aggregate score (e.g., 4.9/5).
+
+Pull 3–5 specific reviews with names and city/complex for authenticity.
+
+Trust badges: Google Guaranteed, HomeAdvisor Seal, BBB Accreditation.
+
+Call‑to‑Action & Contact
+
+Reiterate the emergency phone number and booking CTA.
+
+Show business hours (“24/7 Emergency Service”) and service areas (Quincy, Greater Boston, South Shore).
+
+Include address, social media icons, and a small map embed for credibility.
+
+Footer
+
+Links to Privacy Policy, Terms of Service, and main site navigation.
+
+“Proudly Serving Our Community since 2010” tagline.
+
+🔧 Technical & UX Requirements
+
+Responsive design: The page must look polished on desktop, tablet, and mobile. Use a mobile‑first approach.
+
+Accessibility: Alt text for all images, high contrast, logical heading structure, and keyboard navigation support.
+
+Performance: Optimize images (lazy load), minimize scripts, and ensure <3s load time on 4G.
+
+SEO:
+
+Title tags & meta descriptions containing keywords like “plumber near me,” “drain cleaning in Quincy,” “Johnson Bros. Plumbing.”
+
+Use schema markup for Local Business (Plumber).
+
+H1–H3 hierarchy reflecting page sections.
+
+Analytics & Tracking:
+
+Integrate Google Tag Manager & Facebook Pixel.
+
+Fire events on CTA clicks and form submissions.
+
+Submission Form:
+
+Should send data via secure HTTPS to /api/lead (a stub for Housecall Pro or CRM integration).
+
+Validate required fields client‑side before submission.
+
+Code & Stack:
+
+Prefer vanilla HTML, CSS (with a utility framework like Tailwind or CSS Grid for responsiveness), and vanilla JS or a lightweight front‑end framework (React or Next.js if comfortable).
+
+Use semantic HTML.
+
+Organize code into clear sections (header, hero, services, testimonials, etc.) with comments explaining each block.
+
+📊 Success Metrics
+
+The page should be structured to maximize the following metrics:
+
+Click‑through rate on the “Schedule Service Now” or “Call 617‑479‑9911” CTA.
+
+Form conversion rate for condo community leads.
+
+Time on page (a sign visitors are engaging with content).
+
+Bounce rate should be minimized through clear messaging and intuitive navigation.

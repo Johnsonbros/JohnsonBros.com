@@ -8,7 +8,8 @@ import {
   type BlogAnalytics, type InsertBlogAnalytics,
   type AvailableTimeSlot,
   type Referral, type InsertReferral,
-  type CustomerCredit, type InsertCustomerCredit
+  type CustomerCredit, type InsertCustomerCredit,
+  type Lead, type InsertLead
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -82,6 +83,13 @@ export interface IStorage {
   // Member Benefits methods
   recordMemberBenefit(benefit: any): Promise<any>;
   getMemberBenefits(subscriptionId: number): Promise<any[]>;
+  
+  // Lead methods
+  createLead(lead: InsertLead): Promise<Lead>;
+  getLead(id: number): Promise<Lead | undefined>;
+  getLeadsByLandingPage(landingPage: string): Promise<Lead[]>;
+  getLeadsByCampaign(campaignName: string): Promise<Lead[]>;
+  updateLeadStatus(id: number, status: string): Promise<Lead | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -95,6 +103,7 @@ export class MemStorage implements IStorage {
   private timeSlots: Map<string, AvailableTimeSlot>;
   private referrals: Map<number, Referral>;
   private customerCredits: Map<number, CustomerCredit>;
+  private leads: Map<number, Lead>;
   private nextBlogId: number;
   private nextKeywordId: number;
   private nextPostKeywordId: number;
@@ -102,6 +111,7 @@ export class MemStorage implements IStorage {
   private nextAnalyticsId: number;
   private nextReferralId: number;
   private nextCreditId: number;
+  private nextLeadId: number;
 
   constructor() {
     this.customers = new Map();
@@ -114,6 +124,7 @@ export class MemStorage implements IStorage {
     this.timeSlots = new Map();
     this.referrals = new Map();
     this.customerCredits = new Map();
+    this.leads = new Map();
     this.nextBlogId = 1;
     this.nextKeywordId = 1;
     this.nextPostKeywordId = 1;
@@ -121,6 +132,7 @@ export class MemStorage implements IStorage {
     this.nextAnalyticsId = 1;
     this.nextReferralId = 1;
     this.nextCreditId = 1;
+    this.nextLeadId = 1;
   }
 
   private initializeDefaultData() {
@@ -715,6 +727,62 @@ export class MemStorage implements IStorage {
   async getMemberBenefits(subscriptionId: number): Promise<any[]> {
     // MemStorage doesn't implement benefits - use dbStorage
     return [];
+  }
+  
+  // Lead methods
+  async createLead(lead: InsertLead): Promise<Lead> {
+    const id = this.nextLeadId++;
+    const newLead: Lead = {
+      id,
+      name: lead.name,
+      phone: lead.phone,
+      email: lead.email ?? null,
+      unitNumber: lead.unitNumber ?? null,
+      serviceType: lead.serviceType ?? null,
+      message: lead.message ?? null,
+      campaignSource: lead.campaignSource ?? null,
+      campaignMedium: lead.campaignMedium ?? null,
+      campaignName: lead.campaignName ?? null,
+      landingPage: lead.landingPage ?? null,
+      gclid: lead.gclid ?? null,
+      utmSource: lead.utmSource ?? null,
+      utmMedium: lead.utmMedium ?? null,
+      utmCampaign: lead.utmCampaign ?? null,
+      utmTerm: lead.utmTerm ?? null,
+      utmContent: lead.utmContent ?? null,
+      referrer: lead.referrer ?? null,
+      status: lead.status ?? 'new',
+      convertedCustomerId: null,
+      createdAt: new Date(),
+    };
+    this.leads.set(id, newLead);
+    return newLead;
+  }
+
+  async getLead(id: number): Promise<Lead | undefined> {
+    return this.leads.get(id);
+  }
+
+  async getLeadsByLandingPage(landingPage: string): Promise<Lead[]> {
+    return Array.from(this.leads.values()).filter(
+      lead => lead.landingPage === landingPage
+    );
+  }
+
+  async getLeadsByCampaign(campaignName: string): Promise<Lead[]> {
+    return Array.from(this.leads.values()).filter(
+      lead => lead.campaignName === campaignName
+    );
+  }
+
+  async updateLeadStatus(id: number, status: string): Promise<Lead | undefined> {
+    const lead = this.leads.get(id);
+    if (lead) {
+      lead.status = status;
+      this.leads.set(id, lead);
+      return lead;
+    }
+    return undefined;
   }
 }
 

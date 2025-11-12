@@ -124,6 +124,38 @@ export const attributionData = pgTable('attribution_data', {
   campaignIdx: index('attribution_campaign_idx').on(table.campaign),
 }));
 
+// Leads table - stores landing page form submissions
+export const leads = pgTable('leads', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull(),
+  phone: text('phone').notNull(),
+  email: text('email'),
+  unitNumber: text('unit_number'),
+  serviceType: text('service_type'),
+  message: text('message'),
+  campaignSource: text('campaign_source'),
+  campaignMedium: text('campaign_medium'),
+  campaignName: text('campaign_name'),
+  landingPage: text('landing_page'),
+  gclid: text('gclid'),
+  utmSource: text('utm_source'),
+  utmMedium: text('utm_medium'),
+  utmCampaign: text('utm_campaign'),
+  utmTerm: text('utm_term'),
+  utmContent: text('utm_content'),
+  referrer: text('referrer'),
+  status: text('status').default('new').notNull(), // new, contacted, qualified, converted, closed
+  convertedCustomerId: integer('converted_customer_id').references(() => customers.id),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  phoneIdx: index('lead_phone_idx').on(table.phone),
+  emailIdx: index('lead_email_idx').on(table.email),
+  statusIdx: index('lead_status_idx').on(table.status),
+  campaignIdx: index('lead_campaign_idx').on(table.campaignName),
+  landingPageIdx: index('lead_landing_page_idx').on(table.landingPage),
+  createdAtIdx: index('lead_created_at_idx').on(table.createdAt),
+}));
+
 // Relations
 export const customerAddressesRelations = relations(customerAddresses, ({ one }) => ({
   serviceArea: one(serviceAreas, {
@@ -170,6 +202,16 @@ export const insertAttributionDataSchema = createInsertSchema(attributionData).o
   createdAt: true,
 });
 
+export const insertLeadSchema = createInsertSchema(leads).omit({
+  id: true,
+  createdAt: true,
+  convertedCustomerId: true,
+}).extend({
+  name: z.string().min(2, 'Name must be at least 2 characters'),
+  phone: z.string().min(10, 'Phone number is required'),
+  email: z.string().email('Valid email is required').optional(),
+});
+
 
 // Types
 export type CustomerAddress = typeof customerAddresses.$inferSelect;
@@ -195,6 +237,9 @@ export type InsertMicroConversion = z.infer<typeof insertMicroConversionSchema>;
 
 export type AttributionData = typeof attributionData.$inferSelect;
 export type InsertAttributionData = z.infer<typeof insertAttributionDataSchema>;
+
+export type Lead = typeof leads.$inferSelect;
+export type InsertLead = z.infer<typeof insertLeadSchema>;
 
 // Customer table for booking system
 export const customers = pgTable('customers', {
