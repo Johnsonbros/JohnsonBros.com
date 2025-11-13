@@ -82,42 +82,6 @@ export default function Header({ onBookService }: HeaderProps) {
 
   return (
     <>
-      {/* Trust Bar - Top of page */}
-      <div className="bg-gradient-to-r from-gray-900 to-gray-800 text-white border-b border-gray-700">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-wrap items-center justify-center md:justify-between py-2 text-xs sm:text-sm">
-            {/* Trust indicators */}
-            <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 md:gap-6 w-full md:w-auto">
-              {/* License */}
-              <div className="flex items-center gap-1 hover:text-yellow-400 transition-colors">
-                <Shield className="h-3 w-3 sm:h-4 sm:w-4" />
-                <span className="font-medium">Licensed & Insured</span>
-                <span className="hidden sm:inline text-gray-300">| MA #PC1673</span>
-              </div>
-              
-              {/* Rating */}
-              <div className="flex items-center gap-1 hover:text-yellow-400 transition-colors">
-                <Star className="h-3 w-3 sm:h-4 sm:w-4 fill-current text-yellow-400" />
-                <span className="font-medium">4.9/5 Google Rating</span>
-                <span className="hidden sm:inline text-gray-300">(200+ Reviews)</span>
-              </div>
-              
-              {/* Family Owned */}
-              <div className="flex items-center gap-1 hover:text-yellow-400 transition-colors">
-                <HomeIcon className="h-3 w-3 sm:h-4 sm:w-4" />
-                <span className="font-medium">Family Owned Since 1997</span>
-              </div>
-              
-              {/* Emergency Service - Hidden on mobile, shown on tablet+ */}
-              <a href="tel:6174799911" className="hidden md:flex items-center gap-1 hover:text-yellow-400 transition-colors group">
-                <Phone className="h-3 w-3 sm:h-4 sm:w-4 animate-pulse" />
-                <span className="font-medium group-hover:underline">24/7 Emergency: 617-479-9911</span>
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Dynamic Plumbing Banner - Thinner on Mobile */}
       <a 
         href="tel:6174799911"
