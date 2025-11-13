@@ -263,8 +263,7 @@ export default function Home() {
                     <div className="md:w-1/2 bg-gradient-to-br from-blue-600 to-blue-800 p-8 md:p-12 text-white">
                       <div className="text-center">
                         <div className="inline-block bg-white/10 backdrop-blur-sm rounded-2xl p-8 mb-6">
-                          <div className="text-6xl font-black mb-2">$99</div>
-                          <div className="text-xl font-semibold opacity-90">/year</div>
+                          <div className="text-6xl font-black">$99<span className="text-3xl opacity-90">/year</span></div>
                         </div>
                         <p className="text-lg opacity-90 mb-6">
                           Join hundreds of families saving money on plumbing services
