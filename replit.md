@@ -19,7 +19,7 @@ The frontend is built with React and TypeScript, utilizing Radix UI primitives a
 ### Homepage Layout (Streamlined)
 1. **Express Booking** - Dynamic booking with real-time capacity-based messaging
 2. **Services Section** - Overview of all plumbing services with quick booking
-3. **Why Choose Us & Reviews** - Consolidated trust section with badges (Licensed & Insured, 4.9/5 Rating, 25+ Years Experience) and embedded Google reviews
+3. **Why Choose Us & Reviews** - Consolidated trust section with badges (Licensed & Insured, 4.9/5 Rating, 15+ Years Experience) and embedded Google reviews
 4. **The Family Discount Promo** - Prominent CTA section highlighting $99/year membership benefits
 5. **Customer Success Stories** - Combined video testimonials and featured projects
 6. **Service Fleet** - Showcase of professional service vehicles

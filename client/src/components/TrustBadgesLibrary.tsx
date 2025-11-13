@@ -256,18 +256,18 @@ export const defaultTrustBadges: TrustBadgeData[] = [
   {
     id: 'experience',
     type: 'experience',
-    title: 'Family Owned Since 1997',
-    shortTitle: '27+ Years',
-    description: '27+ years serving Massachusetts families',
+    title: 'Family Owned Since 2008',
+    shortTitle: '15+ Years',
+    description: '15+ years serving Massachusetts families',
     details: [
-      'Established 1997',
-      'Three Generations of Plumbers',
+      'Established 2008',
+      'Family-Owned Business',
       'Over 10,000 Jobs Completed',
       'Local Community Focused'
     ],
     icon: <Home className="h-5 w-5" />,
     color: 'text-blue-600',
-    value: 'Since 1997',
+    value: 'Since 2008',
     showModal: true
   },
   {

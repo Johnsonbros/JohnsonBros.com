@@ -102,7 +102,7 @@ export default function GablesCondoLanding() {
         <title>Professional Plumbing Services for Gables Condominium Trust | Johnson Bros. Plumbing</title>
         <meta 
           name="description" 
-          content="Expert plumbing services for Gables Condominium Trust in Abington, MA. 10% off for all Gables residents. Licensed, insured, and family-owned since 1997. Call 617-479-9911 for same-day service." 
+          content="Expert plumbing services for Gables Condominium Trust in Abington, MA. 10% off for all Gables residents. Licensed, insured, and family-owned since 2008. Call 617-479-9911 for same-day service." 
         />
         <meta name="keywords" content="plumber Abington MA, Gables condo plumbing, emergency plumber South Shore, drain cleaning Abington, water heater repair" />
         
@@ -203,7 +203,7 @@ export default function GablesCondoLanding() {
                   <span>•</span>
                   <span>Licensed & Insured</span>
                   <span>•</span>
-                  <span>Family-Owned Since 1997</span>
+                  <span>Family-Owned Since 2008</span>
                 </div>
               </div>
 
@@ -388,7 +388,7 @@ export default function GablesCondoLanding() {
                 </div>
                 <h3 className="text-xl font-bold mb-3 text-gray-900 dark:text-white">Family-Owned & Local</h3>
                 <p className="text-gray-600 dark:text-gray-300">
-                  Serving the South Shore community since 1997. We treat every home like our own and build lasting relationships with our customers.
+                  Serving the South Shore community since 2008. We treat every home like our own and build lasting relationships with our customers.
                 </p>
               </div>
 
@@ -489,7 +489,7 @@ export default function GablesCondoLanding() {
             </h2>
             <div className="prose prose-lg dark:prose-invert mx-auto text-gray-700 dark:text-gray-300">
               <p className="text-lg leading-relaxed mb-4">
-                Johnson Bros. Plumbing & Drain Cleaning is a family-owned and operated business proudly serving Abington, Quincy, and the Greater South Shore since 1997. Founded by brothers Nate and Nick Johnson, our company continues a family tradition of plumbing excellence that spans two generations.
+                Johnson Bros. Plumbing & Drain Cleaning is a family-owned and operated business proudly serving Abington, Quincy, and the Greater South Shore since 2008. Founded by brothers Nate and Nick Johnson, our company delivers plumbing excellence you can trust.
               </p>
               <p className="text-lg leading-relaxed mb-4">
                 We built our reputation on three core values: <strong>integrity</strong>, <strong>innovation</strong>, and <strong>excellence</strong>. Every member of our team shares these values and brings them to every job, whether it's a routine drain cleaning or an emergency repair at 2 AM.
@@ -611,7 +611,7 @@ export default function GablesCondoLanding() {
             </a>
 
             <div className="border-t border-blue-700 pt-8 mt-8">
-              <p className="text-blue-200 mb-2">Proudly Serving Our Community Since 1997</p>
+              <p className="text-blue-200 mb-2">Proudly Serving Our Community Since 2008</p>
               <p className="text-sm text-blue-300">
                 Service Areas: Quincy • Abington • Braintree • Weymouth • Plymouth • Marshfield • Hingham • Greater South Shore
               </p>

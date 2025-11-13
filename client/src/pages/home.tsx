@@ -151,7 +151,7 @@ export default function Home() {
                   Why Choose Johnson Bros. Plumbing?
                 </h2>
                 <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                  Family-owned and trusted by thousands of homeowners across Massachusetts since 1997
+                  Family-owned and trusted by thousands of homeowners across Massachusetts since 2008
                 </p>
               </div>
 

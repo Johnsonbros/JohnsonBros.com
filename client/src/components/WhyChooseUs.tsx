@@ -179,8 +179,8 @@ export function WhyChooseUs({
   const reasons = [
     {
       icon: <Clock className="h-6 w-6" />,
-      title: "27+ Years Experience",
-      description: "Family-owned since 1997, serving Massachusetts families with pride"
+      title: "15+ Years Experience",
+      description: "Family-owned since 2008, serving Massachusetts families with pride"
     },
     {
       icon: <Shield className="h-6 w-6" />,

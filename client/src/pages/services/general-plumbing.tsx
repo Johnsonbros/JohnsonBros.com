@@ -105,7 +105,7 @@ export default function GeneralPlumbing() {
                 
                 <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
                   {[
-                    { icon: Shield, title: "Licensed & Insured", desc: "Fully licensed Master Plumbers serving South Shore since 1997" },
+                    { icon: Shield, title: "Licensed & Insured", desc: "Fully licensed Master Plumbers serving South Shore since 2008" },
                     { icon: Clock, title: "24/7 Emergency Service", desc: "Available when you need us most, day or night" },
                     { icon: Star, title: "Highly Rated", desc: "500+ five-star reviews from satisfied customers" },
                     { icon: CheckCircle, title: "Guaranteed Work", desc: "100% satisfaction guarantee on all services" }
@@ -162,7 +162,7 @@ export default function GeneralPlumbing() {
                     },
                     {
                       q: "Are your plumbers licensed and insured?",
-                      a: "Absolutely. All our plumbers are fully licensed Master Plumbers and our company is fully insured. We've been serving the South Shore since 1997 with professional, reliable service."
+                      a: "Absolutely. All our plumbers are fully licensed Master Plumbers and our company is fully insured. We've been serving the South Shore since 2008 with professional, reliable service."
                     },
                     {
                       q: "What areas do you serve?",

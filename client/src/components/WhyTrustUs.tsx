@@ -105,8 +105,8 @@ export function WhyTrustUs() {
     },
     {
       icon: <TrendingUp className="h-6 w-6" />,
-      title: "Family Legacy Since 1997",
-      description: "Three generations of plumbing excellence"
+      title: "Family Legacy Since 2008",
+      description: "Trusted plumbing excellence for over 15 years"
     }
   ];
 

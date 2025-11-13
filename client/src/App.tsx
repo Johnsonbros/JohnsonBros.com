@@ -178,7 +178,7 @@ function App() {
             <li><strong>Service Areas:</strong> Quincy, Abington, MA and surrounding South Shore areas</li>
             <li><strong>Emergency Service:</strong> 24/7 available</li>
             <li><strong>Licensed & Insured:</strong> Yes</li>
-            <li><strong>Established:</strong> Family-owned since 1997</li>
+            <li><strong>Established:</strong> Family-owned since 2008</li>
           </ul>
           
           <h2>Services Offered</h2>

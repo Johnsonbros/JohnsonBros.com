@@ -68,7 +68,7 @@ export const serviceMetadata: Record<string, SEOMetadata> = {
 export const serviceAreaMetadata: Record<string, SEOMetadata> = {
   'quincy': {
     title: 'Plumber in Quincy, MA | Local Plumbing Services | Johnson Bros.',
-    description: 'Trusted local plumber serving Quincy, MA. Emergency plumbing, drain cleaning, water heaters. Family-owned since 1997. Same-day service: 617-479-9911',
+    description: 'Trusted local plumber serving Quincy, MA. Emergency plumbing, drain cleaning, water heaters. Family-owned since 2008. Same-day service: 617-479-9911',
     keywords: ['plumber Quincy MA', 'Quincy plumbing', 'local plumber Quincy', 'emergency plumber Quincy', 'Quincy drain cleaning'],
     canonicalUrl: '/service-areas/quincy',
     type: 'website'
@@ -103,7 +103,7 @@ export const serviceAreaMetadata: Record<string, SEOMetadata> = {
   },
   'hingham': {
     title: 'Plumber in Hingham, MA | Premium Plumbing Services | Johnson Bros.',
-    description: 'Professional plumber serving Hingham, MA. Full-service plumbing, emergency repairs, drain cleaning. Family-owned since 1997. Call 617-479-9911',
+    description: 'Professional plumber serving Hingham, MA. Full-service plumbing, emergency repairs, drain cleaning. Family-owned since 2008. Call 617-479-9911',
     keywords: ['plumber Hingham MA', 'Hingham plumbing', 'emergency plumber Hingham', 'Hingham water heater', 'drain service Hingham'],
     canonicalUrl: '/service-areas/hingham',
     type: 'website'
@@ -139,7 +139,7 @@ export const landingPageMetadata: Record<string, SEOMetadata> = {
 export const staticPageMetadata: Record<string, SEOMetadata> = {
   'home': {
     title: 'Johnson Bros. Plumbing & Drain | Expert Plumbers in Quincy, MA',
-    description: 'Professional plumbing services in Quincy & South Shore MA. Emergency plumbing, drain cleaning, water heaters. Family-owned since 1997. Call 617-479-9911',
+    description: 'Professional plumbing services in Quincy & South Shore MA. Emergency plumbing, drain cleaning, water heaters. Family-owned since 2008. Call 617-479-9911',
     keywords: ['plumber Quincy MA', 'Johnson Bros Plumbing', 'emergency plumber', 'drain cleaning', 'water heater repair', 'South Shore plumber'],
     canonicalUrl: '/',
     type: 'website'
@@ -246,7 +246,7 @@ export const commonFAQs = [
   },
   {
     question: 'Are you licensed and insured?',
-    answer: 'Yes, Johnson Bros. Plumbing is fully licensed and insured in Massachusetts. We have been serving the community since 1997 with professional, reliable plumbing services.'
+    answer: 'Yes, Johnson Bros. Plumbing is fully licensed and insured in Massachusetts. We have been serving the community since 2008 with professional, reliable plumbing services.'
   },
   {
     question: 'Do you offer free estimates?',
