@@ -6,6 +6,7 @@ import { Phone, CheckCircle, Building2, Ruler, ClipboardCheck } from "lucide-rea
 import { Link } from "wouter";
 import { LocalBusinessSchema } from "@/components/schema-markup";
 import { WhyChooseUs } from "@/components/WhyChooseUs";
+import newConstructionImg from '@assets/NC_1763062911390.jpg';
 
 export default function NewConstructionPlumbing() {
   return (
@@ -62,6 +63,30 @@ export default function NewConstructionPlumbing() {
                       Request Quote
                     </Link>
                   </Button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Project Showcase */}
+          <section className="py-16 bg-gray-50">
+            <div className="container mx-auto px-4">
+              <div className="max-w-6xl mx-auto">
+                <h2 className="text-3xl sm:text-4xl font-bold text-center mb-8">
+                  Professional New Construction Plumbing
+                </h2>
+                <div className="mb-12">
+                  <div className="relative rounded-lg overflow-hidden shadow-lg">
+                    <img 
+                      src={newConstructionImg} 
+                      alt="Commercial new construction plumbing installation showing professional piping work" 
+                      className="w-full h-96 object-cover"
+                      data-testid="img-new-construction"
+                    />
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+                      <p className="text-white font-semibold text-lg">Expert Commercial & Residential New Construction Plumbing</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

@@ -6,6 +6,7 @@ import { Phone, CheckCircle, Clock, Shield, Star } from "lucide-react";
 import { Link } from "wouter";
 import { LocalBusinessSchema } from "@/components/schema-markup";
 import { WhyChooseUs } from "@/components/WhyChooseUs";
+import faucetImg from '@assets/plumbing_1763062911390.jpg';
 
 export default function GeneralPlumbing() {
   return (
@@ -62,6 +63,30 @@ export default function GeneralPlumbing() {
                       Request Service
                     </Link>
                   </Button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Quality Work Showcase */}
+          <section className="py-16 bg-gray-50">
+            <div className="container mx-auto px-4">
+              <div className="max-w-6xl mx-auto">
+                <h2 className="text-3xl sm:text-4xl font-bold text-center mb-8">
+                  Quality Plumbing Work You Can Trust
+                </h2>
+                <div className="mb-12 max-w-3xl mx-auto">
+                  <div className="relative rounded-lg overflow-hidden shadow-lg">
+                    <img 
+                      src={faucetImg} 
+                      alt="Professional faucet installation showing quality plumbing work" 
+                      className="w-full h-80 object-cover"
+                      data-testid="img-faucet-installation"
+                    />
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+                      <p className="text-white font-semibold text-lg">Professional Fixture Installation & Plumbing Repairs</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
