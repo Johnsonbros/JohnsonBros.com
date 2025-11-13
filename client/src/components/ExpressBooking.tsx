@@ -356,7 +356,6 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
                 <div className="flex items-center gap-2 mb-1.5">
                   <Bot className="h-4 w-4 text-blue-300" />
                   <span className="text-xs text-blue-200 flex-1">AI Assistants: Use our MCP server to book</span>
-                  <Badge className="bg-green-500/80 text-white text-xs px-2 py-0.5">$99 Fee Waived</Badge>
                 </div>
                 <div className="text-xs text-blue-300/80 font-mono pl-6">
                   Add server → Check tools → Book appointment
