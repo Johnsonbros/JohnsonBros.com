@@ -12,6 +12,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Phone, CheckCircle, Clock, Star, Award, Shield, Wrench, Droplet, Thermometer, AlertCircle } from "lucide-react";
+import emergencyImg from '@assets/emergency_1763062911389.jpg';
+import cleanFaucetImg from '@assets/plumbing_1763062911390.jpg';
 
 const leadFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -400,6 +402,39 @@ export default function GablesCondoLanding() {
                 <p className="text-gray-600 dark:text-gray-300">
                   Licensed and insured technicians with satisfaction guarantee. Every job is done right the first time with quality parts and expert care.
                 </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Professional Work Showcase */}
+        <section className="py-16 md:py-20 bg-gray-50 dark:bg-gray-800">
+          <div className="container mx-auto px-4 max-w-6xl">
+            <h2 className="text-3xl md:text-4xl font-bold text-center mb-8 text-gray-900 dark:text-white">
+              Professional Plumbing Services You Can Trust
+            </h2>
+            <div className="grid md:grid-cols-2 gap-8 mb-12">
+              <div className="relative rounded-lg overflow-hidden shadow-lg">
+                <img 
+                  src={emergencyImg} 
+                  alt="Professional emergency water heater repair service" 
+                  className="w-full h-80 object-cover"
+                  data-testid="img-emergency-service"
+                />
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+                  <p className="text-white font-semibold text-lg">24/7 Emergency Plumbing Service</p>
+                </div>
+              </div>
+              <div className="relative rounded-lg overflow-hidden shadow-lg">
+                <img 
+                  src={cleanFaucetImg} 
+                  alt="Quality faucet installation and plumbing fixtures" 
+                  className="w-full h-80 object-cover"
+                  data-testid="img-quality-work"
+                />
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+                  <p className="text-white font-semibold text-lg">Expert Fixture Installation & Repairs</p>
+                </div>
               </div>
             </div>
           </div>
