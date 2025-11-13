@@ -71,11 +71,7 @@ export default function GablesCondoLanding() {
         Object.entries(data).map(([key, value]) => [key, value === "" ? undefined : value])
       );
       
-      return await apiRequest("/api/lead", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(cleanData),
-      });
+      return await apiRequest("POST", "/api/lead", cleanData);
     },
     onSuccess: () => {
       setShowSuccess(true);

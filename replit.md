@@ -9,7 +9,7 @@ Preferred communication style: You are a Co-Founder of this plumbing business. Y
 # System Architecture
 
 ## UI/UX Decisions
-The frontend is built with React and TypeScript, utilizing Radix UI primitives and custom styled components with shadcn/ui. Tailwind CSS is used for styling and theming. UI elements adapt dynamically based on real-time capacity, including headlines, CTAs, and badges.
+The frontend is built with React and TypeScript, utilizing Radix UI primitives and custom styled components with shadcn/ui. Tailwind CSS is used for styling and theming. UI elements adapt dynamically based on real-time capacity, including headlines, CTAs, and badges. Professional service images are strategically placed throughout the site to enhance credibility and visual appeal.
 
 ### Navigation
 - **Desktop Navigation**: Dropdown menus for Services (7 options) and Service Areas (6 locations) using shadcn DropdownMenu components
@@ -38,7 +38,8 @@ The frontend is built with React and TypeScript, utilizing Radix UI primitives a
 - **The Family Discount Membership**: $99/year program offering priority scheduling, waived service call fees, 10% discount on all jobs, and 1 referral gift ability per year. Managed through dedicated page at /family-discount with customer portal at /my-plan.
 - **MCP Server**: Enables AI assistants (ChatGPT, Claude) to book services via `book_service_call` and `search_availability` tools, handling customer preferences and matching.
 - **Admin Dashboard**: Provides real-time analytics, operations monitoring, customer management, task management, AI chat interface, webhook monitoring, and document management.
-- **Social Proof**: Integration of Google reviews, service heat map, live stats widget, and recent jobs widget.
+- **Social Proof**: Real-time Google reviews integration displaying live rating and review count in header (updates every 30 minutes), service heat map, live stats widget, and recent jobs widget.
+- **Visual Assets**: Professional plumbing service images across all major service pages (Emergency Plumbing, Water Heater, Drain Cleaning, New Construction, General Plumbing) and landing pages to build trust and showcase quality workmanship.
 
 ## Business Logic & Rules
 - **Service Area Management**: Defined by postal codes and boundaries in `config/capacity.yml`.
@@ -72,6 +73,11 @@ The frontend is built with React and TypeScript, utilizing Radix UI primitives a
   - Status: Not configured
   - Impact: Service heat map shows console warning but continues to function with limited features
   - Code handles missing key gracefully (ServiceHeatMap.tsx lines 137-140)
+- `GOOGLE_PLACES_API_KEY` - Google Places API for fetching real-time business reviews ✅
+  - Status: Configured
+  - Impact: Header displays live Google review rating and count from both business locations
+  - Endpoint: /api/v1/google-reviews fetches reviews from Quincy and Abington locations
+  - Updates: Every 30 minutes and on window focus
 
 ### Optional (Stub Mode)
 - Google Ads API credentials (not configured)
