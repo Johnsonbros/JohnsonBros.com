@@ -184,7 +184,7 @@ export default function GoogleReviewsSection() {
 
         {/* Reviews grid */}
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 mb-12">
-          {googleData.reviews.slice(0, 9).map((review) => (
+          {googleData.reviews.filter(review => review.rating === 5).slice(0, 9).map((review) => (
             <Card key={review.id} className="shadow-lg hover:shadow-xl transition-shadow duration-300" data-testid={`review-${review.id}`}>
               <CardContent className="p-6">
                 <div className="flex items-start space-x-4 mb-4">
