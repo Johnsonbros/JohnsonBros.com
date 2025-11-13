@@ -2,6 +2,7 @@ import { Phone, Star, Menu, X, Calendar, Shield, Award, Home as HomeIcon, Chevro
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { Link } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,11 +14,25 @@ interface HeaderProps {
   onBookService?: () => void;
 }
 
+interface GoogleReviewsData {
+  reviews: any[];
+  totalReviews: number;
+  averageRating: number;
+  locations: any[];
+}
+
 export default function Header({ onBookService }: HeaderProps) {
   const [isBusinessHours, setIsBusinessHours] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [mobileServicesOpen, setMobileServicesOpen] = useState(false);
   const [mobileAreasOpen, setMobileAreasOpen] = useState(false);
+
+  // Fetch real-time Google reviews data
+  const { data: reviewsData } = useQuery<GoogleReviewsData>({
+    queryKey: ["/api/v1/google-reviews"],
+    refetchInterval: 1000 * 60 * 30, // Refresh every 30 minutes
+    refetchOnWindowFocus: true,
+  });
 
   const checkBusinessHours = () => {
     const now = new Date();
@@ -231,7 +246,7 @@ export default function Header({ onBookService }: HeaderProps) {
                 Live Activity
               </Link>
               
-              {/* Reviews Section - Redesigned */}
+              {/* Reviews Section - Real-time Data */}
               <div className="pt-4 pb-2">
                 <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
                   <div className="flex flex-col items-center space-y-2">
@@ -243,8 +258,12 @@ export default function Header({ onBookService }: HeaderProps) {
                       <Star className="h-6 w-6 fill-current drop-shadow-md" />
                     </div>
                     <div className="text-center">
-                      <span className="text-white text-xl font-black block">4.8 out of 5</span>
-                      <span className="text-blue-100 text-sm font-medium">281 Google Reviews</span>
+                      <span className="text-white text-xl font-black block">
+                        {reviewsData?.averageRating?.toFixed(1) || "4.8"} out of 5
+                      </span>
+                      <span className="text-blue-100 text-sm font-medium">
+                        {reviewsData?.totalReviews || "281"} Google Reviews
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -365,8 +384,12 @@ export default function Header({ onBookService }: HeaderProps) {
                     <Star className="h-4 w-4 xl:h-5 xl:w-5 fill-current drop-shadow-sm" />
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-white text-base xl:text-lg font-bold leading-none" data-testid="rating-display">4.8/5</span>
-                    <span className="text-blue-100 text-xs font-medium opacity-90">281 reviews</span>
+                    <span className="text-white text-base xl:text-lg font-bold leading-none" data-testid="rating-display">
+                      {reviewsData?.averageRating?.toFixed(1) || "4.8"}/5
+                    </span>
+                    <span className="text-blue-100 text-xs font-medium opacity-90">
+                      {reviewsData?.totalReviews || "281"} reviews
+                    </span>
                   </div>
                 </div>
                 {onBookService ? (
