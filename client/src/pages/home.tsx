@@ -10,7 +10,6 @@ import { SEO } from "@/components/SEO";
 import { businessStructuredData } from "@/lib/structuredData";
 import { WhyTrustUs } from "@/components/WhyTrustUs";
 import FeaturedProjects from "@/components/FeaturedProjects";
-import VideoTestimonials from "@/components/VideoTestimonials";
 import { Helmet } from "react-helmet-async";
 import { LocalBusinessSchema, FAQSchema, ReviewSchema, BreadcrumbSchema } from "@/components/schema-markup";
 import { commonFAQs, generateSocialMetaTags, staticPageMetadata } from "@/lib/seoMetadata";
@@ -291,11 +290,6 @@ export default function Home() {
                 <p className="text-lg text-gray-600 max-w-2xl mx-auto">
                   See what our customers are saying and view our recent work
                 </p>
-              </div>
-
-              {/* Video Testimonials */}
-              <div className="mb-16">
-                <VideoTestimonials />
               </div>
 
               {/* Featured Projects */}
