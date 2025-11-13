@@ -6,7 +6,7 @@ import { Phone, CheckCircle, Building2, Ruler, ClipboardCheck } from "lucide-rea
 import { Link } from "wouter";
 import { LocalBusinessSchema } from "@/components/schema-markup";
 import { WhyChooseUs } from "@/components/WhyChooseUs";
-import newConstructionImg from '@assets/NC_1763062911390.jpg';
+import newConstructionImg from '@assets/NC_1763062911389.jpg';
 
 export default function NewConstructionPlumbing() {
   return (
