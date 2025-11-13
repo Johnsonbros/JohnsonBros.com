@@ -7,6 +7,8 @@ import { Link } from "wouter";
 import { LocalBusinessSchema, FAQSchema, BreadcrumbSchema, ReviewSchema } from "@/components/schema-markup";
 import { WhyChooseUs } from "@/components/WhyChooseUs";
 import { serviceMetadata, serviceFAQs, generateSocialMetaTags } from "@/lib/seoMetadata";
+import dirtySinkImg from '@assets/21d982e80f233f91df9c7f01feb0270d&w=600_1763063444910.jpg';
+import slowDrainImg from '@assets/Slow-sink-drain_1763063487225.png';
 
 export default function DrainCleaningServices() {
   // Get SEO metadata
@@ -117,6 +119,41 @@ export default function DrainCleaningServices() {
                   </Button>
                 </div>
               </header>
+            </div>
+          </section>
+
+          {/* Common Drain Problems */}
+          <section className="py-16 bg-gray-50">
+            <div className="container mx-auto px-4">
+              <div className="max-w-6xl mx-auto">
+                <h2 className="text-3xl sm:text-4xl font-bold text-center mb-12">
+                  Common Drain Problems We Solve
+                </h2>
+                <div className="grid md:grid-cols-2 gap-8 mb-12">
+                  <div className="relative rounded-lg overflow-hidden shadow-lg">
+                    <img 
+                      src={dirtySinkImg} 
+                      alt="Clogged sink drain with standing water" 
+                      className="w-full h-64 object-cover"
+                      data-testid="img-clogged-sink"
+                    />
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+                      <p className="text-white font-semibold">Clogged Drains - Fast Professional Cleaning</p>
+                    </div>
+                  </div>
+                  <div className="relative rounded-lg overflow-hidden shadow-lg">
+                    <img 
+                      src={slowDrainImg} 
+                      alt="Slow draining sink requiring professional cleaning" 
+                      className="w-full h-64 object-cover"
+                      data-testid="img-slow-drain"
+                    />
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+                      <p className="text-white font-semibold">Slow Draining? We Can Help!</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </section>
 
