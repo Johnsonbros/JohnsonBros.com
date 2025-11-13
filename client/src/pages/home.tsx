@@ -9,7 +9,6 @@ import { useState, useEffect } from "react";
 import { SEO } from "@/components/SEO";
 import { businessStructuredData } from "@/lib/structuredData";
 import { WhyTrustUs } from "@/components/WhyTrustUs";
-import FeaturedProjects from "@/components/FeaturedProjects";
 import { Helmet } from "react-helmet-async";
 import { LocalBusinessSchema, FAQSchema, ReviewSchema, BreadcrumbSchema } from "@/components/schema-markup";
 import { commonFAQs, generateSocialMetaTags, staticPageMetadata } from "@/lib/seoMetadata";
@@ -276,25 +275,6 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
-          </section>
-
-          {/* Combined Customer Success Stories - Projects & Testimonials */}
-          <section aria-label="Customer Success Stories" className="bg-gray-50 py-16">
-            <div className="container mx-auto px-4">
-              <div className="text-center mb-12">
-                <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                  Customer Success Stories
-                </h2>
-                <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                  See what our customers are saying and view our recent work
-                </p>
-              </div>
-
-              {/* Featured Projects */}
-              <div>
-                <FeaturedProjects />
               </div>
             </div>
           </section>
