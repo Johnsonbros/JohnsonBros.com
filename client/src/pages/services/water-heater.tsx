@@ -5,6 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LocalBusinessSchema } from '@/components/schema-markup';
 import { WhyChooseUs } from '@/components/WhyChooseUs';
+import emergencyWaterHeaterImg from '@assets/emergency_1763062911389.jpg';
+import coldRadiatorImg from '@assets/shutterstock_1247928550_1763063487225.webp';
+import coldShowerImg from '@assets/2-woman-shocked-with-cold-water-while-taking-a-shower-as-a-result-of-a-faulty-circulator-pump-300x200_1763063444910.jpg';
 
 export default function WaterHeater() {
   return (
@@ -62,6 +65,50 @@ export default function WaterHeater() {
                 Schedule Service
               </Link>
             </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Common Water Heater Problems */}
+      <section className="py-12 px-4 bg-gray-50">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-3xl font-bold text-center mb-8">
+            Common Water Heater Problems We Fix
+          </h2>
+          <div className="grid md:grid-cols-3 gap-8 mb-12">
+            <div className="relative rounded-lg overflow-hidden shadow-lg">
+              <img 
+                src={emergencyWaterHeaterImg} 
+                alt="Water heater leak causing basement flooding" 
+                className="w-full h-64 object-cover"
+                data-testid="img-water-heater-leak"
+              />
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+                <p className="text-white font-semibold">Leaking Water Heater - Emergency Repair</p>
+              </div>
+            </div>
+            <div className="relative rounded-lg overflow-hidden shadow-lg">
+              <img 
+                src={coldRadiatorImg} 
+                alt="No hot water or heat from water heater" 
+                className="w-full h-64 object-cover"
+                data-testid="img-no-heat"
+              />
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+                <p className="text-white font-semibold">No Heat? Water Heater Not Working</p>
+              </div>
+            </div>
+            <div className="relative rounded-lg overflow-hidden shadow-lg">
+              <img 
+                src={coldShowerImg} 
+                alt="Running out of hot water too quickly" 
+                className="w-full h-64 object-cover"
+                data-testid="img-no-hot-water"
+              />
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+                <p className="text-white font-semibold">No Hot Water - Same-Day Service Available</p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
