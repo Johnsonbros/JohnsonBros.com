@@ -216,44 +216,30 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
   const queryClient = useQueryClient();
 
   const steps = [
-    { id: 1, name: "Service", icon: Wrench },
-    { id: 2, name: "Problem", icon: ClipboardList },
-    { id: 3, name: "Photos", icon: Camera },
-    { id: 4, name: "Schedule", icon: Calendar },
-    { id: 5, name: "Pricing", icon: DollarSign },
-    { id: 6, name: "Info", icon: User },
-    { id: 7, name: "Confirm", icon: CheckCircle },
+    { id: 1, name: "Schedule", icon: Calendar },
+    { id: 2, name: "Info", icon: User },
+    { id: 3, name: "Confirm", icon: CheckCircle },
   ];
 
-  // Load services
-  const { data: services, isLoading: servicesLoading } = useQuery({
-    queryKey: ["/api/v1/services"],
-    queryFn: getServices,
-  });
+  // Auto-select the $99 Service Call on mount
+  useEffect(() => {
+    if (isOpen && !bookingData.selectedService) {
+      // Default $99 service call
+      const defaultService = {
+        id: 'service-call',
+        name: 'Service Call',
+        description: 'Our professional plumber will assess your situation and provide expert solutions.',
+        price: 99,
+        category: 'maintenance'
+      };
+      setBookingData(prev => ({ ...prev, selectedService: defaultService }));
+    }
+  }, [isOpen, bookingData.selectedService]);
 
-  // Load upsell offers based on selected service
-  const { data: upsellOffers, isLoading: upsellLoading } = useQuery<UpsellOffer[]>({
-    queryKey: ["/api/v1/upsell-offers", bookingData.selectedService?.id],
-    queryFn: async () => {
-      if (!bookingData.selectedService?.id) return [];
-      const response = await fetch(`/api/v1/upsell-offers/${bookingData.selectedService.id}`);
-      if (!response.ok) return [];
-      return response.json();
-    },
-    enabled: !!bookingData.selectedService?.id,
-  });
+  // Simplified optional problem description (no complex form validation)
+  const [problemDescription, setProblemDescription] = useState("");
 
   // Forms
-  const problemForm = useForm<ProblemDetailsFormValues>({
-    resolver: zodResolver(problemDetailsSchema),
-    defaultValues: {
-      description: "",
-      commonIssues: [],
-      severity: "",
-      duration: "",
-    },
-  });
-
   const newCustomerForm = useForm<NewCustomerFormValues>({
     resolver: zodResolver(newCustomerSchema),
     defaultValues: {
@@ -307,14 +293,6 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
         }
       }
 
-      // Handle pre-selected service
-      if (preSelectedService && services) {
-        const service = services.find((s: any) => s.id === preSelectedService);
-        if (service) {
-          setBookingData(prev => ({ ...prev, selectedService: service }));
-        }
-      }
-
       // Check for express booking
       const bookingType = sessionStorage.getItem('booking_type') || localStorage.getItem('booking_type');
       if (bookingType === 'express') {
@@ -324,7 +302,7 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
         setIsFeeWaived(expressFeeWaived);
       }
     }
-  }, [isOpen, preSelectedService, services]);
+  }, [isOpen]);
 
   // Calculate pricing
   useEffect(() => {
@@ -371,11 +349,12 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
         estimatedPrice: {
           base: basePrice,
           additionalFees,
+          addOnsTotal: 0,
           total: basePrice + additionalFees,
         },
       }));
     }
-  }, [bookingData.selectedService, bookingData.selectedTimeSlot, bookingData.problemDetails.severity, bookingData.selectedDate, isFeeWaived]);
+  }, [bookingData.selectedService, bookingData.selectedTimeSlot, bookingData.selectedDate, isFeeWaived]);
 
   // Photo upload handler
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -446,14 +425,14 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
     onSuccess: (data: any) => {
       if (data.customer) {
         setBookingData(prev => ({ ...prev, customer: data.customer }));
-        setCurrentStep(7); // Move to confirmation
+        setCurrentStep(3); // Move to confirmation
       }
     },
     onError: (error: any) => {
       const errorData = error?.response?.data || error;
       if (errorData?.customer) {
         setBookingData(prev => ({ ...prev, customer: errorData.customer }));
-        setCurrentStep(7);
+        setCurrentStep(3);
         toast({
           title: "Account Found",
           description: "Using your existing account.",
@@ -474,7 +453,7 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
     onSuccess: (data: any) => {
       if (data.customer) {
         setBookingData(prev => ({ ...prev, customer: data.customer }));
-        setCurrentStep(7);
+        setCurrentStep(3);
       }
     },
     onError: () => {
@@ -512,6 +491,7 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
     setCurrentStep(1);
     setBookingData({
       selectedService: null,
+      selectedAddOns: [],
       problemDetails: {
         description: "",
         commonIssues: [],
@@ -525,13 +505,14 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
       estimatedPrice: {
         base: 0,
         additionalFees: 0,
+        addOnsTotal: 0,
         total: 0,
       },
     });
     setCustomerType(null);
     setIsExpressBooking(false);
     setIsFeeWaived(false);
-    problemForm.reset();
+    setProblemDescription("");
     newCustomerForm.reset();
     returningCustomerForm.reset();
   };
@@ -558,12 +539,13 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
         zipCode: bookingData.customer.zipCode || "02169"
       },
       selectedService: bookingData.selectedService,
-      problemDetails: bookingData.problemDetails,
-      photos: bookingData.photos.map(p => ({
-        filename: p.filename,
-        mimeType: p.mimeType,
-        base64: p.base64,
-      })),
+      problemDetails: {
+        description: problemDescription || "Customer will discuss issue with plumber",
+        severity: "moderate",
+        commonIssues: [],
+        duration: "unknown"
+      },
+      photos: [],
       selectedDate: bookingData.selectedDate,
       selectedTime: new Date(bookingData.selectedTimeSlot.startTime).toLocaleTimeString('en-US', {
         timeZone: 'America/New_York',
@@ -677,377 +659,8 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
 
         {renderStepIndicator()}
 
-        {/* Step 1: Service Selection */}
+        {/* Step 1: Date & Time Selection */}
         {currentStep === 1 && (
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold mb-4">Select Your Service</h3>
-            
-            {servicesLoading ? (
-              <div className="text-center py-8">Loading services...</div>
-            ) : (
-              <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'md:grid-cols-2 gap-4'}`}>
-                {services?.map((service: any) => {
-                  const IconComponent = serviceIcons[service.category as keyof typeof serviceIcons] || serviceIcons.default;
-                  const isSelected = bookingData.selectedService?.id === service.id;
-                  
-                  return (
-                    <Card
-                      key={service.id}
-                      className={`cursor-pointer transition-all ${
-                        isSelected
-                          ? 'border-johnson-blue bg-blue-50'
-                          : 'hover:border-gray-400'
-                      }`}
-                      onClick={() => setBookingData(prev => ({ ...prev, selectedService: service }))}
-                    >
-                      <CardContent className="p-4">
-                        <div className="flex items-start space-x-3">
-                          <div className={`p-2 rounded-lg ${
-                            service.category === 'emergency' ? 'bg-red-100' :
-                            service.category === 'maintenance' ? 'bg-blue-100' :
-                            'bg-gray-100'
-                          }`}>
-                            <IconComponent className="w-6 h-6" />
-                          </div>
-                          <div className="flex-1">
-                            <h4 className="font-semibold text-base">{service.name}</h4>
-                            <p className="text-sm text-gray-600 mt-1">{service.description}</p>
-                            <div className="mt-2 flex items-center justify-between">
-                              <Badge variant="outline">${service.price || 150}+</Badge>
-                              <span className="text-xs text-gray-500">45-90 min typical</span>
-                            </div>
-                          </div>
-                          {isSelected && (
-                            <CheckCircle className="w-5 h-5 text-johnson-blue" />
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-            )}
-
-            <div className="flex justify-end gap-2 mt-6">
-              <Button
-                variant="outline"
-                onClick={onClose}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={() => setCurrentStep(2)}
-                disabled={!bookingData.selectedService}
-                className="bg-johnson-blue hover:bg-johnson-teal"
-              >
-                Continue
-                <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
-            </div>
-
-            {/* Upsell Section */}
-            {bookingData.selectedService && upsellOffers && upsellOffers.length > 0 && (
-              <div className="mt-8 p-4 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg border-2 border-orange-200">
-                <div className="flex items-center gap-2 mb-4">
-                  <Gift className="w-5 h-5 text-johnson-orange" />
-                  <h4 className="font-semibold text-lg">Frequently Added Together</h4>
-                </div>
-                
-                <div className="space-y-3">
-                  {upsellOffers.map((offer) => {
-                    const isSelected = bookingData.selectedAddOns.some(a => a.id === offer.id);
-                    return (
-                      <div
-                        key={offer.id}
-                        className={`p-4 bg-white rounded-lg border-2 cursor-pointer transition-all ${
-                          isSelected ? 'border-johnson-orange bg-orange-50' : 'border-gray-200 hover:border-orange-300'
-                        }`}
-                        onClick={() => {
-                          setBookingData(prev => ({
-                            ...prev,
-                            selectedAddOns: isSelected
-                              ? prev.selectedAddOns.filter(a => a.id !== offer.id)
-                              : [...prev.selectedAddOns, offer]
-                          }));
-                        }}
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <h5 className="font-semibold">{offer.title}</h5>
-                              {offer.savingsAmount && (
-                                <Badge variant="secondary" className="bg-green-50 text-green-700">
-                                  Save ${offer.savingsAmount}
-                                </Badge>
-                              )}
-                            </div>
-                            <p className="text-sm text-gray-600 mt-1">{offer.description}</p>
-                            {offer.bundlePrice && (
-                              <p className="text-sm font-semibold mt-2 text-johnson-orange">
-                                Bundle price: ${offer.bundlePrice}
-                              </p>
-                            )}
-                          </div>
-                          <Checkbox
-                            checked={isSelected}
-                            className="mt-1"
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                
-                {bookingData.selectedAddOns.length > 0 && (
-                  <div className="mt-4 p-3 bg-green-50 rounded-lg border border-green-200">
-                    <div className="flex items-center justify-between">
-                      <span className="text-green-800 font-semibold">
-                        Total savings with bundles:
-                      </span>
-                      <span className="text-lg font-bold text-green-700">
-                        ${bookingData.selectedAddOns.reduce((sum, offer) => sum + (offer.savingsAmount || 0), 0)}
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Step 2: Problem Details */}
-        {currentStep === 2 && (
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold mb-4">Describe Your Problem</h3>
-
-            <Form {...problemForm}>
-              <form onSubmit={problemForm.handleSubmit((data) => {
-                setBookingData(prev => ({ ...prev, problemDetails: data as any }));
-                setCurrentStep(3);
-              })} className="space-y-4">
-                
-                {/* Common Issues Checklist */}
-                {bookingData.selectedService && commonIssuesByService[bookingData.selectedService.id] && (
-                  <FormField
-                    control={problemForm.control}
-                    name="commonIssues"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Common Issues (select all that apply)</FormLabel>
-                        <div className="grid grid-cols-2 gap-2 mt-2">
-                          {commonIssuesByService[bookingData.selectedService.id].map((issue) => (
-                            <div key={issue} className="flex items-center space-x-2">
-                              <Checkbox
-                                checked={field.value?.includes(issue)}
-                                onCheckedChange={(checked) => {
-                                  const current = field.value || [];
-                                  if (checked) {
-                                    field.onChange([...current, issue]);
-                                  } else {
-                                    field.onChange(current.filter((i: string) => i !== issue));
-                                  }
-                                }}
-                              />
-                              <label className="text-sm">{issue}</label>
-                            </div>
-                          ))}
-                        </div>
-                      </FormItem>
-                    )}
-                  />
-                )}
-
-                {/* Severity Selector */}
-                <FormField
-                  control={problemForm.control}
-                  name="severity"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Severity Level</FormLabel>
-                      <RadioGroup
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        className="grid grid-cols-2 gap-2 mt-2"
-                      >
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="minor" id="minor" />
-                          <Label htmlFor="minor" className="flex items-center gap-2 cursor-pointer">
-                            <Info className="w-4 h-4 text-blue-500" />
-                            Minor (Inconvenient)
-                          </Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="moderate" id="moderate" />
-                          <Label htmlFor="moderate" className="flex items-center gap-2 cursor-pointer">
-                            <AlertCircle className="w-4 h-4 text-yellow-500" />
-                            Moderate (Needs attention)
-                          </Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="urgent" id="urgent" />
-                          <Label htmlFor="urgent" className="flex items-center gap-2 cursor-pointer">
-                            <AlertTriangle className="w-4 h-4 text-orange-500" />
-                            Urgent (Causing problems)
-                          </Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="emergency" id="emergency" />
-                          <Label htmlFor="emergency" className="flex items-center gap-2 cursor-pointer">
-                            <AlertTriangle className="w-4 h-4 text-red-500" />
-                            Emergency (Immediate help)
-                          </Label>
-                        </div>
-                      </RadioGroup>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Duration Selector */}
-                <FormField
-                  control={problemForm.control}
-                  name="duration"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>How long has this been an issue?</FormLabel>
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select duration" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="just_started">Just started</SelectItem>
-                          <SelectItem value="few_days">A few days</SelectItem>
-                          <SelectItem value="week">About a week</SelectItem>
-                          <SelectItem value="few_weeks">A few weeks</SelectItem>
-                          <SelectItem value="month">About a month</SelectItem>
-                          <SelectItem value="months">Several months</SelectItem>
-                          <SelectItem value="year_plus">A year or more</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Problem Description */}
-                <FormField
-                  control={problemForm.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Additional Details</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          {...field}
-                          placeholder="Please provide any additional details about your plumbing issue..."
-                          rows={4}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="flex justify-between gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setCurrentStep(1)}
-                  >
-                    <ChevronLeft className="w-4 h-4 mr-1" />
-                    Back
-                  </Button>
-                  <Button type="submit" className="bg-johnson-blue hover:bg-johnson-teal">
-                    Continue
-                    <ChevronRight className="w-4 h-4 ml-1" />
-                  </Button>
-                </div>
-              </form>
-            </Form>
-          </div>
-        )}
-
-        {/* Step 3: Photo Upload */}
-        {currentStep === 3 && (
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold mb-4">Add Photos (Optional)</h3>
-            <p className="text-sm text-gray-600">
-              Upload photos to help us better understand the issue. You can add up to 5 photos.
-            </p>
-
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-              <input
-                type="file"
-                id="photo-upload"
-                multiple
-                accept="image/*"
-                className="hidden"
-                onChange={handlePhotoUpload}
-                disabled={bookingData.photos.length >= 5}
-              />
-              <label
-                htmlFor="photo-upload"
-                className={`cursor-pointer inline-flex flex-col items-center ${
-                  bookingData.photos.length >= 5 ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
-              >
-                <Upload className="w-12 h-12 text-gray-400 mb-2" />
-                <span className="text-sm font-medium text-gray-700">
-                  Click to upload photos
-                </span>
-                <span className="text-xs text-gray-500 mt-1">
-                  {bookingData.photos.length}/5 photos • Max 5MB each
-                </span>
-              </label>
-            </div>
-
-            {/* Photo Preview Grid */}
-            {bookingData.photos.length > 0 && (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
-                {bookingData.photos.map((photo) => (
-                  <div key={photo.id} className="relative group">
-                    <img
-                      src={photo.preview}
-                      alt={photo.filename}
-                      className="w-full h-32 object-cover rounded-lg"
-                    />
-                    <button
-                      onClick={() => removePhoto(photo.id)}
-                      className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                    <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 rounded-b-lg">
-                      {photo.filename}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <div className="flex justify-between gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setCurrentStep(2)}
-              >
-                <ChevronLeft className="w-4 h-4 mr-1" />
-                Back
-              </Button>
-              <Button
-                onClick={() => setCurrentStep(4)}
-                className="bg-johnson-blue hover:bg-johnson-teal"
-              >
-                Continue
-                <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Step 4: Date & Time Selection */}
-        {currentStep === 4 && (
           <div className="space-y-4">
             <h3 className="text-lg font-semibold mb-4">Select Date & Time</h3>
             
@@ -1115,16 +728,43 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
               </div>
             )}
 
-            <div className="flex justify-between gap-2">
+            {/* Optional Problem Description */}
+            <div className="space-y-2 mt-4">
+              <Label>Problem Description (Optional)</Label>
+              <Textarea
+                value={problemDescription}
+                onChange={(e) => setProblemDescription(e.target.value)}
+                placeholder="Briefly describe your plumbing issue..."
+                rows={3}
+                className="resize-none"
+              />
+              <p className="text-xs text-gray-500">
+                Help us prepare for your service by providing details about your plumbing issue.
+              </p>
+            </div>
+
+            {/* Service Fee Info */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
+              <div className="flex items-start gap-3">
+                <DollarSign className="h-5 w-5 text-johnson-blue mt-0.5" />
+                <div>
+                  <h4 className="font-semibold text-johnson-blue">$99 Service Call Fee</h4>
+                  <p className="text-sm text-gray-700 mt-1">
+                    Our professional plumber will assess your situation and provide expert solutions. Service call fee may be waived based on current capacity.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-between gap-2 mt-6">
               <Button
                 variant="outline"
-                onClick={() => setCurrentStep(3)}
+                onClick={onClose}
               >
-                <ChevronLeft className="w-4 h-4 mr-1" />
-                Back
+                Cancel
               </Button>
               <Button
-                onClick={() => setCurrentStep(5)}
+                onClick={() => setCurrentStep(2)}
                 disabled={!bookingData.selectedTimeSlot}
                 className="bg-johnson-blue hover:bg-johnson-teal"
               >
@@ -1135,56 +775,8 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
           </div>
         )}
 
-        {/* Step 5: Pricing Estimate */}
-        {currentStep === 5 && (
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold mb-4">Service Estimate</h3>
-            
-            {/* Trust Indicators for Pricing */}
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
-              <div className="flex items-start gap-3">
-                <Shield className="h-5 w-5 text-green-600 mt-0.5" />
-                <div>
-                  <h4 className="font-semibold text-green-900">Our Price Guarantee</h4>
-                  <p className="text-sm text-green-700 mt-1">
-                    ✓ No hidden fees - price shown is final<br/>
-                    ✓ Price match guarantee on comparable services<br/>
-                    ✓ Upfront pricing approved before work begins
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            <PricingEstimate
-              service={bookingData.selectedService}
-              selectedDate={bookingData.selectedDate}
-              selectedTimeSlot={bookingData.selectedTimeSlot}
-              severity={bookingData.problemDetails.severity}
-              isFeeWaived={isFeeWaived}
-              onFeeWaiverChange={setIsFeeWaived}
-            />
-
-            <div className="flex justify-between gap-2 mt-6">
-              <Button
-                variant="outline"
-                onClick={() => setCurrentStep(4)}
-              >
-                <ChevronLeft className="w-4 h-4 mr-1" />
-                Back
-              </Button>
-              <Button
-                onClick={() => setCurrentStep(6)}
-                className="bg-johnson-blue hover:bg-johnson-teal"
-              >
-                Continue
-                <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Step 6: Customer Information */}
-        {currentStep === 6 && (
+        {/* Step 2: Customer Information */}
+        {currentStep === 2 && (
           <div className="space-y-4">
             <h3 className="text-lg font-semibold mb-4">Your Information</h3>
 
@@ -1283,7 +875,7 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
                       <Button
                         type="button"
                         variant="outline"
-                        onClick={() => setCurrentStep(5)}
+                        onClick={() => setCurrentStep(1)}
                       >
                         <ChevronLeft className="w-4 h-4 mr-1" />
                         Back
@@ -1338,7 +930,7 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
                       <Button
                         type="button"
                         variant="outline"
-                        onClick={() => setCurrentStep(5)}
+                        onClick={() => setCurrentStep(1)}
                       >
                         <ChevronLeft className="w-4 h-4 mr-1" />
                         Back
@@ -1359,22 +951,15 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
           </div>
         )}
 
-        {/* Step 7: Confirmation */}
-        {currentStep === 7 && bookingData.customer && (
+        {/* Step 3: Confirmation */}
+        {currentStep === 3 && bookingData.customer && (
           <div className="space-y-4">
             <h3 className="text-lg font-semibold mb-4">Confirm Your Booking</h3>
 
             <div className="bg-gray-50 p-4 rounded-lg space-y-3">
               <div className="flex items-center justify-between">
                 <span className="font-medium">Service:</span>
-                <span>{bookingData.selectedService?.name}</span>
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <span className="font-medium">Severity:</span>
-                <Badge variant={bookingData.problemDetails.severity === 'emergency' ? 'destructive' : 'secondary'}>
-                  {bookingData.problemDetails.severity}
-                </Badge>
+                <span>{bookingData.selectedService?.name} - $99</span>
               </div>
 
               <div className="flex items-center justify-between">
@@ -1399,36 +984,44 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
               </div>
 
               <div className="flex items-center justify-between">
+                <span className="font-medium">Phone:</span>
+                <span>{bookingData.customer.phone}</span>
+              </div>
+
+              <div className="flex items-center justify-between">
                 <span className="font-medium">Address:</span>
                 <span className="text-right">{bookingData.customer.address}</span>
               </div>
 
-              {bookingData.photos.length > 0 && (
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">Photos:</span>
-                  <span>{bookingData.photos.length} attached</span>
+              {problemDescription && (
+                <div className="flex flex-col gap-1">
+                  <span className="font-medium">Problem Description:</span>
+                  <span className="text-sm text-gray-600">{problemDescription}</span>
                 </div>
               )}
 
               <div className="border-t pt-3 mt-3">
                 <div className="flex items-center justify-between text-lg font-bold">
-                  <span>Estimated Total:</span>
-                  <span className="text-johnson-blue">${bookingData.estimatedPrice.total}</span>
+                  <span>Service Call Fee:</span>
+                  <span className="text-johnson-blue">$99</span>
                 </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  {isFeeWaived ? "Fee may be waived based on current capacity" : "Additional costs will be quoted on-site"}
+                </p>
               </div>
             </div>
 
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
               <p className="text-sm text-yellow-800">
                 <Info className="inline w-4 h-4 mr-1" />
-                Final price may vary based on the complexity of the work required.
+                Final price for repairs will be quoted by the plumber after assessment.
               </p>
             </div>
 
             <div className="flex justify-between gap-2">
               <Button
                 variant="outline"
-                onClick={() => setCurrentStep(6)}
+                onClick={() => setCurrentStep(2)}
               >
                 <ChevronLeft className="w-4 h-4 mr-1" />
                 Back
@@ -1437,6 +1030,7 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
                 onClick={handleConfirmBooking}
                 disabled={createBookingMutation.isPending}
                 className="bg-johnson-blue hover:bg-johnson-teal"
+                data-testid="button-confirm-booking"
               >
                 {createBookingMutation.isPending ? "Booking..." : "Confirm Booking"}
                 <CheckCircle className="w-4 h-4 ml-1" />
