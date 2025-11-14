@@ -30,15 +30,13 @@ export class EnvValidator {
       name: 'HOUSECALL_PRO_API_KEY',
       required: false, // Not required if HCP_COMPANY_API_KEY is set
       description: 'HousecallPro API key for integration',
-      validator: (val) => val.startsWith('Bearer ') || val.startsWith('Token '),
-      example: 'Bearer your_api_key_here'
+      example: '0cf80db929c04b6d95fb3d5e7118caae'
     },
     {
       name: 'HCP_COMPANY_API_KEY',
       required: false, // Alternative to HOUSECALL_PRO_API_KEY
       description: 'Alternative HousecallPro company API key',
-      validator: (val) => val.startsWith('Bearer ') || val.startsWith('Token '),
-      example: 'Token your_company_api_key'
+      example: 'your_company_api_key_here'
     },
     {
       name: 'SESSION_SECRET',
@@ -436,7 +434,7 @@ export class EnvValidator {
     lines.push(`# Generated at: ${new Date().toISOString()}`);
     lines.push('# =======================================\n');
 
-    const categories = {
+    const categories: Record<string, string[]> = {
       'Core Configuration': ['DATABASE_URL', 'HOUSECALL_PRO_API_KEY', 'HCP_COMPANY_API_KEY', 'SESSION_SECRET'],
       'Google Services': ['GOOGLE_MAPS_API_KEY', 'VITE_GOOGLE_MAPS_API_KEY', 'GOOGLE_PLACES_API_KEY'],
       'Communication': ['TWILIO_ACCOUNT_SID', 'TWILIO_AUTH_TOKEN', 'TWILIO_PHONE_NUMBER'],
