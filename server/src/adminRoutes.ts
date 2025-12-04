@@ -18,10 +18,17 @@ import {
 
 const router = Router();
 
-// Initialize authentication
+// Initialize authentication (with error handling to prevent startup crashes)
 (async () => {
-  await initializePermissions();
-  await ensureSuperAdmin();
+  try {
+    await initializePermissions();
+    await ensureSuperAdmin();
+    console.log('[Admin] Authentication initialized successfully');
+  } catch (error) {
+    console.error('[Admin] Failed to initialize authentication:', error);
+    console.warn('[Admin] App will continue running, but admin features may not work until database is available');
+    // Don't crash the app - let it continue running so the database can auto-wake
+  }
 })();
 
 // Login schema
