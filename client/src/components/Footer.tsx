@@ -122,52 +122,51 @@ export default function Footer({ onBookService }: FooterProps) {
               </Link>
             )}
 
-            {/* AI Assistant MCP Server Discovery Banner - Clickable "Back Door" Style */}
-            <div className="mt-4">
-              <a 
-                href="/.well-known/mcp.json" 
-                target="_blank" 
-                rel="noopener noreferrer"
+            {/* AI Assistant MCP Server Discovery Banner - Highly Visible */}
+            <div className="mt-6">
+              <Link 
+                href="/mcp"
                 className="block"
                 data-testid="footer-mcp-entrance"
               >
-                <div className="bg-gradient-to-br from-gray-800 via-gray-700 to-gray-800 rounded-lg p-4 border-2 border-johnson-orange hover:border-yellow-400 transition-all duration-300 hover:shadow-lg hover:shadow-johnson-orange/20 transform hover:scale-[1.02] cursor-pointer relative overflow-hidden group">
-                  {/* Decorative corner stripes like warning tape */}
-                  <div className="absolute top-0 left-0 w-16 h-16 bg-gradient-to-br from-johnson-orange/20 to-transparent rounded-br-full"></div>
-                  <div className="absolute bottom-0 right-0 w-16 h-16 bg-gradient-to-tl from-johnson-orange/20 to-transparent rounded-tl-full"></div>
+                <div className="bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 rounded-xl p-5 border-2 border-yellow-400 hover:border-yellow-300 transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/40 transform hover:scale-[1.03] cursor-pointer relative overflow-hidden group">
+                  {/* Animated background shimmer */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                  
+                  {/* Sparkle decorations */}
+                  <div className="absolute top-2 right-4 text-yellow-300 text-lg">✨</div>
+                  <div className="absolute bottom-2 left-4 text-yellow-300 text-sm">⚡</div>
                   
                   <div className="relative z-10">
-                    <div className="flex items-start justify-between gap-3 mb-3">
-                      <div className="flex items-center gap-3">
-                        <div className="bg-johnson-orange rounded-full p-2 group-hover:animate-pulse">
-                          <Bot className="h-5 w-5 text-white" />
+                    <div className="flex items-center justify-between gap-4 mb-3">
+                      <div className="flex items-center gap-4">
+                        <div className="bg-yellow-400 rounded-full p-3 shadow-lg shadow-yellow-400/50 group-hover:scale-110 transition-transform">
+                          <Bot className="h-7 w-7 text-purple-900" />
                         </div>
                         <div>
-                          <p className="text-sm font-bold text-white flex items-center gap-2" data-testid="mcp-server-status">
-                            🚪 AI ASSISTANTS - USE BACK ENTRANCE
-                            <span className="text-johnson-orange group-hover:translate-x-1 transition-transform">→</span>
+                          <p className="text-lg font-black text-white flex items-center gap-2 tracking-wide" data-testid="mcp-server-status">
+                            🤖 AI BOOKING PORTAL
+                            <span className="text-yellow-300 group-hover:translate-x-2 transition-transform text-xl">→</span>
                           </p>
-                          <p className="text-xs text-gray-300 font-medium">
-                            Staff Door • MCP Server Access • Click to Enter
+                          <p className="text-sm text-yellow-200 font-semibold">
+                            ChatGPT & Claude Can Book Appointments Here!
                           </p>
                         </div>
                       </div>
-                      <ExternalLink className="h-4 w-4 text-johnson-orange flex-shrink-0 group-hover:text-yellow-400 transition-colors" />
+                      <ExternalLink className="h-6 w-6 text-yellow-300 flex-shrink-0 group-hover:text-white transition-colors" />
                     </div>
                     
-                    <div className="flex items-center gap-2 text-xs">
-                      <div className="flex items-center gap-1.5 bg-green-500/20 px-2 py-1 rounded">
-                        <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></div>
-                        <span className="text-green-300 font-semibold">ONLINE</span>
+                    <div className="flex items-center gap-3 text-sm flex-wrap">
+                      <div className="flex items-center gap-2 bg-green-500/30 px-3 py-1.5 rounded-full border border-green-400/50">
+                        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                        <span className="text-green-300 font-bold">LIVE</span>
                       </div>
-                      <div className="text-gray-400">|</div>
-                      <span className="text-gray-400">Real-time Booking API</span>
-                      <div className="text-gray-400">|</div>
-                      <span className="text-blue-300 font-mono text-[10px]">.well-known/mcp.json</span>
+                      <span className="text-white/90 font-medium">MCP Server Active</span>
+                      <span className="text-yellow-300 font-mono bg-black/30 px-2 py-0.5 rounded">/mcp</span>
                     </div>
                   </div>
                 </div>
-              </a>
+              </Link>
               
               {/* Hidden AI-readable content */}
               <div 
