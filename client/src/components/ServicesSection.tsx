@@ -3,6 +3,7 @@ import { getServices } from "@/lib/housecallApi";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertTriangle, Droplets, Flame, Wrench, Settings, Home } from "lucide-react";
+import emergencyImage from "@assets/emergency_1764896582532.jpg";
 
 interface ServicesSectionProps {
   onBookService: (serviceId: string) => void;
@@ -17,12 +18,12 @@ const serviceIcons = {
   default: Wrench,
 };
 
-const serviceImages = {
-  "emergency-repair": "https://images.unsplash.com/photo-1607472586893-edb57bdc0e39?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=250",
+const serviceImages: Record<string, string> = {
+  "emergency-repair": emergencyImage,
   "drain-cleaning": "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=250",
-  "water-heater": "https://images.unsplash.com/photo-1581578731548-c64695cc6952?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=250",
+  "water-heater": emergencyImage,
   "fixtures": "https://images.unsplash.com/photo-1604709177225-055f99402ea3?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=250",
-  "pipe-repair": "https://images.unsplash.com/photo-1607472586893-edb57bdc0e39?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=250",
+  "pipe-repair": emergencyImage,
   "remodeling": "https://images.unsplash.com/photo-1620626011761-996317b8d101?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=250",
 };
 
