@@ -2,7 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { getServices } from "@/lib/housecallApi";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertTriangle, Droplets, Flame, Wrench, Settings, Home } from "lucide-react";
+import { AlertTriangle, Droplets, Flame, Wrench, Settings, Home, ArrowRight, HardHat } from "lucide-react";
+import { Link } from "wouter";
 import emergencyImage from "@assets/emergency_1764896582532.jpg";
 import pipeRepairImage from "@assets/NC_1764896608320.jpg";
 import serviceCallImage from "@assets/plumbing_1764896658519.jpg";
@@ -12,12 +13,13 @@ interface ServicesSectionProps {
   onBookService: (serviceId: string) => void;
 }
 
-const serviceIcons = {
+const serviceIcons: Record<string, typeof Wrench> = {
   emergency: AlertTriangle,
   maintenance: Droplets,
   installation: Flame,
   repair: Settings,
   renovation: Home,
+  construction: HardHat,
   default: Wrench,
 };
 
@@ -29,17 +31,41 @@ const serviceImages: Record<string, string> = {
   "drain-cleaning": drainCleaningImage,
   "water_heater_service": emergencyImage,
   "water-heater": emergencyImage,
-  "fixtures": "https://images.unsplash.com/photo-1604709177225-055f99402ea3?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=250",
+  "fixtures": serviceCallImage,
   "pipe_repair": pipeRepairImage,
   "pipe-repair": pipeRepairImage,
-  "remodeling": "https://images.unsplash.com/photo-1620626011761-996317b8d101?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=250",
+  "general_plumbing": serviceCallImage,
+  "new_construction": pipeRepairImage,
+  "remodeling": pipeRepairImage,
 };
 
+const servicePageLinks: Record<string, string> = {
+  "service_call": "/services/general-plumbing",
+  "emergency_repair": "/services/emergency-plumbing",
+  "drain_cleaning": "/services/drain-cleaning",
+  "water_heater_service": "/services/water-heater",
+  "pipe_repair": "/services/pipe-repair",
+  "general_plumbing": "/services/general-plumbing",
+  "new_construction": "/services/new-construction",
+};
+
+const additionalServices = [
+  {
+    id: "new_construction",
+    name: "New Construction",
+    description: "Complete plumbing installation for new builds, renovations, and additions. Licensed for residential and commercial projects.",
+    category: "construction",
+    price: 99,
+  }
+];
+
 export default function ServicesSection({ onBookService }: ServicesSectionProps) {
-  const { data: services, isLoading, error } = useQuery({
+  const { data: apiServices, isLoading, error } = useQuery({
     queryKey: ["/api/v1/services"],
     queryFn: getServices,
   });
+
+  const services = apiServices ? [...apiServices, ...additionalServices] : additionalServices;
 
   if (error) {
     return (
@@ -52,6 +78,18 @@ export default function ServicesSection({ onBookService }: ServicesSectionProps)
       </section>
     );
   }
+
+  const getIconColor = (category: string) => {
+    switch (category) {
+      case 'emergency': return 'text-red-600 bg-red-100';
+      case 'maintenance': return 'text-johnson-blue bg-blue-100';
+      case 'installation': return 'text-johnson-orange bg-orange-100';
+      case 'repair': return 'text-purple-600 bg-purple-100';
+      case 'renovation': return 'text-indigo-600 bg-indigo-100';
+      case 'construction': return 'text-amber-600 bg-amber-100';
+      default: return 'text-green-600 bg-green-100';
+    }
+  };
 
   return (
     <section id="services" className="py-12 sm:py-16 lg:py-20 bg-white bg-pipes-orange relative" style={{ backgroundBlendMode: 'overlay' }}>
@@ -83,47 +121,68 @@ export default function ServicesSection({ onBookService }: ServicesSectionProps)
           ) : (
             services?.map((service) => {
               const IconComponent = serviceIcons[service.category as keyof typeof serviceIcons] || serviceIcons.default;
-              const imageUrl = serviceImages[service.id as keyof typeof serviceImages] || serviceImages["emergency-repair"];
-              
-              const getIconColor = (category: string) => {
-                switch (category) {
-                  case 'emergency': return 'text-red-600 bg-red-100';
-                  case 'maintenance': return 'text-johnson-blue bg-blue-100';
-                  case 'installation': return 'text-johnson-orange bg-orange-100';
-                  case 'repair': return 'text-purple-600 bg-purple-100';
-                  case 'renovation': return 'text-indigo-600 bg-indigo-100';
-                  default: return 'text-green-600 bg-green-100';
-                }
-              };
+              const imageUrl = serviceImages[service.id] || serviceImages["service_call"];
+              const pageLink = servicePageLinks[service.id];
 
               return (
                 <div 
                   key={service.id}
-                  className="bg-gray-50 rounded-xl p-4 sm:p-6 lg:p-8 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 group service-card touch-target"
+                  className="bg-gray-50 rounded-xl p-4 sm:p-6 lg:p-8 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 group service-card touch-target flex flex-col"
                   data-testid={`service-card-${service.id}`}
                 >
-                  <div className="mb-4 sm:mb-6">
-                    <img 
-                      src={imageUrl}
-                      alt={`${service.name} service`}
-                      className="w-full h-40 sm:h-48 object-cover rounded-lg group-hover:scale-105 transition-transform duration-300"
-                    />
+                  <div className="mb-4 sm:mb-6 overflow-hidden rounded-lg">
+                    {pageLink ? (
+                      <Link href={pageLink}>
+                        <img 
+                          src={imageUrl}
+                          alt={`${service.name} service`}
+                          className="w-full h-40 sm:h-48 object-cover rounded-lg group-hover:scale-105 transition-transform duration-300 cursor-pointer"
+                        />
+                      </Link>
+                    ) : (
+                      <img 
+                        src={imageUrl}
+                        alt={`${service.name} service`}
+                        className="w-full h-40 sm:h-48 object-cover rounded-lg group-hover:scale-105 transition-transform duration-300"
+                      />
+                    )}
                   </div>
                   <div className="flex items-start mb-4">
                     <div className={`p-2 sm:p-3 rounded-lg mr-3 sm:mr-4 flex-shrink-0 ${getIconColor(service.category || 'default')}`}>
                       <IconComponent className="h-4 w-4 sm:h-5 sm:w-5" />
                     </div>
-                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight">{service.name}</h3>
+                    {pageLink ? (
+                      <Link href={pageLink}>
+                        <h3 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight hover:text-johnson-orange transition-colors cursor-pointer">
+                          {service.name}
+                        </h3>
+                      </Link>
+                    ) : (
+                      <h3 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight">{service.name}</h3>
+                    )}
                   </div>
-                  <p className="text-gray-600 mb-4 sm:mb-6 text-sm sm:text-base">{service.description}</p>
-                  <div className="flex justify-center">
+                  <p className="text-gray-600 mb-4 sm:mb-6 text-sm sm:text-base flex-grow">{service.description}</p>
+                  
+                  <div className="flex flex-col sm:flex-row gap-3">
                     <Button 
                       onClick={() => onBookService(service.id)}
-                      className="bg-gradient-to-r from-johnson-blue to-johnson-teal text-white px-6 py-3 rounded-lg font-semibold hover:from-johnson-teal hover:to-johnson-blue transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl w-full sm:w-auto touch-target"
+                      className="bg-gradient-to-r from-johnson-blue to-johnson-teal text-white px-6 py-3 rounded-lg font-semibold hover:from-johnson-teal hover:to-johnson-blue transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl flex-1 touch-target"
                       data-testid={`book-service-${service.id}`}
                     >
                       Book Service
                     </Button>
+                    {pageLink && (
+                      <Link href={pageLink}>
+                        <Button 
+                          variant="outline"
+                          className="border-johnson-orange text-johnson-orange hover:bg-johnson-orange hover:text-white px-4 py-3 rounded-lg font-semibold transition-all duration-300 w-full sm:w-auto touch-target"
+                          data-testid={`learn-more-${service.id}`}
+                        >
+                          Learn More
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </Button>
+                      </Link>
+                    )}
                   </div>
                 </div>
               );
