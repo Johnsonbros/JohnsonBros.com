@@ -6,6 +6,7 @@ import { AlertTriangle, Droplets, Flame, Wrench, Settings, Home } from "lucide-r
 import emergencyImage from "@assets/emergency_1764896582532.jpg";
 import pipeRepairImage from "@assets/NC_1764896608320.jpg";
 import serviceCallImage from "@assets/plumbing_1764896658519.jpg";
+import drainCleaningImage from "@assets/21d982e80f233f91df9c7f01feb0270d&w=600_1764896906835.jpg";
 
 interface ServicesSectionProps {
   onBookService: (serviceId: string) => void;
@@ -24,8 +25,8 @@ const serviceImages: Record<string, string> = {
   "service_call": serviceCallImage,
   "emergency_repair": emergencyImage,
   "emergency-repair": emergencyImage,
-  "drain_cleaning": serviceCallImage,
-  "drain-cleaning": serviceCallImage,
+  "drain_cleaning": drainCleaningImage,
+  "drain-cleaning": drainCleaningImage,
   "water_heater_service": emergencyImage,
   "water-heater": emergencyImage,
   "fixtures": "https://images.unsplash.com/photo-1604709177225-055f99402ea3?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=250",
