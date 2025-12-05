@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertTriangle, Droplets, Flame, Wrench, Settings, Home } from "lucide-react";
 import emergencyImage from "@assets/emergency_1764896582532.jpg";
+import pipeRepairImage from "@assets/NC_1764896608320.jpg";
 
 interface ServicesSectionProps {
   onBookService: (serviceId: string) => void;
@@ -23,7 +24,7 @@ const serviceImages: Record<string, string> = {
   "drain-cleaning": "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=250",
   "water-heater": emergencyImage,
   "fixtures": "https://images.unsplash.com/photo-1604709177225-055f99402ea3?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=250",
-  "pipe-repair": emergencyImage,
+  "pipe-repair": pipeRepairImage,
   "remodeling": "https://images.unsplash.com/photo-1620626011761-996317b8d101?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=250",
 };
 
