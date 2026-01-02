@@ -100,8 +100,11 @@ app.get('/', (req, res) => {
       health: '/health'
     },
     tools: [
-      'book_service_call - Book a plumbing service appointment',
-      'search_availability - Search for available appointment slots'
+      'book_service_call - Book a plumbing service appointment with HousecallPro',
+      'search_availability - Search for available appointment slots',
+      'get_quote - Get instant plumbing service price estimates',
+      'get_services - List all available plumbing services',
+      'emergency_help - Get emergency plumbing guidance and safety instructions'
     ]
   });
 });

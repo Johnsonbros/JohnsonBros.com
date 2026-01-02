@@ -704,5 +704,569 @@ server.registerTool(
   }
 );
 
+// Service pricing and information data
+const PLUMBING_SERVICES = [
+  {
+    id: "emergency-repair",
+    name: "Emergency Plumbing Repair",
+    description: "24/7 emergency services for burst pipes, major leaks, sewage backups, and no-water situations",
+    priceRange: { min: 150, max: 500 },
+    estimatedDuration: "1-4 hours",
+    category: "emergency",
+    isEmergency: true
+  },
+  {
+    id: "drain-cleaning",
+    name: "Drain Cleaning",
+    description: "Professional drain cleaning for clogged sinks, showers, tubs, and floor drains using advanced equipment",
+    priceRange: { min: 99, max: 250 },
+    estimatedDuration: "1-2 hours",
+    category: "maintenance"
+  },
+  {
+    id: "water-heater",
+    name: "Water Heater Service",
+    description: "Installation, repair, and maintenance of traditional tank and tankless water heaters",
+    priceRange: { min: 150, max: 2500 },
+    estimatedDuration: "2-6 hours",
+    category: "installation"
+  },
+  {
+    id: "toilet-repair",
+    name: "Toilet Repair & Installation",
+    description: "Fix running toilets, clogs, leaks, or install new toilets",
+    priceRange: { min: 85, max: 450 },
+    estimatedDuration: "1-3 hours",
+    category: "repair"
+  },
+  {
+    id: "faucet-fixtures",
+    name: "Faucet & Fixture Installation",
+    description: "Install or repair faucets, showerheads, garbage disposals, and other fixtures",
+    priceRange: { min: 75, max: 300 },
+    estimatedDuration: "1-2 hours",
+    category: "installation"
+  },
+  {
+    id: "pipe-repair",
+    name: "Pipe Repair & Replacement",
+    description: "Fix leaking, corroded, or damaged pipes including copper, PVC, and PEX",
+    priceRange: { min: 150, max: 800 },
+    estimatedDuration: "2-8 hours",
+    category: "repair"
+  },
+  {
+    id: "sewer-line",
+    name: "Sewer Line Service",
+    description: "Camera inspection, cleaning, and repair of main sewer lines",
+    priceRange: { min: 200, max: 5000 },
+    estimatedDuration: "2-8 hours",
+    category: "specialty"
+  },
+  {
+    id: "gas-line",
+    name: "Gas Line Services",
+    description: "Gas leak detection, repair, and new gas line installation for appliances",
+    priceRange: { min: 150, max: 1500 },
+    estimatedDuration: "2-6 hours",
+    category: "specialty"
+  },
+  {
+    id: "sump-pump",
+    name: "Sump Pump Services",
+    description: "Installation, repair, and maintenance of sump pumps and backup systems",
+    priceRange: { min: 150, max: 1200 },
+    estimatedDuration: "2-4 hours",
+    category: "installation"
+  },
+  {
+    id: "water-filtration",
+    name: "Water Filtration",
+    description: "Whole-house water filtration and water softener installation",
+    priceRange: { min: 300, max: 3000 },
+    estimatedDuration: "3-6 hours",
+    category: "installation"
+  }
+];
+
+const EMERGENCY_GUIDANCE = {
+  "burst_pipe": {
+    title: "Burst Pipe Emergency",
+    immediateSteps: [
+      "Turn off the main water supply immediately - usually located near the water meter or where water enters your home",
+      "Turn off electricity in affected areas if water is near electrical outlets",
+      "Open faucets to drain remaining water from pipes",
+      "Move valuables away from the water",
+      "If possible, place buckets under the leak"
+    ],
+    doNotDo: [
+      "Do not attempt to repair the pipe yourself while water is still on",
+      "Do not use electrical appliances in wet areas"
+    ],
+    urgency: "critical",
+    callToAction: "This requires immediate professional attention. We can dispatch a plumber right away."
+  },
+  "no_hot_water": {
+    title: "No Hot Water",
+    immediateSteps: [
+      "Check if the water heater is getting power (circuit breaker for electric, pilot light for gas)",
+      "For gas heaters: Check if the pilot light is lit - if not, follow relighting instructions on the unit",
+      "Check the temperature setting on the water heater",
+      "Allow 30-60 minutes for water to heat after relighting pilot"
+    ],
+    doNotDo: [
+      "Do not attempt to repair gas connections yourself",
+      "Do not ignore the smell of gas - leave immediately and call gas company"
+    ],
+    urgency: "moderate",
+    callToAction: "If these steps don't work, schedule a service call for water heater diagnosis."
+  },
+  "clogged_drain": {
+    title: "Clogged Drain",
+    immediateSteps: [
+      "Try a plunger first - create a seal and use forceful pumping action",
+      "For kitchen sinks: Check if the garbage disposal is the issue",
+      "Avoid chemical drain cleaners as they can damage pipes",
+      "Try hot water flush - pour boiling water slowly down the drain"
+    ],
+    doNotDo: [
+      "Do not mix different chemical drain cleaners",
+      "Do not use a plunger if you've already added chemicals"
+    ],
+    urgency: "low",
+    callToAction: "If plunging doesn't work, professional drain cleaning can clear the blockage effectively."
+  },
+  "gas_leak": {
+    title: "Gas Leak Emergency",
+    immediateSteps: [
+      "Do NOT turn on any lights or electrical switches",
+      "Do NOT use your phone inside the house",
+      "Open windows and doors if safely possible",
+      "Leave the house immediately",
+      "Call 911 and your gas company from outside"
+    ],
+    doNotDo: [
+      "NEVER light matches, lighters, or any flame",
+      "NEVER operate electrical switches or appliances",
+      "NEVER try to locate the leak yourself"
+    ],
+    urgency: "critical",
+    callToAction: "After the gas company clears the situation, we can repair any gas line issues."
+  },
+  "running_toilet": {
+    title: "Running Toilet",
+    immediateSteps: [
+      "Remove the tank lid and check if the flapper is seated properly",
+      "Check if the float is stuck or set too high",
+      "Jiggle the flush handle - sometimes the chain gets caught",
+      "Turn off water supply valve behind toilet if it won't stop"
+    ],
+    doNotDo: [
+      "Don't leave it running - a running toilet can waste 200+ gallons per day"
+    ],
+    urgency: "low",
+    callToAction: "If these steps don't fix it, the internal parts may need replacement."
+  },
+  "sewage_backup": {
+    title: "Sewage Backup Emergency",
+    immediateSteps: [
+      "Stop using all water and flushing in your home immediately",
+      "Keep children and pets away from affected areas",
+      "Turn off HVAC system to prevent spreading contamination",
+      "Open windows for ventilation but stay out of flooded areas"
+    ],
+    doNotDo: [
+      "Do NOT try to clean up sewage yourself - it contains harmful bacteria",
+      "Do NOT run water or flush toilets"
+    ],
+    urgency: "critical",
+    callToAction: "This is a health hazard requiring immediate professional service. We can dispatch emergency help."
+  },
+  "low_water_pressure": {
+    title: "Low Water Pressure",
+    immediateSteps: [
+      "Check if the issue affects all faucets or just one",
+      "Check if neighbors are experiencing the same issue",
+      "Look for any visible leaks under sinks or in basement",
+      "Check the main water valve to ensure it's fully open"
+    ],
+    doNotDo: [
+      "Don't ignore sudden pressure drops - could indicate a hidden leak"
+    ],
+    urgency: "moderate",
+    callToAction: "Persistent low pressure often indicates pipe issues that need professional diagnosis."
+  }
+};
+
+// Get Quote Tool
+const GetQuoteInput = z.object({
+  service_type: z.string().describe("Type of plumbing service needed"),
+  issue_description: z.string().describe("Description of the plumbing issue"),
+  property_type: z.enum(["residential", "commercial"]).default("residential"),
+  urgency: z.enum(["routine", "soon", "urgent", "emergency"]).default("routine")
+});
+
+server.registerTool(
+  "get_quote",
+  {
+    title: "Get Plumbing Service Quote",
+    description: "Provides an instant estimate for plumbing services based on the type of work needed. Returns price range, estimated duration, and recommendations.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        service_type: { type: "string", description: "Type of service (e.g., 'drain cleaning', 'water heater repair', 'toilet repair')" },
+        issue_description: { type: "string", description: "Description of the plumbing problem" },
+        property_type: { type: "string", enum: ["residential", "commercial"], description: "Type of property" },
+        urgency: { type: "string", enum: ["routine", "soon", "urgent", "emergency"], description: "How urgent is the repair" }
+      },
+      required: ["service_type", "issue_description"]
+    }
+  } as any,
+  async (raw) => {
+    const correlationId = randomUUID();
+    
+    try {
+      const input = GetQuoteInput.parse(raw);
+      log.info({ input, correlationId }, "get_quote: start");
+
+      // Find matching services
+      const searchTerms = input.service_type.toLowerCase();
+      const matchingServices = PLUMBING_SERVICES.filter(s => 
+        s.name.toLowerCase().includes(searchTerms) ||
+        s.description.toLowerCase().includes(searchTerms) ||
+        s.id.includes(searchTerms.replace(/\s+/g, '-'))
+      );
+
+      // If no exact match, try to find closest match or suggest similar
+      let recommendedService = matchingServices[0];
+      if (!recommendedService) {
+        // Find best match based on keywords
+        const keywords: Record<string, string> = {
+          'drain': 'drain-cleaning',
+          'clog': 'drain-cleaning',
+          'water heater': 'water-heater',
+          'hot water': 'water-heater',
+          'toilet': 'toilet-repair',
+          'faucet': 'faucet-fixtures',
+          'leak': 'pipe-repair',
+          'pipe': 'pipe-repair',
+          'sewer': 'sewer-line',
+          'gas': 'gas-line',
+          'sump': 'sump-pump',
+          'filter': 'water-filtration',
+          'emergency': 'emergency-repair'
+        };
+
+        for (const [keyword, serviceId] of Object.entries(keywords)) {
+          if (searchTerms.includes(keyword)) {
+            const found = PLUMBING_SERVICES.find(s => s.id === serviceId);
+            if (found) {
+              recommendedService = found;
+              break;
+            }
+          }
+        }
+      }
+
+      // Default to general repair estimate if still no match
+      if (!recommendedService) {
+        recommendedService = {
+          id: "general-plumbing",
+          name: "General Plumbing Service",
+          description: "Diagnostic and repair services for various plumbing issues",
+          priceRange: { min: 99, max: 500 },
+          estimatedDuration: "1-4 hours",
+          category: "repair"
+        };
+      }
+
+      // Adjust pricing for urgency
+      let priceMultiplier = 1;
+      let urgencyNote = "";
+      if (input.urgency === "emergency") {
+        priceMultiplier = 1.5;
+        urgencyNote = "Emergency service includes after-hours premium.";
+      } else if (input.urgency === "urgent") {
+        priceMultiplier = 1.25;
+        urgencyNote = "Priority scheduling available with expedited rate.";
+      }
+
+      // Commercial premium
+      if (input.property_type === "commercial") {
+        priceMultiplier *= 1.2;
+      }
+
+      const adjustedMin = Math.round(recommendedService.priceRange.min * priceMultiplier);
+      const adjustedMax = Math.round(recommendedService.priceRange.max * priceMultiplier);
+
+      const result = {
+        success: true,
+        service: recommendedService.name,
+        description: recommendedService.description,
+        estimated_price_range: {
+          min: adjustedMin,
+          max: adjustedMax,
+          currency: "USD"
+        },
+        estimated_duration: recommendedService.estimatedDuration,
+        urgency_level: input.urgency,
+        property_type: input.property_type,
+        notes: [
+          urgencyNote,
+          "Final price depends on actual scope of work after on-site assessment.",
+          "We offer a $99 diagnostic fee that's waived if you proceed with the repair.",
+          "All work comes with our satisfaction guarantee."
+        ].filter(Boolean),
+        next_steps: input.urgency === "emergency" 
+          ? "For emergencies, call us directly at (617) 555-0123 or book now for immediate dispatch."
+          : "Book an appointment to get an exact quote after our technician assesses the issue.",
+        correlation_id: correlationId
+      };
+
+      log.info({ result, correlationId }, "get_quote: success");
+
+      return {
+        content: [
+          { type: "text", text: JSON.stringify(result, null, 2) }
+        ]
+      };
+      
+    } catch (err: any) {
+      log.error({ error: err.message, correlationId }, "get_quote: error");
+      
+      return {
+        content: [{
+          type: "text",
+          text: JSON.stringify({
+            success: false,
+            error: "Unable to generate quote. Please describe your plumbing issue and we'll help.",
+            correlation_id: correlationId
+          }, null, 2)
+        }]
+      };
+    }
+  }
+);
+
+// Emergency Help Tool
+const EmergencyHelpInput = z.object({
+  emergency_type: z.string().describe("Type of plumbing emergency"),
+  additional_details: z.string().optional().describe("Any additional details about the situation")
+});
+
+server.registerTool(
+  "emergency_help",
+  {
+    title: "Emergency Plumbing Help",
+    description: "Provides immediate guidance for plumbing emergencies. Gives step-by-step instructions while waiting for a plumber, safety warnings, and determines if emergency dispatch is needed.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        emergency_type: { type: "string", description: "Type of emergency (e.g., 'burst pipe', 'gas leak', 'sewage backup', 'no hot water')" },
+        additional_details: { type: "string", description: "Additional details about the emergency" }
+      },
+      required: ["emergency_type"]
+    }
+  } as any,
+  async (raw) => {
+    const correlationId = randomUUID();
+    
+    try {
+      const input = EmergencyHelpInput.parse(raw);
+      log.info({ input, correlationId }, "emergency_help: start");
+
+      // Match emergency type to guidance
+      const searchTerm = input.emergency_type.toLowerCase();
+      let guidance: typeof EMERGENCY_GUIDANCE[keyof typeof EMERGENCY_GUIDANCE] | null = null;
+
+      // Map common terms to emergency types
+      const emergencyMappings: Record<string, keyof typeof EMERGENCY_GUIDANCE> = {
+        'burst': 'burst_pipe',
+        'pipe burst': 'burst_pipe',
+        'broken pipe': 'burst_pipe',
+        'flooding': 'burst_pipe',
+        'water everywhere': 'burst_pipe',
+        'hot water': 'no_hot_water',
+        'cold water': 'no_hot_water',
+        'water heater': 'no_hot_water',
+        'clog': 'clogged_drain',
+        'drain': 'clogged_drain',
+        'slow drain': 'clogged_drain',
+        'backed up': 'clogged_drain',
+        'gas': 'gas_leak',
+        'smell gas': 'gas_leak',
+        'gas smell': 'gas_leak',
+        'running': 'running_toilet',
+        'toilet running': 'running_toilet',
+        'wont stop': 'running_toilet',
+        'sewage': 'sewage_backup',
+        'sewer': 'sewage_backup',
+        'backup': 'sewage_backup',
+        'pressure': 'low_water_pressure',
+        'low pressure': 'low_water_pressure',
+        'weak water': 'low_water_pressure'
+      };
+
+      for (const [term, emergencyKey] of Object.entries(emergencyMappings)) {
+        if (searchTerm.includes(term)) {
+          guidance = EMERGENCY_GUIDANCE[emergencyKey];
+          break;
+        }
+      }
+
+      // Default emergency guidance if no match
+      if (!guidance) {
+        guidance = {
+          title: "Plumbing Emergency",
+          immediateSteps: [
+            "Locate and turn off your main water supply if there's active water damage",
+            "Avoid using plumbing fixtures until the issue is assessed",
+            "Document the issue with photos if safe to do so",
+            "Clear the area of valuables and electronics"
+          ],
+          doNotDo: [
+            "Don't attempt repairs without proper tools and knowledge",
+            "Don't ignore signs of water damage"
+          ],
+          urgency: "moderate",
+          callToAction: "Describe your issue in more detail so we can provide specific guidance, or book an emergency appointment now."
+        };
+      }
+
+      const result = {
+        success: true,
+        emergency_type: guidance.title,
+        urgency_level: guidance.urgency,
+        immediate_steps: guidance.immediateSteps,
+        safety_warnings: guidance.doNotDo,
+        recommendation: guidance.callToAction,
+        emergency_contact: {
+          phone: "(617) 555-0123",
+          available: "24/7 for emergencies",
+          response_time: guidance.urgency === "critical" ? "Within 1 hour" : "Same day"
+        },
+        book_now: guidance.urgency === "critical" 
+          ? "CRITICAL: We recommend booking emergency service immediately."
+          : "Book a service call to address this issue professionally.",
+        correlation_id: correlationId
+      };
+
+      log.info({ result: { emergency_type: guidance.title, urgency: guidance.urgency }, correlationId }, "emergency_help: success");
+
+      return {
+        content: [
+          { type: "text", text: JSON.stringify(result, null, 2) }
+        ]
+      };
+      
+    } catch (err: any) {
+      log.error({ error: err.message, correlationId }, "emergency_help: error");
+      
+      return {
+        content: [{
+          type: "text",
+          text: JSON.stringify({
+            success: false,
+            error: "Unable to process emergency request. For immediate help, call (617) 555-0123.",
+            correlation_id: correlationId
+          }, null, 2)
+        }]
+      };
+    }
+  }
+);
+
+// Get Services Tool
+const GetServicesInput = z.object({
+  category: z.string().optional().describe("Filter by category: emergency, maintenance, repair, installation, specialty"),
+  search: z.string().optional().describe("Search term to filter services")
+});
+
+server.registerTool(
+  "get_services",
+  {
+    title: "Get Available Plumbing Services",
+    description: "Lists all plumbing services offered by Johnson Bros. Plumbing with descriptions, price ranges, and estimated durations.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        category: { type: "string", description: "Filter by category (emergency, maintenance, repair, installation, specialty)" },
+        search: { type: "string", description: "Search term to filter services" }
+      }
+    }
+  } as any,
+  async (raw) => {
+    const correlationId = randomUUID();
+    
+    try {
+      const input = GetServicesInput.parse(raw || {});
+      log.info({ input, correlationId }, "get_services: start");
+
+      let services = [...PLUMBING_SERVICES];
+
+      // Filter by category
+      if (input.category) {
+        services = services.filter(s => 
+          s.category?.toLowerCase() === input.category?.toLowerCase()
+        );
+      }
+
+      // Filter by search term
+      if (input.search) {
+        const searchTerm = input.search.toLowerCase();
+        services = services.filter(s =>
+          s.name.toLowerCase().includes(searchTerm) ||
+          s.description.toLowerCase().includes(searchTerm)
+        );
+      }
+
+      const result = {
+        success: true,
+        total_services: services.length,
+        services: services.map(s => ({
+          id: s.id,
+          name: s.name,
+          description: s.description,
+          price_range: `$${s.priceRange.min} - $${s.priceRange.max}`,
+          estimated_duration: s.estimatedDuration,
+          category: s.category,
+          is_emergency: s.isEmergency || false
+        })),
+        categories: ["emergency", "maintenance", "repair", "installation", "specialty"],
+        business_info: {
+          name: "Johnson Bros. Plumbing",
+          phone: "(617) 555-0123",
+          service_area: "Greater Boston Area",
+          emergency_available: true,
+          licensed_insured: true
+        },
+        correlation_id: correlationId
+      };
+
+      log.info({ result: { service_count: services.length }, correlationId }, "get_services: success");
+
+      return {
+        content: [
+          { type: "text", text: JSON.stringify(result, null, 2) }
+        ]
+      };
+      
+    } catch (err: any) {
+      log.error({ error: err.message, correlationId }, "get_services: error");
+      
+      return {
+        content: [{
+          type: "text",
+          text: JSON.stringify({
+            success: false,
+            error: "Unable to retrieve services list.",
+            correlation_id: correlationId
+          }, null, 2)
+        }]
+      };
+    }
+  }
+);
+
 // Export the server for use in different transports
 export { server };
