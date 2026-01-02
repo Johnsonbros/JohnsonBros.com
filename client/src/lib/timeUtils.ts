@@ -52,3 +52,28 @@ export function formatTimeWindowEST(startTime: string, endTime: string): string 
   const end12 = convert24to12Hour(endTime);
   return `${start12} - ${end12}`;
 }
+
+// Format ISO date to 12-hour time in Eastern timezone
+export function formatISOToTimeEST(isoString: string): string {
+  const date = new Date(isoString);
+  return date.toLocaleTimeString('en-US', {
+    timeZone: TIMEZONE,
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+}
+
+// Format time slot window from ISO strings
+export function formatTimeSlotWindow(startIso: string, endIso: string): string {
+  const startTime = formatISOToTimeEST(startIso);
+  const endTime = formatISOToTimeEST(endIso);
+  return `${startTime} - ${endTime}`;
+}
+
+// Check if a date is a weekend (Saturday = 6, Sunday = 0)
+export function isWeekendDate(dateString: string): boolean {
+  const date = new Date(dateString);
+  const dayOfWeek = date.getDay();
+  return dayOfWeek === 0 || dayOfWeek === 6;
+}

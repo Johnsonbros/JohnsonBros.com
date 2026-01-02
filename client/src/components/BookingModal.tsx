@@ -24,7 +24,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { z } from "zod";
-import { formatTimeWindowEST } from "@/lib/timeUtils";
+import { formatTimeSlotWindow, isWeekendDate } from "@/lib/timeUtils";
 import { PricingEstimate } from "./PricingEstimate";
 
 // Types
@@ -953,6 +953,18 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                   {/* Time Selection */}
                   <div>
                     <h5 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base">Available Times</h5>
+                    {/* Weekend Emergency Badge */}
+                    {bookingData.selectedDate && isWeekendDate(bookingData.selectedDate) && (
+                      <div className="mb-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <AlertTriangle className="h-5 w-5 text-orange-500 flex-shrink-0" />
+                          <div>
+                            <span className="font-semibold text-orange-700 text-sm">Call for Emergency Service Availability</span>
+                            <p className="text-xs text-orange-600 mt-0.5">Weekend service is limited. Call <a href="tel:6174799911" className="underline font-medium">(617) 479-9911</a> for urgent plumbing needs.</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     {bookingData.selectedDate ? (
                       <div className="space-y-2 max-h-64 overflow-y-auto">
                         {timeSlotsLoading ? (
@@ -963,18 +975,6 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                         ) : timeSlots && timeSlots.length > 0 ? (
                           timeSlots.map((slot: AvailableTimeSlot) => {
                             const isSelected = bookingData.selectedTimeSlot?.id === slot.id;
-                            const startTimeOnly = new Date(slot.startTime).toLocaleTimeString('en-US', {
-                              timeZone: 'America/New_York',
-                              hour12: false,
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            });
-                            const endTimeOnly = new Date(slot.endTime).toLocaleTimeString('en-US', {
-                              timeZone: 'America/New_York',
-                              hour12: false,
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            });
                             
                             return (
                               <button
@@ -992,7 +992,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                                   <div className="flex items-center gap-2">
                                     <Clock className="h-4 w-4 text-gray-500" />
                                     <span className="font-medium text-sm sm:text-base">
-                                      {formatTimeWindowEST(startTimeOnly, endTimeOnly)}
+                                      {formatTimeSlotWindow(slot.startTime, slot.endTime)}
                                     </span>
                                   </div>
                                   <Badge className="bg-green-100 text-green-700 text-xs">Available</Badge>
@@ -1237,20 +1237,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                     </p>
                     {bookingData.selectedTimeSlot && (
                       <p className="text-sm text-gray-600 mt-1">
-                        {formatTimeWindowEST(
-                          new Date(bookingData.selectedTimeSlot.startTime).toLocaleTimeString('en-US', {
-                            timeZone: 'America/New_York',
-                            hour12: false,
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          }),
-                          new Date(bookingData.selectedTimeSlot.endTime).toLocaleTimeString('en-US', {
-                            timeZone: 'America/New_York',
-                            hour12: false,
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })
-                        )}
+                        {formatTimeSlotWindow(bookingData.selectedTimeSlot.startTime, bookingData.selectedTimeSlot.endTime)}
                       </p>
                     )}
                   </div>
