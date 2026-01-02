@@ -8,7 +8,7 @@ The MCP (Model Context Protocol) server allows ChatGPT to interact with your Hou
 
 ### Tools
 
-Your MCP server exposes two tools to ChatGPT:
+Your MCP server exposes five tools to ChatGPT:
 
 1. **book_service_call** - Book a plumbing service appointment
    - Creates/updates customer records
@@ -20,6 +20,24 @@ Your MCP server exposes two tools to ChatGPT:
    - Check availability for specific dates
    - Filter by time preferences
    - View available booking windows
+
+3. **get_quote** - Get instant plumbing service estimates
+   - Provides price ranges based on service type
+   - Adjusts for urgency (routine, soon, urgent, emergency)
+   - Supports residential and commercial properties
+   - Returns estimated duration and next steps
+
+4. **get_services** - List all available plumbing services
+   - Browse all service categories
+   - Filter by category (emergency, maintenance, repair, installation, specialty)
+   - See price ranges and descriptions
+   - Returns business information
+
+5. **emergency_help** - Get emergency plumbing guidance
+   - Immediate safety steps for plumbing emergencies
+   - Guidance for burst pipes, gas leaks, sewage backups, etc.
+   - What to do and what NOT to do
+   - Determines urgency level and recommends next actions
 
 ## Running the MCP Server
 
