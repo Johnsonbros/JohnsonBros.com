@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { motion, AnimatePresence } from 'framer-motion';
-import logoIcon from '@assets/JBros_wrench_logo_1767388279822.png';
+import logoIcon from '@assets/JBros_Wrench_Logo_WP.png';
 
 interface Message {
   id: string;
@@ -233,7 +233,6 @@ export function ChatWidget() {
           </motion.div>
         )}
       </AnimatePresence>
-
       <motion.button
         onClick={() => setIsOpen(!isOpen)}
         className="fixed bottom-6 right-6 z-50 w-16 h-16 rounded-full bg-white hover:bg-gray-50 shadow-xl border border-gray-200 flex items-center justify-center transition-colors"
@@ -260,7 +259,7 @@ export function ChatWidget() {
               exit={{ rotate: -90, opacity: 0 }}
               transition={{ duration: 0.15 }}
             >
-              <img src={logoIcon} alt="Chat" className="w-14 h-14 object-contain" />
+              <img src={logoIcon} alt="Chat" className="w-14 h-14 object-contain pl-[0px] pr-[0px] pt-[0px] pb-[0px] mt-[0px] mb-[0px] ml-[0px] mr-[0px]" />
             </motion.div>
           )}
         </AnimatePresence>
