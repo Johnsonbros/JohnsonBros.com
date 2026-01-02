@@ -964,11 +964,13 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                           timeSlots.map((slot: AvailableTimeSlot) => {
                             const isSelected = bookingData.selectedTimeSlot?.id === slot.id;
                             const startTimeOnly = new Date(slot.startTime).toLocaleTimeString('en-US', {
+                              timeZone: 'America/New_York',
                               hour12: false,
                               hour: '2-digit',
                               minute: '2-digit',
                             });
                             const endTimeOnly = new Date(slot.endTime).toLocaleTimeString('en-US', {
+                              timeZone: 'America/New_York',
                               hour12: false,
                               hour: '2-digit',
                               minute: '2-digit',
@@ -1237,11 +1239,13 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                       <p className="text-sm text-gray-600 mt-1">
                         {formatTimeWindowEST(
                           new Date(bookingData.selectedTimeSlot.startTime).toLocaleTimeString('en-US', {
+                            timeZone: 'America/New_York',
                             hour12: false,
                             hour: '2-digit',
                             minute: '2-digit',
                           }),
                           new Date(bookingData.selectedTimeSlot.endTime).toLocaleTimeString('en-US', {
+                            timeZone: 'America/New_York',
                             hour12: false,
                             hour: '2-digit',
                             minute: '2-digit',
