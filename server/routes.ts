@@ -21,6 +21,7 @@ import adminRoutes from "./src/adminRoutes";
 import abTestingRoutes from "./src/abTestingRoutes";
 import conversionRoutes from "./src/conversionRoutes";
 import experimentManagementRoutes from "./src/experimentManagement";
+import chatRoutes from "./src/chatRoutes";
 import { generateSitemap } from "./src/sitemap";
 import { healthChecker } from "./src/healthcheck";
 import { Logger, logError, getErrorMessage } from "./src/logger";
@@ -263,6 +264,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Experiment management routes (authenticated)
   app.use(experimentManagementRoutes);
+  
+  // AI Chat routes (web chat, Twilio SMS/Voice)
+  app.use('/api/v1', chatRoutes);
 
   // Seed blog data on startup (only in development)
   if (process.env.NODE_ENV === 'development') {
