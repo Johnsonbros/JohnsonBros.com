@@ -62,6 +62,8 @@ app.use((req, res, next) => {
   const exemptPaths = [
     '/api/admin/auth/login',  // Pre-authentication
     '/api/webhooks',          // Webhooks use HMAC signature validation
+    '/api/v1/twilio',         // Twilio webhooks use signature validation
+    '/api/v1/chat',           // AI chat endpoints (session-based)
     '/health'                 // Health check
   ];
   
