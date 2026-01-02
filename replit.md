@@ -42,6 +42,13 @@ The frontend is built with React and TypeScript, utilizing Radix UI primitives a
   - `get_quote` - Get instant price estimates based on service type and urgency
   - `get_services` - List all available plumbing services with descriptions
   - `emergency_help` - Provide emergency guidance for plumbing issues (burst pipes, gas leaks, etc.)
+- **Multi-Channel AI Chat System**: OpenAI-powered chatbot available across web, SMS, and voice:
+  - **Web Chat Widget**: Floating chat button with company logo, opens branded chat panel with quick action prompts
+  - **SMS**: Twilio integration at +18577546617 for text-based support
+  - **Voice**: Same number for voice calls with speech-to-text AI conversation
+  - Uses OpenAI function calling to execute MCP tools (booking, quotes, availability, services, emergency help)
+  - Maintains conversation history per session for context continuity
+  - Emergency phone: (617) 479-9911
 - **Admin Dashboard**: Provides real-time analytics, operations monitoring, customer management, task management, AI chat interface, webhook monitoring, and document management.
 - **Social Proof**: Real-time Google reviews integration displaying live rating and review count in header (updates every 30 minutes), service heat map, live stats widget, and recent jobs widget.
 - **Visual Assets**: Professional plumbing service images across all major service pages (Emergency Plumbing, Water Heater, Drain Cleaning, New Construction, General Plumbing) and landing pages to build trust and showcase quality workmanship.

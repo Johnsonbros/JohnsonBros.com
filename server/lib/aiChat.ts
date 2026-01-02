@@ -229,7 +229,7 @@ async function executeTool(name: string, args: any): Promise<string> {
           category: s.category
         })),
         total: services.length,
-        phone: "(617) 555-0123"
+        phone: "(617) 479-9911"
       });
     }
     
@@ -302,7 +302,7 @@ async function executeTool(name: string, args: any): Promise<string> {
           "A technician will arrive at the scheduled time",
           "Payment is due upon completion"
         ],
-        emergency_note: "For immediate emergencies, call us directly at (617) 555-0123"
+        emergency_note: "For immediate emergencies, call us directly at (617) 479-9911"
       });
     }
     
@@ -329,7 +329,7 @@ async function executeTool(name: string, args: any): Promise<string> {
         urgency: guidance.urgency,
         immediate_steps: guidance.immediateSteps,
         safety_warnings: guidance.doNotDo || [],
-        call_now: guidance.urgency === "critical" ? "CALL NOW: (617) 555-0123" : "Schedule service: (617) 555-0123"
+        call_now: guidance.urgency === "critical" ? "CALL NOW: (617) 479-9911" : "Schedule service: (617) 479-9911"
       });
     }
     
@@ -347,7 +347,7 @@ const SYSTEM_PROMPT = `You are a helpful AI assistant for Johnson Bros. Plumbing
 
 Key information:
 - Business: Johnson Bros. Plumbing & Drain Cleaning
-- Phone: (617) 555-0123 (available 24/7 for emergencies)
+- Phone: (617) 479-9911 (available 24/7 for emergencies)
 - Service Area: South Shore Massachusetts (Quincy, Braintree, Weymouth, Hingham, Cohasset, Abington, and surrounding areas)
 - We're licensed, insured, and have over 15 years of experience
 - We offer "The Family Discount" membership ($99/year) for priority service and discounts
@@ -439,7 +439,7 @@ export async function processChat(
       conversationHistory.set(sessionId, history);
       
       return {
-        message: finalMessage.content || "I apologize, I couldn't generate a response. Please call us at (617) 555-0123.",
+        message: finalMessage.content || "I apologize, I couldn't generate a response. Please call us at (617) 479-9911.",
         toolsUsed
       };
     }
@@ -449,14 +449,14 @@ export async function processChat(
     conversationHistory.set(sessionId, history);
     
     return {
-      message: assistantMessage.content || "I apologize, I couldn't generate a response. Please call us at (617) 555-0123.",
+      message: assistantMessage.content || "I apologize, I couldn't generate a response. Please call us at (617) 479-9911.",
       toolsUsed
     };
     
   } catch (error: any) {
     Logger.error('AI Chat error:', error);
     return {
-      message: "I'm having trouble right now. Please call us at (617) 555-0123 for immediate assistance."
+      message: "I'm having trouble right now. Please call us at (617) 479-9911 for immediate assistance."
     };
   }
 }

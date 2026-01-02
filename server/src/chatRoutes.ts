@@ -114,7 +114,7 @@ router.post('/twilio/sms', async (req: Request, res: Response) => {
     Logger.error('Twilio SMS webhook error:', error);
     
     res.type('text/xml');
-    res.send(generateTwiML('Sorry, we\'re experiencing technical difficulties. Please call (617) 555-0123 for assistance.'));
+    res.send(generateTwiML('Sorry, we\'re experiencing technical difficulties. Please call (617) 479-9911 for assistance.'));
   }
 });
 
@@ -245,7 +245,7 @@ router.get('/chat/info', async (req: Request, res: Response) => {
       ],
       business: {
         name: 'Johnson Bros. Plumbing & Drain Cleaning',
-        emergencyPhone: '(617) 555-0123',
+        emergencyPhone: '(617) 479-9911',
         serviceArea: 'South Shore Massachusetts'
       }
     });

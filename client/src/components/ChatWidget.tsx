@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { motion, AnimatePresence } from 'framer-motion';
+import logoIcon from '@assets/JBros_wrench_logo_1767388279822.png';
 
 interface Message {
   id: string;
@@ -57,11 +58,16 @@ export function ChatWidget() {
       const response = await fetch('/api/v1/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           message: messageText,
           sessionId: sessionId,
         }),
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error: ${response.status}`);
+      }
 
       const data = await response.json();
 
@@ -77,12 +83,12 @@ export function ChatWidget() {
       } else {
         throw new Error(data.error || 'Failed to send message');
       }
-    } catch (error) {
-      console.error('Chat error:', error);
+    } catch (error: any) {
+      console.error('Chat error:', error?.message || error);
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: "I'm having trouble connecting. Please call us at (617) 555-0123 for immediate assistance.",
+        content: "I'm having trouble connecting. Please call us at (617) 479-9911 for immediate assistance.",
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, errorMessage]);
@@ -221,7 +227,7 @@ export function ChatWidget() {
                 </Button>
               </div>
               <p className="text-xs text-gray-400 mt-2 text-center">
-                For emergencies, call <a href="tel:6175550123" className="text-blue-600 font-medium">(617) 555-0123</a>
+                For emergencies, call <a href="tel:6174799911" className="text-blue-600 font-medium">(617) 479-9911</a>
               </p>
             </form>
           </motion.div>
@@ -230,7 +236,7 @@ export function ChatWidget() {
 
       <motion.button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg flex items-center justify-center transition-colors"
+        className="fixed bottom-6 right-6 z-50 w-16 h-16 rounded-full bg-white hover:bg-gray-50 shadow-xl border border-gray-200 flex items-center justify-center transition-colors"
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         data-testid="chat-toggle-button"
@@ -244,7 +250,7 @@ export function ChatWidget() {
               exit={{ rotate: 90, opacity: 0 }}
               transition={{ duration: 0.15 }}
             >
-              <X className="w-6 h-6" />
+              <X className="w-6 h-6 text-gray-700" />
             </motion.div>
           ) : (
             <motion.div
@@ -254,7 +260,7 @@ export function ChatWidget() {
               exit={{ rotate: -90, opacity: 0 }}
               transition={{ duration: 0.15 }}
             >
-              <MessageCircle className="w-6 h-6" />
+              <img src={logoIcon} alt="Chat" className="w-14 h-14 object-contain" />
             </motion.div>
           )}
         </AnimatePresence>
