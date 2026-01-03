@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Clock, Shield, DollarSign, Calendar, Phone, MapPin, Zap, ChevronRight, Star, Bot } from "lucide-react";
+import { Clock, Shield, DollarSign, Calendar, Phone, MapPin, Zap, ChevronRight, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/queryClient";
@@ -7,7 +7,6 @@ import { useState, useEffect } from "react";
 import { formatTimeSlotWindow } from "@/lib/timeUtils";
 import { format, addDays } from "date-fns";
 import plumberVideo from "@assets/Website video_1759942431968.mp4";
-import feeWaivedImage from "@assets/generated_images/$99_fee_waived_promotional_graphic_f5d5b265.png";
 
 interface HeroSectionProps {
   onBookService: () => void;
@@ -343,23 +342,6 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
               </div>
             )}
 
-            {/* MCP/AI Assistant Integration - Discrete Card */}
-            <div className="mt-4">
-              <a 
-                href="/.well-known/mcp.json" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="block bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20 hover:bg-white/15 transition-all group"
-              >
-                <div className="flex items-center gap-2 mb-1.5">
-                  <Bot className="h-4 w-4 text-blue-300" />
-                  <span className="text-xs text-blue-200 flex-1">AI Assistants: Use our MCP server to book</span>
-                </div>
-                <div className="text-xs text-blue-300/80 font-mono pl-6">
-                  Add server → Check tools → Book appointment
-                </div>
-              </a>
-            </div>
           </div>
 
           <div className="relative mt-8 lg:mt-0">

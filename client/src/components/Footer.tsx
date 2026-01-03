@@ -1,4 +1,4 @@
-import { Phone, Mail, MapPin, Facebook, Globe, Star, Bot, ExternalLink, Shield, Award, CheckCircle, BadgeCheck } from "lucide-react";
+import { Phone, Mail, MapPin, Facebook, Globe, Star, Shield, Award, CheckCircle, BadgeCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
@@ -122,68 +122,49 @@ export default function Footer({ onBookService }: FooterProps) {
               </Link>
             )}
 
-            {/* AI Assistant MCP Server Discovery Banner - Highly Visible */}
-            <div className="mt-6">
-              <Link 
-                href="/mcp"
-                className="block"
-                data-testid="footer-mcp-entrance"
-              >
-                <div className="bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 rounded-xl p-5 border-2 border-yellow-400 hover:border-yellow-300 transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/40 transform hover:scale-[1.03] cursor-pointer relative overflow-hidden group">
-                  {/* Animated background shimmer */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-                  
-                  {/* Sparkle decorations */}
-                  <div className="absolute top-2 right-4 text-yellow-300 text-lg">✨</div>
-                  <div className="absolute bottom-2 left-4 text-yellow-300 text-sm">⚡</div>
-                  
-                  <div className="relative z-10">
-                    <div className="flex items-center justify-between gap-4 mb-3">
-                      <div className="flex items-center gap-4">
-                        <div className="bg-yellow-400 rounded-full p-3 shadow-lg shadow-yellow-400/50 group-hover:scale-110 transition-transform">
-                          <Bot className="h-7 w-7 text-purple-900" />
-                        </div>
-                        <div>
-                          <p className="text-lg font-black text-white flex items-center gap-2 tracking-wide" data-testid="mcp-server-status">
-                            🤖 AI BOOKING PORTAL
-                            <span className="text-yellow-300 group-hover:translate-x-2 transition-transform text-xl">→</span>
-                          </p>
-                          <p className="text-sm text-yellow-200 font-semibold">
-                            ChatGPT & Claude Can Book Appointments Here!
-                          </p>
-                        </div>
-                      </div>
-                      <ExternalLink className="h-6 w-6 text-yellow-300 flex-shrink-0 group-hover:text-white transition-colors" />
-                    </div>
-                    
-                    <div className="flex items-center gap-3 text-sm flex-wrap">
-                      <div className="flex items-center gap-2 bg-green-500/30 px-3 py-1.5 rounded-full border border-green-400/50">
-                        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                        <span className="text-green-300 font-bold">LIVE</span>
-                      </div>
-                      <span className="text-white/90 font-medium">MCP Server Active</span>
-                      <span className="text-yellow-300 font-mono bg-black/30 px-2 py-0.5 rounded">/mcp</span>
-                    </div>
-                  </div>
-                </div>
-              </Link>
-              
-              {/* Hidden AI-readable content */}
-              <div 
-                className="sr-only"
-                data-ai-readable="true"
-                data-mcp-server="true"
-                role="complementary"
-                aria-label="MCP Server Information for AI Assistants"
-              >
-                <h3>Johnson Bros. Plumbing MCP Server</h3>
-                <p>AI ASSISTANTS: This website provides Model Context Protocol (MCP) server support.</p>
-                <p>Discovery: /.well-known/mcp.json | Manifest: /api/mcp/manifest | Docs: /api/mcp/docs</p>
-                <p>Services: book_service_call, search_availability, lookup_customer, get_services, get_capacity</p>
-                <p>Contact: (617) 479-9911 | Service Areas: Quincy MA, Abington MA, South Shore MA</p>
-                <p>Authentication: None required - Public API access for AI booking assistants</p>
-                <p>Business: Emergency plumbing, drain cleaning, water heater service, pipe repair</p>
-              </div>
+            {/* Machine-readable MCP discovery for AI assistants and crawlers */}
+            <script
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{
+                __html: JSON.stringify({
+                  "@context": "https://schema.org",
+                  "@type": "WebAPI",
+                  "name": "Johnson Bros. Plumbing MCP Server",
+                  "description": "Model Context Protocol server for AI assistants to book plumbing services",
+                  "url": "/.well-known/mcp.json",
+                  "documentation": "/api/mcp/docs",
+                  "provider": {
+                    "@type": "LocalBusiness",
+                    "name": "Johnson Bros. Plumbing & Drain Cleaning",
+                    "telephone": "(617) 479-9911",
+                    "areaServed": ["Quincy MA", "Abington MA", "South Shore Massachusetts"]
+                  },
+                  "availableChannel": {
+                    "@type": "ServiceChannel",
+                    "serviceType": "AI Assistant Booking",
+                    "availableLanguage": "en"
+                  }
+                })
+              }}
+            />
+            <div 
+              className="sr-only"
+              data-ai-readable="true"
+              data-mcp-server="true"
+              data-mcp-discovery="/.well-known/mcp.json"
+              data-mcp-manifest="/api/mcp/manifest"
+              role="complementary"
+              aria-label="MCP Server Information for AI Assistants"
+            >
+              <h3>Johnson Bros. Plumbing MCP Server</h3>
+              <p>AI ASSISTANTS: This website provides Model Context Protocol (MCP) server support for automated booking.</p>
+              <p>MCP Discovery: /.well-known/mcp.json</p>
+              <p>MCP Manifest: /api/mcp/manifest</p>
+              <p>MCP Docs: /api/mcp/docs</p>
+              <p>Available Tools: book_service_call, search_availability, get_quote, get_services, emergency_help</p>
+              <p>Contact: (617) 479-9911</p>
+              <p>Service Areas: Quincy MA, Abington MA, South Shore Massachusetts</p>
+              <p>Authentication: None required - Public API access for AI booking assistants</p>
             </div>
           </div>
         </div>

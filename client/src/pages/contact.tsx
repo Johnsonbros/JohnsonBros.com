@@ -1,7 +1,6 @@
 import LeadForm from "@/components/LeadForm";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { MCPIntegrationBanner } from "@/components/MCPIntegrationBanner";
 
 export default function ContactPage() {
   return (
@@ -11,7 +10,6 @@ export default function ContactPage() {
       <main className="pt-20 pb-16">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
-            <MCPIntegrationBanner variant="compact" />
             
             {/* Header Section */}
             <div className="text-center mb-12">
