@@ -61,7 +61,7 @@ export function ChatWidget() {
         credentials: 'include',
         body: JSON.stringify({
           message: messageText,
-          sessionId: sessionId,
+          ...(sessionId && { sessionId }),
         }),
       });
 
