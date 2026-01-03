@@ -87,3 +87,22 @@ fee_waive:
   discount_amount: 99
   utm_source: "site"
   utm_campaign: "capacity"
+
+# Official booking windows (3 per day)
+# Each window has a 1-hour arrival window for the technician
+booking_windows:
+  - id: "morning"
+    label: "Morning"
+    start_hour: 8   # 8:00 AM
+    end_hour: 11    # 11:00 AM
+    arrival_window: 1  # Arrive within first hour (8-9 AM)
+  - id: "midday"
+    label: "Midday"
+    start_hour: 11  # 11:00 AM
+    end_hour: 14    # 2:00 PM
+    arrival_window: 1  # Arrive within first hour (11 AM - 12 PM)
+  - id: "afternoon"
+    label: "Afternoon"
+    start_hour: 14  # 2:00 PM
+    end_hour: 17    # 5:00 PM
+    arrival_window: 1  # Arrive within first hour (2-3 PM)

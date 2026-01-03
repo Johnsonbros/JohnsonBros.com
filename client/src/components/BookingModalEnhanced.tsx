@@ -27,7 +27,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { z } from "zod";
-import { formatTimeWindowEST } from "@/lib/timeUtils";
+import { formatTimeSlotWindow, isWeekendDate } from "@/lib/timeUtils";
 import { PricingEstimate } from "./PricingEstimate";
 
 // Types
@@ -718,7 +718,7 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
                         >
                           <div className="flex items-center justify-center gap-1">
                             <Clock className="w-3 h-3" />
-                            {formatTimeWindowEST(slot.startTime, slot.endTime)}
+                            {formatTimeSlotWindow(slot.startTime, slot.endTime)}
                           </div>
                         </button>
                       );
@@ -972,7 +972,7 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
                   })}
                   {bookingData.selectedTimeSlot && (
                     <span className="ml-2 font-medium">
-                      {formatTimeWindowEST(bookingData.selectedTimeSlot.startTime, bookingData.selectedTimeSlot.endTime)}
+                      {formatTimeSlotWindow(bookingData.selectedTimeSlot.startTime, bookingData.selectedTimeSlot.endTime)}
                     </span>
                   )}
                 </span>

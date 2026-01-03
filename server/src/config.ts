@@ -2,6 +2,14 @@ import fs from 'fs';
 import path from 'path';
 import { parse } from 'yaml';
 
+export interface BookingWindow {
+  id: string;
+  label: string;
+  start_hour: number;
+  end_hour: number;
+  arrival_window: number;
+}
+
 export interface CapacityConfig {
   thresholds: {
     same_day_fee_waived: number;
@@ -47,6 +55,7 @@ export interface CapacityConfig {
     utm_source: string;
     utm_campaign: string;
   };
+  booking_windows?: BookingWindow[];
 }
 
 let cachedConfig: CapacityConfig | null = null;

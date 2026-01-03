@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/queryClient";
 import { useState, useEffect } from "react";
-import { formatTimeWindowEST } from "@/lib/timeUtils";
+import { formatTimeSlotWindow } from "@/lib/timeUtils";
 import { format, addDays } from "date-fns";
 import plumberVideo from "@assets/Website video_1759942431968.mp4";
 import feeWaivedImage from "@assets/generated_images/$99_fee_waived_promotional_graphic_f5d5b265.png";
@@ -224,8 +224,6 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
                 {/* Time Slot Buttons */}
                 <div className="space-y-2">
                   {uniqueSlots.map((slot, idx) => {
-                    const [startTime, endTime] = slot.time_slot.split(' - ');
-                    
                     return (
                       <button
                         key={idx}
@@ -241,7 +239,7 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
                             <Clock className="h-5 w-5" />
                             <div className="text-left">
                               <div className="font-bold text-lg">
-                                {formatTimeWindowEST(startTime, endTime)}
+                                {formatTimeSlotWindow(slot.start_time, slot.end_time)}
                               </div>
                               <div className="text-sm opacity-90">
                                 {dateDisplay}

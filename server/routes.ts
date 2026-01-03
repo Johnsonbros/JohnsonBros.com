@@ -27,6 +27,7 @@ import { healthChecker } from "./src/healthcheck";
 import { Logger, logError, getErrorMessage } from "./src/logger";
 import { cachePresets } from "./src/cachingMiddleware";
 import { authenticate } from "./src/auth";
+import { loadConfig } from "./src/config";
 
 // Housecall Pro API client
 const HOUSECALL_API_BASE = 'https://api.housecallpro.com';
@@ -688,9 +689,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ========== END LEAD CAPTURE ROUTES ==========
 
   // Get available time slots for a specific date
+  // Returns aggregated booking windows (8am-11am, 11am-2pm, 2pm-5pm) instead of raw 30-min HCP slots
   app.get("/api/v1/timeslots/:date", publicReadLimiter, async (req, res) => {
     try {
       const { date } = req.params;
+      console.log('[Timeslots] Aggregating HCP slots into 3 official windows for date:', date);
       
       // Validate date format (YYYY-MM-DD)
       const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
@@ -698,30 +701,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid date format. Use YYYY-MM-DD" });
       }
 
+      // Get official booking windows from config
+      const config = loadConfig();
+      const officialWindows = config.booking_windows || [
+        { id: 'morning', label: 'Morning', start_hour: 8, end_hour: 11, arrival_window: 1 },
+        { id: 'midday', label: 'Midday', start_hour: 11, end_hour: 14, arrival_window: 1 },
+        { id: 'afternoon', label: 'Afternoon', start_hour: 14, end_hour: 17, arrival_window: 1 },
+      ];
+
       // Fetch real booking windows from HousecallPro
       if (API_KEY) {
         const hcpClient = HousecallProClient.getInstance();
         const bookingWindows = await hcpClient.getBookingWindows(date);
         
-        // Convert HousecallPro booking windows to our time slot format
-        // Filter to only include slots for the requested date
-        const timeSlots = bookingWindows
+        // Filter to only include slots for the requested date that are available
+        const availableSlots = bookingWindows
           .filter((window: any) => {
             const windowDate = new Date(window.start_time).toISOString().split('T')[0];
             return window.available && windowDate === date;
-          })
-          .map((window: any, index: number) => {
-            const startTime = new Date(window.start_time);
-            const endTime = new Date(window.end_time);
-            
-            return {
-              id: `${date}-${index}`,
-              date: date,
-              startTime: startTime.toISOString(),
-              endTime: endTime.toISOString(),
-              isAvailable: window.available,
-            };
           });
+        
+        // Aggregate 30-minute HCP slots into official booking windows
+        const timeSlots = officialWindows.map((window) => {
+          // Check if any 30-minute HCP slot falls within this official window
+          const hasAvailability = availableSlots.some((slot: any) => {
+            const slotStart = new Date(slot.start_time);
+            // Get hour in Eastern Time
+            const slotHourET = parseInt(slotStart.toLocaleTimeString('en-US', {
+              timeZone: 'America/New_York',
+              hour: '2-digit',
+              hour12: false,
+            }));
+            return slotHourET >= window.start_hour && slotHourET < window.end_hour;
+          });
+          
+          // Create ISO timestamps for this window (in Eastern Time for the given date)
+          // Using -05:00 for EST, but this could be -04:00 during EDT
+          const startTime = new Date(`${date}T${String(window.start_hour).padStart(2, '0')}:00:00.000-05:00`);
+          const endTime = new Date(`${date}T${String(window.end_hour).padStart(2, '0')}:00:00.000-05:00`);
+          
+          // Format arrival window display (e.g., "8AM - 9AM")
+          const formatHour = (h: number) => {
+            const hour12 = h > 12 ? h - 12 : (h === 0 ? 12 : h);
+            return `${hour12}${h >= 12 ? 'PM' : 'AM'}`;
+          };
+          const arrivalEnd = window.start_hour + window.arrival_window;
+          
+          return {
+            id: `${date}-${window.id}`,
+            date: date,
+            startTime: startTime.toISOString(),
+            endTime: endTime.toISOString(),
+            isAvailable: hasAvailability,
+            label: window.label,
+            arrivalWindow: `${formatHour(window.start_hour)} - ${formatHour(arrivalEnd)}`,
+          };
+        }).filter(slot => slot.isAvailable);
         
         res.json(timeSlots);
       } else {
