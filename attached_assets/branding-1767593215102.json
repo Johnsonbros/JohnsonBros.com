@@ -1,0 +1,112 @@
+{
+  "colorScheme": "light",
+  "fonts": [
+    {
+      "family": "Arial",
+      "count": 109
+    },
+    {
+      "family": "sans-serif",
+      "count": 109
+    },
+    {
+      "family": "Roboto",
+      "count": 107
+    },
+    {
+      "family": "Montserrat",
+      "count": 48
+    },
+    {
+      "family": "Helvetica Neue",
+      "count": 2
+    },
+    {
+      "family": "Helvetica",
+      "count": 2
+    }
+  ],
+  "colors": {
+    "primary": "#51ACFB",
+    "accent": "#F69324",
+    "background": "#FFFFFF",
+    "textPrimary": "#252525",
+    "link": "#F69324"
+  },
+  "typography": {
+    "fontFamilies": {
+      "primary": "Roboto",
+      "heading": "Montserrat"
+    },
+    "fontStacks": {
+      "body": [
+        "Roboto",
+        "Arial",
+        "sans-serif"
+      ],
+      "heading": [
+        "Montserrat"
+      ],
+      "paragraph": [
+        "Roboto",
+        "Arial",
+        "sans-serif"
+      ]
+    },
+    "fontSizes": {
+      "h1": "80px",
+      "h2": "40px",
+      "body": "22px"
+    }
+  },
+  "spacing": {
+    "baseUnit": 4,
+    "borderRadius": "4px"
+  },
+  "components": {
+    "input": {
+      "background": "#FFFFFF",
+      "textColor": "#757575",
+      "borderColor": "#E6E6E6",
+      "borderRadius": "4px",
+      "borderRadiusCorners": {
+        "topLeft": "4px",
+        "topRight": "4px",
+        "bottomRight": "4px",
+        "bottomLeft": "4px"
+      },
+      "shadow": "none"
+    }
+  },
+  "images": {
+    "logo": "https://thejohnsonbros.com/wp-content/uploads/2024/02/JB_logo_New.png",
+    "favicon": "https://thejohnsonbros.com/wp-content/uploads/2024/09/cropped-JBros_Wrench_Logo_WP-32x32.png",
+    "ogImage": "https://thejohnsonbros.com/wp-content/uploads/2024/03/van-graphic-1.png"
+  },
+  "__framework_hints": [
+    "bootstrap"
+  ],
+  "__llm_logo_reasoning": {
+    "selectedIndex": 0,
+    "reasoning": "Strong indicators: header logo linking to homepage, header location, visible, src contains logo, class contains logo, alt exactly matches brand name \"Johnson Bros. Plumbing & Drain Cleaning | Quincy, MA Plumbers\", reasonable size. Score: 120 (clear winner by 93 points)",
+    "confidence": 0.9
+  },
+  "__llm_button_reasoning": {
+    "primary": {
+      "index": -1,
+      "text": "N/A",
+      "reasoning": "LLM failed"
+    },
+    "secondary": {
+      "index": -1,
+      "text": "N/A",
+      "reasoning": "LLM failed"
+    },
+    "confidence": 0
+  },
+  "confidence": {
+    "buttons": 0,
+    "colors": 0,
+    "overall": 0
+  }
+}
