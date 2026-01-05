@@ -459,6 +459,18 @@ export class DatabaseStorage implements IStorage {
     return newOffer;
   }
 
+  async getUpsellOffers(): Promise<UpsellOffer[]> {
+    return await db.select().from(upsellOffers)
+      .where(eq(upsellOffers.isActive, true))
+      .orderBy(asc(upsellOffers.displayOrder));
+  }
+
+  // Subscription methods
+  async getSubscriptions(): Promise<MemberSubscription[]> {
+    return await db.select().from(memberSubscriptions)
+      .orderBy(desc(memberSubscriptions.startDate));
+  }
+
   // Revenue Metrics methods
   async getRevenueMetrics(startDate: Date, endDate: Date): Promise<RevenueMetric[]> {
     return await db.select().from(revenueMetrics)

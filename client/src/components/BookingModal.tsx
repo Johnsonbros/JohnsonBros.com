@@ -190,6 +190,9 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
     },
   });
   const [customerType, setCustomerType] = useState<"new" | "returning" | null>(null);
+  const [customer, setCustomer] = useState<Customer | null>(null);
+  const [problemDescription, setProblemDescription] = useState("");
+  const [photos, setPhotos] = useState<PhotoUpload[]>([]);
   const [isExpressBooking, setIsExpressBooking] = useState(false);
   const [isFeeWaived, setIsFeeWaived] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(0);
@@ -473,10 +476,12 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
         const base64Data = base64.split(',')[1];
         
         setPhotos(prev => [...prev, {
+          id: `photo-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           filename: file.name,
           mimeType: file.type,
           base64: base64Data,
-          preview: base64
+          preview: base64,
+          size: file.size
         }]);
       };
       reader.readAsDataURL(file);
@@ -489,8 +494,8 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
     setPhotos(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleProblemSubmit = (data: ProblemDescriptionFormValues) => {
-    setProblemDescription(data.problemDescription);
+  const handleProblemSubmit = (data: ProblemDetailsFormValues) => {
+    setProblemDescription(data.description);
     setCurrentStep(2);
   };
 
@@ -517,7 +522,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
     try {
       const currentSlots = await getTimeSlots(bookingData.selectedDate);
       const slotStillAvailable = currentSlots.some(
-        (slot: AvailableTimeSlot) => slot.id === bookingData.selectedTimeSlot.id && slot.isAvailable
+        (slot: AvailableTimeSlot) => slot.id === bookingData.selectedTimeSlot?.id && slot.isAvailable
       );
       
       if (!slotStillAvailable) {
@@ -540,7 +545,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
     const timeObj = new Date(bookingData.selectedTimeSlot.startTime);
     const formattedTime = `${timeObj.getHours().toString().padStart(2, '0')}:${timeObj.getMinutes().toString().padStart(2, '0')}`;
 
-    const bookingData: any = {
+    const bookingPayload: any = {
       customerInfo: {
         firstName: customer.firstName,
         lastName: customer.lastName,
@@ -554,14 +559,14 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
       selectedDate: bookingData.selectedDate,
       selectedTime: formattedTime,
       problemDescription: problemDescription,
-      photos: photos.map(p => ({
+      photos: photos.map((p: PhotoUpload) => ({
         filename: p.filename,
         mimeType: p.mimeType,
         base64: p.base64
       }))
     };
 
-    createBookingMutation.mutate(bookingData);
+    createBookingMutation.mutate(bookingPayload);
   };
 
   const nextStep = () => {
@@ -781,7 +786,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                   <form onSubmit={problemForm.handleSubmit(handleProblemSubmit)} className="space-y-4">
                     <FormField
                       control={problemForm.control}
-                      name="problemDescription"
+                      name="description"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-sm sm:text-base">Problem Description *</FormLabel>
@@ -1305,7 +1310,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
               <div className="w-1/3"></div>
               <Button
                 onClick={problemForm.handleSubmit(handleProblemSubmit)}
-                disabled={!problemForm.watch('problemDescription')}
+                disabled={!problemForm.watch('description')}
                 className="bg-gradient-to-r from-johnson-blue to-johnson-teal text-white px-6 py-3 rounded-lg font-bold hover:from-johnson-teal hover:to-johnson-blue transition-all duration-300 shadow-lg disabled:opacity-50 disabled:shadow-none flex-1 text-sm sm:text-base"
                 data-testid="step1-continue-button"
               >
