@@ -165,60 +165,59 @@ export class CapacityCalculator {
     // Get available express windows for TODAY only
     const todayStr = date.toISOString().split('T')[0];
     Logger.debug(`[Express] Starting express windows filtering for ${todayStr}. RealBookingWindows count: ${realBookingWindows.length}`);
-    const expressWindows = realBookingWindows
-      .filter(window => {
+    
+    // Define 3-hour service windows in EST (converted to UTC for comparison)
+    // Morning: 8-11 AM EST = 13:00-16:00 UTC
+    // Midday: 11 AM-2 PM EST = 16:00-19:00 UTC  
+    // Afternoon: 2-5 PM EST = 19:00-22:00 UTC
+    const serviceWindows = [
+      { label: 'Morning', startHourUTC: 13, endHourUTC: 16, startEST: '08:00', endEST: '11:00' },
+      { label: 'Midday', startHourUTC: 16, endHourUTC: 19, startEST: '11:00', endEST: '14:00' },
+      { label: 'Afternoon', startHourUTC: 19, endHourUTC: 22, startEST: '14:00', endEST: '17:00' }
+    ];
+    
+    // Track which service windows have available slots
+    const availableServiceWindows: string[] = [];
+    
+    for (const serviceWindow of serviceWindows) {
+      // Check if any 30-min slot falls within this service window
+      const hasAvailableSlot = realBookingWindows.some(window => {
         // Check if window is for the target date
         const windowDate = window.start_time ? window.start_time.split('T')[0] : 
                           (window.date ? window.date.split('T')[0] : todayStr);
-        if (windowDate !== todayStr) {
-          Logger.debug(`[Express] Window ${window.start_time} filtered out - wrong date. Window: ${windowDate}, Target: ${todayStr}`);
-          return false;
-        }
+        if (windowDate !== todayStr) return false;
         
-        // For UTC timestamps, parse them directly instead of using parseWindowTime
-        let windowStart, windowEnd;
+        // Parse window time
+        let windowStart: Date;
         if (window.start_time.includes('T') && window.start_time.includes('Z')) {
           windowStart = new Date(window.start_time);
-          windowEnd = new Date(window.end_time);
         } else {
           windowStart = this.parseWindowTime(window.start_time, new Date(window.date || date));
-          windowEnd = this.parseWindowTime(window.end_time, new Date(window.date || date));
         }
+        
+        const windowHourUTC = windowStart.getUTCHours();
+        
+        // Check if this slot falls within the service window
+        const isInServiceWindow = windowHourUTC >= serviceWindow.startHourUTC && windowHourUTC < serviceWindow.endHourUTC;
         
         // Filter out expired windows - must be bookable 30 minutes before start
         const bookingCutoff = new Date(windowStart.getTime() - 30 * 60000);
         const isBookable = now < bookingCutoff;
-        const isNotExpired = now < windowEnd;
         
-        Logger.debug(`[Express] Window ${window.start_time}: available=${window.available}, isBookable=${isBookable} (now: ${now.toISOString()}, cutoff: ${bookingCutoff.toISOString()}), isNotExpired=${isNotExpired}`);
-        
-        return window.available && isBookable && isNotExpired;
-      })
-      .map(window => {
-        // Convert UTC timestamps to EST time strings for display
-        if (window.start_time.includes('T') && window.start_time.includes('Z')) {
-          const startDate = new Date(window.start_time);
-          const endDate = new Date(window.end_time);
-          const startTimeEST = startDate.toLocaleTimeString('en-US', { 
-            timeZone: 'America/New_York', 
-            hour: '2-digit', 
-            minute: '2-digit',
-            hour12: false 
-          });
-          const endTimeEST = endDate.toLocaleTimeString('en-US', { 
-            timeZone: 'America/New_York', 
-            hour: '2-digit', 
-            minute: '2-digit',
-            hour12: false 
-          });
-          return `${startTimeEST} - ${endTimeEST}`;
-        } else {
-          // Simple time strings from mock data
-          return `${window.start_time} - ${window.end_time}`;
-        }
+        return window.available && isBookable && isInServiceWindow;
       });
+      
+      if (hasAvailableSlot) {
+        // Add the consolidated 3-hour window as a time string
+        availableServiceWindows.push(`${serviceWindow.startEST} - ${serviceWindow.endEST}`);
+        Logger.debug(`[Express] Service window ${serviceWindow.label} (${serviceWindow.startEST} - ${serviceWindow.endEST}) has available slots`);
+      } else {
+        Logger.debug(`[Express] Service window ${serviceWindow.label} has no available slots`);
+      }
+    }
 
-    Logger.debug(`[Express] Filtered express windows count: ${expressWindows.length}`, expressWindows);
+    const expressWindows = availableServiceWindows;
+    Logger.debug(`[Express] Consolidated service windows count: ${expressWindows.length}`, expressWindows);
 
     // Create unique express windows with tech availability
     const uniqueExpressWindows = this.consolidateTimeSlots(expressWindows, techCapacities, date);
@@ -491,30 +490,38 @@ export class CapacityCalculator {
   }
 
   private consolidateTimeSlots(expressWindows: string[], techCapacities: any, targetDate: Date): ExpressWindow[] {
-    const slotMap = new Map<string, ExpressWindow>();
+    const results: ExpressWindow[] = [];
     
     // Priority order for tech assignment (Jahz first)
     const techPriority = ['jahz', 'nate', 'nick'];
     
-    // Get the date string for building ISO timestamps
-    const dateStr = targetDate.toISOString().split('T')[0];
+    // Service window definitions with UTC hour ranges for matching
+    // Morning: 8-11 AM EST = 13-16 UTC
+    // Midday: 11 AM-2 PM EST = 16-19 UTC
+    // Afternoon: 2-5 PM EST = 19-22 UTC
+    const serviceWindowDefs = [
+      { key: '08:00 - 11:00', startUTC: 13, endUTC: 16 },
+      { key: '11:00 - 14:00', startUTC: 16, endUTC: 19 },
+      { key: '14:00 - 17:00', startUTC: 19, endUTC: 22 }
+    ];
     
-    // First, create entries for all available express windows
+    // Process each consolidated express window
     for (const window of expressWindows) {
       const [startTime, endTime] = window.split(' - ');
       
-      // Convert EST time strings (like "08:00" or "14:00") to ISO timestamps
-      // Parse the time parts (assumes 24-hour format HH:MM)
+      // Find the matching service window definition
+      const serviceDef = serviceWindowDefs.find(def => def.key === window);
+      
+      // Convert EST time strings to ISO timestamps
       const [startHour, startMin] = startTime.split(':').map(Number);
       const [endHour, endMin] = endTime.split(':').map(Number);
       
-      // Create dates in EST and convert to ISO
-      // EST is UTC-5 (or EDT UTC-4), so we add 5 hours to get UTC
+      // Create dates in EST and convert to ISO (EST = UTC-5)
       const startDate = new Date(Date.UTC(
         targetDate.getFullYear(),
         targetDate.getMonth(),
         targetDate.getDate(),
-        startHour + 5, // Convert EST to UTC (EST = UTC-5)
+        startHour + 5,
         startMin || 0
       ));
       
@@ -522,43 +529,49 @@ export class CapacityCalculator {
         targetDate.getFullYear(),
         targetDate.getMonth(),
         targetDate.getDate(),
-        endHour + 5, // Convert EST to UTC
+        endHour + 5,
         endMin || 0
       ));
       
-      slotMap.set(window, {
-        time_slot: window,
-        available_techs: [],
-        start_time: startDate.toISOString(),
-        end_time: endDate.toISOString(),
-      });
-    }
-    
-    // Then add techs who have these windows available
-    for (const tech of techPriority) {
-      const capacity = techCapacities[tech];
-      if (!capacity || !capacity.open_windows) continue;
+      // Find techs who have ANY 30-min slot within this 3-hour window
+      const availableTechs: string[] = [];
       
-      for (const window of capacity.open_windows) {
-        if (slotMap.has(window)) {
-          const slot = slotMap.get(window)!;
-          if (!slot.available_techs.includes(tech)) {
-            slot.available_techs.push(tech);
-          }
+      for (const tech of techPriority) {
+        const capacity = techCapacities[tech];
+        if (!capacity || !capacity.open_windows) continue;
+        
+        // Check if this tech has any open 30-min slot within the service window
+        const hasSlotInWindow = capacity.open_windows.some((techWindow: string) => {
+          // Parse the tech's 30-min slot (format: "HH:MM - HH:MM" in 24hr EST converted from UTC)
+          const [slotStart] = techWindow.split(' - ');
+          const [slotHour] = slotStart.split(':').map(Number);
+          
+          // slotHour is already in 24hr format representing EST time
+          // Check if it falls within the service window's EST hours
+          const windowStartHour = startHour;
+          const windowEndHour = endHour;
+          
+          return slotHour >= windowStartHour && slotHour < windowEndHour;
+        });
+        
+        if (hasSlotInWindow && !availableTechs.includes(tech)) {
+          availableTechs.push(tech);
         }
+      }
+      
+      // If at least one tech is available, add this window
+      if (availableTechs.length > 0) {
+        results.push({
+          time_slot: window,
+          available_techs: availableTechs,
+          start_time: startDate.toISOString(),
+          end_time: endDate.toISOString(),
+        });
       }
     }
     
-    // Filter out slots with no available techs and sort
-    return Array.from(slotMap.values())
-      .filter(slot => slot.available_techs.length > 0)
-      .sort((a, b) => a.start_time.localeCompare(b.start_time))
-      .map(slot => ({
-        ...slot,
-        available_techs: slot.available_techs.sort((a, b) => 
-          techPriority.indexOf(a) - techPriority.indexOf(b)
-        )
-      }));
+    // Sort by start time
+    return results.sort((a, b) => a.start_time.localeCompare(b.start_time));
   }
 
   /**
