@@ -22,6 +22,7 @@ import abTestingRoutes from "./src/abTestingRoutes";
 import conversionRoutes from "./src/conversionRoutes";
 import experimentManagementRoutes from "./src/experimentManagement";
 import chatRoutes from "./src/chatRoutes";
+import chatkitRoutes from "./src/chatkitRoutes";
 import { generateSitemap } from "./src/sitemap";
 import { healthChecker } from "./src/healthcheck";
 import { Logger, logError, getErrorMessage } from "./src/logger";
@@ -268,6 +269,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // AI Chat routes (web chat, Twilio SMS/Voice)
   app.use('/api/v1', chatRoutes);
+  
+  // ChatKit routes for OpenAI ChatKit integration
+  app.use('/api/v1/chatkit', chatkitRoutes);
 
   // Seed blog data on startup (only in development)
   if (process.env.NODE_ENV === 'development') {

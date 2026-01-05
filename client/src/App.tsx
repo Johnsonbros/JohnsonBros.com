@@ -23,7 +23,7 @@ import AdminHeatMap from "@/pages/admin/heatmap";
 import ExperimentsPage from "@/pages/admin/experiments";
 import NotFound from "@/pages/not-found";
 import { JobCompletionNotifications } from "@/components/JobCompletionNotifications";
-import { ChatWidget } from "@/components/ChatWidget";
+import { BookingAgentChat } from "@/components/BookingAgentChat";
 
 // Lazy load VideoCallPopup - not critical for initial render
 const VideoCallPopup = lazy(() => import("@/components/VideoCallPopup").then(module => ({ default: module.VideoCallPopup })));
@@ -222,7 +222,7 @@ function App() {
         <Toaster />
         <Router />
           <JobCompletionNotifications />
-          <ChatWidget />
+          <BookingAgentChat />
           <Suspense fallback={null}>
             <VideoCallPopup />
           </Suspense>
