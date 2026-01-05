@@ -287,7 +287,7 @@ export default function MyPlan() {
   // Show loading state while fetching authentication status or data
   if (isLoading && isCustomerAuthenticated) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 pb-20 lg:pb-0">
         <SEO 
           title="My Plan | Johnson Bros. Plumbing & Heating"
           description="Manage your Family Discount membership and track your savings."
@@ -311,7 +311,7 @@ export default function MyPlan() {
 
   if (!isCustomerAuthenticated || error) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 pb-20 lg:pb-0">
         <SEO 
           title="My Plan | Johnson Bros. Plumbing & Heating"
           description="Manage your Family Discount membership and track your savings."
@@ -343,7 +343,7 @@ export default function MyPlan() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-20 lg:pb-0">
       <SEO 
         title="My Maintenance Plan | Johnson Bros. Plumbing & Heating"
         description="Manage your maintenance plan, track savings, and access exclusive member benefits."

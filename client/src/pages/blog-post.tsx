@@ -85,7 +85,7 @@ export default function BlogPostPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col pb-20 lg:pb-0">
         <Header />
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center py-16">
@@ -105,7 +105,7 @@ export default function BlogPostPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col pb-20 lg:pb-0">
       {post && (
         <SEO
           title={post.metaTitle || post.title}

@@ -69,7 +69,7 @@ export default function FamilyDiscount() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-20 lg:pb-0">
       <SEO 
         title="The Family Discount | Johnson Bros. Plumbing & Heating"
         description="Join The Family Discount for just $99/year. Get priority scheduling, no service fees, and 10% off all plumbing jobs."

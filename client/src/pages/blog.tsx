@@ -204,7 +204,7 @@ export default function Blog() {
   const regularPosts = filteredPosts?.slice(1);
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col bg-gray-50 pb-20 lg:pb-0">
       <SEO
         title="Blog | Plumbing Tips & Insights | Johnson Bros. Plumbing Quincy MA"
         description="Expert plumbing advice, maintenance tips, and home improvement guides from Johnson Bros. Plumbing. Learn how to prevent frozen pipes, maintain your water heater, and more."
@@ -261,7 +261,7 @@ export default function Blog() {
                   <button
                     key={cat.id}
                     onClick={() => setSelectedCategory(cat.id)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                    className={`flex items-center gap-2 px-4 py-2.5 sm:py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all min-h-[44px] touch-target ${
                       isSelected 
                         ? "bg-johnson-orange text-white shadow-lg shadow-johnson-orange/30" 
                         : "bg-gray-100 text-gray-600 hover:bg-gray-200"

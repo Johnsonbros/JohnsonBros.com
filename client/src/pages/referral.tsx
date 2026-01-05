@@ -264,7 +264,7 @@ export default function Referral() {
         type="website"
       />
       
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 pb-20 lg:pb-0">
         <Header />
         
         <div className="container mx-auto px-4 py-12 max-w-6xl">

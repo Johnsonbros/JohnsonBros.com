@@ -8,7 +8,7 @@ import Footer from '@/components/Footer';
 
 export default function AboutUs() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
+    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 pb-20 lg:pb-0">
       <LocalBusinessSchema 
         serviceArea={["Quincy", "Weymouth", "Braintree", "Plymouth", "Marshfield", "Hingham", "Abington", "Wollaston", "Squantum", "Houghs Neck"]}
       />
