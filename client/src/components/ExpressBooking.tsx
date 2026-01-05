@@ -357,7 +357,7 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
             />
             
             {/* Floating Service Badge */}
-            <div className={`absolute -bottom-3 -left-3 sm:-bottom-6 sm:-left-6 bg-white p-3 sm:p-6 rounded-xl shadow-lg ${hasToday || hasTomorrow ? 'ring-4 ring-green-400 ring-opacity-50' : ''}`}>
+            <div className={`absolute bottom-2 left-2 sm:-bottom-6 sm:-left-6 bg-white p-3 sm:p-6 rounded-xl shadow-lg ${hasToday || hasTomorrow ? 'ring-4 ring-green-400 ring-opacity-50' : ''}`}>
               <div className="text-center">
                 {hasToday ? (
                   <>
