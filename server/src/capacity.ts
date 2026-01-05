@@ -221,7 +221,7 @@ export class CapacityCalculator {
     Logger.debug(`[Express] Filtered express windows count: ${expressWindows.length}`, expressWindows);
 
     // Create unique express windows with tech availability
-    const uniqueExpressWindows = this.consolidateTimeSlots(expressWindows, techCapacities);
+    const uniqueExpressWindows = this.consolidateTimeSlots(expressWindows, techCapacities, date);
     Logger.debug(`[Express] Unique express windows count: ${uniqueExpressWindows.length}`, uniqueExpressWindows);
 
     // Calculate expiration time (5 minutes to reduce API costs)
@@ -490,20 +490,47 @@ export class CapacityCalculator {
     }
   }
 
-  private consolidateTimeSlots(expressWindows: string[], techCapacities: any): ExpressWindow[] {
+  private consolidateTimeSlots(expressWindows: string[], techCapacities: any, targetDate: Date): ExpressWindow[] {
     const slotMap = new Map<string, ExpressWindow>();
     
     // Priority order for tech assignment (Jahz first)
     const techPriority = ['jahz', 'nate', 'nick'];
     
+    // Get the date string for building ISO timestamps
+    const dateStr = targetDate.toISOString().split('T')[0];
+    
     // First, create entries for all available express windows
     for (const window of expressWindows) {
       const [startTime, endTime] = window.split(' - ');
+      
+      // Convert EST time strings (like "08:00" or "14:00") to ISO timestamps
+      // Parse the time parts (assumes 24-hour format HH:MM)
+      const [startHour, startMin] = startTime.split(':').map(Number);
+      const [endHour, endMin] = endTime.split(':').map(Number);
+      
+      // Create dates in EST and convert to ISO
+      // EST is UTC-5 (or EDT UTC-4), so we add 5 hours to get UTC
+      const startDate = new Date(Date.UTC(
+        targetDate.getFullYear(),
+        targetDate.getMonth(),
+        targetDate.getDate(),
+        startHour + 5, // Convert EST to UTC (EST = UTC-5)
+        startMin || 0
+      ));
+      
+      const endDate = new Date(Date.UTC(
+        targetDate.getFullYear(),
+        targetDate.getMonth(),
+        targetDate.getDate(),
+        endHour + 5, // Convert EST to UTC
+        endMin || 0
+      ));
+      
       slotMap.set(window, {
         time_slot: window,
         available_techs: [],
-        start_time: startTime,
-        end_time: endTime,
+        start_time: startDate.toISOString(),
+        end_time: endDate.toISOString(),
       });
     }
     
