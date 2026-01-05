@@ -1,15 +1,43 @@
 // AI Chat Service - Powers web chat, SMS, and voice conversations
-// Uses OpenAI to understand customer requests and call MCP tools
+// Uses OpenAI to understand customer requests and calls MCP server for HousecallPro integration
 
 import OpenAI from 'openai';
 import { Logger } from '../src/logger';
+import { fetch } from 'undici';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
+// MCP Server endpoint - running on port 3001
+const MCP_SERVER_URL = process.env.MCP_SERVER_URL || 'http://localhost:3001';
+
 // Define the tools available to the AI (mirrors MCP server tools)
 const PLUMBING_TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
+  {
+    type: "function",
+    function: {
+      name: "lookup_customer",
+      description: "Look up an existing customer in the system by phone number, email, or name. Use this when a customer asks to be looked up or wants to use their existing information.",
+      parameters: {
+        type: "object",
+        properties: {
+          phone: {
+            type: "string",
+            description: "Customer's phone number to search for"
+          },
+          email: {
+            type: "string",
+            description: "Customer's email address to search for"
+          },
+          name: {
+            type: "string",
+            description: "Customer's name to search for"
+          }
+        }
+      }
+    }
+  },
   {
     type: "function",
     function: {
@@ -91,45 +119,57 @@ const PLUMBING_TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
     type: "function",
     function: {
       name: "book_service_call",
-      description: "Book a plumbing service appointment. Collects customer info, finds available slots, and creates the booking",
+      description: "Book a plumbing service appointment. Creates the booking in HousecallPro with customer info and schedules the appointment.",
       parameters: {
         type: "object",
         properties: {
-          customer_name: {
+          first_name: {
             type: "string",
-            description: "Customer's full name"
+            description: "Customer's first name"
           },
-          customer_phone: {
+          last_name: {
+            type: "string",
+            description: "Customer's last name"
+          },
+          phone: {
             type: "string",
             description: "Customer's phone number"
           },
-          customer_email: {
+          email: {
             type: "string",
             description: "Customer's email address"
           },
-          address: {
+          street: {
             type: "string",
-            description: "Full service address including city, state, and ZIP"
+            description: "Street address for service"
           },
-          service_type: {
+          city: {
             type: "string",
-            description: "Type of plumbing service needed"
+            description: "City"
           },
-          issue_description: {
+          state: {
+            type: "string",
+            description: "State (e.g., MA)"
+          },
+          zip: {
+            type: "string",
+            description: "ZIP code"
+          },
+          description: {
             type: "string",
             description: "Description of the plumbing issue"
-          },
-          preferred_date: {
-            type: "string",
-            description: "Preferred appointment date (YYYY-MM-DD)"
           },
           time_preference: {
             type: "string",
             enum: ["morning", "afternoon", "evening", "any"],
             description: "Preferred time of day"
+          },
+          earliest_date: {
+            type: "string",
+            description: "Earliest preferred date (YYYY-MM-DD)"
           }
         },
-        required: ["customer_name", "customer_phone", "address", "service_type", "issue_description"]
+        required: ["first_name", "last_name", "phone", "street", "city", "state", "zip", "description"]
       }
     }
   },
@@ -156,185 +196,154 @@ const PLUMBING_TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
   }
 ];
 
-// Service data (same as MCP server)
-const PLUMBING_SERVICES = [
-  { id: "emergency-repair", name: "Emergency Plumbing Repair", description: "24/7 emergency services for burst pipes, major leaks, sewage backups", priceRange: { min: 150, max: 500 }, estimatedDuration: "1-4 hours", category: "emergency", isEmergency: true },
-  { id: "drain-cleaning", name: "Drain Cleaning", description: "Professional drain cleaning for clogged sinks, showers, tubs", priceRange: { min: 99, max: 250 }, estimatedDuration: "1-2 hours", category: "maintenance" },
-  { id: "water-heater", name: "Water Heater Service", description: "Installation, repair, and maintenance of water heaters", priceRange: { min: 150, max: 2500 }, estimatedDuration: "2-6 hours", category: "installation" },
-  { id: "toilet-repair", name: "Toilet Repair & Installation", description: "Fix running toilets, clogs, leaks, or install new toilets", priceRange: { min: 85, max: 450 }, estimatedDuration: "1-3 hours", category: "repair" },
-  { id: "faucet-fixtures", name: "Faucet & Fixture Installation", description: "Install or repair faucets, showerheads, garbage disposals", priceRange: { min: 75, max: 300 }, estimatedDuration: "1-2 hours", category: "installation" },
-  { id: "pipe-repair", name: "Pipe Repair & Replacement", description: "Fix leaking, corroded, or damaged pipes", priceRange: { min: 150, max: 800 }, estimatedDuration: "2-8 hours", category: "repair" },
-  { id: "sewer-line", name: "Sewer Line Service", description: "Camera inspection, cleaning, and repair of main sewer lines", priceRange: { min: 200, max: 5000 }, estimatedDuration: "2-8 hours", category: "specialty" },
-  { id: "gas-line", name: "Gas Line Services", description: "Gas leak detection, repair, and new gas line installation", priceRange: { min: 150, max: 1500 }, estimatedDuration: "2-6 hours", category: "specialty" },
-  { id: "sump-pump", name: "Sump Pump Services", description: "Installation, repair, and maintenance of sump pumps", priceRange: { min: 150, max: 1200 }, estimatedDuration: "2-4 hours", category: "installation" },
-  { id: "water-filtration", name: "Water Filtration", description: "Whole-house water filtration and water softener installation", priceRange: { min: 300, max: 3000 }, estimatedDuration: "3-6 hours", category: "installation" }
-];
+// Session storage for MCP sessions
+const mcpSessions: Map<string, string> = new Map();
 
-const EMERGENCY_GUIDANCE: Record<string, any> = {
-  "burst_pipe": {
-    title: "Burst Pipe Emergency",
-    immediateSteps: ["Turn off the main water supply immediately", "Turn off electricity in affected areas", "Open faucets to drain remaining water", "Move valuables away from the water"],
-    doNotDo: ["Do not attempt to repair the pipe yourself while water is on", "Do not use electrical appliances in wet areas"],
-    urgency: "critical"
-  },
-  "gas_leak": {
-    title: "Gas Leak Emergency",
-    immediateSteps: ["Do NOT turn on any lights or electrical switches", "Do NOT use your phone inside the house", "Open windows and doors if safely possible", "Leave the house immediately", "Call 911 and your gas company from outside"],
-    doNotDo: ["NEVER light matches or flames", "NEVER operate electrical switches", "NEVER try to locate the leak yourself"],
-    urgency: "critical"
-  },
-  "sewage_backup": {
-    title: "Sewage Backup Emergency",
-    immediateSteps: ["Stop using all water immediately", "Keep children and pets away", "Turn off HVAC to prevent spreading contamination", "Open windows for ventilation"],
-    doNotDo: ["Do NOT try to clean up sewage yourself", "Do NOT run water or flush toilets"],
-    urgency: "critical"
-  },
-  "no_hot_water": {
-    title: "No Hot Water",
-    immediateSteps: ["Check if the water heater is getting power", "For gas heaters: Check if the pilot light is lit", "Check the temperature setting", "Allow 30-60 minutes after relighting pilot"],
-    doNotDo: ["Do not attempt to repair gas connections yourself"],
-    urgency: "moderate"
-  },
-  "clogged_drain": {
-    title: "Clogged Drain",
-    immediateSteps: ["Try a plunger first", "For kitchen sinks: Check garbage disposal", "Avoid chemical drain cleaners", "Try hot water flush"],
-    doNotDo: ["Do not mix different chemical drain cleaners"],
-    urgency: "low"
+// Call MCP server tool
+async function callMCPTool(toolName: string, args: any, chatSessionId: string): Promise<any> {
+  try {
+    // Get or create MCP session
+    let mcpSessionId = mcpSessions.get(chatSessionId);
+    
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json'
+    };
+    
+    if (mcpSessionId) {
+      headers['Mcp-Session-Id'] = mcpSessionId;
+    }
+
+    // Call MCP server with tools/call method
+    const response = await fetch(`${MCP_SERVER_URL}/mcp`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: Date.now(),
+        method: 'tools/call',
+        params: {
+          name: toolName,
+          arguments: args
+        }
+      })
+    });
+
+    // Store session ID if returned
+    const sessionIdHeader = response.headers.get('Mcp-Session-Id');
+    if (sessionIdHeader) {
+      mcpSessions.set(chatSessionId, sessionIdHeader);
+    }
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      Logger.error(`MCP server error: ${response.status} ${errorText}`);
+      throw new Error(`MCP server error: ${response.status}`);
+    }
+
+    const result = await response.json() as any;
+    
+    if (result.error) {
+      Logger.error('MCP tool error:', result.error);
+      throw new Error(result.error.message || 'MCP tool error');
+    }
+
+    // Extract text content from MCP response
+    if (result.result?.content?.[0]?.text) {
+      return result.result.content[0].text;
+    }
+    
+    return JSON.stringify(result.result || result);
+    
+  } catch (error: any) {
+    Logger.error(`MCP tool call failed for ${toolName}:`, error);
+    throw error;
   }
-};
+}
 
-// Execute tool calls locally
-async function executeTool(name: string, args: any): Promise<string> {
-  Logger.info(`Executing tool: ${name}`, args);
+// Initialize MCP session
+async function initMCPSession(chatSessionId: string): Promise<boolean> {
+  try {
+    const response = await fetch(`${MCP_SERVER_URL}/mcp`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: Date.now(),
+        method: 'initialize',
+        params: {
+          protocolVersion: '2024-11-05',
+          capabilities: {},
+          clientInfo: {
+            name: 'jb-chat',
+            version: '1.0.0'
+          }
+        }
+      })
+    });
+
+    const sessionIdHeader = response.headers.get('Mcp-Session-Id');
+    if (sessionIdHeader) {
+      mcpSessions.set(chatSessionId, sessionIdHeader);
+      Logger.info(`MCP session initialized: ${sessionIdHeader}`);
+      return true;
+    }
+    
+    return response.ok;
+  } catch (error: any) {
+    Logger.error('Failed to initialize MCP session:', error);
+    return false;
+  }
+}
+
+// Execute tool calls - routes to MCP server for real HousecallPro integration
+async function executeTool(name: string, args: any, chatSessionId: string): Promise<string> {
+  Logger.info(`Executing tool via MCP: ${name}`, args);
   
-  switch (name) {
-    case "get_services": {
-      let services = [...PLUMBING_SERVICES];
-      if (args.category) {
-        services = services.filter(s => s.category === args.category);
-      }
-      if (args.search) {
-        const term = args.search.toLowerCase();
-        services = services.filter(s => 
-          s.name.toLowerCase().includes(term) || 
-          s.description.toLowerCase().includes(term)
-        );
-      }
-      return JSON.stringify({
-        services: services.map(s => ({
-          name: s.name,
-          description: s.description,
-          price_range: `$${s.priceRange.min} - $${s.priceRange.max}`,
-          duration: s.estimatedDuration,
-          category: s.category
-        })),
-        total: services.length,
-        phone: "(617) 479-9911"
-      });
+  try {
+    // Ensure MCP session is initialized
+    if (!mcpSessions.has(chatSessionId)) {
+      await initMCPSession(chatSessionId);
     }
     
-    case "get_quote": {
-      const searchTerms = (args.service_type || '').toLowerCase();
-      const foundService = PLUMBING_SERVICES.find(s => 
-        s.name.toLowerCase().includes(searchTerms) ||
-        s.description.toLowerCase().includes(searchTerms)
-      );
-      
-      const service = foundService || { 
-        id: "general", 
-        name: "General Plumbing Service", 
-        description: "General plumbing services",
-        priceRange: { min: 99, max: 500 }, 
-        estimatedDuration: "1-4 hours",
-        category: "repair"
-      };
-      
-      let multiplier = 1;
-      if (args.urgency === "emergency") multiplier = 1.5;
-      else if (args.urgency === "urgent") multiplier = 1.25;
-      if (args.property_type === "commercial") multiplier *= 1.2;
-      
-      return JSON.stringify({
-        service: service.name,
-        estimated_price_range: `$${Math.round(service.priceRange.min * multiplier)} - $${Math.round(service.priceRange.max * multiplier)}`,
-        estimated_duration: service.estimatedDuration,
-        urgency: args.urgency || "routine",
-        notes: ["Final price depends on actual scope of work", "We offer a $99 diagnostic fee waived if you proceed with repair"],
-        next_step: "Book an appointment for an exact quote"
-      });
-    }
+    // Call the MCP server
+    const result = await callMCPTool(name, args, chatSessionId);
+    return typeof result === 'string' ? result : JSON.stringify(result);
     
-    case "search_availability": {
-      // Simulate availability - in production this calls HousecallPro
-      const slots = [
-        { time: "9:00 AM", available: true },
-        { time: "11:00 AM", available: true },
-        { time: "2:00 PM", available: true },
-        { time: "4:00 PM", available: true }
-      ];
-      
-      let filtered = slots;
-      if (args.time_preference === "morning") {
-        filtered = slots.filter(s => s.time.includes("AM"));
-      } else if (args.time_preference === "afternoon") {
-        filtered = slots.filter(s => s.time.includes("PM"));
-      }
-      
-      return JSON.stringify({
-        date: args.date,
-        service: args.serviceType,
-        available_slots: filtered,
-        total_available: filtered.length,
-        message: filtered.length > 0 
-          ? `Found ${filtered.length} available slots on ${args.date}`
-          : "No slots available. Try a different date or time preference."
-      });
-    }
+  } catch (error: any) {
+    Logger.error(`Tool ${name} failed, returning error response:`, error);
     
-    case "book_service_call": {
-      // In production, this would call the MCP server's book_service_call
-      // For now, return a confirmation that guides the user
-      return JSON.stringify({
-        status: "booking_initiated",
-        message: `To complete your booking for ${args.service_type}, please confirm: Name: ${args.customer_name}, Phone: ${args.customer_phone}, Address: ${args.address}`,
-        next_steps: [
-          "We'll call you within 30 minutes to confirm the appointment",
-          "A technician will arrive at the scheduled time",
-          "Payment is due upon completion"
-        ],
-        emergency_note: "For immediate emergencies, call us directly at (617) 479-9911"
-      });
+    // Return helpful error messages based on tool type
+    switch (name) {
+      case 'lookup_customer':
+        return JSON.stringify({
+          success: false,
+          error: "I'm having trouble accessing customer records right now. Could you please provide your details so I can help you book an appointment?",
+          fallback: true
+        });
+        
+      case 'book_service_call':
+        return JSON.stringify({
+          success: false,
+          error: "I'm having trouble completing the booking. Please call us directly at (617) 479-9911 to schedule your appointment.",
+          fallback: true
+        });
+        
+      case 'search_availability':
+        return JSON.stringify({
+          success: false,
+          error: "I couldn't check availability right now. Please call (617) 479-9911 to check available times.",
+          fallback: true
+        });
+        
+      default:
+        return JSON.stringify({
+          success: false,
+          error: "I'm experiencing a technical issue. Please try again or call (617) 479-9911.",
+          fallback: true
+        });
     }
-    
-    case "emergency_help": {
-      const type = (args.emergency_type || '').toLowerCase();
-      let guidance = null;
-      
-      if (type.includes('burst') || type.includes('pipe')) guidance = EMERGENCY_GUIDANCE.burst_pipe;
-      else if (type.includes('gas')) guidance = EMERGENCY_GUIDANCE.gas_leak;
-      else if (type.includes('sewage') || type.includes('backup')) guidance = EMERGENCY_GUIDANCE.sewage_backup;
-      else if (type.includes('hot water') || type.includes('water heater')) guidance = EMERGENCY_GUIDANCE.no_hot_water;
-      else if (type.includes('clog') || type.includes('drain')) guidance = EMERGENCY_GUIDANCE.clogged_drain;
-      
-      if (!guidance) {
-        guidance = {
-          title: "Plumbing Emergency",
-          immediateSteps: ["Turn off main water supply if there's active water damage", "Avoid using plumbing fixtures", "Document the issue with photos"],
-          urgency: "moderate"
-        };
-      }
-      
-      return JSON.stringify({
-        emergency_type: guidance.title,
-        urgency: guidance.urgency,
-        immediate_steps: guidance.immediateSteps,
-        safety_warnings: guidance.doNotDo || [],
-        call_now: guidance.urgency === "critical" ? "CALL NOW: (617) 479-9911" : "Schedule service: (617) 479-9911"
-      });
-    }
-    
-    default:
-      return JSON.stringify({ error: "Unknown tool" });
   }
 }
 
@@ -344,6 +353,7 @@ const SYSTEM_PROMPT = `You are a helpful AI assistant for Johnson Bros. Plumbing
 2. Provide instant price estimates for services
 3. Give emergency plumbing guidance when needed
 4. Answer questions about our services
+5. Look up existing customers when they ask - you CAN access customer records!
 
 Key information:
 - Business: Johnson Bros. Plumbing & Drain Cleaning
@@ -351,6 +361,12 @@ Key information:
 - Service Area: South Shore Massachusetts (Quincy, Braintree, Weymouth, Hingham, Cohasset, Abington, and surrounding areas)
 - We're licensed, insured, and have over 15 years of experience
 - We offer "The Family Discount" membership ($99/year) for priority service and discounts
+
+IMPORTANT - Customer Lookup:
+- When a customer asks "can you look me up?", "do you have my info?", or provides their phone/email, USE the lookup_customer tool
+- You CAN access customer records - use the lookup_customer tool with their phone, email, or name
+- If you find them, confirm their information and offer to book using their existing address
+- If not found, politely ask for their details to create a new booking
 
 Guidelines:
 - Be friendly, professional, and helpful
@@ -401,7 +417,7 @@ export async function processChat(
       messages: history,
       tools: PLUMBING_TOOLS,
       tool_choice: 'auto',
-      max_tokens: channel === 'sms' ? 300 : 500 // Shorter for SMS
+      max_tokens: channel === 'sms' ? 300 : 500
     });
     
     const assistantMessage = response.choices[0].message;
@@ -418,7 +434,9 @@ export async function processChat(
         const toolArgs = JSON.parse(toolCall.function.arguments);
         
         toolsUsed.push(toolName);
-        const toolResult = await executeTool(toolName, toolArgs);
+        
+        // Execute tool via MCP server
+        const toolResult = await executeTool(toolName, toolArgs, sessionId);
         
         history.push({
           role: 'tool',
@@ -463,6 +481,7 @@ export async function processChat(
 
 export function clearSession(sessionId: string): void {
   conversationHistory.delete(sessionId);
+  mcpSessions.delete(sessionId);
 }
 
 export function getSessionHistory(sessionId: string): ChatMessage[] {
