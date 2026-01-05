@@ -1268,5 +1268,159 @@ server.registerTool(
   }
 );
 
+// Lookup Customer Tool - search for existing customers by phone or email
+const LookupCustomerInput = z.object({
+  phone: z.string().optional().describe("Customer's phone number to search for"),
+  email: z.string().email().optional().describe("Customer's email address to search for"),
+  name: z.string().optional().describe("Customer's name to search for")
+});
+
+server.registerTool(
+  "lookup_customer",
+  {
+    title: "Look Up Existing Customer",
+    description: "Search for an existing customer in HousecallPro by phone number, email, or name. Returns customer details including address and service history if found.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        phone: { type: "string", description: "Customer's phone number" },
+        email: { type: "string", description: "Customer's email address" },
+        name: { type: "string", description: "Customer's name" }
+      }
+    }
+  } as any,
+  async (raw) => {
+    const correlationId = randomUUID();
+    
+    try {
+      const input = LookupCustomerInput.parse(raw || {});
+      log.info({ input, correlationId }, "lookup_customer: start");
+
+      // Need at least one search parameter
+      if (!input.phone && !input.email && !input.name) {
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify({
+              success: false,
+              error: "Please provide a phone number, email, or name to look up the customer.",
+              correlation_id: correlationId
+            }, null, 2)
+          }]
+        };
+      }
+
+      // Build search query - prioritize phone, then email, then name
+      const searchQuery = input.phone || input.email || input.name;
+      
+      // Search HousecallPro for existing customer
+      const searchResult = await hcpGet("/customers", { 
+        q: searchQuery,
+        page_size: 5 
+      }, correlationId) as any;
+      
+      const customers = searchResult.customers || [];
+      
+      if (customers.length === 0) {
+        log.info({ correlationId, searchQuery }, "lookup_customer: no customers found");
+        
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify({
+              success: true,
+              found: false,
+              message: `No customer found matching "${searchQuery}". Would you like to create a new booking? I'll just need your details.`,
+              search_query: searchQuery,
+              correlation_id: correlationId
+            }, null, 2)
+          }]
+        };
+      }
+
+      // Format customer data for response
+      const formattedCustomers = customers.map((c: any) => ({
+        id: c.id,
+        name: `${c.first_name || ''} ${c.last_name || ''}`.trim(),
+        first_name: c.first_name,
+        last_name: c.last_name,
+        phone: c.mobile_number || c.home_number || c.work_number,
+        email: c.email,
+        addresses: (c.addresses || []).map((addr: any) => ({
+          id: addr.id,
+          street: addr.street,
+          street_line_2: addr.street_line_2,
+          city: addr.city,
+          state: addr.state,
+          zip: addr.zip,
+          full_address: [addr.street, addr.street_line_2, addr.city, addr.state, addr.zip]
+            .filter(Boolean)
+            .join(', ')
+        })),
+        tags: c.tags || [],
+        created_at: c.created_at
+      }));
+
+      const primaryCustomer = formattedCustomers[0];
+      
+      const result = {
+        success: true,
+        found: true,
+        customer_count: customers.length,
+        customer: primaryCustomer,
+        all_matches: formattedCustomers.length > 1 ? formattedCustomers : undefined,
+        message: `Found ${customers.length > 1 ? customers.length + ' customers' : 'your account'}: ${primaryCustomer.name}${primaryCustomer.addresses.length > 0 ? ` at ${primaryCustomer.addresses[0].full_address}` : ''}`,
+        next_steps: "I have your information on file. Would you like to book a service appointment at this address, or do you have a different location?",
+        correlation_id: correlationId
+      };
+
+      log.info({ 
+        result: { 
+          found: true, 
+          customer_count: customers.length,
+          customer_id: primaryCustomer.id 
+        }, 
+        correlationId 
+      }, "lookup_customer: success");
+
+      return {
+        content: [
+          { type: "text", text: JSON.stringify(result, null, 2) }
+        ]
+      };
+      
+    } catch (err: any) {
+      let structuredError: StructuredError;
+      
+      if (err.type) {
+        structuredError = err;
+      } else {
+        structuredError = createStructuredError(
+          ErrorType.UNKNOWN,
+          "LOOKUP_ERROR",
+          `Customer lookup failed: ${err.message}`,
+          "I had trouble looking up customer records. Could you please provide your details so I can help you book an appointment?",
+          correlationId,
+          { original_error: err.message }
+        );
+      }
+      
+      log.error({ error: structuredError, correlationId }, "lookup_customer: error");
+
+      return {
+        content: [{
+          type: "text",
+          text: JSON.stringify({
+            success: false,
+            error: structuredError.userMessage,
+            error_code: structuredError.code,
+            correlation_id: correlationId
+          }, null, 2)
+        }]
+      };
+    }
+  }
+);
+
 // Export the server for use in different transports
 export { server };
