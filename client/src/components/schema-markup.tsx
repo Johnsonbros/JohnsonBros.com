@@ -14,24 +14,45 @@ export function LocalBusinessSchema({ serviceArea, service }: LocalBusinessSchem
     "@context": "https://schema.org",
     "@type": "Plumber",
     "name": "Johnson Bros. Plumbing & Drain Cleaning",
-    "image": "https://johnsonbrosplumbing.com/logo.png",
+    "alternateName": "N.J. Services Inc.",
+    "image": "https://thejohnsonbros.com/wp-content/uploads/2024/02/JB_logo_New.png",
     "telephone": "+16174799911",
-    "email": "info@johnsonbrosplumbing.com",
-    "address": {
-      "@type": "PostalAddress",
-      "streetAddress": "Abington",
-      "addressLocality": "Abington",
-      "addressRegion": "MA",
-      "postalCode": "02351",
-      "addressCountry": "US"
-    },
+    "email": "Sales@TheJohnsonBros.com",
+    "legalName": "N.J. Services Inc.",
+    "license": "PL #17034-M, Corp #4581",
+    "address": [
+      {
+        "@type": "PostalAddress",
+        "streetAddress": "75 East Elm Ave",
+        "addressLocality": "Quincy",
+        "addressRegion": "MA",
+        "postalCode": "02170",
+        "addressCountry": "US"
+      },
+      {
+        "@type": "PostalAddress",
+        "streetAddress": "55 Brighton St",
+        "addressLocality": "Abington",
+        "addressRegion": "MA",
+        "postalCode": "02351",
+        "addressCountry": "US"
+      }
+    ],
     "geo": {
       "@type": "GeoCoordinates",
-      "latitude": "42.1048",
-      "longitude": "-70.9453"
+      "latitude": "42.2529",
+      "longitude": "-71.0023"
     },
-    "url": "https://johnsonbrosplumbing.com",
+    "url": "https://thejohnsonbros.com",
+    "sameAs": [
+      "https://www.yelp.com/biz/johnson-bros-plumbing-and-drain-cleaning-quincy-5",
+      "https://www.google.com/maps/place/Johnson+Bros.+Plumbing+%26+Drain+Cleaning"
+    ],
     "priceRange": "$$",
+    "paymentAccepted": ["Cash", "Credit Card", "Check"],
+    "currenciesAccepted": "USD",
+    "knowsLanguage": "English",
+    "slogan": "Your local neighborhood Quincy plumbers, ready to tackle any plumbing issue 24/7",
     "openingHoursSpecification": [
       {
         "@type": "OpeningHoursSpecification",
@@ -141,8 +162,8 @@ export function LocalBusinessSchema({ serviceArea, service }: LocalBusinessSchem
     },
     "aggregateRating": {
       "@type": "AggregateRating",
-      "ratingValue": "4.9",
-      "reviewCount": "487",
+      "ratingValue": "4.8",
+      "reviewCount": "314",
       "bestRating": "5",
       "worstRating": "1"
     }

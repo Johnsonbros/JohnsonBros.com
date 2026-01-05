@@ -36,6 +36,10 @@ import DrainCleaning from "@/pages/services/drain-cleaning";
 import EmergencyPlumbing from "@/pages/services/emergency-plumbing";
 import WaterHeater from "@/pages/services/water-heater";
 import PipeRepair from "@/pages/services/pipe-repair";
+import HeatingServices from "@/pages/services/heating";
+
+// About Page
+import AboutUs from "@/pages/about";
 
 // Service Area Pages
 import QuincyPlumbing from "@/pages/service-areas/quincy";
@@ -103,6 +107,8 @@ function Router() {
       <Route path="/services/emergency-plumbing" component={EmergencyPlumbing} />
       <Route path="/services/water-heater" component={WaterHeater} />
       <Route path="/services/pipe-repair" component={PipeRepair} />
+      <Route path="/services/heating" component={HeatingServices} />
+      <Route path="/about" component={AboutUs} />
       
       {/* Service Area Pages */}
       <Route path="/service-areas/quincy" component={QuincyPlumbing} />

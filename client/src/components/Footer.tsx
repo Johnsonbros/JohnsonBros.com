@@ -54,12 +54,12 @@ export default function Footer({ onBookService }: FooterProps) {
           <div>
             <h4 className="text-lg font-bold mb-6">Services</h4>
             <ul className="space-y-3">
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Emergency Plumbing</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Drain Cleaning</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Water Heater Service</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Pipe Repair</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Fixture Installation</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Bathroom Remodeling</a></li>
+              <li><Link href="/services/emergency-plumbing" className="text-gray-400 hover:text-white transition-colors">Emergency Plumbing</Link></li>
+              <li><Link href="/services/drain-cleaning" className="text-gray-400 hover:text-white transition-colors">Drain Cleaning</Link></li>
+              <li><Link href="/services/water-heater" className="text-gray-400 hover:text-white transition-colors">Water Heater Service</Link></li>
+              <li><Link href="/services/heating" className="text-gray-400 hover:text-white transition-colors">Heating & Boiler Service</Link></li>
+              <li><Link href="/services/pipe-repair" className="text-gray-400 hover:text-white transition-colors">Pipe Repair</Link></li>
+              <li><Link href="/services/new-construction" className="text-gray-400 hover:text-white transition-colors">New Construction</Link></li>
             </ul>
           </div>
 
@@ -81,11 +81,20 @@ export default function Footer({ onBookService }: FooterProps) {
                   <p className="text-xs sm:text-sm text-gray-400">Email Us</p>
                 </div>
               </div>
-              <div className="flex items-center space-x-3">
-                <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-johnson-blue flex-shrink-0" />
+              <div className="flex items-start space-x-3">
+                <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-johnson-blue flex-shrink-0 mt-1" />
                 <div>
-                  <p className="font-semibold text-sm sm:text-base" data-testid="footer-location">Abington & Quincy, MA</p>
-                  <p className="text-xs sm:text-sm text-gray-400">Service Area</p>
+                  <p className="font-semibold text-sm sm:text-base" data-testid="footer-location">Two Locations:</p>
+                  <a href="https://maps.app.goo.gl/65wd4toecNfd1Qeo7" target="_blank" rel="noopener noreferrer" className="text-xs sm:text-sm text-gray-400 hover:text-white block">75 East Elm Ave, Quincy, MA 02170</a>
+                  <a href="https://maps.app.goo.gl/GPfqvtdFTxTuZXui6" target="_blank" rel="noopener noreferrer" className="text-xs sm:text-sm text-gray-400 hover:text-white block">55 Brighton St, Abington, MA 02351</a>
+                </div>
+              </div>
+              <div className="flex items-center space-x-3 pt-2">
+                <Shield className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 flex-shrink-0" />
+                <div>
+                  <p className="text-xs sm:text-sm text-gray-400">
+                    MA License: <span className="text-white font-medium">PL #17034-M</span> | Corp: <span className="text-white font-medium">#4581</span>
+                  </p>
                 </div>
               </div>
             </div>
@@ -95,12 +104,12 @@ export default function Footer({ onBookService }: FooterProps) {
           <div>
             <h4 className="text-lg font-bold mb-6">Quick Links</h4>
             <ul className="space-y-3 mb-6">
-              <li><a href="/#about" className="text-gray-400 hover:text-white transition-colors">About Us</a></li>
+              <li><Link href="/about" className="text-gray-400 hover:text-white transition-colors">About Us</Link></li>
               <li><Link href="/blog" className="text-gray-400 hover:text-white transition-colors">Blog</Link></li>
               <li><a href="/#reviews" className="text-gray-400 hover:text-white transition-colors">Reviews</a></li>
               <li><a href="/#service-area" className="text-gray-400 hover:text-white transition-colors">Service Area</a></li>
               <li><Link href="/contact" className="text-gray-400 hover:text-white transition-colors">Contact</Link></li>
-              <li><Link href="/referral" className="text-gray-400 hover:text-white transition-colors">Referral Program</Link></li>
+              <li><Link href="/family-discount" className="text-gray-400 hover:text-white transition-colors">The Family Discount</Link></li>
             </ul>
             
             {onBookService ? (
