@@ -9,6 +9,7 @@ import { ABTestingProvider } from "@/contexts/ABTestingContext";
 import { lazy, Suspense, useState, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import MobileBottomNav from "@/components/MobileBottomNav";
+import MobileMoreMenu from "@/components/MobileMoreMenu";
 import BookingModalEnhanced from "@/components/BookingModalEnhanced";
 import Home from "@/pages/home";
 import Blog from "@/pages/blog";
@@ -139,10 +140,13 @@ function Router() {
 
 function App() {
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
   const isMobile = useIsMobile();
 
   const openBookingModal = () => setIsBookingModalOpen(true);
   const closeBookingModal = () => setIsBookingModalOpen(false);
+  const openMoreMenu = () => setIsMoreMenuOpen(true);
+  const closeMoreMenu = () => setIsMoreMenuOpen(false);
 
   return (
     <ErrorBoundary>
@@ -234,7 +238,18 @@ function App() {
           </Suspense>
           
           {/* Mobile Bottom Navigation - Only on mobile */}
-          {isMobile && <MobileBottomNav onBookService={openBookingModal} />}
+          {isMobile && (
+            <MobileBottomNav 
+              onBookService={openBookingModal} 
+              onMoreClick={openMoreMenu}
+            />
+          )}
+          
+          {/* Mobile More Menu */}
+          <MobileMoreMenu 
+            isOpen={isMoreMenuOpen} 
+            onClose={closeMoreMenu}
+          />
           
           {/* Booking Modal for Mobile Bottom Nav */}
           <BookingModalEnhanced 
