@@ -606,14 +606,17 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
   const generateCalendarDays = () => {
     const days = [];
     const today = new Date();
-    for (let i = 0; i < 14; i++) {
+    for (let i = 0; i < 7; i++) {
       const date = new Date();
       date.setDate(today.getDate() + i);
+      const dayOfWeek = date.getDay();
+      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6; // Sunday = 0, Saturday = 6
       days.push({
         date: date.toISOString().split('T')[0],
         label: date.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' }),
         isToday: i === 0,
         isTomorrow: i === 1,
+        isWeekend,
       });
     }
     return days;
@@ -677,8 +680,12 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
                       onClick={() => setBookingData(prev => ({ ...prev, selectedDate: day.date, selectedTimeSlot: null }))}
                       className={`p-2 rounded-lg text-center transition-all ${
                         isSelected
-                          ? 'bg-johnson-blue text-white'
-                          : 'bg-gray-100 hover:bg-gray-200'
+                          ? day.isWeekend 
+                            ? 'bg-red-500 text-white'
+                            : 'bg-johnson-blue text-white'
+                          : day.isWeekend
+                            ? 'bg-red-50 hover:bg-red-100 border border-red-200'
+                            : 'bg-gray-100 hover:bg-gray-200'
                       }`}
                     >
                       <div className="text-xs font-medium">
@@ -686,6 +693,9 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
                       </div>
                       {day.isToday && <Badge className="text-xs">Today</Badge>}
                       {day.isTomorrow && <Badge className="text-xs">Tomorrow</Badge>}
+                      {day.isWeekend && !day.isToday && !day.isTomorrow && (
+                        <Badge className="text-xs bg-red-500">Emergency</Badge>
+                      )}
                     </button>
                   );
                 })}
@@ -693,40 +703,67 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
             </div>
 
             {/* Time Slot Selection */}
-            {bookingData.selectedDate && (
-              <div className="space-y-2">
-                <Label>Available Time Slots</Label>
-                {timeSlotsLoading ? (
-                  <div className="text-center py-4">Loading available times...</div>
-                ) : (
-                  <div className="grid grid-cols-3 gap-2">
-                    {timeSlots?.map((slot: AvailableTimeSlot) => {
-                      const isSelected = bookingData.selectedTimeSlot?.id === slot.id;
-                      
-                      return (
-                        <button
-                          key={slot.id}
-                          onClick={() => setBookingData(prev => ({ ...prev, selectedTimeSlot: slot }))}
-                          disabled={!slot.isAvailable}
-                          className={`p-3 rounded-lg text-sm transition-all ${
-                            isSelected
-                              ? 'bg-johnson-blue text-white'
-                              : slot.isAvailable
-                              ? 'bg-gray-100 hover:bg-gray-200'
-                              : 'bg-gray-50 text-gray-400 cursor-not-allowed'
-                          }`}
-                        >
-                          <div className="flex items-center justify-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            {formatTimeSlotWindow(slot.startTime, slot.endTime)}
-                          </div>
-                        </button>
-                      );
-                    })}
+            {bookingData.selectedDate && (() => {
+              const selectedDateObj = new Date(bookingData.selectedDate + 'T12:00:00');
+              const isWeekendSelected = selectedDateObj.getDay() === 0 || selectedDateObj.getDay() === 6;
+              
+              if (isWeekendSelected) {
+                return (
+                  <div className="bg-red-50 border-2 border-red-300 rounded-lg p-6 text-center">
+                    <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+                    <h4 className="font-bold text-lg text-red-700 mb-2">Emergency Service Only</h4>
+                    <p className="text-gray-700 mb-4">
+                      Weekend appointments are available for emergency services only. Please call us directly to schedule.
+                    </p>
+                    <a 
+                      href="tel:6174799911"
+                      className="inline-flex items-center justify-center gap-2 bg-red-500 text-white px-6 py-3 rounded-lg font-bold hover:bg-red-600 transition-all"
+                    >
+                      <Clock className="w-5 h-5" />
+                      Call (617) 479-9911
+                    </a>
+                    <p className="text-sm text-gray-500 mt-3">
+                      Available 24/7 for plumbing emergencies
+                    </p>
                   </div>
-                )}
-              </div>
-            )}
+                );
+              }
+              
+              return (
+                <div className="space-y-2">
+                  <Label>Available Time Slots</Label>
+                  {timeSlotsLoading ? (
+                    <div className="text-center py-4">Loading available times...</div>
+                  ) : (
+                    <div className="grid grid-cols-3 gap-2">
+                      {timeSlots?.map((slot: AvailableTimeSlot) => {
+                        const isSelected = bookingData.selectedTimeSlot?.id === slot.id;
+                        
+                        return (
+                          <button
+                            key={slot.id}
+                            onClick={() => setBookingData(prev => ({ ...prev, selectedTimeSlot: slot }))}
+                            disabled={!slot.isAvailable}
+                            className={`p-3 rounded-lg text-sm transition-all ${
+                              isSelected
+                                ? 'bg-johnson-blue text-white'
+                                : slot.isAvailable
+                                ? 'bg-gray-100 hover:bg-gray-200'
+                                : 'bg-gray-50 text-gray-400 cursor-not-allowed'
+                            }`}
+                          >
+                            <div className="flex items-center justify-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              {formatTimeSlotWindow(slot.startTime, slot.endTime)}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Optional Problem Description */}
             <div className="space-y-2 mt-4">
