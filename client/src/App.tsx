@@ -138,6 +138,12 @@ function Router() {
 }
 
 function App() {
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const isMobile = useIsMobile();
+
+  const openBookingModal = () => setIsBookingModalOpen(true);
+  const closeBookingModal = () => setIsBookingModalOpen(false);
+
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
@@ -226,6 +232,15 @@ function App() {
           <Suspense fallback={null}>
             <VideoCallPopup />
           </Suspense>
+          
+          {/* Mobile Bottom Navigation - Only on mobile */}
+          {isMobile && <MobileBottomNav onBookService={openBookingModal} />}
+          
+          {/* Booking Modal for Mobile Bottom Nav */}
+          <BookingModalEnhanced 
+            isOpen={isBookingModalOpen} 
+            onClose={closeBookingModal}
+          />
             </TooltipProvider>
           </ABTestingProvider>
         </HelmetProvider>
