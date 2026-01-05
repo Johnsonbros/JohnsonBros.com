@@ -25,6 +25,7 @@ export function ChatWidget() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [scrollProgress, setScrollProgress] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -33,6 +34,16 @@ export function ChatWidget() {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollY = window.scrollY;
+      const progress = Math.min(scrollY / 300, 1);
+      setScrollProgress(progress);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     if (isOpen && inputRef.current) {
@@ -234,13 +245,38 @@ export function ChatWidget() {
         )}
       </AnimatePresence>
       <div className="fixed bottom-24 md:bottom-6 right-6 z-50 flex flex-col items-center gap-1">
-        <span className="text-xs font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 px-2 py-0.5 rounded-full shadow-sm border border-gray-200 dark:border-gray-600">
-          Chat Now
-        </span>
+        <AnimatePresence>
+          {scrollProgress > 0.5 && !isOpen && (
+            <motion.span
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              transition={{ duration: 0.3 }}
+              className="text-xs font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 px-2 py-0.5 rounded-full shadow-sm border border-gray-200 dark:border-gray-600"
+            >
+              Chat Now
+            </motion.span>
+          )}
+        </AnimatePresence>
         <motion.button
           onClick={() => setIsOpen(!isOpen)}
-          className="w-20 h-20 rounded-full bg-white hover:bg-gray-50 shadow-xl border border-gray-200 flex items-center justify-center transition-colors"
-          whileHover={{ scale: 1.05 }}
+          className="rounded-full bg-white hover:bg-gray-50 shadow-xl border border-gray-200 flex items-center justify-center transition-colors"
+          style={{
+            width: `${64 + scrollProgress * 16}px`,
+            height: `${64 + scrollProgress * 16}px`,
+          }}
+          animate={{
+            scale: isOpen ? 1 : [1, 1.05, 1],
+          }}
+          transition={{
+            scale: {
+              duration: 2,
+              repeat: isOpen ? 0 : Infinity,
+              repeatType: "loop",
+              ease: "easeInOut",
+            },
+          }}
+          whileHover={{ scale: 1.08 }}
           whileTap={{ scale: 0.95 }}
           data-testid="chat-toggle-button"
         >
@@ -263,7 +299,15 @@ export function ChatWidget() {
                 exit={{ rotate: -90, opacity: 0 }}
                 transition={{ duration: 0.15 }}
               >
-                <img src={logoIcon} alt="Chat" className="w-[72px] h-[72px] object-contain" />
+                <img 
+                  src={logoIcon} 
+                  alt="Chat" 
+                  style={{
+                    width: `${56 + scrollProgress * 16}px`,
+                    height: `${56 + scrollProgress * 16}px`,
+                  }}
+                  className="object-contain" 
+                />
               </motion.div>
             )}
           </AnimatePresence>
