@@ -56,7 +56,7 @@ export default function NewConstructionPlumbing() {
                   <Button 
                     size="lg"
                     variant="outline"
-                    className="border-2 border-white text-white hover:bg-white hover:text-johnson-blue text-lg px-8 py-6"
+                    className="border-2 border-white hover:bg-white hover:text-johnson-blue text-lg px-8 py-6 text-[#4792b9]"
                     asChild
                   >
                     <Link href="/contact" data-testid="contact-button">
