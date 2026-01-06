@@ -27,21 +27,25 @@ interface StructuredError {
   userMessage: string; // Friendly message for AI assistants
 }
 
-// Environment validation
-function validateEnvironment() {
-  const required = ["HOUSECALL_API_KEY"];
-  const missing = required.filter(key => !process.env[key]);
-  
-  if (missing.length > 0) {
-    log.error({ missing }, "Missing required environment variables");
-    throw new Error(`Missing required environment variables: ${missing.join(", ")}`);
+function getHousecallApiKey(correlationId?: string) {
+  const apiKey = process.env.HOUSECALL_API_KEY;
+  if (!apiKey) {
+    const corrId = correlationId || randomUUID();
+    const error = createStructuredError(
+      ErrorType.CONFIGURATION,
+      "MISSING_HOUSECALL_API_KEY",
+      "HOUSECALL_API_KEY environment variable is not set",
+      "Booking tools are temporarily unavailable because required credentials are missing. Please contact support.",
+      corrId,
+      { envVar: "HOUSECALL_API_KEY" }
+    );
+
+    log.error({ correlationId: corrId }, "HousecallPro API key missing");
+    throw error;
   }
+  return apiKey;
 }
 
-// Validate environment on startup
-validateEnvironment();
-
-const HOUSECALL_API_KEY = process.env.HOUSECALL_API_KEY!;
 const COMPANY_TZ = process.env.COMPANY_TZ || "America/New_York";
 const DEFAULT_DISPATCH_EMPLOYEE_IDS = (process.env.DEFAULT_DISPATCH_EMPLOYEE_IDS || "")
   .split(",")
@@ -81,9 +85,11 @@ const SearchAvailabilityInput = z.object({
 
 type SearchAvailabilityInput = z.infer<typeof SearchAvailabilityInput>;
 
-function hcpHeaders() {
+function hcpHeaders(correlationId?: string) {
+  const apiKey = getHousecallApiKey(correlationId);
+
   return {
-    "Authorization": `Token ${HOUSECALL_API_KEY}`,
+    "Authorization": `Token ${apiKey}`,
     "Content-Type": "application/json"
   };
 }
@@ -107,7 +113,7 @@ async function hcpGet(path: string, query?: Record<string, string | number | boo
   });
   
   try {
-    const res = await fetch(url, { headers: hcpHeaders() });
+    const res = await fetch(url, { headers: hcpHeaders(corrId) });
     if (!res.ok) {
       const errorText = await res.text();
       log.error({ path, errorText, status: res.status, correlationId: corrId }, `HCP API error: ${res.status}`);
@@ -173,7 +179,7 @@ async function hcpPost(path: string, body: unknown, correlationId?: string) {
   try {
     const res = await fetch(url, {
       method: "POST",
-      headers: hcpHeaders(),
+      headers: hcpHeaders(corrId),
       body: JSON.stringify(body)
     });
     if (!res.ok) {
