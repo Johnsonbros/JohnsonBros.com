@@ -715,6 +715,14 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
               const selectedDateObj = new Date(bookingData.selectedDate + 'T12:00:00');
               const isWeekendSelected = selectedDateObj.getDay() === 0 || selectedDateObj.getDay() === 6;
               
+              const now = new Date();
+              const estTime = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
+              const currentHour = estTime.getHours();
+              const todayDate = estTime.toISOString().split('T')[0];
+              const isTodaySelected = bookingData.selectedDate === todayDate;
+              const isPastNoon = currentHour >= 12;
+              const isSameDayCutoff = isTodaySelected && isPastNoon;
+              
               if (isWeekendSelected) {
                 return (
                   <div className="bg-red-50 border-2 border-red-300 rounded-lg p-6 text-center">
@@ -732,6 +740,28 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
                     </a>
                     <p className="text-sm text-gray-500 mt-3">
                       Available 24/7 for plumbing emergencies
+                    </p>
+                  </div>
+                );
+              }
+              
+              if (isSameDayCutoff) {
+                return (
+                  <div className="bg-amber-50 border-2 border-amber-300 rounded-lg p-6 text-center">
+                    <Phone className="h-12 w-12 text-amber-500 mx-auto mb-4" />
+                    <h4 className="font-bold text-lg text-amber-700 mb-2">Call for Same-Day Availability</h4>
+                    <p className="text-gray-700 mb-4">
+                      Online same-day booking closes at 12 PM. Please call us directly to check today's availability.
+                    </p>
+                    <a 
+                      href="tel:6174799911"
+                      className="inline-flex items-center justify-center gap-2 bg-amber-500 text-white px-6 py-3 rounded-lg font-bold hover:bg-amber-600 transition-all"
+                    >
+                      <Phone className="w-5 h-5" />
+                      Call (617) 479-9911
+                    </a>
+                    <p className="text-sm text-gray-500 mt-3">
+                      Or select tomorrow for online booking
                     </p>
                   </div>
                 );
