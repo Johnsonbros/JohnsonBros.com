@@ -4,6 +4,7 @@
 import OpenAI from 'openai';
 import { Logger } from '../src/logger';
 import { fetch } from 'undici';
+import { agentTracing } from './agentTracing';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
@@ -351,7 +352,7 @@ async function executeTool(name: string, args: any, chatSessionId: string): Prom
 
 const SYSTEM_PROMPT = `You are the Johnson Bros. Plumbing & Drain Cleaning booking chatbot that lives on thejohnsonbros.com. Follow the scripted booking flow below, pausing after each step for the customer's response.
 
-Business facts
+## Business Facts
 - Phone/CTA: (617) 479-9911 (call for emergencies or to book now)
 - Services: general plumbing, heating, drain cleaning, new construction plumbing, emergency plumbing
 - Service area: Quincy, Greater Boston, and the South Shore (all cities/towns in Norfolk, Suffolk, and Plymouth counties). Ask for city/town/ZIP; if outside those counties, say they are outside the regular service area but invite them to call.
@@ -359,14 +360,51 @@ Business facts
 - Arrival windows: Mon–Fri slots are 8–11 AM, 11 AM–2 PM, 2–5 PM with a 2-hour arrival window.
 - Membership: The Family Discount ($99/year) for priority service and discounts.
 
-Sequential booking steps (wait for user reply after each):
+## TOOL SELECTION DECISION TREE (CRITICAL - Follow This Exactly)
+
+### When to use lookup_customer:
+✅ USE when customer says: "I've used you before", "I'm an existing customer", "Look me up", "You have my info"
+✅ USE when customer provides phone/email and wants to use saved info
+✅ USE after asking "Have you used Johnson Bros. before?" and they say "Yes"
+❌ DO NOT USE for new customers
+❌ DO NOT USE when you don't have phone/email/name yet
+
+### When to use get_services:
+✅ USE when customer asks: "What services do you offer?", "What can you fix?", "Do you do X?"
+✅ USE when customer needs to know if we handle their issue type
+❌ DO NOT USE if the customer already knows what service they need
+
+### When to use get_quote:
+✅ USE when customer asks about pricing for a specific service
+✅ USE when you need to provide a cost estimate
+❌ DO NOT USE without knowing service type and issue description first
+
+### When to use search_availability:
+✅ USE when customer wants to know available times on a specific date
+✅ USE when customer says "When can you come?", "What times are available?"
+✅ USE when you have a date and service type
+❌ DO NOT USE before knowing what service is needed
+❌ DO NOT USE without a target date
+
+### When to use book_service_call:
+✅ USE when you have ALL required info: name, phone, email, address, service type, date/time
+✅ USE only AFTER confirming appointment details with customer
+❌ DO NOT USE if any required field is missing
+❌ DO NOT USE before customer confirms the appointment
+
+### When to use emergency_help:
+✅ USE when customer describes emergency: burst pipe, flooding, gas smell, sewage backup
+✅ USE immediately when safety is at risk
+❌ DO NOT USE for routine issues that can wait
+
+## Sequential Booking Steps (wait for user reply after each):
 1) Greet the customer and ask how Johnson Bros. can assist.
 2) Ask 1–2 targeted questions about their issue to capture booking notes.
 3) Ask if they want to schedule an appointment.
 4) If yes, ask if it is an emergency.
 5) If emergency, instruct them to call (617) 479-9911 immediately.
 6) If not emergency, ask if they have used Johnson Bros. before. Remind them of the service fee when appropriate.
-7) If they have used us, look them up (use lookup_customer) and gather their information.
+7) If they have used us, look them up (use lookup_customer with phone/email) and gather their information.
 8) When showing saved addresses, list them like: 1) 184 Furnace Brook Parkway, Unit 2, Quincy, MA 02169 2) 75 East Elm Ave, Quincy, MA 02170. Remember and store address_id values.
 9) If they have not used us, collect full name, email (may include symbols), mobile number, and full address; then create a profile.
 10) Remember and store customer_id for bookings.
@@ -375,13 +413,21 @@ Sequential booking steps (wait for user reply after each):
 13) If they have multiple issues, prompt them to call the office directly at (617) 479-9911.
 14) After booking, ask them to leave a Google review: https://www.google.com/search?hl=en-US&gl=us&q=Johnson+Bros.+Plumbing++Drain+Cleaning, and if they mention past good experiences, share https://g.page/r/CctTL_zEdxlHEBM/review.
 
-Pricing rule: Never quote full job prices. If asked for pricing, say exactly: "Thanks for asking about our prices at Johnson Bros. Plumbing & Drain Cleaning! For most situations like yours, we charge a $99 Service Charge. This includes a visit from our technician to precisely evaluate your specific plumbing issue and give you an estimate to fix it. While non-refundable, this fee is credited towards your service cost if you proceed with us." Then add a sales point and CTA to call or book.
+## Pricing Rule
+Never quote full job prices. If asked for pricing, say exactly: "Thanks for asking about our prices at Johnson Bros. Plumbing & Drain Cleaning! For most situations like yours, we charge a $99 Service Charge. This includes a visit from our technician to precisely evaluate your specific plumbing issue and give you an estimate to fix it. While non-refundable, this fee is credited towards your service cost if you proceed with us." Then add a sales point and CTA to call or book.
 
-Tooling and safety
-- You CAN access customer records; use lookup_customer when they ask or provide phone/email/name.
-- Use search_availability and book_service_call to check slots and book jobs.
-- Be friendly, knowledgeable, and concise. Offer basic plumbing info but never DIY repair instructions and never recommend Drain-O or similar products.
-- If unsure about anything, say so and invite them to call (617) 479-9911.`;
+## Personality & Style
+- Be warm, professional, and helpful - like a friendly neighbor who happens to be a plumbing expert
+- Use conversational language, not corporate speak
+- Be concise - especially for SMS/voice channels
+- Show empathy for plumbing problems ("I understand that can be stressful!")
+- Be confident about our expertise and reliability
+
+## Safety Rules
+- Never provide DIY repair instructions
+- Never recommend Drain-O or chemical drain cleaners
+- If unsure about anything, say so and invite them to call (617) 479-9911
+- For any life-threatening emergency, tell them to call 911 first`;
 
 // Store conversation history per session
 const conversationHistory: Map<string, OpenAI.Chat.Completions.ChatCompletionMessageParam[]> = new Map();
@@ -401,7 +447,16 @@ export async function processChat(
   userMessage: string,
   channel: 'web' | 'sms' | 'voice' = 'web'
 ): Promise<ChatResponse> {
+  const channelMap = { web: 'web_chat', sms: 'sms', voice: 'voice' } as const;
+  
   try {
+    // Ensure conversation is tracked
+    const conversationId = await agentTracing.getOrCreateConversation(
+      sessionId, 
+      channelMap[channel],
+      SYSTEM_PROMPT
+    );
+    
     // Get or create conversation history
     let history = conversationHistory.get(sessionId) || [];
     
@@ -412,6 +467,12 @@ export async function processChat(
     
     // Add user message
     history.push({ role: 'user', content: userMessage });
+    
+    // Track user message
+    await agentTracing.addMessage(sessionId, {
+      role: 'user',
+      content: userMessage,
+    });
     
     // Limit history to prevent token overflow
     if (history.length > 20) {
@@ -434,6 +495,19 @@ export async function processChat(
     if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
       history.push(assistantMessage);
       
+      // Track assistant message with tool calls
+      await agentTracing.addMessage(sessionId, {
+        role: 'assistant',
+        content: assistantMessage.content || '',
+        toolCalls: assistantMessage.tool_calls
+          .filter(tc => tc.type === 'function')
+          .map(tc => ({
+            id: tc.id,
+            name: (tc as any).function.name,
+            arguments: JSON.parse((tc as any).function.arguments),
+          })),
+      });
+      
       for (const toolCall of assistantMessage.tool_calls) {
         if (toolCall.type !== 'function') continue;
         
@@ -442,8 +516,46 @@ export async function processChat(
         
         toolsUsed.push(toolName);
         
+        // Log tool call start
+        const startTime = Date.now();
+        const toolCallDbId = await agentTracing.logToolCall({
+          sessionId,
+          toolName,
+          toolCallId: toolCall.id,
+          arguments: toolArgs,
+          userMessageTrigger: userMessage,
+        });
+        
         // Execute tool via MCP server
-        const toolResult = await executeTool(toolName, toolArgs, sessionId);
+        let toolResult: string;
+        let success = true;
+        let errorMessage: string | undefined;
+        
+        try {
+          toolResult = await executeTool(toolName, toolArgs, sessionId);
+        } catch (error: any) {
+          toolResult = JSON.stringify({ error: error.message });
+          success = false;
+          errorMessage = error.message;
+        }
+        
+        // Log tool call result
+        const latencyMs = Date.now() - startTime;
+        if (toolCallDbId) {
+          await agentTracing.updateToolCallResult(toolCallDbId, {
+            result: toolResult,
+            success,
+            errorMessage,
+            latencyMs,
+          });
+        }
+        
+        // Track tool response
+        await agentTracing.addMessage(sessionId, {
+          role: 'tool',
+          content: toolResult,
+          toolCallId: toolCall.id,
+        });
         
         history.push({
           role: 'tool',
@@ -463,6 +575,12 @@ export async function processChat(
       history.push(finalMessage);
       conversationHistory.set(sessionId, history);
       
+      // Track final assistant message
+      await agentTracing.addMessage(sessionId, {
+        role: 'assistant',
+        content: finalMessage.content || '',
+      });
+      
       return {
         message: finalMessage.content || "I apologize, I couldn't generate a response. Please call us at (617) 479-9911.",
         toolsUsed
@@ -473,6 +591,12 @@ export async function processChat(
     history.push(assistantMessage);
     conversationHistory.set(sessionId, history);
     
+    // Track assistant message
+    await agentTracing.addMessage(sessionId, {
+      role: 'assistant',
+      content: assistantMessage.content || '',
+    });
+    
     return {
       message: assistantMessage.content || "I apologize, I couldn't generate a response. Please call us at (617) 479-9911.",
       toolsUsed
@@ -480,6 +604,14 @@ export async function processChat(
     
   } catch (error: any) {
     Logger.error('AI Chat error:', error);
+    
+    // Track error in conversation
+    try {
+      await agentTracing.endConversation(sessionId, 'error');
+    } catch (e) {
+      // Ignore tracing errors
+    }
+    
     return {
       message: "I'm having trouble right now. Please call us at (617) 479-9911 for immediate assistance."
     };

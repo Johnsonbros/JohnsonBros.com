@@ -1523,3 +1523,245 @@ export type InsertUpsellOffer = z.infer<typeof insertUpsellOfferSchema>;
 
 export type RevenueMetric = typeof revenueMetrics.$inferSelect;
 export type InsertRevenueMetric = z.infer<typeof insertRevenueMetricSchema>;
+
+// ============================================
+// AGENT TRACING & RLHF SYSTEM
+// ============================================
+
+// Channel types for multi-channel support
+export const ChannelType = {
+  WEB_CHAT: 'web_chat',
+  SMS: 'sms',
+  VOICE: 'voice',
+} as const;
+
+export type ChannelTypeValue = typeof ChannelType[keyof typeof ChannelType];
+
+// Message role types
+export const MessageRole = {
+  SYSTEM: 'system',
+  USER: 'user',
+  ASSISTANT: 'assistant',
+  TOOL: 'tool',
+} as const;
+
+export type MessageRoleValue = typeof MessageRole[keyof typeof MessageRole];
+
+// Agent Conversations - stores full conversation transcripts
+export const agentConversations = pgTable('agent_conversations', {
+  id: serial('id').primaryKey(),
+  sessionId: text('session_id').notNull().unique(),
+  channel: text('channel').notNull().default('web_chat'), // web_chat, sms, voice
+  customerPhone: text('customer_phone'),
+  customerId: integer('customer_id').references(() => customers.id),
+  systemPrompt: text('system_prompt'), // Store system prompt for fine-tuning
+  messages: json('messages').$type<Array<{
+    role: string;
+    content: string;
+    timestamp: string;
+    toolCalls?: Array<{ id: string; name: string; arguments: any }>;
+    toolCallId?: string;
+  }>>().default([]),
+  totalTokens: integer('total_tokens').default(0),
+  totalToolCalls: integer('total_tool_calls').default(0),
+  outcome: text('outcome'), // completed, abandoned, escalated, error
+  startedAt: timestamp('started_at').defaultNow().notNull(),
+  endedAt: timestamp('ended_at'),
+  metadata: json('metadata').$type<Record<string, any>>(),
+}, (table) => ({
+  sessionIdx: uniqueIndex('agent_conv_session_idx').on(table.sessionId),
+  channelIdx: index('agent_conv_channel_idx').on(table.channel),
+  customerIdx: index('agent_conv_customer_idx').on(table.customerId),
+  startedAtIdx: index('agent_conv_started_idx').on(table.startedAt),
+  outcomeIdx: index('agent_conv_outcome_idx').on(table.outcome),
+}));
+
+// Agent Tool Calls - detailed log of each tool invocation
+export const agentToolCalls = pgTable('agent_tool_calls', {
+  id: serial('id').primaryKey(),
+  conversationId: integer('conversation_id').references(() => agentConversations.id).notNull(),
+  toolName: text('tool_name').notNull(),
+  toolCallId: text('tool_call_id').notNull(),
+  arguments: json('arguments').$type<Record<string, any>>(),
+  result: json('result').$type<any>(),
+  success: boolean('success').notNull().default(true),
+  errorMessage: text('error_message'),
+  latencyMs: integer('latency_ms'),
+  tokensBefore: integer('tokens_before'), // Context tokens before this call
+  userMessageTrigger: text('user_message_trigger'), // What user said that triggered this
+  wasCorrectTool: boolean('was_correct_tool'), // Human feedback flag
+  correctToolSuggestion: text('correct_tool_suggestion'), // If wrong, what should it have been
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  conversationIdx: index('tool_call_conv_idx').on(table.conversationId),
+  toolNameIdx: index('tool_call_name_idx').on(table.toolName),
+  successIdx: index('tool_call_success_idx').on(table.success),
+  createdAtIdx: index('tool_call_created_idx').on(table.createdAt),
+}));
+
+// Agent Feedback - human ratings and corrections for RLHF
+export const agentFeedback = pgTable('agent_feedback', {
+  id: serial('id').primaryKey(),
+  conversationId: integer('conversation_id').references(() => agentConversations.id).notNull(),
+  toolCallId: integer('tool_call_id').references(() => agentToolCalls.id),
+  messageIndex: integer('message_index'), // Which message in the conversation
+  feedbackType: text('feedback_type').notNull(), // rating, correction, flag, annotation
+  rating: integer('rating'), // 1-5 scale for ratings
+  originalResponse: text('original_response'),
+  correctedResponse: text('corrected_response'),
+  flagReason: text('flag_reason'), // wrong_tool, bad_response, hallucination, etc
+  annotation: text('annotation'), // Free-form notes
+  reviewedBy: text('reviewed_by'), // Admin who reviewed
+  reviewedAt: timestamp('reviewed_at'),
+  includedInTraining: boolean('included_in_training').default(false),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  conversationIdx: index('feedback_conv_idx').on(table.conversationId),
+  feedbackTypeIdx: index('feedback_type_idx').on(table.feedbackType),
+  includedIdx: index('feedback_included_idx').on(table.includedInTraining),
+  ratingIdx: index('feedback_rating_idx').on(table.rating),
+}));
+
+// Agent Evals - test scenarios and results
+export const agentEvals = pgTable('agent_evals', {
+  id: serial('id').primaryKey(),
+  evalId: text('eval_id').notNull().unique(),
+  name: text('name').notNull(),
+  description: text('description'),
+  category: text('category').notNull(), // emergency_detection, tool_selection, booking_flow, etc
+  inputMessages: json('input_messages').$type<Array<{ role: string; content: string }>>().notNull(),
+  expectedBehavior: text('expected_behavior').notNull(),
+  expectedToolCalls: json('expected_tool_calls').$type<string[]>(), // List of tool names that should be called
+  expectedOutput: text('expected_output'),
+  passCriteria: json('pass_criteria').$type<{
+    mustCallTools?: string[];
+    mustNotCallTools?: string[];
+    mustContain?: string[];
+    mustNotContain?: string[];
+    customChecks?: string[];
+  }>(),
+  isActive: boolean('is_active').default(true).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  evalIdIdx: uniqueIndex('eval_id_idx').on(table.evalId),
+  categoryIdx: index('eval_category_idx').on(table.category),
+}));
+
+// Agent Eval Runs - results of running evals
+export const agentEvalRuns = pgTable('agent_eval_runs', {
+  id: serial('id').primaryKey(),
+  evalId: integer('eval_id').references(() => agentEvals.id).notNull(),
+  runId: text('run_id').notNull(),
+  passed: boolean('passed').notNull(),
+  actualOutput: text('actual_output'),
+  actualToolCalls: json('actual_tool_calls').$type<Array<{ name: string; arguments: any }>>(),
+  failureReason: text('failure_reason'),
+  latencyMs: integer('latency_ms'),
+  modelUsed: text('model_used'),
+  promptVersion: text('prompt_version'),
+  metadata: json('metadata').$type<Record<string, any>>(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  evalIdx: index('eval_run_eval_idx').on(table.evalId),
+  passedIdx: index('eval_run_passed_idx').on(table.passed),
+  runIdIdx: index('eval_run_id_idx').on(table.runId),
+  createdAtIdx: index('eval_run_created_idx').on(table.createdAt),
+}));
+
+// Relations for agent tracing
+export const agentConversationsRelations = relations(agentConversations, ({ one, many }) => ({
+  customer: one(customers, {
+    fields: [agentConversations.customerId],
+    references: [customers.id],
+  }),
+  toolCalls: many(agentToolCalls),
+  feedback: many(agentFeedback),
+}));
+
+export const agentToolCallsRelations = relations(agentToolCalls, ({ one, many }) => ({
+  conversation: one(agentConversations, {
+    fields: [agentToolCalls.conversationId],
+    references: [agentConversations.id],
+  }),
+  feedback: many(agentFeedback),
+}));
+
+export const agentFeedbackRelations = relations(agentFeedback, ({ one }) => ({
+  conversation: one(agentConversations, {
+    fields: [agentFeedback.conversationId],
+    references: [agentConversations.id],
+  }),
+  toolCall: one(agentToolCalls, {
+    fields: [agentFeedback.toolCallId],
+    references: [agentToolCalls.id],
+  }),
+}));
+
+export const agentEvalsRelations = relations(agentEvals, ({ many }) => ({
+  runs: many(agentEvalRuns),
+}));
+
+export const agentEvalRunsRelations = relations(agentEvalRuns, ({ one }) => ({
+  eval: one(agentEvals, {
+    fields: [agentEvalRuns.evalId],
+    references: [agentEvals.id],
+  }),
+}));
+
+// Insert schemas for agent tracing
+export const insertAgentConversationSchema = createInsertSchema(agentConversations).omit({
+  id: true,
+  startedAt: true,
+});
+
+export const insertAgentToolCallSchema = createInsertSchema(agentToolCalls).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertAgentFeedbackSchema = createInsertSchema(agentFeedback).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertAgentEvalSchema = createInsertSchema(agentEvals).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertAgentEvalRunSchema = createInsertSchema(agentEvalRuns).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Types for agent tracing
+export type AgentConversation = typeof agentConversations.$inferSelect;
+export type InsertAgentConversation = z.infer<typeof insertAgentConversationSchema>;
+
+export type AgentToolCall = typeof agentToolCalls.$inferSelect;
+export type InsertAgentToolCall = z.infer<typeof insertAgentToolCallSchema>;
+
+export type AgentFeedback = typeof agentFeedback.$inferSelect;
+export type InsertAgentFeedback = z.infer<typeof insertAgentFeedbackSchema>;
+
+export type AgentEval = typeof agentEvals.$inferSelect;
+export type InsertAgentEval = z.infer<typeof insertAgentEvalSchema>;
+
+export type AgentEvalRun = typeof agentEvalRuns.$inferSelect;
+export type InsertAgentEvalRun = z.infer<typeof insertAgentEvalRunSchema>;
+
+// Fine-tuning export format (OpenAI JSONL)
+export type FineTuningExample = {
+  messages: Array<{
+    role: 'system' | 'user' | 'assistant';
+    content: string;
+    tool_calls?: Array<{
+      id: string;
+      type: 'function';
+      function: { name: string; arguments: string };
+    }>;
+    tool_call_id?: string;
+  }>;
+};
