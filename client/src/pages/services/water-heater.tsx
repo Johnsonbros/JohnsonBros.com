@@ -29,7 +29,6 @@ export default function WaterHeater() {
         <meta property="og:url" content="https://johnsonbrosplumbing.com/services/water-heater" />
         <meta property="og:type" content="website" />
       </Helmet>
-
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-blue-600 to-blue-700 text-white py-16 px-4">
         <div className="max-w-6xl mx-auto">
@@ -68,7 +67,6 @@ export default function WaterHeater() {
           </div>
         </div>
       </section>
-
       {/* Common Water Heater Problems */}
       <section className="py-12 px-4 bg-gray-50">
         <div className="max-w-6xl mx-auto">
@@ -112,7 +110,6 @@ export default function WaterHeater() {
           </div>
         </div>
       </section>
-
       {/* Water Heater Services */}
       <section className="py-12 px-4">
         <div className="max-w-6xl mx-auto">
@@ -160,7 +157,7 @@ export default function WaterHeater() {
                 <ul className="space-y-2 text-gray-600">
                   <li className="flex items-start gap-2">
                     <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-                    <span>Tank water heaters (30-80 gal)</span>
+                    <span>Tank water heaters (40-80 gal)</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
@@ -215,7 +212,6 @@ export default function WaterHeater() {
           </div>
         </div>
       </section>
-
       {/* Signs You Need Service */}
       <section className="py-12 px-4 bg-gray-50">
         <div className="max-w-6xl mx-auto">
@@ -297,7 +293,6 @@ export default function WaterHeater() {
           </div>
         </div>
       </section>
-
       {/* Tank vs Tankless */}
       <section className="py-12 px-4">
         <div className="max-w-6xl mx-auto">
@@ -371,7 +366,6 @@ export default function WaterHeater() {
           </div>
         </div>
       </section>
-
       {/* Local Service Areas */}
       <section className="py-12 px-4 bg-blue-50">
         <div className="max-w-6xl mx-auto">
@@ -411,7 +405,6 @@ export default function WaterHeater() {
           </div>
         </div>
       </section>
-
       {/* Why Choose Johnson Bros */}
       <section className="py-12 px-4">
         <div className="max-w-6xl mx-auto">
@@ -453,10 +446,8 @@ export default function WaterHeater() {
           </div>
         </div>
       </section>
-
       {/* Why Choose Johnson Bros Section */}
       <WhyChooseUs serviceName="water-heater" />
-
       {/* Final CTA */}
       <section className="py-16 px-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white">
         <div className="max-w-4xl mx-auto text-center">
