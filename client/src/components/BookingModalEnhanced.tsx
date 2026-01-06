@@ -17,7 +17,7 @@ import {
   Calendar, X, User, UserPlus, Clock, DollarSign, ChevronLeft, ChevronRight, 
   ClipboardList, Gift, Info, Upload, Image as ImageIcon, AlertTriangle,
   Droplets, Flame, Wrench, Settings, Home, Camera, Trash2, CheckCircle,
-  AlertCircle, MapPin, FileText, Lock, Shield, Phone
+  AlertCircle, MapPin, FileText, Lock, Shield, Phone, ArrowRight
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -749,33 +749,31 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
             })()}
 
             {/* Date Selection - Weekly Calendar View */}
-            <div className="space-y-3">
-              {/* Week Navigation Header */}
-              <div className="flex items-center justify-between">
-                <Label>SELECT DAY</Label>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setWeekOffset(prev => Math.max(0, prev - 1))}
-                    disabled={weekOffset === 0}
-                    className="h-8 w-8 p-0"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <span className="text-sm font-medium min-w-[80px] text-center">
-                    {weekOffset === 0 ? 'This Week' : 'Next Week'}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setWeekOffset(prev => Math.min(1, prev + 1))}
-                    disabled={weekOffset >= 1}
-                    className="h-8 w-8 p-0"
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
+            <div className="space-y-4">
+              {/* Week Selection Toggle */}
+              <div className="flex p-1 bg-gray-100 rounded-xl">
+                <button
+                  onClick={() => setWeekOffset(0)}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition-all ${
+                    weekOffset === 0 
+                      ? 'bg-white text-johnson-blue shadow-sm' 
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  <Calendar className="w-4 h-4" />
+                  This Week
+                </button>
+                <button
+                  onClick={() => setWeekOffset(1)}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition-all ${
+                    weekOffset === 1 
+                      ? 'bg-white text-johnson-blue shadow-sm' 
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  <ArrowRight className="w-4 h-4" />
+                  Next Week
+                </button>
               </div>
 
               {/* Weekly Calendar Layout */}
