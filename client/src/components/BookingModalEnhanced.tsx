@@ -565,6 +565,14 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
   const renderStepIndicator = () => {
     return (
       <div className="mb-6">
+        <div className="flex items-center justify-center mb-6 pt-2">
+          <img 
+            src="/JB_logo_New_1756136293648.png" 
+            alt="Johnson Bros. Plumbing & Drain Cleaning" 
+            className="h-16 w-auto object-contain"
+            data-testid="modal-logo"
+          />
+        </div>
         <Progress value={(currentStep / steps.length) * 100} className="h-2 mb-4" />
         <div className="flex justify-between">
           {steps.map((step) => {
