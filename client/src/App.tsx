@@ -29,6 +29,7 @@ const AdminLogin = lazy(() => import("@/pages/admin/login"));
 const AdminDashboard = lazy(() => import("@/pages/admin/dashboard"));
 const AdminHeatMap = lazy(() => import("@/pages/admin/heatmap"));
 const ExperimentsPage = lazy(() => import("@/pages/admin/experiments"));
+const AgentTracingPage = lazy(() => import("@/pages/admin/agent-tracing"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 
 // Service Pages
@@ -108,6 +109,7 @@ function Router() {
           <Route path="/admin/dashboard" component={AdminDashboard} />
           <Route path="/admin/heatmap" component={AdminHeatMap} />
           <Route path="/admin/experiments" component={ExperimentsPage} />
+          <Route path="/admin/agent-tracing" component={AgentTracingPage} />
 
           {/* Service Pages */}
           <Route path="/services/general-plumbing" component={GeneralPlumbing} />
