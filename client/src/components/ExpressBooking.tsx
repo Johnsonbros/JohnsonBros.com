@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { Clock, Shield, DollarSign, Calendar, Phone, MapPin, Zap, ChevronRight, Star } from "lucide-react";
+import { Link } from "wouter";
+import { Clock, Shield, DollarSign, Calendar, Phone, MapPin, Zap, ChevronRight, Star, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/queryClient";
