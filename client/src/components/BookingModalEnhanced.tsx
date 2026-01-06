@@ -756,21 +756,34 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
                           const isSelected = bookingData.selectedDate === day.date;
                           const isDisabled = day.isPast;
                           
+                          if (isDisabled) {
+                            return (
+                              <div
+                                key={day.date}
+                                className="p-3 rounded-lg text-center min-h-[90px] flex flex-col justify-center items-center gap-1 bg-gray-100/50 border border-gray-100"
+                              >
+                                <div className="text-xs font-medium text-gray-400">
+                                  {day.dayName}
+                                </div>
+                                <div className="text-xl font-bold text-gray-300">
+                                  {day.dayNum}
+                                </div>
+                              </div>
+                            );
+                          }
+
                           return (
                             <button
                               key={day.date}
-                              onClick={() => !isDisabled && setBookingData(prev => ({ 
+                              onClick={() => setBookingData(prev => ({ 
                                 ...prev, 
                                 selectedDate: day.date, 
                                 selectedTimeSlot: null 
                               }))}
-                              disabled={isDisabled}
                               className={`p-3 rounded-lg text-center transition-all min-h-[90px] flex flex-col justify-center items-center gap-1 ${
-                                isDisabled
-                                  ? 'bg-gray-100 text-gray-300 cursor-not-allowed'
-                                  : isSelected
-                                    ? 'bg-johnson-blue text-white shadow-md'
-                                    : 'bg-gray-50 hover:bg-gray-100 border border-gray-200'
+                                isSelected
+                                  ? 'bg-johnson-blue text-white shadow-md'
+                                  : 'bg-gray-50 hover:bg-gray-100 border border-gray-200'
                               }`}
                             >
                               <div className="text-xs font-medium opacity-75">
