@@ -23,6 +23,7 @@ import conversionRoutes from "./src/conversionRoutes";
 import experimentManagementRoutes from "./src/experimentManagement";
 import chatRoutes from "./src/chatRoutes";
 import chatkitRoutes from "./src/chatkitRoutes";
+import twilioWebhooks from "./lib/twilioWebhooks";
 import { generateSitemap } from "./src/sitemap";
 import { healthChecker } from "./src/healthcheck";
 import { Logger, logError, getErrorMessage } from "./src/logger";
@@ -272,6 +273,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // ChatKit routes for OpenAI ChatKit integration
   app.use('/api/v1/chatkit', chatkitRoutes);
+  
+  // Twilio SMS and Voice webhook routes
+  app.use('/api/v1/twilio', twilioWebhooks);
 
   // Seed blog data on startup (only in development)
   if (process.env.NODE_ENV === 'development') {
@@ -3558,5 +3562,22 @@ Sitemap: ${siteUrl}/sitemap.xml
   });
 
   const httpServer = createServer(app);
+  
+  // Set up WebSocket server for Twilio Media Streams (Realtime Voice)
+  const { WebSocketServer } = await import('ws');
+  const { handleMediaStream } = await import('./lib/realtimeVoice');
+  
+  const wss = new WebSocketServer({ 
+    server: httpServer,
+    path: '/api/v1/twilio/media-stream'
+  });
+  
+  wss.on('connection', (ws, req) => {
+    Logger.info('[WebSocket] New Twilio Media Stream connection');
+    handleMediaStream(ws, req);
+  });
+  
+  Logger.info('[WebSocket] Media Stream WebSocket server initialized');
+  
   return httpServer;
 }
