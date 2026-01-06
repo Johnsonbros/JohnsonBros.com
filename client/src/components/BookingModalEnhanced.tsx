@@ -880,32 +880,69 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
               }
               
               return (
-                <div className="space-y-2">
-                  <Label>Available Time Slots</Label>
+                <div className="space-y-3">
+                  <Label className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-johnson-blue" />
+                    Choose Your Time Window
+                  </Label>
                   {timeSlotsLoading ? (
-                    <div className="text-center py-4">Loading available times...</div>
+                    <div className="flex items-center justify-center py-6">
+                      <div className="animate-pulse flex items-center gap-2 text-gray-500">
+                        <Clock className="w-4 h-4 animate-spin" />
+                        <span>Loading times...</span>
+                      </div>
+                    </div>
                   ) : (
-                    <div className="grid grid-cols-3 gap-2">
-                      {timeSlots?.map((slot: AvailableTimeSlot) => {
+                    <div className="grid grid-cols-1 gap-2">
+                      {timeSlots?.map((slot: AvailableTimeSlot, index: number) => {
                         const isSelected = bookingData.selectedTimeSlot?.id === slot.id;
+                        const timeLabels = ['Morning', 'Midday', 'Afternoon'];
+                        const timeIcons = ['🌅', '☀️', '🌆'];
                         
                         return (
                           <button
                             key={slot.id}
                             onClick={() => setBookingData(prev => ({ ...prev, selectedTimeSlot: slot }))}
                             disabled={!slot.isAvailable}
-                            className={`p-3 rounded-lg text-sm transition-all ${
+                            className={`relative p-4 rounded-xl text-left transition-all active:scale-[0.98] ${
                               isSelected
-                                ? 'bg-johnson-blue text-white'
+                                ? 'bg-johnson-blue text-white shadow-lg ring-2 ring-johnson-blue ring-offset-2'
                                 : slot.isAvailable
-                                ? 'bg-gray-100 hover:bg-gray-200'
-                                : 'bg-gray-50 text-gray-400 cursor-not-allowed'
+                                  ? 'bg-white border-2 border-gray-200 hover:border-johnson-blue hover:shadow-md'
+                                  : 'bg-gray-50 text-gray-400 cursor-not-allowed border border-gray-100'
                             }`}
                           >
-                            <div className="flex items-center justify-center gap-1">
-                              <Clock className="w-3 h-3" />
-                              {formatTimeSlotWindow(slot.startTime, slot.endTime)}
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <span className="text-2xl">{timeIcons[index] || '⏰'}</span>
+                                <div>
+                                  <div className={`text-xs font-bold uppercase tracking-wider ${isSelected ? 'text-white/80' : 'text-gray-500'}`}>
+                                    {timeLabels[index] || 'Window'}
+                                  </div>
+                                  <div className={`text-base font-bold ${isSelected ? 'text-white' : 'text-gray-900'}`}>
+                                    {formatTimeSlotWindow(slot.startTime, slot.endTime)}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                                isSelected 
+                                  ? 'bg-white border-white' 
+                                  : slot.isAvailable 
+                                    ? 'border-gray-300' 
+                                    : 'border-gray-200'
+                              }`}>
+                                {isSelected && (
+                                  <CheckCircle className="w-4 h-4 text-johnson-blue" />
+                                )}
+                              </div>
                             </div>
+                            {slot.isAvailable && !isSelected && (
+                              <div className="absolute top-2 right-2">
+                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 uppercase">
+                                  Available
+                                </span>
+                              </div>
+                            )}
                           </button>
                         );
                       })}
