@@ -747,20 +747,20 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
               
               if (isSameDayCutoff) {
                 return (
-                  <div className="bg-amber-50 border-2 border-amber-300 rounded-lg p-6 text-center">
-                    <Phone className="h-12 w-12 text-amber-500 mx-auto mb-4" />
-                    <h4 className="font-bold text-lg text-amber-700 mb-2">Call for Same-Day Availability</h4>
-                    <p className="text-gray-700 mb-4">
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-center">
+                    <Phone className="h-8 w-8 text-amber-500 mx-auto mb-2" />
+                    <h4 className="font-bold text-base text-amber-700 mb-1">Call for Same-Day Availability</h4>
+                    <p className="text-xs text-gray-600 mb-3">
                       Online same-day booking closes at 12 PM. Please call us directly to check today's availability.
                     </p>
                     <a 
                       href="tel:6174799911"
-                      className="inline-flex items-center justify-center gap-2 bg-amber-500 text-white px-6 py-3 rounded-lg font-bold hover:bg-amber-600 transition-all"
+                      className="inline-flex items-center justify-center gap-2 bg-amber-500 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-amber-600 transition-all shadow-sm"
                     >
-                      <Phone className="w-5 h-5" />
+                      <Phone className="w-4 h-4" />
                       Call (617) 479-9911
                     </a>
-                    <p className="text-sm text-gray-500 mt-3">
+                    <p className="text-[10px] text-gray-500 mt-2 italic">
                       Or select tomorrow for online booking
                     </p>
                   </div>
