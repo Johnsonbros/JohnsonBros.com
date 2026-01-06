@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Clock, Shield, DollarSign, Calendar, Phone, MapPin, Zap, ChevronRight, Star, Award } from "lucide-react";
+import { Clock, Shield, DollarSign, Calendar, Phone, MapPin, Zap, ChevronRight, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/queryClient";
@@ -104,8 +104,6 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
                        tomorrowCapacity.unique_express_windows.length > 0;
   
   const activeCapacity = hasToday ? todayCapacity : hasTomorrow ? tomorrowCapacity : todayCapacity;
-  const isLoading = !todayCapacity && !tomorrowCapacity;
-  const headline = activeCapacity?.ui_copy?.headline || "Schedule Service";
   const uniqueSlots = !isEmergency ? (activeCapacity?.unique_express_windows || []) : [];
   const isNextDay = hasTomorrow && !hasToday && !isEmergency;
   
@@ -124,122 +122,222 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
       <div className="container mx-auto px-3 sm:px-4 relative z-10">
         <div className="grid lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-12 items-center">
           <div>
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 lg:p-10 shadow-xl border border-white/20">
-              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white mb-4 leading-tight" data-testid="booking-headline">
-                {headline}
-              </h2>
-              <p className="text-blue-100 text-base sm:text-lg mb-8 font-medium">
-                Professional local plumbers. Upfront pricing. 
-                <span className="block font-bold text-white mt-1 underline decoration-johnson-orange decoration-2">Guaranteed workmanship.</span>
-              </p>
+            {/* Express, Next Day, or Emergency Badge */}
+            {activeCapacity && (
+              <div className="mb-4">
+                <Badge 
+                  className={`
+                    inline-flex items-center px-4 py-2 text-sm font-bold
+                    ${hasToday 
+                      ? 'bg-green-500 text-white animate-pulse shadow-lg shadow-green-500/50' 
+                      : hasTomorrow
+                        ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/50'
+                        : isEmergency
+                          ? 'bg-red-500 text-white animate-pulse shadow-lg shadow-red-500/50'
+                          : 'bg-orange-500 text-white'}
+                  `}
+                  data-testid="express-badge"
+                >
+                  {hasToday ? (
+                    <>
+                      <Zap className="mr-2 h-4 w-4 animate-bounce" />
+                      Express - $99 Fee Waived
+                    </>
+                  ) : hasTomorrow ? (
+                    <>
+                      <Calendar className="mr-2 h-4 w-4" />
+                      Next Day Guarantee - $99 Fee Waived
+                    </>
+                  ) : isEmergency ? (
+                    <>
+                      <Phone className="mr-2 h-4 w-4 animate-bounce" />
+                      24/7 Emergency Service
+                    </>
+                  ) : (
+                    'Schedule Service'
+                  )}
+                </Badge>
+              </div>
+            )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start mb-8">
-                <div>
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="h-2 w-2 rounded-full bg-green-400 animate-pulse"></div>
-                    <span className="text-xs font-bold text-green-400 uppercase tracking-widest">Live Availability</span>
+            {/* Dynamic Headline */}
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 leading-tight">
+              {hasToday ? (
+                <>
+                  Express Booking Available!
+                  <span className="text-johnson-orange block text-2xl sm:text-3xl lg:text-4xl mt-2">Now Booking Appointments</span>
+                </>
+              ) : hasTomorrow ? (
+                <>
+                  Next Day Appointment Guarantee
+                  <span className="text-johnson-orange block text-2xl sm:text-3xl lg:text-4xl mt-2">
+                    Abington & Quincy, MA
+                  </span>
+                </>
+              ) : isEmergency ? (
+                <>
+                  24/7 Emergency Service Available
+                  <span className="text-johnson-orange block text-2xl sm:text-3xl lg:text-4xl mt-2">
+                    Call Now: (617) 479-9911
+                  </span>
+                </>
+              ) : (
+                <>
+                  Schedule Your Service
+                  <span className="text-johnson-orange block text-2xl sm:text-3xl lg:text-4xl mt-2">
+                    Abington & Quincy, MA
+                  </span>
+                </>
+              )}
+            </h2>
+
+            {/* Dynamic Subhead */}
+            <p className="text-base sm:text-lg lg:text-xl mb-6 sm:mb-8 text-blue-100">
+              {hasToday 
+                ? "Book now for same-day service - emergency fee waived!"
+                : hasTomorrow
+                  ? "Guaranteed appointment tomorrow with $99 service fee waived!"
+                  : isEmergency
+                    ? "Weekend and after-hours emergency plumbing service available. Our expert technicians are ready to help!"
+                    : "Fast, reliable, and professional plumbing solutions. Licensed, insured, and available 24/7 for emergencies."}
+            </p>
+
+            {/* Time Slot Selection */}
+            {uniqueSlots.length > 0 && (
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 mb-6 border border-white/20">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center">
+                    <Clock className="h-5 w-5 text-green-400 animate-pulse mr-2" />
+                    <span className="font-semibold text-green-100">
+                      {uniqueSlots.length} Time Slot{uniqueSlots.length > 1 ? 's' : ''} Available {isNextDay ? 'Tomorrow' : 'Today'}
+                    </span>
                   </div>
-                  
-                  {isLoading ? (
-                    <div className="space-y-3">
-                      <div className="h-12 bg-white/10 rounded-xl animate-pulse"></div>
-                      <div className="h-12 bg-white/10 rounded-xl animate-pulse"></div>
-                    </div>
-                  ) : uniqueSlots.length > 0 ? (
-                    <div className="space-y-3">
-                      {uniqueSlots.slice(0, 3).map((slot, index) => (
-                        <button
-                          key={`${slot.time_slot}`}
-                          onClick={() => handleTimeSlotBooking(slot, isNextDay)}
-                          className="w-full bg-white hover:bg-blue-50 text-johnson-blue p-4 rounded-xl font-bold flex items-center justify-between transition-all duration-300 group shadow-lg hover:shadow-johnson-blue/20"
-                          data-testid={`slot-button-${index}`}
-                        >
-                          <div className="flex items-center">
-                            <Calendar className="mr-3 h-5 w-5 text-johnson-blue/60" />
+                  <Badge className="bg-green-500 text-white">
+                    $99 Fee Waived
+                  </Badge>
+                </div>
+                
+                {/* Time Slot Buttons */}
+                <div className="space-y-2">
+                  {uniqueSlots.map((slot, idx) => {
+                    return (
+                      <button
+                        key={idx}
+                        onClick={() => handleTimeSlotBooking(slot, isNextDay)}
+                        className={`w-full p-4 rounded-lg border-2 transition-all duration-300 transform hover:scale-102 
+                          ${selectedTimeSlot?.time_slot === slot.time_slot 
+                            ? 'bg-green-500 border-green-400 text-white shadow-lg' 
+                            : 'bg-white/20 border-white/30 hover:bg-white/30 hover:border-white/50'}`}
+                        data-testid={`time-slot-${idx}`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <Clock className="h-5 w-5" />
                             <div className="text-left">
-                              <div className="text-sm">{dateDisplay}</div>
-                              <div className="text-xs text-gray-500 font-medium">Arrival: {slot.start_time} - {slot.end_time}</div>
+                              <div className="font-bold text-lg">
+                                {formatTimeSlotWindow(slot.start_time, slot.end_time)}
+                              </div>
+                              <div className="text-sm opacity-90">
+                                {dateDisplay}
+                              </div>
                             </div>
                           </div>
-                          <ChevronRight className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-all transform group-hover:translate-x-1" />
-                        </button>
-                      ))}
-                      <button
-                        onClick={() => onBookService?.()}
-                        className="w-full bg-johnson-orange hover:bg-orange-600 text-white p-4 rounded-xl font-bold transition-all duration-300 shadow-lg hover:shadow-orange-500/20 flex items-center justify-center gap-2"
-                      >
-                        <span>VIEW ALL TIMES</span>
-                        <ChevronRight className="h-5 w-5" />
+                          <div className="flex items-center space-x-2">
+                            <Badge className="bg-green-600 text-white">
+                              Book Now
+                            </Badge>
+                            <ChevronRight className="h-5 w-5" />
+                          </div>
+                        </div>
                       </button>
-                    </div>
-                  ) : (
-                    <div className="bg-white/5 rounded-xl p-6 border border-white/10 text-center">
-                      <p className="text-white font-bold mb-2">High Demand Today</p>
-                      <p className="text-sm text-blue-100/70 mb-4">We're currently handling several emergency calls in your area.</p>
-                      <Button 
-                        onClick={() => onBookService?.()}
-                        className="w-full bg-white text-johnson-blue hover:bg-blue-50 font-bold py-4 rounded-xl"
-                      >
-                        CHECK LATEST OPENINGS
-                      </Button>
-                    </div>
-                  )}
+                    );
+                  })}
                 </div>
 
-                <div className="space-y-6">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-johnson-orange/20 p-2 rounded-lg">
-                      <Shield className="h-6 w-6 text-johnson-orange" />
-                    </div>
-                    <div>
-                      <h3 className="text-white font-bold">Licensed & Insured</h3>
-                      <p className="text-xs text-blue-100/70">Full protection for your home and peace of mind.</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <div className="bg-green-500/20 p-2 rounded-lg">
-                      <Award className="h-6 w-6 text-green-400" />
-                    </div>
-                    <div>
-                      <h3 className="text-white font-bold">4.9/5 Star Rating</h3>
-                      <p className="text-xs text-blue-100/70">Trusted by over 10,000+ local homeowners.</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <div className="bg-blue-500/20 p-2 rounded-lg">
-                      <Zap className="h-6 w-6 text-blue-400" />
-                    </div>
-                    <div>
-                      <h3 className="text-white font-bold">Fast Response</h3>
-                      <p className="text-xs text-blue-100/70">Real-time scheduling with local technicians.</p>
-                    </div>
-                  </div>
+                {/* Priority Assignment Notice */}
+                <div className="mt-3 flex items-start text-xs text-blue-200">
+                  <Star className="h-4 w-4 mr-1 flex-shrink-0 mt-0.5" />
+                  <span>Our expert technicians will be assigned based on expertise and availability</span>
                 </div>
               </div>
-
-              {/* Call Option (shown for express/next day bookings) */}
-              {uniqueSlots.length > 0 && !isEmergency && (
-                <div className="mt-8 pt-6 border-t border-white/10">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
-                    <div>
-                      <div className="text-sm font-semibold text-blue-200 uppercase tracking-wider mb-1">Prefer to book by phone?</div>
-                      <p className="text-xs text-blue-100/70">Our dispatchers are standing by to help you schedule your service immediately.</p>
-                    </div>
-                    <div className="sm:text-right">
-                      <a 
-                        href="tel:6174799911" 
-                        className="bg-white text-johnson-blue px-6 py-3 rounded-xl font-bold hover:bg-blue-50 transition-all duration-300 inline-flex items-center shadow-lg group w-full sm:w-auto justify-center"
-                      >
-                        <Phone className="mr-2 h-5 w-5 group-hover:rotate-12 transition-transform" />
-                        Call (617) 479-9911
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              )}
+            )}
+            
+            {/* Key Benefits */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
+              <div className="flex items-center space-x-2 bg-white/10 rounded-lg p-2 sm:p-0 sm:bg-transparent">
+                <Clock className={`h-5 w-5 flex-shrink-0 ${hasToday ? 'text-green-400 animate-pulse' : isEmergency ? 'text-red-400 animate-pulse' : 'text-johnson-orange'}`} />
+                <span className="font-medium text-sm sm:text-base">
+                  {hasToday ? 'Express Same-Day' : hasTomorrow ? 'Next Day Guarantee' : isEmergency ? '24/7 Emergency' : 'Same Day Service'}
+                </span>
+              </div>
+              <div className="flex items-center space-x-2 bg-white/10 rounded-lg p-2 sm:p-0 sm:bg-transparent">
+                <Shield className="h-5 w-5 text-johnson-orange flex-shrink-0" />
+                <span className="font-medium text-sm sm:text-base">Licensed & Insured</span>
+              </div>
+              <div className="flex items-center space-x-2 bg-white/10 rounded-lg p-2 sm:p-0 sm:bg-transparent">
+                <DollarSign className="h-5 w-5 text-johnson-orange flex-shrink-0" />
+                <span className="font-medium text-sm sm:text-base">{isEmergency ? 'Emergency Rates Apply' : '$99 Fee Waived'}</span>
+              </div>
             </div>
+
+            {/* CTA Buttons - Emergency call prompt or booking */}
+            {isEmergency ? (
+              <div className="flex flex-col space-y-3 sm:space-y-4">
+                <div className="bg-red-500/20 border-2 border-red-500 rounded-lg p-4 mb-4">
+                  <div className="flex items-center mb-2">
+                    <Phone className="h-6 w-6 text-red-400 animate-bounce mr-2" />
+                    <span className="font-bold text-lg text-red-100">Emergency Service Available</span>
+                  </div>
+                  <p className="text-sm text-blue-200">
+                    Our emergency plumbers are standing by to help with your urgent plumbing needs.
+                  </p>
+                </div>
+                <a 
+                  href="tel:6174799911" 
+                  className="bg-red-500 text-white px-6 py-4 sm:px-8 rounded-lg font-bold text-lg hover:bg-red-600 transition-all duration-300 transform hover:scale-105 shadow-xl text-center inline-flex items-center justify-center w-full sm:w-auto touch-target animate-pulse"
+                  data-testid="emergency-call-button"
+                >
+                  <Phone className="mr-2 h-5 w-5" />
+                  Call Now: (617) 479-9911
+                </a>
+                <div className="text-sm text-blue-200 text-center">
+                  Available 24/7 for emergency plumbing services
+                </div>
+              </div>
+            ) : uniqueSlots.length === 0 && (
+              <div className="flex flex-col space-y-3 sm:space-y-4">
+                <Button 
+                  onClick={onBookService}
+                  className="px-6 py-4 sm:px-8 rounded-lg font-bold text-lg transition-all duration-300 transform hover:scale-105 shadow-xl w-full sm:w-auto touch-target bg-gradient-to-r from-johnson-orange to-orange-500 hover:from-orange-500 hover:to-johnson-orange"
+                  data-testid="express-booking-button"
+                >
+                  <Calendar className="mr-2 h-5 w-5" />
+                  Book Service
+                </Button>
+                <a 
+                  href="tel:6174799911" 
+                  className="bg-white text-johnson-blue px-6 py-4 sm:px-8 rounded-lg font-bold text-lg hover:bg-gray-50 transition-all duration-300 transform hover:scale-105 shadow-lg text-center inline-flex items-center justify-center w-full sm:w-auto touch-target border-2 border-johnson-blue hover:border-johnson-teal"
+                  data-testid="hero-call-button"
+                >
+                  <Phone className="mr-2 h-5 w-5" />
+                  Call (617) 479-9911
+                </a>
+              </div>
+            )}
+
+            {/* Call Option (shown for express/next day bookings) */}
+            {uniqueSlots.length > 0 && !isEmergency && (
+              <div className="mt-4">
+                <div className="text-sm text-blue-200 mb-2">Prefer to book by phone?</div>
+                <a 
+                  href="tel:6174799911" 
+                  className="bg-white/20 text-white px-4 py-2 rounded-lg font-bold hover:bg-white/30 transition-all duration-300 inline-flex items-center border border-white/30"
+                >
+                  <Phone className="mr-2 h-4 w-4" />
+                  Call (617) 479-9911
+                </a>
+              </div>
+            )}
 
           </div>
 
