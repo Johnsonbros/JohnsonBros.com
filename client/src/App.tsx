@@ -12,63 +12,65 @@ import MobileBottomNav from "@/components/MobileBottomNav";
 import MobileMoreMenu from "@/components/MobileMoreMenu";
 import BookingModalEnhanced from "@/components/BookingModalEnhanced";
 import Home from "@/pages/home";
-import Blog from "@/pages/blog";
-import BlogPost from "@/pages/blog-post";
-import Contact from "@/pages/contact";
-import Referral from "@/pages/referral";
-import Webhooks from "@/pages/webhooks";
-import CheckIns from "@/pages/CheckIns";
-import AdminLogin from "@/pages/admin/login";
-import AdminDashboard from "@/pages/admin/dashboard";
-import AdminHeatMap from "@/pages/admin/heatmap";
-import ExperimentsPage from "@/pages/admin/experiments";
-import NotFound from "@/pages/not-found";
 import { JobCompletionNotifications } from "@/components/JobCompletionNotifications";
 import { BookingAgentChat } from "@/components/BookingAgentChat";
 
 // Lazy load VideoCallPopup - not critical for initial render
 const VideoCallPopup = lazy(() => import("@/components/VideoCallPopup").then(module => ({ default: module.VideoCallPopup })));
 
+// Lazy loaded pages (keep Home eagerly loaded for initial render)
+const Blog = lazy(() => import("@/pages/blog"));
+const BlogPost = lazy(() => import("@/pages/blog-post"));
+const Contact = lazy(() => import("@/pages/contact"));
+const Referral = lazy(() => import("@/pages/referral"));
+const Webhooks = lazy(() => import("@/pages/webhooks"));
+const CheckIns = lazy(() => import("@/pages/CheckIns"));
+const AdminLogin = lazy(() => import("@/pages/admin/login"));
+const AdminDashboard = lazy(() => import("@/pages/admin/dashboard"));
+const AdminHeatMap = lazy(() => import("@/pages/admin/heatmap"));
+const ExperimentsPage = lazy(() => import("@/pages/admin/experiments"));
+const NotFound = lazy(() => import("@/pages/not-found"));
+
 // Service Pages
-import GeneralPlumbing from "@/pages/services/general-plumbing";
-import NewConstruction from "@/pages/services/new-construction";
-import GasHeat from "@/pages/services/gas-heat";
-import DrainCleaning from "@/pages/services/drain-cleaning";
-import EmergencyPlumbing from "@/pages/services/emergency-plumbing";
-import WaterHeater from "@/pages/services/water-heater";
-import PipeRepair from "@/pages/services/pipe-repair";
-import HeatingServices from "@/pages/services/heating";
+const GeneralPlumbing = lazy(() => import("@/pages/services/general-plumbing"));
+const NewConstruction = lazy(() => import("@/pages/services/new-construction"));
+const GasHeat = lazy(() => import("@/pages/services/gas-heat"));
+const DrainCleaning = lazy(() => import("@/pages/services/drain-cleaning"));
+const EmergencyPlumbing = lazy(() => import("@/pages/services/emergency-plumbing"));
+const WaterHeater = lazy(() => import("@/pages/services/water-heater"));
+const PipeRepair = lazy(() => import("@/pages/services/pipe-repair"));
+const HeatingServices = lazy(() => import("@/pages/services/heating"));
 
 // About Page
-import AboutUs from "@/pages/about";
+const AboutUs = lazy(() => import("@/pages/about"));
 
 // Service Area Pages
-import QuincyPlumbing from "@/pages/service-areas/quincy";
-import BraintreePlumbing from "@/pages/service-areas/braintree";
-import WeymouthPlumbing from "@/pages/service-areas/weymouth";
-import PlymouthPlumbing from "@/pages/service-areas/plymouth";
-import MarshfieldPlumbing from "@/pages/service-areas/marshfield";
-import HinghamPlumbing from "@/pages/service-areas/hingham";
+const QuincyPlumbing = lazy(() => import("@/pages/service-areas/quincy"));
+const BraintreePlumbing = lazy(() => import("@/pages/service-areas/braintree"));
+const WeymouthPlumbing = lazy(() => import("@/pages/service-areas/weymouth"));
+const PlymouthPlumbing = lazy(() => import("@/pages/service-areas/plymouth"));
+const MarshfieldPlumbing = lazy(() => import("@/pages/service-areas/marshfield"));
+const HinghamPlumbing = lazy(() => import("@/pages/service-areas/hingham"));
 
 // Landing Pages
-import EmergencyLandingPage from "@/pages/landing/emergency";
-import DrainCleaningLandingPage from "@/pages/landing/drain-cleaning";
-import WinterPrepLandingPage from "@/pages/landing/winter-prep";
-import GablesCondoLanding from "@/pages/landing/gables-condo";
+const EmergencyLandingPage = lazy(() => import("@/pages/landing/emergency"));
+const DrainCleaningLandingPage = lazy(() => import("@/pages/landing/drain-cleaning"));
+const WinterPrepLandingPage = lazy(() => import("@/pages/landing/winter-prep"));
+const GablesCondoLanding = lazy(() => import("@/pages/landing/gables-condo"));
 
 // Service Landing Pages
-import DrainCleaningServiceLanding from "@/pages/service/drain-cleaning-landing";
-import WaterHeaterServiceLanding from "@/pages/service/water-heater-landing";
-import PipeRepairServiceLanding from "@/pages/service/pipe-repair-landing";
-import EmergencyPlumbingServiceLanding from "@/pages/service/emergency-plumbing-landing";
-import SewerLineServiceLanding from "@/pages/service/sewer-line-landing";
+const DrainCleaningServiceLanding = lazy(() => import("@/pages/service/drain-cleaning-landing"));
+const WaterHeaterServiceLanding = lazy(() => import("@/pages/service/water-heater-landing"));
+const PipeRepairServiceLanding = lazy(() => import("@/pages/service/pipe-repair-landing"));
+const EmergencyPlumbingServiceLanding = lazy(() => import("@/pages/service/emergency-plumbing-landing"));
+const SewerLineServiceLanding = lazy(() => import("@/pages/service/sewer-line-landing"));
 
 // AI Booking Page
-import AIBooking from "@/pages/ai-booking";
+const AIBooking = lazy(() => import("@/pages/ai-booking"));
 
 // The Family Discount & Member Portal Pages
-import FamilyDiscount from "@/pages/family-discount";
-import MyPlan from "@/pages/my-plan";
+const FamilyDiscount = lazy(() => import("@/pages/family-discount"));
+const MyPlan = lazy(() => import("@/pages/my-plan"));
 
 function ScrollToTop() {
   const [location] = useLocation();
@@ -84,56 +86,64 @@ function Router() {
   return (
     <>
       <ScrollToTop />
-      <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/blog" component={Blog} />
-      <Route path="/blog/:slug" component={BlogPost} />
-      <Route path="/ai-booking" component={AIBooking} />
-      <Route path="/contact" component={Contact} />
-      <Route path="/referral" component={Referral} />
-      <Route path="/family-discount" component={FamilyDiscount} />
-      <Route path="/my-plan" component={MyPlan} />
-      <Route path="/webhooks" component={Webhooks} />
-      <Route path="/check-ins" component={CheckIns} />
-      <Route path="/admin/login" component={AdminLogin} />
-      <Route path="/admin/dashboard" component={AdminDashboard} />
-      <Route path="/admin/heatmap" component={AdminHeatMap} />
-      <Route path="/admin/experiments" component={ExperimentsPage} />
-      
-      {/* Service Pages */}
-      <Route path="/services/general-plumbing" component={GeneralPlumbing} />
-      <Route path="/services/new-construction" component={NewConstruction} />
-      <Route path="/services/gas-heat" component={GasHeat} />
-      <Route path="/services/drain-cleaning" component={DrainCleaning} />
-      <Route path="/services/emergency-plumbing" component={EmergencyPlumbing} />
-      <Route path="/services/water-heater" component={WaterHeater} />
-      <Route path="/services/pipe-repair" component={PipeRepair} />
-      <Route path="/services/heating" component={HeatingServices} />
-      <Route path="/about" component={AboutUs} />
-      
-      {/* Service Area Pages */}
-      <Route path="/service-areas/quincy" component={QuincyPlumbing} />
-      <Route path="/service-areas/braintree" component={BraintreePlumbing} />
-      <Route path="/service-areas/weymouth" component={WeymouthPlumbing} />
-      <Route path="/service-areas/plymouth" component={PlymouthPlumbing} />
-      <Route path="/service-areas/marshfield" component={MarshfieldPlumbing} />
-      <Route path="/service-areas/hingham" component={HinghamPlumbing} />
-      
-      {/* Landing Pages */}
-      <Route path="/landing/emergency" component={EmergencyLandingPage} />
-      <Route path="/landing/drain-cleaning" component={DrainCleaningLandingPage} />
-      <Route path="/landing/winter-prep" component={WinterPrepLandingPage} />
-      <Route path="/landing/gables-condo" component={GablesCondoLanding} />
-      
-      {/* Service Landing Pages */}
-      <Route path="/service/drain-cleaning-landing" component={DrainCleaningServiceLanding} />
-      <Route path="/service/water-heater-landing" component={WaterHeaterServiceLanding} />
-      <Route path="/service/pipe-repair-landing" component={PipeRepairServiceLanding} />
-      <Route path="/service/emergency-plumbing-landing" component={EmergencyPlumbingServiceLanding} />
-      <Route path="/service/sewer-line-landing" component={SewerLineServiceLanding} />
-      
-      <Route component={NotFound} />
-      </Switch>
+      <Suspense
+        fallback={(
+          <div className="flex items-center justify-center py-10 text-lg text-primary">
+            Loading page…
+          </div>
+        )}
+      >
+        <Switch>
+          <Route path="/" component={Home} />
+          <Route path="/blog" component={Blog} />
+          <Route path="/blog/:slug" component={BlogPost} />
+          <Route path="/ai-booking" component={AIBooking} />
+          <Route path="/contact" component={Contact} />
+          <Route path="/referral" component={Referral} />
+          <Route path="/family-discount" component={FamilyDiscount} />
+          <Route path="/my-plan" component={MyPlan} />
+          <Route path="/webhooks" component={Webhooks} />
+          <Route path="/check-ins" component={CheckIns} />
+          <Route path="/admin/login" component={AdminLogin} />
+          <Route path="/admin/dashboard" component={AdminDashboard} />
+          <Route path="/admin/heatmap" component={AdminHeatMap} />
+          <Route path="/admin/experiments" component={ExperimentsPage} />
+
+          {/* Service Pages */}
+          <Route path="/services/general-plumbing" component={GeneralPlumbing} />
+          <Route path="/services/new-construction" component={NewConstruction} />
+          <Route path="/services/gas-heat" component={GasHeat} />
+          <Route path="/services/drain-cleaning" component={DrainCleaning} />
+          <Route path="/services/emergency-plumbing" component={EmergencyPlumbing} />
+          <Route path="/services/water-heater" component={WaterHeater} />
+          <Route path="/services/pipe-repair" component={PipeRepair} />
+          <Route path="/services/heating" component={HeatingServices} />
+          <Route path="/about" component={AboutUs} />
+
+          {/* Service Area Pages */}
+          <Route path="/service-areas/quincy" component={QuincyPlumbing} />
+          <Route path="/service-areas/braintree" component={BraintreePlumbing} />
+          <Route path="/service-areas/weymouth" component={WeymouthPlumbing} />
+          <Route path="/service-areas/plymouth" component={PlymouthPlumbing} />
+          <Route path="/service-areas/marshfield" component={MarshfieldPlumbing} />
+          <Route path="/service-areas/hingham" component={HinghamPlumbing} />
+
+          {/* Landing Pages */}
+          <Route path="/landing/emergency" component={EmergencyLandingPage} />
+          <Route path="/landing/drain-cleaning" component={DrainCleaningLandingPage} />
+          <Route path="/landing/winter-prep" component={WinterPrepLandingPage} />
+          <Route path="/landing/gables-condo" component={GablesCondoLanding} />
+
+          {/* Service Landing Pages */}
+          <Route path="/service/drain-cleaning-landing" component={DrainCleaningServiceLanding} />
+          <Route path="/service/water-heater-landing" component={WaterHeaterServiceLanding} />
+          <Route path="/service/pipe-repair-landing" component={PipeRepairServiceLanding} />
+          <Route path="/service/emergency-plumbing-landing" component={EmergencyPlumbingServiceLanding} />
+          <Route path="/service/sewer-line-landing" component={SewerLineServiceLanding} />
+
+          <Route component={NotFound} />
+        </Switch>
+      </Suspense>
     </>
   );
 }
