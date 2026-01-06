@@ -99,7 +99,7 @@ export default function WaterHeater() {
             <div className="relative rounded-lg overflow-hidden shadow-lg">
               <img 
                 src={coldShowerImg} 
-                alt="Running out of hot water too quickly" 
+                alt="Woman shocked with cold water while taking a shower due to a faulty circulator pump" 
                 className="w-full h-64 object-cover"
                 data-testid="img-no-hot-water"
               />

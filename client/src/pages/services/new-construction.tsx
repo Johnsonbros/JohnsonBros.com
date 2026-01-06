@@ -59,7 +59,7 @@ export default function NewConstructionPlumbing() {
                     className="border-2 border-white hover:bg-white hover:text-johnson-blue text-lg px-8 py-6 text-[#4792b9]"
                     asChild
                   >
-                    <Link href="/contact" data-testid="contact-button">
+                    <Link href="/contact" data-testid="contact-button" className="inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 bg-background h-11 rounded-md border-2 border-white hover:bg-white hover:text-johnson-blue text-lg px-8 py-6 text-[#4792b9]">
                       Request Quote
                     </Link>
                   </Button>
