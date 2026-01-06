@@ -665,7 +665,7 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
       isToday: sundayDate.toISOString().split('T')[0] === todayDate,
     };
     
-    return { saturday, weekdays, sunday };
+    return { weekdays };
   };
 
   // Handle navigation between steps
@@ -745,40 +745,12 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
 
               {/* Weekly Calendar Layout */}
               {(() => {
-                const { saturday, weekdays, sunday } = generateWeekDays();
-                
-                const WeekendCard = ({ day, side }: { day: typeof saturday, side: 'left' | 'right' }) => (
-                  <div 
-                    className={`flex-shrink-0 w-16 bg-red-50 border border-red-200 rounded-lg p-2 text-center ${
-                      day.isPast ? 'opacity-50' : ''
-                    }`}
-                  >
-                    <div className="text-[10px] font-medium text-red-600 mb-1">{day.dayName}</div>
-                    <div className={`text-lg font-bold ${day.isPast ? 'text-gray-400' : 'text-red-700'}`}>
-                      {day.dayNum}
-                    </div>
-                    <div className="text-[8px] text-red-500 font-medium mt-1 leading-tight">
-                      Emergency<br/>Only
-                    </div>
-                    {!day.isPast && (
-                      <a 
-                        href="tel:6174799911"
-                        className="inline-flex items-center justify-center mt-1 text-[8px] text-red-600 hover:text-red-800 font-medium"
-                      >
-                        <Phone className="w-2 h-2 mr-0.5" />
-                        Call
-                      </a>
-                    )}
-                  </div>
-                );
+                const { weekdays } = generateWeekDays();
                 
                 return (
                   <div className="flex items-stretch gap-2">
-                    {/* Saturday Emergency Card */}
-                    <WeekendCard day={saturday} side="left" />
-                    
                     {/* Weekdays Grid (Mon-Fri) */}
-                    <div className="flex-1 grid grid-cols-5 gap-1">
+                    <div className="flex-1 grid grid-cols-5 gap-2">
                       {weekdays.map((day) => {
                         const isSelected = bookingData.selectedDate === day.date;
                         const isDisabled = day.isPast;
@@ -792,7 +764,7 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
                               selectedTimeSlot: null 
                             }))}
                             disabled={isDisabled}
-                            className={`p-2 rounded-lg text-center transition-all min-h-[70px] flex flex-col justify-center ${
+                            className={`p-3 rounded-lg text-center transition-all min-h-[80px] flex flex-col justify-center items-center gap-1 ${
                               isDisabled
                                 ? 'bg-gray-100 text-gray-300 cursor-not-allowed'
                                 : isSelected
@@ -800,19 +772,19 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
                                   : 'bg-gray-50 hover:bg-gray-100 border border-gray-200'
                             }`}
                           >
-                            <div className="text-[10px] font-medium opacity-75">
+                            <div className="text-xs font-medium opacity-75">
                               {day.dayName}
                             </div>
-                            <div className="text-lg font-bold">
+                            <div className="text-xl font-bold">
                               {day.dayNum}
                             </div>
                             {day.isToday && !isDisabled && (
-                              <Badge className={`text-[8px] px-1 py-0 ${isSelected ? 'bg-white/20 text-white' : 'bg-johnson-blue/10 text-johnson-blue'}`}>
+                              <Badge className={`text-[10px] px-2 py-0 ${isSelected ? 'bg-white/20 text-white' : 'bg-johnson-blue/10 text-johnson-blue'}`}>
                                 Today
                               </Badge>
                             )}
                             {day.isTomorrow && !isDisabled && !day.isToday && (
-                              <Badge className={`text-[8px] px-1 py-0 ${isSelected ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-600'}`}>
+                              <Badge className={`text-[10px] px-2 py-0 ${isSelected ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-600'}`}>
                                 Tomorrow
                               </Badge>
                             )}
@@ -820,9 +792,6 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
                         );
                       })}
                     </div>
-                    
-                    {/* Sunday Emergency Card */}
-                    <WeekendCard day={sunday} side="right" />
                   </div>
                 );
               })()}
