@@ -126,7 +126,7 @@ export function ChatWidget() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.2 }}
-            className="fixed bottom-36 md:bottom-24 right-4 z-50 w-[380px] max-w-[calc(100vw-2rem)] rounded-2xl shadow-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 overflow-hidden"
+            className="fixed bottom-36 md:bottom-24 left-4 z-50 w-[380px] max-w-[calc(100vw-2rem)] rounded-2xl shadow-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 overflow-hidden"
             data-testid="chat-widget-container"
           >
             <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4">
@@ -244,7 +244,7 @@ export function ChatWidget() {
           </motion.div>
         )}
       </AnimatePresence>
-      <div className="fixed bottom-24 md:bottom-6 right-6 z-50 flex flex-col items-center gap-1">
+      <div className="fixed bottom-24 md:bottom-6 left-6 z-50 flex flex-col items-center gap-1">
         <AnimatePresence>
           {scrollProgress > 0.5 && !isOpen && (
             <motion.span
@@ -254,7 +254,7 @@ export function ChatWidget() {
               transition={{ duration: 0.3 }}
               className="text-xs font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 px-2 py-0.5 rounded-full shadow-sm border border-gray-200 dark:border-gray-600"
             >
-              Chat Now
+              Chat with us
             </motion.span>
           )}
         </AnimatePresence>
@@ -303,8 +303,8 @@ export function ChatWidget() {
                   src={logoIcon} 
                   alt="Chat" 
                   style={{
-                    width: `${56 + scrollProgress * 16}px`,
-                    height: `${56 + scrollProgress * 16}px`,
+                    width: `${60 + scrollProgress * 20}px`,
+                    height: `${60 + scrollProgress * 20}px`,
                   }}
                   className="object-contain" 
                 />
