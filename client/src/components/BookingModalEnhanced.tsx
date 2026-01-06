@@ -677,7 +677,7 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
             
             {/* Date Selection */}
             <div className="space-y-2">
-              <Label>Select Date</Label>
+              <Label>DAY</Label>
               <div className="grid grid-cols-7 gap-2">
                 {generateCalendarDays().map((day) => {
                   const isSelected = bookingData.selectedDate === day.date;
