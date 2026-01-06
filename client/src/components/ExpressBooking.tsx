@@ -341,7 +341,7 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
 
           </div>
 
-          <div className="relative mt-8 lg:mt-0">
+          <div className="relative mt-8 lg:mt-0 flex flex-col items-center sm:block">
             {/* Professional plumber working video */}
             <video 
               src={plumberVideo}
@@ -353,8 +353,8 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
               aria-label="Professional plumber at work"
             />
             
-            {/* Floating Service Badge */}
-            <div className={`absolute bottom-2 left-2 sm:-bottom-6 sm:-left-6 bg-white p-3 sm:p-6 rounded-xl shadow-lg ${hasToday || hasTomorrow ? 'ring-4 ring-green-400 ring-opacity-50' : ''}`}>
+            {/* Floating Service Badge - Now conditional and responsive */}
+            <div className={`mt-6 sm:mt-0 sm:absolute sm:bottom-2 sm:left-2 sm:-bottom-6 sm:-left-6 bg-white p-6 rounded-xl shadow-lg w-full sm:w-auto ${hasToday || hasTomorrow ? 'ring-4 ring-green-400 ring-opacity-50' : ''}`}>
               <div className="text-center">
                 {hasToday ? (
                   <>
