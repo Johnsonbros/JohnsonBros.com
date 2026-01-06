@@ -1254,4 +1254,227 @@ router.get('/activity-logs', authenticate, requirePermission('settings.view'), a
   }
 });
 
+// ============================================
+// AGENT TRACING & RLHF
+// ============================================
+
+import { agentTracing } from '../lib/agentTracing';
+import { 
+  agentConversations, 
+  agentToolCalls, 
+  agentFeedback,
+  InsertAgentFeedback
+} from '@shared/schema';
+
+// Get all agent conversations with filtering
+router.get('/agent-tracing/conversations', authenticate, requirePermission('ai.view_chats'), async (req, res) => {
+  try {
+    const { channel, outcome, startDate, endDate, limit = 50, offset = 0 } = req.query;
+    
+    const conversations = await agentTracing.getConversations({
+      channel: channel as string,
+      outcome: outcome as string,
+      startDate: startDate ? new Date(startDate as string) : undefined,
+      endDate: endDate ? new Date(endDate as string) : undefined,
+      limit: parseInt(limit as string),
+      offset: parseInt(offset as string),
+    });
+    
+    res.json(conversations);
+  } catch (error) {
+    console.error('Get conversations error:', error);
+    res.status(500).json({ error: 'Failed to fetch conversations' });
+  }
+});
+
+// Get single conversation with full details
+router.get('/agent-tracing/conversations/:id', authenticate, requirePermission('ai.view_chats'), async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    
+    const conversation = await agentTracing.getConversation(id);
+    if (!conversation) {
+      return res.status(404).json({ error: 'Conversation not found' });
+    }
+    
+    const toolCalls = await agentTracing.getToolCalls(id);
+    const feedback = await agentTracing.getFeedback(id);
+    
+    res.json({
+      conversation,
+      toolCalls,
+      feedback,
+    });
+  } catch (error) {
+    console.error('Get conversation error:', error);
+    res.status(500).json({ error: 'Failed to fetch conversation' });
+  }
+});
+
+// Get conversation statistics
+router.get('/agent-tracing/stats', authenticate, requirePermission('ai.view_chats'), async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    
+    const [conversationStats, toolCallStats] = await Promise.all([
+      agentTracing.getConversationStats(
+        startDate ? new Date(startDate as string) : undefined,
+        endDate ? new Date(endDate as string) : undefined
+      ),
+      agentTracing.getToolCallStats(
+        startDate ? new Date(startDate as string) : undefined,
+        endDate ? new Date(endDate as string) : undefined
+      ),
+    ]);
+    
+    res.json({
+      conversations: conversationStats,
+      toolCalls: toolCallStats,
+    });
+  } catch (error) {
+    console.error('Get stats error:', error);
+    res.status(500).json({ error: 'Failed to fetch statistics' });
+  }
+});
+
+// Get tool calls for a conversation
+router.get('/agent-tracing/conversations/:id/tool-calls', authenticate, requirePermission('ai.view_chats'), async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const toolCalls = await agentTracing.getToolCalls(id);
+    res.json(toolCalls);
+  } catch (error) {
+    console.error('Get tool calls error:', error);
+    res.status(500).json({ error: 'Failed to fetch tool calls' });
+  }
+});
+
+// Add feedback to a conversation
+router.post('/agent-tracing/conversations/:id/feedback', authenticate, requirePermission('ai.view_chats'), async (req, res) => {
+  try {
+    const conversationId = parseInt(req.params.id);
+    const { feedbackType, rating, correctedResponse, messageIndex, flagReason, annotation } = req.body;
+    
+    const feedback = await agentTracing.addFeedback({
+      conversationId,
+      feedbackType,
+      rating,
+      correctedResponse,
+      messageIndex,
+      flagReason,
+      annotation,
+      reviewedBy: (req as any).user.email,
+      reviewedAt: new Date(),
+    });
+    
+    await logActivity(
+      (req as any).user.id,
+      'add_feedback',
+      'conversation',
+      conversationId.toString(),
+      { feedbackType, rating },
+      req.ip
+    );
+    
+    res.json(feedback);
+  } catch (error) {
+    console.error('Add feedback error:', error);
+    res.status(500).json({ error: 'Failed to add feedback' });
+  }
+});
+
+// Flag or review a tool call
+router.post('/agent-tracing/tool-calls/:id/review', authenticate, requirePermission('ai.view_chats'), async (req, res) => {
+  try {
+    const toolCallId = parseInt(req.params.id);
+    const { wasCorrectTool, correctToolSuggestion, flagReason, annotation } = req.body;
+    
+    await agentTracing.flagToolCall(toolCallId, {
+      wasCorrectTool,
+      correctToolSuggestion,
+      flagReason,
+      annotation,
+      reviewedBy: (req as any).user.email,
+    });
+    
+    await logActivity(
+      (req as any).user.id,
+      'review_tool_call',
+      'tool_call',
+      toolCallId.toString(),
+      { wasCorrectTool, correctToolSuggestion },
+      req.ip
+    );
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Review tool call error:', error);
+    res.status(500).json({ error: 'Failed to review tool call' });
+  }
+});
+
+// Get pending reviews (tool calls that haven't been reviewed)
+router.get('/agent-tracing/pending-reviews', authenticate, requirePermission('ai.view_chats'), async (req, res) => {
+  try {
+    const pendingReviews = await agentTracing.getPendingReviews();
+    res.json(pendingReviews);
+  } catch (error) {
+    console.error('Get pending reviews error:', error);
+    res.status(500).json({ error: 'Failed to fetch pending reviews' });
+  }
+});
+
+// Export conversations for fine-tuning in JSONL format
+router.get('/agent-tracing/export/fine-tuning', authenticate, requirePermission('settings.edit'), async (req, res) => {
+  try {
+    const { minRating = 4, includeCorrections = 'true', excludeFlagged = 'true' } = req.query;
+    
+    const examples = await agentTracing.exportForFineTuning({
+      minRating: parseInt(minRating as string),
+      includeCorrections: includeCorrections === 'true',
+      excludeFlagged: excludeFlagged === 'true',
+    });
+    
+    // Convert to JSONL format
+    const jsonl = examples.map(ex => JSON.stringify(ex)).join('\n');
+    
+    await logActivity(
+      (req as any).user.id,
+      'export_fine_tuning',
+      'agent_tracing',
+      undefined,
+      { exampleCount: examples.length },
+      req.ip
+    );
+    
+    res.setHeader('Content-Type', 'application/jsonl');
+    res.setHeader('Content-Disposition', `attachment; filename="fine-tuning-${new Date().toISOString().split('T')[0]}.jsonl"`);
+    res.send(jsonl);
+  } catch (error) {
+    console.error('Export fine-tuning error:', error);
+    res.status(500).json({ error: 'Failed to export fine-tuning data' });
+  }
+});
+
+// Get export preview (JSON format for viewing)
+router.get('/agent-tracing/export/preview', authenticate, requirePermission('ai.view_chats'), async (req, res) => {
+  try {
+    const { minRating = 4, includeCorrections = 'true', excludeFlagged = 'true', limit = 10 } = req.query;
+    
+    const examples = await agentTracing.exportForFineTuning({
+      minRating: parseInt(minRating as string),
+      includeCorrections: includeCorrections === 'true',
+      excludeFlagged: excludeFlagged === 'true',
+    });
+    
+    res.json({
+      totalExamples: examples.length,
+      preview: examples.slice(0, parseInt(limit as string)),
+    });
+  } catch (error) {
+    console.error('Export preview error:', error);
+    res.status(500).json({ error: 'Failed to generate preview' });
+  }
+});
+
 export default router;
