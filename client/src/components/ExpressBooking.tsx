@@ -119,7 +119,6 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent animate-shimmer" />
         </div>
       )}
-      
       <div className="container mx-auto px-3 sm:px-4 relative z-10">
         <div className="grid lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-12 items-center">
           <div>
@@ -166,9 +165,7 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
               {hasToday ? (
                 <>
                   Express Booking Available!
-                  <span className="text-johnson-orange block text-2xl sm:text-3xl lg:text-4xl mt-2">
-                    Abington & Quincy, MA
-                  </span>
+                  <span className="text-johnson-orange block text-2xl sm:text-3xl lg:text-4xl mt-2">Now Booking Appointments</span>
                 </>
               ) : hasTomorrow ? (
                 <>

@@ -155,8 +155,6 @@ function App() {
 
   const openBookingModal = () => setIsBookingModalOpen(true);
   const closeBookingModal = () => setIsBookingModalOpen(false);
-  const openMoreMenu = () => setIsMoreMenuOpen(true);
-  const closeMoreMenu = () => setIsMoreMenuOpen(false);
 
   return (
     <ErrorBoundary>
@@ -251,15 +249,8 @@ function App() {
           {isMobile && (
             <MobileBottomNav 
               onBookService={openBookingModal} 
-              onMoreClick={openMoreMenu}
             />
           )}
-          
-          {/* Mobile More Menu */}
-          <MobileMoreMenu 
-            isOpen={isMoreMenuOpen} 
-            onClose={closeMoreMenu}
-          />
           
           {/* Booking Modal for Mobile Bottom Nav */}
           <BookingModalEnhanced 

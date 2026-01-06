@@ -1,20 +1,19 @@
-import { Phone, Calendar, Home, MessageSquare, MoreHorizontal } from "lucide-react";
+import { Phone, Calendar, Home, MessageSquare, Gift } from "lucide-react";
 import { Link, useLocation } from "wouter";
 
 interface MobileBottomNavProps {
   onBookService?: () => void;
-  onMoreClick?: () => void;
 }
 
-export default function MobileBottomNav({ onBookService, onMoreClick }: MobileBottomNavProps) {
+export default function MobileBottomNav({ onBookService }: MobileBottomNavProps) {
   const [location] = useLocation();
 
   const navItems = [
     { icon: Home, label: "Home", path: "/", testId: "bottom-nav-home" },
     { icon: Calendar, label: "Book", action: onBookService, testId: "bottom-nav-book" },
     { icon: Phone, label: "Call", href: "tel:6174799911", testId: "bottom-nav-call" },
+    { icon: Gift, label: "Referral", path: "/referral", testId: "bottom-nav-referral" },
     { icon: MessageSquare, label: "Contact", path: "/contact", testId: "bottom-nav-contact" },
-    { icon: MoreHorizontal, label: "More", action: onMoreClick, testId: "bottom-nav-more" },
   ];
 
   return (
