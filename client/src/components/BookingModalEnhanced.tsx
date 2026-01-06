@@ -765,7 +765,7 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
                                 selectedTimeSlot: null 
                               }))}
                               disabled={isDisabled}
-                              className={`p-3 rounded-lg text-center transition-all min-h-[80px] flex flex-col justify-center items-center gap-1 ${
+                              className={`p-3 rounded-lg text-center transition-all min-h-[90px] flex flex-col justify-center items-center gap-1 ${
                                 isDisabled
                                   ? 'bg-gray-100 text-gray-300 cursor-not-allowed'
                                   : isSelected
@@ -779,14 +779,14 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
                               <div className="text-xl font-bold">
                                 {day.dayNum}
                               </div>
+                              <div className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-tighter ${
+                                isSelected ? 'bg-white/20 text-white' : 'bg-green-100 text-green-700'
+                              }`}>
+                                Open
+                              </div>
                               {day.isToday && !isDisabled && (
-                                <Badge className="inline-flex items-center rounded-full border font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent hover:bg-primary/80 text-[10px] px-2 py-0 bg-[#e03d3d] text-[#ffffff]">
+                                <Badge className={`text-[8px] px-1 py-0 h-3 leading-none ${isSelected ? 'bg-white/20 text-white' : 'bg-red-500 text-white'}`}>
                                   Today
-                                </Badge>
-                              )}
-                              {day.isTomorrow && !isDisabled && !day.isToday && (
-                                <Badge className={`text-[10px] px-2 py-0 ${isSelected ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-600'}`}>
-                                  Tomorrow
                                 </Badge>
                               )}
                             </button>
