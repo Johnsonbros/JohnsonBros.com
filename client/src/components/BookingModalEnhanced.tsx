@@ -795,15 +795,30 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
                       </div>
                     </div>
                     {/* Emergency Services Disclaimer */}
-                    <div className="bg-red-50 border border-red-100 rounded-lg p-3 flex items-start gap-3">
-                      <div className="bg-red-100 p-1.5 rounded-full mt-0.5">
-                        <Phone className="w-3.5 h-3.5 text-red-600" />
+                    <div className="bg-red-50 border border-red-200 rounded-xl p-4 shadow-sm">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="bg-red-100 p-2 rounded-full">
+                          <Phone className="w-5 h-5 text-red-600" />
+                        </div>
+                        <h4 className="font-bold text-red-900 text-sm uppercase tracking-wider">Emergency Service</h4>
                       </div>
-                      <div className="text-xs text-red-800 leading-relaxed">
-                        <span className="font-bold">Need Emergency Service?</span> Saturdays, Sundays, and After-Hours emergency services may be available. Please call 
-                        <a href="tel:6174799911" className="font-bold underline mx-1 hover:text-red-900 transition-colors">617-479-9911</a> 
-                        directly to schedule.
+                      
+                      <div className="text-sm text-red-800 leading-relaxed mb-4">
+                        Saturdays, Sundays, and After-Hours emergency services may be available via phone only.
                       </div>
+
+                      <a 
+                        href="tel:6174799911" 
+                        className="flex items-center justify-between bg-white border-2 border-red-500 rounded-lg p-3 group hover:bg-red-50 transition-all active:scale-[0.98]"
+                      >
+                        <div className="flex flex-col">
+                          <span className="text-[10px] uppercase font-bold text-red-500 tracking-tight">Call Now</span>
+                          <span className="text-lg font-black text-red-600">(617) 479-9911</span>
+                        </div>
+                        <div className="bg-red-500 p-2 rounded-md group-hover:bg-red-600 transition-colors">
+                          <Phone className="w-5 h-5 text-white" />
+                        </div>
+                      </a>
                     </div>
                   </div>
                 );
