@@ -395,8 +395,8 @@ export function BookingAgentChat() {
                   src={logoIcon} 
                   alt="Chat with us" 
                   style={{
-                    width: `${60 + scrollProgress * 20}px`,
-                    height: `${60 + scrollProgress * 20}px`,
+                    width: `${80 + scrollProgress * 20}px`,
+                    height: `${80 + scrollProgress * 20}px`,
                   }}
                   className="object-contain" 
                 />
