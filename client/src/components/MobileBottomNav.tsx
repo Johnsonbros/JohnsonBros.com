@@ -35,25 +35,28 @@ export default function MobileBottomNav({ onBookService }: MobileBottomNavProps)
           </span>
         </Link>
 
-        {/* Book Button */}
+        {/* Book Button - Flashy */}
         <button
           onClick={onBookService}
-          className="group flex flex-col items-center justify-center min-w-[64px] py-1.5 touch-manipulation rounded-xl transition-all duration-300 text-gray-500 hover:bg-gray-50 active:scale-95"
+          className="group relative flex flex-col items-center justify-center min-w-[72px] py-2 touch-manipulation rounded-xl transition-all duration-300 bg-johnson-blue text-white shadow-[0_0_15px_rgba(32,128,205,0.4)] scale-110 active:scale-95 animate-pulse-slow overflow-hidden"
           data-testid="bottom-nav-book"
         >
-          <Calendar className="h-5 w-5 text-johnson-blue group-hover:scale-110 transition-transform" />
-          <span className="text-[10px] mt-1 text-gray-500 font-bold tracking-tight uppercase">Book</span>
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full animate-shimmer-fast" />
+          <Calendar className="h-5 w-5 text-white group-hover:scale-110 transition-transform relative z-10" />
+          <span className="text-[10px] mt-1 text-white font-black tracking-widest uppercase relative z-10">Book</span>
         </button>
 
-        {/* Call Button */}
+        {/* Call Button - Flashy */}
         <a
           href="tel:6174799911"
-          className="group flex flex-col items-center justify-center min-w-[64px] py-1.5 touch-manipulation rounded-xl transition-all duration-300 text-gray-500 hover:bg-gray-50 active:scale-95"
+          className="group relative flex flex-col items-center justify-center min-w-[72px] py-2 touch-manipulation rounded-xl transition-all duration-300 bg-johnson-orange text-white shadow-[0_0_15px_rgba(255,165,0,0.4)] active:scale-95 overflow-hidden"
           data-testid="bottom-nav-call"
         >
-          <div className="bg-johnson-orange/10 p-1.5 rounded-lg group-hover:bg-johnson-orange/20 transition-colors">
-            <Phone className="h-5 w-5 text-johnson-orange group-hover:rotate-12 transition-transform" />
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full animate-shimmer-fast" />
+          <div className="p-0.5 rounded-lg relative z-10">
+            <Phone className="h-5 w-5 text-white animate-bounce-subtle" />
           </div>
+          <span className="text-[10px] mt-0.5 text-white font-black tracking-widest uppercase relative z-10">Call</span>
         </a>
 
         {/* Referral Button */}
