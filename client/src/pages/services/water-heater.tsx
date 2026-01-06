@@ -7,30 +7,34 @@ import { LocalBusinessSchema } from '@/components/schema-markup';
 import { WhyChooseUs } from '@/components/WhyChooseUs';
 import emergencyWaterHeaterImg from '@assets/emergency_1763062911389.jpg';
 import coldRadiatorImg from '@assets/shutterstock_1247928550_1763063487225.webp';
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 import coldShowerImg from '@assets/2-woman-shocked-with-cold-water-while-taking-a-shower-as-a-result-of-a-faulty-circulator-pump-300x200_1763063444910.jpg';
 
 export default function WaterHeater() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
-      <LocalBusinessSchema 
-        serviceArea={["Quincy", "Weymouth", "Braintree", "Plymouth", "Marshfield", "Hingham"]}
-        service={{
-          name: "Water Heater Repair, Replacement & Installation",
-          description: "Expert water heater repair, replacement, and installation services for tank and tankless systems. Same-day service available across South Shore MA",
-          url: "https://johnsonbrosplumbing.com/services/water-heater"
-        }}
-      />
-      <Helmet>
-        <title>Water Heater Repair & Installation South Shore MA | Johnson Bros.</title>
-        <meta name="description" content="Expert water heater repair, replacement & installation in Quincy, Weymouth, Plymouth, Braintree MA. Tank & tankless systems. Same-day service. Call (617) 479-9911!" />
-        <link rel="canonical" href="https://johnsonbrosplumbing.com/services/water-heater" />
-        <meta property="og:title" content="Water Heater Repair & Installation South Shore MA | Johnson Bros." />
-        <meta property="og:description" content="Expert water heater repair, replacement & installation in Quincy, Weymouth, Plymouth, Braintree MA. Tank & tankless systems. Same-day service." />
-        <meta property="og:url" content="https://johnsonbrosplumbing.com/services/water-heater" />
-        <meta property="og:type" content="website" />
-      </Helmet>
-      {/* Hero Section */}
-      <section className="bg-gradient-to-r from-blue-600 to-blue-700 text-white py-16 px-4">
+    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 flex flex-col">
+      <Header onBookService={() => {}} />
+      <main className="flex-grow">
+        <LocalBusinessSchema 
+          serviceArea={["Quincy", "Weymouth", "Braintree", "Plymouth", "Marshfield", "Hingham"]}
+          service={{
+            name: "Water Heater Repair, Replacement & Installation",
+            description: "Expert water heater repair, replacement, and installation services for tank and tankless systems. Same-day service available across South Shore MA",
+            url: "https://johnsonbrosplumbing.com/services/water-heater"
+          }}
+        />
+        <Helmet>
+          <title>Water Heater Repair & Installation South Shore MA | Johnson Bros.</title>
+          <meta name="description" content="Expert water heater repair, replacement & installation in Quincy, Weymouth, Plymouth, Braintree MA. Tank & tankless systems. Same-day service. Call (617) 479-9911!" />
+          <link rel="canonical" href="https://johnsonbrosplumbing.com/services/water-heater" />
+          <meta property="og:title" content="Water Heater Repair & Installation South Shore MA | Johnson Bros." />
+          <meta property="og:description" content="Expert water heater repair, replacement & installation in Quincy, Weymouth, Plymouth, Braintree MA. Tank & tankless systems. Same-day service." />
+          <meta property="og:url" content="https://johnsonbrosplumbing.com/services/water-heater" />
+          <meta property="og:type" content="website" />
+        </Helmet>
+        {/* Hero Section */}
+        <section className="bg-gradient-to-r from-blue-600 to-blue-700 text-white py-16 px-4">
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center gap-3 mb-4">
             <Thermometer className="w-12 h-12" />
@@ -484,6 +488,8 @@ export default function WaterHeater() {
           </div>
         </div>
       </section>
+      </main>
+      <Footer />
     </div>
   );
 }
