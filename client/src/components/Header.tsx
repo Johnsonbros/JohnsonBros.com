@@ -87,6 +87,7 @@ export default function Header({ onBookService }: HeaderProps) {
   ];
 
   const serviceAreas = [
+    { name: "All Areas", href: "/service-areas" },
     { name: "Quincy, MA", href: "/service-areas/quincy" },
     { name: "Braintree, MA", href: "/service-areas/braintree" },
     { name: "Weymouth, MA", href: "/service-areas/weymouth" },
@@ -94,6 +95,7 @@ export default function Header({ onBookService }: HeaderProps) {
     { name: "Marshfield, MA", href: "/service-areas/marshfield" },
     { name: "Hingham, MA", href: "/service-areas/hingham" },
   ];
+
 
   return (
     <>
@@ -191,7 +193,14 @@ export default function Header({ onBookService }: HeaderProps) {
                 </button>
                 {mobileAreasOpen && (
                   <div className="pl-4 space-y-0.5 mt-1">
-                    {serviceAreas.map((area) => (
+                    <Link
+                      href="/service-areas"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="block text-white font-bold text-sm py-2.5 px-4 hover:bg-white/10 rounded-lg transition-all duration-200"
+                    >
+                      View All Areas Directory
+                    </Link>
+                    {serviceAreas.filter(a => a.href !== "/service-areas").map((area) => (
                       <Link
                         key={area.href}
                         href={area.href}
@@ -344,12 +353,19 @@ export default function Header({ onBookService }: HeaderProps) {
 
                 {/* Desktop Service Areas Dropdown */}
                 <DropdownMenu>
-                  <DropdownMenuTrigger className="text-white hover:text-blue-200 transition-colors font-medium text-sm xl:text-base whitespace-nowrap flex items-center gap-1 outline-none">
-                    Service Areas
-                    <ChevronDown className="h-3 w-3" />
+                  <DropdownMenuTrigger asChild>
+                    <Link href="/service-areas" className="text-white hover:text-blue-200 transition-colors font-medium text-sm xl:text-base whitespace-nowrap flex items-center gap-1 outline-none cursor-pointer">
+                      Service Areas
+                      <ChevronDown className="h-3 w-3" />
+                    </Link>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56">
-                    {serviceAreas.map((area) => (
+                    <DropdownMenuItem asChild>
+                      <Link href="/service-areas" className="cursor-pointer font-bold">
+                        All Areas Directory
+                      </Link>
+                    </DropdownMenuItem>
+                    {serviceAreas.filter(a => a.href !== "/service-areas").map((area) => (
                       <DropdownMenuItem key={area.href} asChild>
                         <Link href={area.href} className="cursor-pointer">
                           {area.name}

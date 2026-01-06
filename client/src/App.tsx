@@ -45,7 +45,7 @@ const HeatingServices = lazy(() => import("@/pages/services/heating"));
 const AboutUs = lazy(() => import("@/pages/about"));
 
 // Service Area Pages
-const QuincyPlumbing = lazy(() => import("@/pages/service-areas/quincy"));
+const ServiceAreasDirectory = lazy(() => import("@/pages/service-areas/index"));
 const BraintreePlumbing = lazy(() => import("@/pages/service-areas/braintree"));
 const WeymouthPlumbing = lazy(() => import("@/pages/service-areas/weymouth"));
 const PlymouthPlumbing = lazy(() => import("@/pages/service-areas/plymouth"));
@@ -121,7 +121,7 @@ function Router() {
           <Route path="/about" component={AboutUs} />
 
           {/* Service Area Pages */}
-          <Route path="/service-areas/quincy" component={QuincyPlumbing} />
+          <Route path="/service-areas" component={ServiceAreasDirectory} />
           <Route path="/service-areas/braintree" component={BraintreePlumbing} />
           <Route path="/service-areas/weymouth" component={WeymouthPlumbing} />
           <Route path="/service-areas/plymouth" component={PlymouthPlumbing} />
