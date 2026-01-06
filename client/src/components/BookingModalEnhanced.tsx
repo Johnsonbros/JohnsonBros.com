@@ -935,7 +935,7 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
                               </div>
                             </div>
                             {slot.isAvailable && !isSelected && (
-                              <div className="absolute top-2 right-2">
+                              <div className="absolute top-2 left-2">
                                 <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 uppercase">
                                   Available
                                 </span>
