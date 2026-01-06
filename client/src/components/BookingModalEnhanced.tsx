@@ -212,6 +212,7 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
   const [isExpressBooking, setIsExpressBooking] = useState(false);
   const [isFeeWaived, setIsFeeWaived] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(0);
+  const [weekOffset, setWeekOffset] = useState(0);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -611,23 +612,60 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
     );
   };
 
-  const generateCalendarDays = () => {
-    const days = [];
-    const today = new Date();
-    for (let i = 0; i < 7; i++) {
-      const date = new Date();
-      date.setDate(today.getDate() + i);
-      const dayOfWeek = date.getDay();
-      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6; // Sunday = 0, Saturday = 6
-      days.push({
-        date: date.toISOString().split('T')[0],
-        label: date.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' }),
-        isToday: i === 0,
-        isTomorrow: i === 1,
-        isWeekend,
+  const generateWeekDays = () => {
+    const now = new Date();
+    const estTime = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
+    const todayDate = estTime.toISOString().split('T')[0];
+    
+    // Find the Saturday that starts this week (looking back from today)
+    const currentDayOfWeek = estTime.getDay(); // 0 = Sunday, 6 = Saturday
+    const daysToSaturday = currentDayOfWeek === 6 ? 0 : currentDayOfWeek + 1;
+    
+    const weekStart = new Date(estTime);
+    weekStart.setDate(estTime.getDate() - daysToSaturday + (weekOffset * 7));
+    
+    const weekdays = [];
+    const saturday = {
+      date: new Date(weekStart).toISOString().split('T')[0],
+      dayNum: weekStart.getDate(),
+      dayName: 'Sat',
+      isWeekend: true,
+      isPast: new Date(weekStart).toISOString().split('T')[0] < todayDate,
+      isToday: new Date(weekStart).toISOString().split('T')[0] === todayDate,
+    };
+    
+    // Mon-Fri (5 weekdays)
+    for (let i = 2; i <= 6; i++) { // Monday is +2 from Saturday
+      const date = new Date(weekStart);
+      date.setDate(weekStart.getDate() + i);
+      const dateStr = date.toISOString().split('T')[0];
+      const tomorrow = new Date(estTime);
+      tomorrow.setDate(estTime.getDate() + 1);
+      const tomorrowStr = tomorrow.toISOString().split('T')[0];
+      
+      weekdays.push({
+        date: dateStr,
+        dayNum: date.getDate(),
+        dayName: date.toLocaleDateString('en-US', { weekday: 'short' }),
+        isWeekend: false,
+        isPast: dateStr < todayDate,
+        isToday: dateStr === todayDate,
+        isTomorrow: dateStr === tomorrowStr,
       });
     }
-    return days;
+    
+    const sundayDate = new Date(weekStart);
+    sundayDate.setDate(weekStart.getDate() + 1);
+    const sunday = {
+      date: sundayDate.toISOString().split('T')[0],
+      dayNum: sundayDate.getDate(),
+      dayName: 'Sun',
+      isWeekend: true,
+      isPast: sundayDate.toISOString().split('T')[0] < todayDate,
+      isToday: sundayDate.toISOString().split('T')[0] === todayDate,
+    };
+    
+    return { saturday, weekdays, sunday };
   };
 
   // Handle navigation between steps
@@ -675,46 +713,123 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
           <div className="space-y-4">
             <h3 className="text-lg font-semibold mb-4">Select Date & Time</h3>
             
-            {/* Date Selection */}
-            <div className="space-y-2">
-              <Label>DAY</Label>
-              <div className="grid grid-cols-7 gap-2">
-                {generateCalendarDays().map((day) => {
-                  const isSelected = bookingData.selectedDate === day.date;
-
-                  return (
-                    <button
-                      key={day.date}
-                      onClick={() => setBookingData(prev => ({ ...prev, selectedDate: day.date, selectedTimeSlot: null }))}
-                      className={`p-2 rounded-lg text-center transition-all ${
-                        isSelected
-                          ? day.isWeekend 
-                            ? 'bg-red-500 text-white'
-                            : 'bg-johnson-blue text-white'
-                          : day.isWeekend
-                            ? 'bg-red-50 hover:bg-red-100 border border-red-200'
-                            : 'bg-gray-100 hover:bg-gray-200'
-                      }`}
-                    >
-                      <div className="text-xs font-medium">
-                        {day.label}
-                      </div>
-                      {day.isToday && <Badge className="text-xs">Today</Badge>}
-                      {day.isTomorrow && <Badge className="text-xs">Tomorrow</Badge>}
-                      {day.isWeekend && !day.isToday && !day.isTomorrow && (
-                        <Badge className="text-xs bg-red-500">Emergency</Badge>
-                      )}
-                    </button>
-                  );
-                })}
+            {/* Date Selection - Weekly Calendar View */}
+            <div className="space-y-3">
+              {/* Week Navigation Header */}
+              <div className="flex items-center justify-between">
+                <Label>SELECT DAY</Label>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setWeekOffset(prev => Math.max(0, prev - 1))}
+                    disabled={weekOffset === 0}
+                    className="h-8 w-8 p-0"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <span className="text-sm font-medium min-w-[80px] text-center">
+                    {weekOffset === 0 ? 'This Week' : 'Next Week'}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setWeekOffset(prev => Math.min(1, prev + 1))}
+                    disabled={weekOffset >= 1}
+                    className="h-8 w-8 p-0"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
+
+              {/* Weekly Calendar Layout */}
+              {(() => {
+                const { saturday, weekdays, sunday } = generateWeekDays();
+                
+                const WeekendCard = ({ day, side }: { day: typeof saturday, side: 'left' | 'right' }) => (
+                  <div 
+                    className={`flex-shrink-0 w-16 bg-red-50 border border-red-200 rounded-lg p-2 text-center ${
+                      day.isPast ? 'opacity-50' : ''
+                    }`}
+                  >
+                    <div className="text-[10px] font-medium text-red-600 mb-1">{day.dayName}</div>
+                    <div className={`text-lg font-bold ${day.isPast ? 'text-gray-400' : 'text-red-700'}`}>
+                      {day.dayNum}
+                    </div>
+                    <div className="text-[8px] text-red-500 font-medium mt-1 leading-tight">
+                      Emergency<br/>Only
+                    </div>
+                    {!day.isPast && (
+                      <a 
+                        href="tel:6174799911"
+                        className="inline-flex items-center justify-center mt-1 text-[8px] text-red-600 hover:text-red-800 font-medium"
+                      >
+                        <Phone className="w-2 h-2 mr-0.5" />
+                        Call
+                      </a>
+                    )}
+                  </div>
+                );
+                
+                return (
+                  <div className="flex items-stretch gap-2">
+                    {/* Saturday Emergency Card */}
+                    <WeekendCard day={saturday} side="left" />
+                    
+                    {/* Weekdays Grid (Mon-Fri) */}
+                    <div className="flex-1 grid grid-cols-5 gap-1">
+                      {weekdays.map((day) => {
+                        const isSelected = bookingData.selectedDate === day.date;
+                        const isDisabled = day.isPast;
+                        
+                        return (
+                          <button
+                            key={day.date}
+                            onClick={() => !isDisabled && setBookingData(prev => ({ 
+                              ...prev, 
+                              selectedDate: day.date, 
+                              selectedTimeSlot: null 
+                            }))}
+                            disabled={isDisabled}
+                            className={`p-2 rounded-lg text-center transition-all min-h-[70px] flex flex-col justify-center ${
+                              isDisabled
+                                ? 'bg-gray-100 text-gray-300 cursor-not-allowed'
+                                : isSelected
+                                  ? 'bg-johnson-blue text-white shadow-md'
+                                  : 'bg-gray-50 hover:bg-gray-100 border border-gray-200'
+                            }`}
+                          >
+                            <div className="text-[10px] font-medium opacity-75">
+                              {day.dayName}
+                            </div>
+                            <div className="text-lg font-bold">
+                              {day.dayNum}
+                            </div>
+                            {day.isToday && !isDisabled && (
+                              <Badge className={`text-[8px] px-1 py-0 ${isSelected ? 'bg-white/20 text-white' : 'bg-johnson-blue/10 text-johnson-blue'}`}>
+                                Today
+                              </Badge>
+                            )}
+                            {day.isTomorrow && !isDisabled && !day.isToday && (
+                              <Badge className={`text-[8px] px-1 py-0 ${isSelected ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-600'}`}>
+                                Tomorrow
+                              </Badge>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    
+                    {/* Sunday Emergency Card */}
+                    <WeekendCard day={sunday} side="right" />
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Time Slot Selection */}
             {bookingData.selectedDate && (() => {
-              const selectedDateObj = new Date(bookingData.selectedDate + 'T12:00:00');
-              const isWeekendSelected = selectedDateObj.getDay() === 0 || selectedDateObj.getDay() === 6;
-              
               const now = new Date();
               const estTime = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
               const currentHour = estTime.getHours();
@@ -722,28 +837,6 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
               const isTodaySelected = bookingData.selectedDate === todayDate;
               const isPastNoon = currentHour >= 12;
               const isSameDayCutoff = isTodaySelected && isPastNoon;
-              
-              if (isWeekendSelected) {
-                return (
-                  <div className="bg-red-50 border-2 border-red-300 rounded-lg p-6 text-center">
-                    <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-                    <h4 className="font-bold text-lg text-red-700 mb-2">Emergency Service Only</h4>
-                    <p className="text-gray-700 mb-4">
-                      Weekend appointments are available for emergency services only. Please call us directly to schedule.
-                    </p>
-                    <a 
-                      href="tel:6174799911"
-                      className="inline-flex items-center justify-center gap-2 bg-red-500 text-white px-6 py-3 rounded-lg font-bold hover:bg-red-600 transition-all"
-                    >
-                      <Clock className="w-5 h-5" />
-                      Call (617) 479-9911
-                    </a>
-                    <p className="text-sm text-gray-500 mt-3">
-                      Available 24/7 for plumbing emergencies
-                    </p>
-                  </div>
-                );
-              }
               
               if (isSameDayCutoff) {
                 return (
