@@ -711,8 +711,43 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
         {/* Step 1: Date & Time Selection */}
         {currentStep === 1 && (
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold mb-4">Select Date & Time</h3>
-            
+            <h3 className="text-lg font-semibold mb-2">Select Date & Time</h3>
+
+            {/* Emergency Services Card - Conditional Visibility */}
+            {(() => {
+              const now = new Date();
+              const estTime = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
+              const day = estTime.getDay(); // 0 = Sun, 6 = Sat
+              const hour = estTime.getHours();
+              const isWeekend = day === 0 || day === 6;
+              const isAfterHours = hour >= 17 || hour < 6;
+
+              if (isWeekend || isAfterHours) {
+                return (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-3 shadow-sm">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Phone className="w-4 h-4 text-red-600" />
+                      <h4 className="font-bold text-red-900 text-xs uppercase tracking-wider">Emergency Service Available</h4>
+                    </div>
+                    <div className="text-[11px] text-red-800 leading-tight mb-3">
+                      Saturdays, Sundays, and After-Hours services are phone-only.
+                    </div>
+                    <a 
+                      href="tel:6174799911" 
+                      className="flex items-center justify-between bg-white border border-red-400 rounded-md p-2 group hover:bg-red-50 transition-all active:scale-[0.98]"
+                    >
+                      <div className="flex flex-col">
+                        <span className="text-[9px] uppercase font-bold text-red-500">Call Now</span>
+                        <span className="text-sm font-black text-red-600">(617) 479-9911</span>
+                      </div>
+                      <Phone className="w-4 h-4 text-red-500 group-hover:text-red-600" />
+                    </a>
+                  </div>
+                );
+              }
+              return null;
+            })()}
+
             {/* Date Selection - Weekly Calendar View */}
             <div className="space-y-3">
               {/* Week Navigation Header */}
@@ -806,32 +841,6 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
                           );
                         })}
                       </div>
-                    </div>
-                    {/* Emergency Services Disclaimer */}
-                    <div className="bg-red-50 border border-red-200 rounded-xl p-4 shadow-sm">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="bg-red-100 p-2 rounded-full">
-                          <Phone className="w-5 h-5 text-red-600" />
-                        </div>
-                        <h4 className="font-bold text-red-900 text-sm uppercase tracking-wider">Emergency Service</h4>
-                      </div>
-                      
-                      <div className="text-sm text-red-800 leading-relaxed mb-4">
-                        Saturdays, Sundays, and After-Hours emergency services may be available via phone only.
-                      </div>
-
-                      <a 
-                        href="tel:6174799911" 
-                        className="flex items-center justify-between bg-white border-2 border-red-500 rounded-lg p-3 group hover:bg-red-50 transition-all active:scale-[0.98]"
-                      >
-                        <div className="flex flex-col">
-                          <span className="text-[10px] uppercase font-bold text-red-500 tracking-tight">Call Now</span>
-                          <span className="text-lg font-black text-red-600">(617) 479-9911</span>
-                        </div>
-                        <div className="bg-red-500 p-2 rounded-md group-hover:bg-red-600 transition-colors">
-                          <Phone className="w-5 h-5 text-white" />
-                        </div>
-                      </a>
                     </div>
                   </div>
                 );
