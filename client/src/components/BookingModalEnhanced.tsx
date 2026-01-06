@@ -748,49 +748,63 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
                 const { weekdays } = generateWeekDays();
                 
                 return (
-                  <div className="flex items-stretch gap-2">
-                    {/* Weekdays Grid (Mon-Fri) */}
-                    <div className="flex-1 grid grid-cols-5 gap-2">
-                      {weekdays.map((day) => {
-                        const isSelected = bookingData.selectedDate === day.date;
-                        const isDisabled = day.isPast;
-                        
-                        return (
-                          <button
-                            key={day.date}
-                            onClick={() => !isDisabled && setBookingData(prev => ({ 
-                              ...prev, 
-                              selectedDate: day.date, 
-                              selectedTimeSlot: null 
-                            }))}
-                            disabled={isDisabled}
-                            className={`p-3 rounded-lg text-center transition-all min-h-[80px] flex flex-col justify-center items-center gap-1 ${
-                              isDisabled
-                                ? 'bg-gray-100 text-gray-300 cursor-not-allowed'
-                                : isSelected
-                                  ? 'bg-johnson-blue text-white shadow-md'
-                                  : 'bg-gray-50 hover:bg-gray-100 border border-gray-200'
-                            }`}
-                          >
-                            <div className="text-xs font-medium opacity-75">
-                              {day.dayName}
-                            </div>
-                            <div className="text-xl font-bold">
-                              {day.dayNum}
-                            </div>
-                            {day.isToday && !isDisabled && (
-                              <Badge className={`text-[10px] px-2 py-0 ${isSelected ? 'bg-white/20 text-white' : 'bg-johnson-blue/10 text-johnson-blue'}`}>
-                                Today
-                              </Badge>
-                            )}
-                            {day.isTomorrow && !isDisabled && !day.isToday && (
-                              <Badge className={`text-[10px] px-2 py-0 ${isSelected ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-600'}`}>
-                                Tomorrow
-                              </Badge>
-                            )}
-                          </button>
-                        );
-                      })}
+                  <div className="space-y-3">
+                    <div className="flex items-stretch gap-2">
+                      {/* Weekdays Grid (Mon-Fri) */}
+                      <div className="flex-1 grid grid-cols-5 gap-2">
+                        {weekdays.map((day) => {
+                          const isSelected = bookingData.selectedDate === day.date;
+                          const isDisabled = day.isPast;
+                          
+                          return (
+                            <button
+                              key={day.date}
+                              onClick={() => !isDisabled && setBookingData(prev => ({ 
+                                ...prev, 
+                                selectedDate: day.date, 
+                                selectedTimeSlot: null 
+                              }))}
+                              disabled={isDisabled}
+                              className={`p-3 rounded-lg text-center transition-all min-h-[80px] flex flex-col justify-center items-center gap-1 ${
+                                isDisabled
+                                  ? 'bg-gray-100 text-gray-300 cursor-not-allowed'
+                                  : isSelected
+                                    ? 'bg-johnson-blue text-white shadow-md'
+                                    : 'bg-gray-50 hover:bg-gray-100 border border-gray-200'
+                              }`}
+                            >
+                              <div className="text-xs font-medium opacity-75">
+                                {day.dayName}
+                              </div>
+                              <div className="text-xl font-bold">
+                                {day.dayNum}
+                              </div>
+                              {day.isToday && !isDisabled && (
+                                <Badge className={`text-[10px] px-2 py-0 ${isSelected ? 'bg-white/20 text-white' : 'bg-johnson-blue/10 text-johnson-blue'}`}>
+                                  Today
+                                </Badge>
+                              )}
+                              {day.isTomorrow && !isDisabled && !day.isToday && (
+                                <Badge className={`text-[10px] px-2 py-0 ${isSelected ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-600'}`}>
+                                  Tomorrow
+                                </Badge>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Emergency Services Disclaimer */}
+                    <div className="bg-red-50 border border-red-100 rounded-lg p-3 flex items-start gap-3">
+                      <div className="bg-red-100 p-1.5 rounded-full mt-0.5">
+                        <Phone className="w-3.5 h-3.5 text-red-600" />
+                      </div>
+                      <div className="text-xs text-red-800 leading-relaxed">
+                        <span className="font-bold">Need Emergency Service?</span> Saturdays, Sundays, and After-Hours emergency services may be available. Please call 
+                        <a href="tel:6174799911" className="font-bold underline mx-1 hover:text-red-900 transition-colors">617-479-9911</a> 
+                        directly to schedule.
+                      </div>
                     </div>
                   </div>
                 );
