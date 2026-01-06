@@ -114,16 +114,16 @@ export function JobCompletionNotifications() {
   };
 
   return (
-    <div className="fixed bottom-32 md:bottom-24 left-6 z-50 space-y-2 pointer-events-none">
+    <div className="fixed bottom-32 md:bottom-24 right-6 z-50 space-y-2 pointer-events-none">
       {notifications.map((notification) => (
         <div
           key={notification.id}
           className={`
             pointer-events-auto bg-white rounded-lg shadow-xl border border-gray-200 p-3 w-72 
-            transition-all duration-300 transform origin-bottom-left
+            transition-all duration-300 transform origin-bottom-right
             ${notification.show 
               ? 'translate-x-0 opacity-100 scale-100' 
-              : '-translate-x-full opacity-0 scale-95'
+              : 'translate-x-full opacity-0 scale-95'
             }
           `}
           data-testid={`job-notification-${notification.job.id}`}
