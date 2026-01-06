@@ -780,7 +780,7 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
                                 {day.dayNum}
                               </div>
                               {day.isToday && !isDisabled && (
-                                <Badge className={`text-[10px] px-2 py-0 ${isSelected ? 'bg-white/20 text-white' : 'bg-johnson-blue/10 text-johnson-blue'}`}>
+                                <Badge className="inline-flex items-center rounded-full border font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent hover:bg-primary/80 text-[10px] px-2 py-0 bg-[#e03d3d] text-[#ffffff]">
                                   Today
                                 </Badge>
                               )}
@@ -794,7 +794,6 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
                         })}
                       </div>
                     </div>
-
                     {/* Emergency Services Disclaimer */}
                     <div className="bg-red-50 border border-red-100 rounded-lg p-3 flex items-start gap-3">
                       <div className="bg-red-100 p-1.5 rounded-full mt-0.5">
