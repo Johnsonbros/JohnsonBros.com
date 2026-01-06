@@ -59,34 +59,36 @@ export default function MobileBottomNav({ onBookService }: MobileBottomNavProps)
           <span className="text-[10px] mt-0.5 text-white font-black tracking-widest uppercase relative z-10">Call</span>
         </a>
 
-        {/* Referral Button */}
+        {/* Referral Button - Flashy */}
         <Link
           href="/referral"
-          className={`group flex flex-col items-center justify-center min-w-[64px] py-1.5 touch-manipulation rounded-xl transition-all duration-300 ${
+          className={`group relative flex flex-col items-center justify-center min-w-[72px] py-2 touch-manipulation rounded-xl transition-all duration-300 overflow-hidden ${
             location === "/referral" 
-              ? "bg-johnson-blue text-white shadow-lg shadow-johnson-blue/20 scale-105" 
-              : "text-gray-500 hover:bg-gray-50 active:scale-95"
+              ? "bg-johnson-blue text-white shadow-[0_0_15px_rgba(32,128,205,0.4)] scale-110" 
+              : "bg-white text-gray-500 border border-gray-100 shadow-sm active:scale-95"
           }`}
           data-testid="bottom-nav-referral"
         >
-          <Gift className={`h-5 w-5 transition-transform duration-300 ${location === "/referral" ? "scale-110" : "group-hover:scale-110"}`} />
-          <span className={`text-[10px] mt-1 font-bold tracking-tight uppercase ${location === "/referral" ? "text-white" : "text-gray-500"}`}>
+          {location === "/referral" && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full animate-shimmer-fast" />}
+          <Gift className={`h-5 w-5 transition-transform duration-300 relative z-10 ${location === "/referral" ? "scale-110" : "group-hover:scale-110"}`} />
+          <span className={`text-[10px] mt-1 font-black tracking-widest uppercase relative z-10 ${location === "/referral" ? "text-white" : "text-gray-500"}`}>
             Referral
           </span>
         </Link>
 
-        {/* Contact Button */}
+        {/* Contact Button - Flashy */}
         <Link
           href="/contact"
-          className={`group flex flex-col items-center justify-center min-w-[64px] py-1.5 touch-manipulation rounded-xl transition-all duration-300 ${
+          className={`group relative flex flex-col items-center justify-center min-w-[72px] py-2 touch-manipulation rounded-xl transition-all duration-300 overflow-hidden ${
             location === "/contact" 
-              ? "bg-johnson-blue text-white shadow-lg shadow-johnson-blue/20 scale-105" 
-              : "text-gray-500 hover:bg-gray-50 active:scale-95"
+              ? "bg-johnson-blue text-white shadow-[0_0_15px_rgba(32,128,205,0.4)] scale-110" 
+              : "bg-white text-gray-500 border border-gray-100 shadow-sm active:scale-95"
           }`}
           data-testid="bottom-nav-contact"
         >
-          <MessageSquare className={`h-5 w-5 transition-transform duration-300 ${location === "/contact" ? "scale-110" : "group-hover:scale-110"}`} />
-          <span className={`text-[10px] mt-1 font-bold tracking-tight uppercase ${location === "/contact" ? "text-white" : "text-gray-500"}`}>
+          {location === "/contact" && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full animate-shimmer-fast" />}
+          <MessageSquare className={`h-5 w-5 transition-transform duration-300 relative z-10 ${location === "/contact" ? "scale-110" : "group-hover:scale-110"}`} />
+          <span className={`text-[10px] mt-1 font-black tracking-widest uppercase relative z-10 ${location === "/contact" ? "text-white" : "text-gray-500"}`}>
             Contact
           </span>
         </Link>
