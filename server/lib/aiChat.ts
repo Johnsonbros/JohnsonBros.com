@@ -206,7 +206,8 @@ async function callMCPTool(toolName: string, args: any, chatSessionId: string): 
     let mcpSessionId = mcpSessions.get(chatSessionId);
     
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      'Accept': 'application/json, text/event-stream'
     };
     
     if (mcpSessionId) {
@@ -266,7 +267,8 @@ async function initMCPSession(chatSessionId: string): Promise<boolean> {
     const response = await fetch(`${MCP_SERVER_URL}/mcp`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Accept': 'application/json, text/event-stream'
       },
       body: JSON.stringify({
         jsonrpc: '2.0',
