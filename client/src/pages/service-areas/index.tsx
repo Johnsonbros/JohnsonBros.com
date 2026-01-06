@@ -34,11 +34,14 @@ export default function ServiceAreasDirectory() {
         
         <main className="flex-grow">
           {/* Hero Section */}
-          <section className="bg-johnson-blue text-white py-16 sm:py-20">
-            <div className="container mx-auto px-4 text-center">
+          <section className="bg-johnson-blue text-white py-16 sm:py-20 relative overflow-hidden">
+            <div className="absolute inset-0 opacity-10">
+              <div className="absolute inset-0 bg-pipes-blue" style={{ backgroundBlendMode: 'overlay' }} />
+            </div>
+            <div className="container mx-auto px-4 text-center relative z-10">
               <h1 className="text-4xl sm:text-5xl font-bold mb-6">Our Service Areas</h1>
               <p className="text-xl text-blue-100 max-w-2xl mx-auto">
-                Providing expert plumbing and drain cleaning services across South Shore, Massachusetts.
+                Providing expert plumbing and drain cleaning services across the South Shore of Massachusetts. We're your local 24/7 plumbing partners.
               </p>
             </div>
           </section>

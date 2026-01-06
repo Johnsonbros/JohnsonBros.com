@@ -305,7 +305,7 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
                 </div>
               </div>
             ) : uniqueSlots.length === 0 && (
-              <div className="flex flex-col space-y-3 sm:space-y-4">
+              <div className="flex flex-col sm:flex-row gap-4">
                 <Button 
                   onClick={onBookService}
                   className="px-6 py-4 sm:px-8 rounded-lg font-bold text-lg transition-all duration-300 transform hover:scale-105 shadow-xl w-full sm:w-auto touch-target bg-gradient-to-r from-johnson-orange to-orange-500 hover:from-orange-500 hover:to-johnson-orange"
@@ -314,14 +314,15 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
                   <Calendar className="mr-2 h-5 w-5" />
                   Book Service
                 </Button>
-                <a 
-                  href="tel:6174799911" 
-                  className="bg-white text-johnson-blue px-6 py-4 sm:px-8 rounded-lg font-bold text-lg hover:bg-gray-50 transition-all duration-300 transform hover:scale-105 shadow-lg text-center inline-flex items-center justify-center w-full sm:w-auto touch-target border-2 border-johnson-blue hover:border-johnson-teal"
-                  data-testid="hero-call-button"
+                <Button 
+                  variant="outline"
+                  className="bg-white/10 border-2 border-white text-white hover:bg-white hover:text-johnson-blue text-lg px-8 py-4 w-full sm:w-auto font-bold shadow-xl transition-all duration-300 transform hover:scale-105"
+                  asChild
                 >
-                  <Phone className="mr-2 h-5 w-5" />
-                  Call (617) 479-9911
-                </a>
+                  <Link href="/service-areas">
+                    View Service Areas
+                  </Link>
+                </Button>
               </div>
             )}
 

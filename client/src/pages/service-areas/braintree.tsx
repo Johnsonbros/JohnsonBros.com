@@ -4,22 +4,54 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Phone, MapPin, CheckCircle, Clock, Shield } from "lucide-react";
 import { Link } from "wouter";
-import { LocalBusinessSchema } from "@/components/schema-markup";
+import { LocalBusinessSchema, ServiceAreaSchema, FAQSchema, BreadcrumbSchema, ReviewSchema } from "@/components/schema-markup";
+import { serviceAreaMetadata, generateSocialMetaTags } from "@/lib/seoMetadata";
 
 export default function BraintreePlumbing() {
+  // Get SEO metadata
+  const pageMetadata = serviceAreaMetadata['braintree'];
+  const socialTags = generateSocialMetaTags(pageMetadata);
+  
+  // Local FAQs for Braintree
+  const braintreeFAQs = [
+    {
+      question: "Do you provide emergency plumbing services in Braintree, MA?",
+      answer: "Yes, Johnson Bros. provides 24/7 emergency plumbing services throughout Braintree, MA. We're locally based and can respond quickly to any plumbing emergency."
+    },
+    {
+      question: "What plumbing services do you offer in Braintree?",
+      answer: "We offer full-service plumbing including drain cleaning, water heater repair and installation, gas heat services, and emergency repairs for Braintree residents."
+    }
+  ];
+  
+  const breadcrumbs = [
+    { name: "Home", url: "https://www.thejohnsonbros.com/" },
+    { name: "Service Areas", url: "https://www.thejohnsonbros.com/service-areas" },
+    { name: "Braintree", url: "https://www.thejohnsonbros.com/service-areas/braintree" }
+  ];
+  
+  const braintreeServices = [
+    { name: "Emergency Plumbing Braintree", description: "24/7 emergency plumbing repairs for Braintree homes" },
+    { name: "Drain Cleaning Braintree", description: "Professional drain and sewer cleaning in Braintree, MA" },
+    { name: "Water Heater Service Braintree", description: "Water heater repair and installation for Braintree residents" }
+  ];
+
   return (
     <>
-      <LocalBusinessSchema serviceArea="Braintree" />
       <Helmet>
-        <title>Plumber Braintree MA | 24/7 Emergency Plumbing | Johnson Bros</title>
-        <meta 
-          name="description" 
-          content="Expert plumber in Braintree MA. Emergency plumbing, drain cleaning, water heaters, gas heat. Licensed & insured. Same-day service. Call (617) 479-9911" 
-        />
-        <meta property="og:title" content="Plumber Braintree MA | Emergency Plumbing | Johnson Bros" />
-        <meta property="og:description" content="Trusted plumbing services in Braintree MA. 24/7 emergency service, drain cleaning, water heaters. Licensed plumbers serving Braintree." />
-        <link rel="canonical" href="https://johnsonbrosplumbing.com/service-areas/braintree" />
+        <title>{pageMetadata.title}</title>
+        <meta name="description" content={pageMetadata.description} />
+        <meta name="keywords" content={pageMetadata.keywords.join(', ')} />
+        <link rel="canonical" href={`https://www.thejohnsonbros.com${pageMetadata.canonicalUrl}`} />
+        {Object.entries(socialTags.openGraph).map(([key, value]) => (
+          <meta key={key} property={key} content={value} />
+        ))}
       </Helmet>
+      
+      <LocalBusinessSchema serviceArea="Braintree" />
+      <ServiceAreaSchema areaName="Braintree" services={braintreeServices} />
+      <FAQSchema questions={braintreeFAQs} />
+      <BreadcrumbSchema items={breadcrumbs} />
 
       <div className="min-h-screen flex flex-col bg-gray-50">
         <Header onBookService={() => {}} />
