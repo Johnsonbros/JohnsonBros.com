@@ -880,32 +880,38 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
             })()}
 
             {/* Optional Problem Description */}
-            <div className="space-y-2 mt-4">
-              <Label>Problem Description (Optional)</Label>
-              <Textarea
-                value={problemDescription}
-                onChange={(e) => setProblemDescription(e.target.value)}
-                placeholder="Briefly describe your plumbing issue..."
-                rows={3}
-                className="resize-none"
-              />
-              <p className="text-xs text-gray-500">
-                Help us prepare for your service by providing details about your plumbing issue.
-              </p>
-            </div>
+            {!(bookingData.selectedDate === new Date(new Date().toLocaleString("en-US", {timeZone: "America/New_York"})).toISOString().split('T')[0] && 
+              new Date(new Date().toLocaleString("en-US", {timeZone: "America/New_York"})).getHours() >= 12) && (
+              <div className="space-y-2 mt-4">
+                <Label>Problem Description (Optional)</Label>
+                <Textarea
+                  value={problemDescription}
+                  onChange={(e) => setProblemDescription(e.target.value)}
+                  placeholder="Briefly describe your plumbing issue..."
+                  rows={3}
+                  className="resize-none"
+                />
+                <p className="text-xs text-gray-500">
+                  Help us prepare for your service by providing details about your plumbing issue.
+                </p>
+              </div>
+            )}
 
             {/* Service Fee Info */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
-              <div className="flex items-start gap-3">
-                <DollarSign className="h-5 w-5 text-johnson-blue mt-0.5" />
-                <div>
-                  <h4 className="font-semibold text-johnson-blue">$99 Service Call Fee</h4>
-                  <p className="text-sm text-gray-700 mt-1">
-                    Our professional plumber will assess your situation and provide expert solutions. Service call fee may be waived based on current capacity.
-                  </p>
+            {!(bookingData.selectedDate === new Date(new Date().toLocaleString("en-US", {timeZone: "America/New_York"})).toISOString().split('T')[0] && 
+              new Date(new Date().toLocaleString("en-US", {timeZone: "America/New_York"})).getHours() >= 12) && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
+                <div className="flex items-start gap-3">
+                  <DollarSign className="h-5 w-5 text-johnson-blue mt-0.5" />
+                  <div>
+                    <h4 className="font-semibold text-johnson-blue">$99 Service Call Fee</h4>
+                    <p className="text-sm text-gray-700 mt-1">
+                      Our professional plumber will assess your situation and provide expert solutions. Service call fee may be waived based on current capacity.
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             <div className="flex justify-between gap-2 mt-6">
               <Button
