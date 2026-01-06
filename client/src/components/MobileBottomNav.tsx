@@ -9,26 +9,28 @@ export default function MobileBottomNav({ onBookService }: MobileBottomNavProps)
   const [location] = useLocation();
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg lg:hidden z-50">
-      <div className="flex items-center justify-around py-2">
+    <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-100 shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.1)] lg:hidden z-50 pb-safe">
+      <div className="flex items-center justify-around py-2 px-2">
         {/* Home Button */}
         <Link
           href="/"
-          className={`flex flex-col items-center justify-center min-w-[64px] min-h-[56px] px-1 touch-manipulation rounded-lg transition-colors ${
-            location === "/" ? "bg-johnson-blue/10" : "hover:bg-gray-50"
+          className={`group flex flex-col items-center justify-center min-w-[64px] py-1.5 touch-manipulation rounded-xl transition-all duration-300 ${
+            location === "/" 
+              ? "bg-johnson-blue text-white shadow-lg shadow-johnson-blue/20 scale-105" 
+              : "text-gray-500 hover:bg-gray-50 active:scale-95"
           }`}
           data-testid="bottom-nav-home"
         >
-          <Home
-            className={`h-5 w-5 ${
-              location === "/" ? "text-johnson-blue" : "text-gray-600"
-            }`}
-          />
-          <span
-            className={`text-xs mt-1 font-medium ${
-              location === "/" ? "text-johnson-blue" : "text-gray-700"
-            }`}
-          >
+          <div className="relative">
+            <Home className={`h-5 w-5 transition-transform duration-300 ${location === "/" ? "scale-110" : "group-hover:scale-110"}`} />
+            {location === "/" && (
+              <span className="absolute -top-1 -right-1 flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+              </span>
+            )}
+          </div>
+          <span className={`text-[10px] mt-1 font-bold tracking-tight uppercase ${location === "/" ? "text-white" : "text-gray-500"}`}>
             Home
           </span>
         </Link>
@@ -36,41 +38,36 @@ export default function MobileBottomNav({ onBookService }: MobileBottomNavProps)
         {/* Book Button */}
         <button
           onClick={onBookService}
-          className="flex flex-col items-center justify-center min-w-[64px] min-h-[56px] px-1 touch-manipulation hover:bg-gray-50 rounded-lg transition-colors"
+          className="group flex flex-col items-center justify-center min-w-[64px] py-1.5 touch-manipulation rounded-xl transition-all duration-300 text-gray-500 hover:bg-gray-50 active:scale-95"
           data-testid="bottom-nav-book"
         >
-          <Calendar className="h-5 w-5 text-johnson-blue" />
-          <span className="text-xs mt-1 text-gray-700 font-medium">Book</span>
+          <Calendar className="h-5 w-5 text-johnson-blue group-hover:scale-110 transition-transform" />
+          <span className="text-[10px] mt-1 text-gray-500 font-bold tracking-tight uppercase">Book</span>
         </button>
 
         {/* Call Button */}
         <a
           href="tel:6174799911"
-          className="flex flex-col items-center justify-center min-w-[64px] min-h-[56px] px-1 touch-manipulation hover:bg-gray-50 rounded-lg transition-colors"
+          className="group flex flex-col items-center justify-center min-w-[64px] py-1.5 touch-manipulation rounded-xl transition-all duration-300 text-gray-500 hover:bg-gray-50 active:scale-95"
           data-testid="bottom-nav-call"
         >
-          <Phone className="h-5 w-5 text-johnson-blue" />
-          <span className="text-xs mt-1 text-gray-700 font-medium">Call</span>
+          <div className="bg-johnson-orange/10 p-1.5 rounded-lg group-hover:bg-johnson-orange/20 transition-colors">
+            <Phone className="h-5 w-5 text-johnson-orange group-hover:rotate-12 transition-transform" />
+          </div>
         </a>
 
         {/* Referral Button */}
         <Link
           href="/referral"
-          className={`flex flex-col items-center justify-center min-w-[64px] min-h-[56px] px-1 touch-manipulation rounded-lg transition-colors ${
-            location === "/referral" ? "bg-johnson-blue/10" : "hover:bg-gray-50"
+          className={`group flex flex-col items-center justify-center min-w-[64px] py-1.5 touch-manipulation rounded-xl transition-all duration-300 ${
+            location === "/referral" 
+              ? "bg-johnson-blue text-white shadow-lg shadow-johnson-blue/20 scale-105" 
+              : "text-gray-500 hover:bg-gray-50 active:scale-95"
           }`}
           data-testid="bottom-nav-referral"
         >
-          <Gift
-            className={`h-5 w-5 ${
-              location === "/referral" ? "text-johnson-blue" : "text-gray-600"
-            }`}
-          />
-          <span
-            className={`text-xs mt-1 font-medium ${
-              location === "/referral" ? "text-johnson-blue" : "text-gray-700"
-            }`}
-          >
+          <Gift className={`h-5 w-5 transition-transform duration-300 ${location === "/referral" ? "scale-110" : "group-hover:scale-110"}`} />
+          <span className={`text-[10px] mt-1 font-bold tracking-tight uppercase ${location === "/referral" ? "text-white" : "text-gray-500"}`}>
             Referral
           </span>
         </Link>
@@ -78,21 +75,15 @@ export default function MobileBottomNav({ onBookService }: MobileBottomNavProps)
         {/* Contact Button */}
         <Link
           href="/contact"
-          className={`flex flex-col items-center justify-center min-w-[64px] min-h-[56px] px-1 touch-manipulation rounded-lg transition-colors ${
-            location === "/contact" ? "bg-johnson-blue/10" : "hover:bg-gray-50"
+          className={`group flex flex-col items-center justify-center min-w-[64px] py-1.5 touch-manipulation rounded-xl transition-all duration-300 ${
+            location === "/contact" 
+              ? "bg-johnson-blue text-white shadow-lg shadow-johnson-blue/20 scale-105" 
+              : "text-gray-500 hover:bg-gray-50 active:scale-95"
           }`}
           data-testid="bottom-nav-contact"
         >
-          <MessageSquare
-            className={`h-5 w-5 ${
-              location === "/contact" ? "text-johnson-blue" : "text-gray-600"
-            }`}
-          />
-          <span
-            className={`text-xs mt-1 font-medium ${
-              location === "/contact" ? "text-johnson-blue" : "text-gray-700"
-            }`}
-          >
+          <MessageSquare className={`h-5 w-5 transition-transform duration-300 ${location === "/contact" ? "scale-110" : "group-hover:scale-110"}`} />
+          <span className={`text-[10px] mt-1 font-bold tracking-tight uppercase ${location === "/contact" ? "text-white" : "text-gray-500"}`}>
             Contact
           </span>
         </Link>
