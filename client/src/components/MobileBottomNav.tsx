@@ -8,87 +8,91 @@ interface MobileBottomNavProps {
 export default function MobileBottomNav({ onBookService }: MobileBottomNavProps) {
   const [location] = useLocation();
 
+  const isActive = (path: string) => location === path;
+
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-100 shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.1)] lg:hidden z-50 pb-safe">
-      <div className="flex items-center justify-around py-2 px-2">
+    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.15)] lg:hidden z-50 pb-safe">
+      <div className="flex items-end justify-around px-2 pt-2 pb-2">
         {/* Home Button */}
         <Link
           href="/"
-          className={`group flex flex-col items-center justify-center min-w-[64px] py-1.5 touch-manipulation rounded-xl transition-all duration-300 ${
-            location === "/" 
-              ? "bg-johnson-blue text-white shadow-lg shadow-johnson-blue/20 scale-105" 
-              : "text-gray-500 hover:bg-gray-50 active:scale-95"
+          className={`flex flex-col items-center justify-center w-16 py-2 rounded-lg transition-all duration-200 ${
+            isActive("/") 
+              ? "text-johnson-blue" 
+              : "text-gray-500 hover:text-gray-700"
           }`}
           data-testid="bottom-nav-home"
         >
-          <div className="relative">
-            <Home className={`h-5 w-5 transition-transform duration-300 ${location === "/" ? "scale-110" : "group-hover:scale-110"}`} />
-            {location === "/" && (
-              <span className="absolute -top-1 -right-1 flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
-              </span>
-            )}
-          </div>
-          <span className={`text-[10px] mt-1 font-bold tracking-tight uppercase ${location === "/" ? "text-white" : "text-gray-500"}`}>
+          <Home className={`h-5 w-5 ${isActive("/") ? "stroke-[2.5]" : ""}`} />
+          <span className={`text-[10px] mt-1 font-semibold uppercase tracking-wide ${isActive("/") ? "text-johnson-blue" : "text-gray-500"}`}>
             Home
           </span>
         </Link>
 
-        {/* Book Button - Flashy */}
+        {/* Book Button */}
         <button
           onClick={onBookService}
-          className="group relative flex flex-col items-center justify-center min-w-[72px] py-2 touch-manipulation rounded-xl transition-all duration-300 bg-johnson-blue text-white shadow-[0_0_15px_rgba(32,128,205,0.4)] scale-110 active:scale-95 animate-pulse-slow overflow-hidden"
+          className="flex flex-col items-center justify-center w-16 py-2 rounded-lg transition-all duration-200 text-gray-500 hover:text-gray-700 active:scale-95"
           data-testid="bottom-nav-book"
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full animate-shimmer-fast" />
-          <Calendar className="h-5 w-5 text-white group-hover:scale-110 transition-transform relative z-10" />
-          <span className="text-[10px] mt-1 text-white font-black tracking-widest uppercase relative z-10">Book</span>
+          <Calendar className="h-5 w-5" />
+          <span className="text-[10px] mt-1 font-semibold uppercase tracking-wide text-gray-500">
+            Book
+          </span>
         </button>
 
-        {/* Call Button - Flashy */}
+        {/* CALL Button - Hero Center */}
         <a
           href="tel:6174799911"
-          className="group relative flex flex-col items-center justify-center min-w-[72px] py-2 touch-manipulation rounded-xl transition-all duration-300 bg-johnson-orange text-white shadow-[0_0_15px_rgba(255,165,0,0.4)] active:scale-95 overflow-hidden"
+          className="relative flex flex-col items-center justify-center -mt-6 transition-all duration-300 active:scale-95"
           data-testid="bottom-nav-call"
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full animate-shimmer-fast" />
-          <div className="p-0.5 rounded-lg relative z-10">
-            <Phone className="h-5 w-5 text-white animate-bounce-subtle" />
+          {/* Outer glow ring */}
+          <div className="absolute inset-0 -m-1 bg-johnson-orange/30 rounded-full blur-md animate-pulse" />
+          
+          {/* Main button circle */}
+          <div className="relative w-16 h-16 bg-gradient-to-br from-johnson-orange to-orange-600 rounded-full flex items-center justify-center shadow-lg shadow-orange-500/40 ring-4 ring-white">
+            {/* Shimmer effect */}
+            <div className="absolute inset-0 rounded-full overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full animate-shimmer" />
+            </div>
+            <Phone className="h-7 w-7 text-white relative z-10" />
           </div>
-          <span className="text-[10px] mt-0.5 text-white font-black tracking-widest uppercase relative z-10">Call</span>
+          
+          {/* Label */}
+          <span className="text-[10px] mt-1.5 font-bold uppercase tracking-wider text-johnson-orange">
+            Call
+          </span>
         </a>
 
-        {/* Referral Button - Flashy */}
+        {/* Referral Button */}
         <Link
           href="/referral"
-          className={`group relative flex flex-col items-center justify-center min-w-[72px] py-2 touch-manipulation rounded-xl transition-all duration-300 overflow-hidden ${
-            location === "/referral" 
-              ? "bg-johnson-blue text-white shadow-[0_0_15px_rgba(32,128,205,0.4)] scale-110" 
-              : "bg-white text-gray-500 border border-gray-100 shadow-sm active:scale-95"
+          className={`flex flex-col items-center justify-center w-16 py-2 rounded-lg transition-all duration-200 ${
+            isActive("/referral") 
+              ? "text-johnson-blue" 
+              : "text-gray-500 hover:text-gray-700"
           }`}
           data-testid="bottom-nav-referral"
         >
-          {location === "/referral" && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full animate-shimmer-fast" />}
-          <Gift className={`h-5 w-5 transition-transform duration-300 relative z-10 ${location === "/referral" ? "scale-110" : "group-hover:scale-110"}`} />
-          <span className={`text-[10px] mt-1 font-black tracking-widest uppercase relative z-10 ${location === "/referral" ? "text-white" : "text-gray-500"}`}>
+          <Gift className={`h-5 w-5 ${isActive("/referral") ? "stroke-[2.5]" : ""}`} />
+          <span className={`text-[10px] mt-1 font-semibold uppercase tracking-wide ${isActive("/referral") ? "text-johnson-blue" : "text-gray-500"}`}>
             Referral
           </span>
         </Link>
 
-        {/* Contact Button - Flashy */}
+        {/* Contact Button */}
         <Link
           href="/contact"
-          className={`group relative flex flex-col items-center justify-center min-w-[72px] py-2 touch-manipulation rounded-xl transition-all duration-300 overflow-hidden ${
-            location === "/contact" 
-              ? "bg-johnson-blue text-white shadow-[0_0_15px_rgba(32,128,205,0.4)] scale-110" 
-              : "bg-white text-gray-500 border border-gray-100 shadow-sm active:scale-95"
+          className={`flex flex-col items-center justify-center w-16 py-2 rounded-lg transition-all duration-200 ${
+            isActive("/contact") 
+              ? "text-johnson-blue" 
+              : "text-gray-500 hover:text-gray-700"
           }`}
           data-testid="bottom-nav-contact"
         >
-          {location === "/contact" && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full animate-shimmer-fast" />}
-          <MessageSquare className={`h-5 w-5 transition-transform duration-300 relative z-10 ${location === "/contact" ? "scale-110" : "group-hover:scale-110"}`} />
-          <span className={`text-[10px] mt-1 font-black tracking-widest uppercase relative z-10 ${location === "/contact" ? "text-white" : "text-gray-500"}`}>
+          <MessageSquare className={`h-5 w-5 ${isActive("/contact") ? "stroke-[2.5]" : ""}`} />
+          <span className={`text-[10px] mt-1 font-semibold uppercase tracking-wide ${isActive("/contact") ? "text-johnson-blue" : "text-gray-500"}`}>
             Contact
           </span>
         </Link>
