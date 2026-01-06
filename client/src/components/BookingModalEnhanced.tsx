@@ -17,7 +17,7 @@ import {
   Calendar, X, User, UserPlus, Clock, DollarSign, ChevronLeft, ChevronRight, 
   ClipboardList, Gift, Info, Upload, Image as ImageIcon, AlertTriangle,
   Droplets, Flame, Wrench, Settings, Home, Camera, Trash2, CheckCircle,
-  AlertCircle, MapPin, FileText, Lock, Shield
+  AlertCircle, MapPin, FileText, Lock, Shield, Phone
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
