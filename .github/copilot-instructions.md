@@ -71,7 +71,7 @@ This is a full-stack web application for Johnson Bros. Plumbing & Drain Cleaning
 - Apply rate limiting to public endpoints
 - Use authentication middleware (`authenticate`) for protected routes
 - Implement proper error handling with try-catch blocks
-- Log errors using the Logger utility from `./src/logger`
+- Log errors using the Logger utility from `server/src/logger.ts`
 - Return consistent JSON responses
 
 ### Data Validation
