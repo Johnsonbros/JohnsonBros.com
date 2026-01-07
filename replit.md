@@ -49,6 +49,14 @@ The frontend is built with React and TypeScript, utilizing Radix UI primitives a
   - Uses OpenAI function calling to execute MCP tools (booking, quotes, availability, services, emergency help)
   - Maintains conversation history per session for context continuity
   - Emergency phone: (617) 479-9911
+- **Automated SMS Booking Agent**: AI-powered follow-up system for contact form submissions:
+  - Triggers exactly 3 minutes and 57 seconds (237 seconds) after form submission (when customer opts in for marketing)
+  - Uses OpenAI Agents SDK (gpt-4o) connected to HousecallPro MCP server via StreamableHTTPClientTransport
+  - Has access to 5 MCP tools: book_service_call, search_availability, get_quote, get_services, emergency_help
+  - Conducts conversational SMS dialogue to book $99 service fee appointments
+  - Automatically enters conversation notes into HousecallPro jobs after successful bookings
+  - Session history maintained in-memory by phone number for context continuity
+  - Agent runs autonomous tool execution loop (max 5 iterations) to prevent infinite loops
 - **Admin Dashboard**: Provides real-time analytics, operations monitoring, customer management, task management, AI chat interface, webhook monitoring, and document management.
 - **Social Proof**: Real-time Google reviews integration displaying live rating and review count in header (updates every 30 minutes), service heat map, live stats widget, and recent jobs widget.
 - **Visual Assets**: Professional plumbing service images across all major service pages (Emergency Plumbing, Water Heater, Drain Cleaning, New Construction, General Plumbing) and landing pages to build trust and showcase quality workmanship.
