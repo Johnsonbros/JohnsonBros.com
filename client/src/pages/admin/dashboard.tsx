@@ -5,8 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
-  BarChart3, Users, FileText, Calendar, Settings, LogOut, 
-  Home, DollarSign, TrendingUp, Package, AlertCircle, CheckCircle,
+  BarChart3, Users, FileText, Settings, LogOut, 
+  Home, DollarSign, CheckCircle,
   Clock, Activity, Brain, Target, Bell, ListTodo, Menu, X, RefreshCw,
   Loader2, Zap
 } from 'lucide-react';
@@ -14,6 +14,16 @@ import { authenticatedFetch, logout, getAdminUser, isAuthenticated } from '@/lib
 import { cn } from '@/lib/utils';
 import OperationsDashboard from './operations';
 import CustomizableDashboard from './customizable-dashboard';
+import {
+  AnalyticsPanel,
+  CustomersPanel,
+  TasksPanel,
+  AIAgentPanel,
+  BlogPanel,
+  GoogleAdsPanel,
+  WebhooksPanel,
+  SettingsPanel,
+} from './dashboard-panels';
 
 interface DashboardStats {
   today: {
@@ -422,91 +432,35 @@ export default function AdminDashboard() {
             </TabsContent>
 
             <TabsContent value="analytics">
-              <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-gray-900">Analytics & Reports</h2>
-                <Card>
-                  <CardContent className="pt-6">
-                    <p className="text-gray-600">Detailed analytics and reporting tools coming soon...</p>
-                  </CardContent>
-                </Card>
-              </div>
+              <AnalyticsPanel />
             </TabsContent>
 
             <TabsContent value="customers">
-              <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-gray-900">Customer Management</h2>
-                <Card>
-                  <CardContent className="pt-6">
-                    <p className="text-gray-600">Customer data from HousecallPro integration coming soon...</p>
-                  </CardContent>
-                </Card>
-              </div>
+              <CustomersPanel />
             </TabsContent>
 
             <TabsContent value="tasks">
-              <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-gray-900">Task Management</h2>
-                <Card>
-                  <CardContent className="pt-6">
-                    <p className="text-gray-600">Task management system coming soon...</p>
-                  </CardContent>
-                </Card>
-              </div>
+              <TasksPanel />
             </TabsContent>
 
             <TabsContent value="ai-agent">
-              <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-gray-900">AI Agent Assistant</h2>
-                <Card>
-                  <CardContent className="pt-6">
-                    <p className="text-gray-600">AI-powered data analysis and document generation coming soon...</p>
-                  </CardContent>
-                </Card>
-              </div>
+              <AIAgentPanel />
             </TabsContent>
 
             <TabsContent value="blog">
-              <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-gray-900">Blog Management</h2>
-                <Card>
-                  <CardContent className="pt-6">
-                    <p className="text-gray-600">Blog content management interface coming soon...</p>
-                  </CardContent>
-                </Card>
-              </div>
+              <BlogPanel />
             </TabsContent>
 
             <TabsContent value="google-ads">
-              <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-gray-900">Google Ads Management</h2>
-                <Card>
-                  <CardContent className="pt-6">
-                    <p className="text-gray-600">Google Ads campaign management coming soon...</p>
-                  </CardContent>
-                </Card>
-              </div>
+              <GoogleAdsPanel />
             </TabsContent>
 
             <TabsContent value="webhooks">
-              <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-gray-900">Webhook Monitor</h2>
-                <Card>
-                  <CardContent className="pt-6">
-                    <p className="text-gray-600">Real-time webhook event monitoring coming soon...</p>
-                  </CardContent>
-                </Card>
-              </div>
+              <WebhooksPanel />
             </TabsContent>
 
             <TabsContent value="settings">
-              <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-gray-900">Settings</h2>
-                <Card>
-                  <CardContent className="pt-6">
-                    <p className="text-gray-600">System settings and configuration coming soon...</p>
-                  </CardContent>
-                </Card>
-              </div>
+              <SettingsPanel />
             </TabsContent>
           </Tabs>
         </main>

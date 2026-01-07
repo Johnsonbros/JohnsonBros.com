@@ -1006,6 +1006,204 @@ router.post('/dashboard/widgets/reset', authenticate, async (req, res) => {
 });
 
 // ============================================
+// ANALYTICS & REPORTING
+// ============================================
+
+router.get('/analytics/overview', authenticate, requirePermission('analytics.view'), async (req, res) => {
+  try {
+    const days = parseInt((req.query.days as string) || '30');
+    const limit = Number.isNaN(days) ? 30 : Math.min(Math.max(days, 1), 90);
+    const analyticsRows = await db.select()
+      .from(websiteAnalytics)
+      .orderBy(desc(websiteAnalytics.date))
+      .limit(limit);
+
+    const safeParse = <T,>(value: string | null | undefined, fallback: T): T => {
+      if (!value) return fallback;
+      try {
+        return JSON.parse(value) as T;
+      } catch (error) {
+        return fallback;
+      }
+    };
+
+    const normalized = analyticsRows.map((row) => ({
+      ...row,
+      topPages: safeParse<string[]>(row.topPages, []),
+      trafficSources: safeParse<Record<string, number>>(row.trafficSources, {}),
+      deviceTypes: safeParse<Record<string, number>>(row.deviceTypes, {}),
+    }));
+
+    res.json({
+      latest: normalized[0] || null,
+      history: normalized,
+    });
+  } catch (error) {
+    console.error('Analytics overview error:', error);
+    res.status(500).json({ error: 'Failed to fetch analytics overview' });
+  }
+});
+
+// ============================================
+// CUSTOMER MANAGEMENT
+// ============================================
+
+router.get('/customers', authenticate, requirePermission('customers.view'), async (req, res) => {
+  try {
+    const page = parseInt((req.query.page as string) || '1');
+    const limit = parseInt((req.query.limit as string) || '25');
+    const search = (req.query.search as string) || '';
+
+    const { HousecallProClient } = await import('./housecall');
+    const hcpClient = HousecallProClient.getInstance();
+
+    try {
+      const response = await hcpClient.callAPI<{ customers?: any[]; total_items?: number; total_pages?: number }>('/customers', {
+        page: Number.isNaN(page) ? 1 : page,
+        page_size: Number.isNaN(limit) ? 25 : Math.min(Math.max(limit, 1), 100),
+        ...(search ? { q: search } : {}),
+      });
+
+      const customersList = (response.customers || []).map((customer) => ({
+        id: customer.id,
+        firstName: customer.first_name || '',
+        lastName: customer.last_name || '',
+        email: customer.email || '',
+        phone: customer.mobile_number || customer.phone_number || '',
+        createdAt: customer.created_at || null,
+        source: 'housecall_pro',
+      }));
+
+      return res.json({
+        source: 'housecall_pro',
+        customers: customersList,
+        total: response.total_items ?? customersList.length,
+        page: Number.isNaN(page) ? 1 : page,
+        totalPages: response.total_pages ?? null,
+        fetchedAt: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.warn('[Admin] Falling back to database customers:', error);
+    }
+
+    const conditions = [];
+    if (search) {
+      const pattern = `%${search}%`;
+      conditions.push(
+        or(
+          like(customers.firstName, pattern),
+          like(customers.lastName, pattern),
+          like(customers.email, pattern),
+          like(customers.phone, pattern)
+        )
+      );
+    }
+
+    let query = db.select()
+      .from(customers)
+      .orderBy(desc(customers.createdAt))
+      .limit(Number.isNaN(limit) ? 25 : Math.min(Math.max(limit, 1), 100))
+      .offset(((Number.isNaN(page) ? 1 : page) - 1) * (Number.isNaN(limit) ? 25 : Math.min(Math.max(limit, 1), 100)));
+
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as any;
+    }
+
+    const customersRows = await query;
+
+    res.json({
+      source: 'database',
+      customers: customersRows.map((customer) => ({
+        id: customer.id,
+        firstName: customer.firstName,
+        lastName: customer.lastName,
+        email: customer.email,
+        phone: customer.phone,
+        createdAt: customer.createdAt,
+        source: 'database',
+      })),
+      total: customersRows.length,
+      page: Number.isNaN(page) ? 1 : page,
+      totalPages: null,
+      fetchedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Get customers error:', error);
+    res.status(500).json({ error: 'Failed to fetch customers' });
+  }
+});
+
+// ============================================
+// GOOGLE ADS
+// ============================================
+
+router.get('/google-ads/campaigns', authenticate, requirePermission('google_ads.view'), async (req, res) => {
+  try {
+    const { status } = req.query;
+    const conditions = [];
+
+    if (status) {
+      conditions.push(eq(googleAdsCampaigns.status, status as string));
+    }
+
+    let query = db.select()
+      .from(googleAdsCampaigns)
+      .orderBy(desc(googleAdsCampaigns.updatedAt));
+
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as any;
+    }
+
+    const campaigns = await query;
+    res.json(campaigns);
+  } catch (error) {
+    console.error('Get Google Ads campaigns error:', error);
+    res.status(500).json({ error: 'Failed to fetch campaigns' });
+  }
+});
+
+// ============================================
+// WEBHOOK EVENTS
+// ============================================
+
+router.get('/webhooks/events', authenticate, requirePermission('dashboard.view'), async (req, res) => {
+  try {
+    const { status, eventType, limit = 25 } = req.query;
+
+    const conditions = [];
+    if (status) {
+      conditions.push(eq(webhookEvents.status, status as string));
+    }
+    if (eventType) {
+      conditions.push(eq(webhookEvents.eventType, eventType as string));
+    }
+
+    let query = db.select({
+      id: webhookEvents.id,
+      eventType: webhookEvents.eventType,
+      eventCategory: webhookEvents.eventCategory,
+      status: webhookEvents.status,
+      error: webhookEvents.error,
+      receivedAt: webhookEvents.receivedAt,
+      entityId: webhookEvents.entityId,
+    })
+      .from(webhookEvents)
+      .orderBy(desc(webhookEvents.receivedAt))
+      .limit(parseInt(limit as string));
+
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as any;
+    }
+
+    const events = await query;
+    res.json(events);
+  } catch (error) {
+    console.error('Get webhook events error:', error);
+    res.status(500).json({ error: 'Failed to fetch webhook events' });
+  }
+});
+
+// ============================================
 // TASK MANAGEMENT
 // ============================================
 
