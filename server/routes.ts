@@ -2205,7 +2205,7 @@ Sitemap: ${siteUrl}/sitemap.xml
     try {
       Logger.info("Running initial data sync on server start...");
       const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
-      const host = process.env.NODE_ENV === 'production' ? process.env.REPL_SLUG ? `${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co` : 'localhost:5000' : 'localhost:5000';
+      const host = process.env.NODE_ENV === 'production' ? process.env.REPL_SLUG ? `${process.env.REPL_SLUG}-${process.env.REPL_OWNER}.replit.app` : 'localhost:5000' : 'localhost:5000';
       // Only include internal secret header if configured
       const headers: Record<string, string> = { 
         'Content-Type': 'application/json'
@@ -2253,7 +2253,7 @@ Sitemap: ${siteUrl}/sitemap.xml
         
         // Trigger sync in background
         const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
-        const host = process.env.NODE_ENV === 'production' ? process.env.REPL_SLUG ? `${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co` : 'localhost:5000' : 'localhost:5000';
+        const host = process.env.NODE_ENV === 'production' ? process.env.REPL_SLUG ? `${process.env.REPL_SLUG}-${process.env.REPL_OWNER}.replit.app` : 'localhost:5000' : 'localhost:5000';
         // Only include internal secret header if configured
         const headers: Record<string, string> = { 
           'Content-Type': 'application/json'
