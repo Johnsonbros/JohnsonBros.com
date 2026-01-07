@@ -147,7 +147,7 @@ export default function Header({ onBookService }: HeaderProps) {
 
         {/* Mobile Menu Overlay */}
         {isMobileMenuOpen && (
-          <div className="lg:hidden fixed left-0 right-0 bg-johnson-blue z-40 shadow-2xl overflow-y-auto" style={{ top: '0px', bottom: '70px' }}>
+          <div className="lg:hidden fixed inset-x-0 bg-johnson-blue z-[60] shadow-2xl overflow-y-auto" style={{ top: '0px', bottom: '70px' }}>
             {/* Solid header with logo in mobile menu */}
             <div className="bg-johnson-blue px-2 py-1 flex justify-between items-center gap-1 border-b border-white/10">
               <img 
