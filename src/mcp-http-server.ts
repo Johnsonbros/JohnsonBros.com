@@ -4,9 +4,99 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import { IncomingMessage, ServerResponse } from 'node:http';
 import pino from 'pino';
 import cors from 'cors';
+import rateLimit from 'express-rate-limit';
 import { server } from './booker.js';
 
 const log = pino({ name: 'mcp-http-server', level: process.env.LOG_LEVEL || 'info' });
+
+// In-memory rate limiting for MCP requests
+const sessionRequestCounts = new Map<string, { count: number; firstRequest: number; lastRequest: number }>();
+const ipRequestCounts = new Map<string, { count: number; firstRequest: number; lastRequest: number; sessions: Set<string> }>();
+
+const RATE_LIMIT_CONFIG = {
+  SESSION_MAX_REQUESTS: 100,
+  SESSION_WINDOW_MS: 15 * 60 * 1000,
+  SESSION_COOLDOWN_MS: 500,
+  IP_MAX_REQUESTS: 200,
+  IP_MAX_SESSIONS: 20,
+  IP_WINDOW_MS: 60 * 60 * 1000,
+};
+
+function checkMcpRateLimit(sessionId: string, ipAddress: string): { allowed: boolean; reason?: string } {
+  const now = Date.now();
+  
+  // Session-level rate limiting
+  let session = sessionRequestCounts.get(sessionId);
+  if (!session) {
+    session = { count: 0, firstRequest: now, lastRequest: now };
+    sessionRequestCounts.set(sessionId, session);
+  }
+  
+  // Reset window if expired
+  if (now - session.firstRequest > RATE_LIMIT_CONFIG.SESSION_WINDOW_MS) {
+    session.count = 0;
+    session.firstRequest = now;
+  }
+  
+  // Cooldown check
+  if (session.count > 0 && now - session.lastRequest < RATE_LIMIT_CONFIG.SESSION_COOLDOWN_MS) {
+    return { allowed: false, reason: 'Request too fast, please slow down' };
+  }
+  
+  // Session limit check
+  if (session.count >= RATE_LIMIT_CONFIG.SESSION_MAX_REQUESTS) {
+    return { allowed: false, reason: 'Session request limit exceeded' };
+  }
+  
+  // IP-level rate limiting
+  let ip = ipRequestCounts.get(ipAddress);
+  if (!ip) {
+    ip = { count: 0, firstRequest: now, lastRequest: now, sessions: new Set() };
+    ipRequestCounts.set(ipAddress, ip);
+  }
+  
+  // Reset IP window if expired
+  if (now - ip.firstRequest > RATE_LIMIT_CONFIG.IP_WINDOW_MS) {
+    ip.count = 0;
+    ip.firstRequest = now;
+    ip.sessions.clear();
+  }
+  
+  // Track sessions per IP
+  ip.sessions.add(sessionId);
+  if (ip.sessions.size > RATE_LIMIT_CONFIG.IP_MAX_SESSIONS) {
+    log.warn({ ipAddress, sessionCount: ip.sessions.size }, 'Too many sessions from IP');
+    return { allowed: false, reason: 'Too many sessions from this IP' };
+  }
+  
+  // IP limit check
+  if (ip.count >= RATE_LIMIT_CONFIG.IP_MAX_REQUESTS) {
+    return { allowed: false, reason: 'IP request limit exceeded' };
+  }
+  
+  // Update counters
+  session.count++;
+  session.lastRequest = now;
+  ip.count++;
+  ip.lastRequest = now;
+  
+  return { allowed: true };
+}
+
+// Cleanup old entries every 5 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [sessionId, entry] of sessionRequestCounts) {
+    if (now - entry.lastRequest > RATE_LIMIT_CONFIG.SESSION_WINDOW_MS) {
+      sessionRequestCounts.delete(sessionId);
+    }
+  }
+  for (const [ip, entry] of ipRequestCounts) {
+    if (now - entry.lastRequest > RATE_LIMIT_CONFIG.IP_WINDOW_MS) {
+      ipRequestCounts.delete(ip);
+    }
+  }
+}, 5 * 60 * 1000);
 
 // Create Express application
 const app = express();
@@ -75,11 +165,27 @@ function clearSession(sessionId: string) {
 
 // Handle all MCP Streamable HTTP requests (GET, POST, DELETE) on a single endpoint
 app.all('/mcp', async (req, res) => {
-  log.info({ method: req.method, path: req.path }, 'Received MCP request');
+  const ipAddress = req.ip || req.socket.remoteAddress || 'unknown';
+  const sessionId = req.headers['mcp-session-id'] as string || 'new-session';
+  
+  log.info({ method: req.method, path: req.path, ip: ipAddress }, 'Received MCP request');
+
+  // Apply rate limiting
+  const rateLimitResult = checkMcpRateLimit(sessionId, ipAddress);
+  if (!rateLimitResult.allowed) {
+    log.warn({ sessionId, ip: ipAddress, reason: rateLimitResult.reason }, 'MCP request rate limited');
+    return res.status(429).json({
+      jsonrpc: '2.0',
+      error: {
+        code: -32000,
+        message: rateLimitResult.reason || 'Rate limit exceeded'
+      },
+      id: null
+    });
+  }
 
   try {
     // Check for existing session ID
-    const sessionId = req.headers['mcp-session-id'] as string | undefined;
     let transport: StreamableHTTPServerTransport;
 
     if (sessionId && transports[sessionId]) {
@@ -134,13 +240,28 @@ app.all('/mcp', async (req, res) => {
   }
 });
 
-// Health check endpoint
+// Health check endpoint with rate limiting stats
 app.get('/health', (req, res) => {
+  const activeSessions = Object.keys(transports).length;
+  const rateLimitedSessions = sessionRequestCounts.size;
+  const rateLimitedIps = ipRequestCounts.size;
+  
   res.json({
     status: 'ok',
     service: 'jb-booker-mcp',
+    version: '1.0.0',
     timestamp: new Date().toISOString(),
-    activeSessions: Object.keys(transports).length
+    stats: {
+      activeSessions,
+      trackedSessions: rateLimitedSessions,
+      trackedIps: rateLimitedIps
+    },
+    rateLimits: {
+      sessionMax: RATE_LIMIT_CONFIG.SESSION_MAX_REQUESTS,
+      sessionWindowMinutes: RATE_LIMIT_CONFIG.SESSION_WINDOW_MS / 60000,
+      ipMax: RATE_LIMIT_CONFIG.IP_MAX_REQUESTS,
+      ipWindowHours: RATE_LIMIT_CONFIG.IP_WINDOW_MS / 3600000
+    }
   });
 });
 
@@ -150,17 +271,41 @@ app.get('/', (req, res) => {
     name: 'Johnson Bros. Plumbing MCP Server',
     version: '1.0.0',
     description: 'Model Context Protocol server for HousecallPro booking integration',
+    service_area: 'Norfolk, Suffolk, and Plymouth Counties, Massachusetts',
     endpoints: {
       mcp: '/mcp',
       health: '/health'
     },
-    tools: [
-      'book_service_call - Book a plumbing service appointment with HousecallPro',
-      'search_availability - Search for available appointment slots',
-      'get_quote - Get instant plumbing service price estimates',
-      'get_services - List all available plumbing services',
-      'emergency_help - Get emergency plumbing guidance and safety instructions'
-    ]
+    tools: {
+      booking: [
+        'book_service_call - Book a plumbing service appointment',
+        'search_availability - Search for available appointment slots',
+        'create_lead - Request a callback for customers who want to speak with office'
+      ],
+      customer: [
+        'lookup_customer - Verify existing customer by name and phone',
+        'get_job_status - Check status of scheduled or past jobs',
+        'get_service_history - View past service records'
+      ],
+      information: [
+        'get_services - List all available plumbing services',
+        'get_quote - Get instant price estimates',
+        'search_faq - Search frequently asked questions',
+        'emergency_help - Get emergency plumbing guidance'
+      ],
+      modifications: [
+        'request_reschedule_callback - Log reschedule request (requires phone call)',
+        'request_cancellation_callback - Log cancellation request (requires phone call)'
+      ],
+      offline: [
+        'request_review - [OFFLINE] Google review request (future feature)'
+      ]
+    },
+    security: {
+      rate_limiting: 'Enabled',
+      cors: 'Configured',
+      authentication: process.env.MCP_AUTH_TOKEN ? 'Token required' : 'Open'
+    }
   });
 });
 

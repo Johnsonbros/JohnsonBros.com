@@ -1965,5 +1965,530 @@ server.registerTool(
   }
 );
 
+// Create Lead Tool - create a lead in HCP for callback requests
+const CreateLeadInput = z.object({
+  first_name: z.string().min(1),
+  last_name: z.string().min(1),
+  phone: z.string().min(7),
+  email: z.string().email().optional(),
+  street: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  zip: z.string().optional(),
+  issue_description: z.string().min(1),
+  preferred_callback_time: z.string().optional(),
+  urgency: z.enum(["low", "medium", "high", "emergency"]).default("medium"),
+  conversation_notes: z.string().optional(),
+  lead_source: z.string().default("AI Assistant")
+});
+
+server.registerTool(
+  "create_lead",
+  {
+    title: "Create Lead for Callback",
+    description: "Creates a lead in HousecallPro for customers who want a callback instead of booking immediately. Includes conversation notes and issue description.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        first_name: { type: "string", description: "Customer's first name" },
+        last_name: { type: "string", description: "Customer's last name" },
+        phone: { type: "string", description: "Customer's phone number" },
+        email: { type: "string", description: "Customer's email (optional)" },
+        street: { type: "string", description: "Street address (optional)" },
+        city: { type: "string", description: "City (optional)" },
+        state: { type: "string", description: "State (optional)" },
+        zip: { type: "string", description: "ZIP code (optional)" },
+        issue_description: { type: "string", description: "Description of the plumbing issue" },
+        preferred_callback_time: { type: "string", description: "When the customer prefers to be called back" },
+        urgency: { type: "string", enum: ["low", "medium", "high", "emergency"], description: "Urgency level" },
+        conversation_notes: { type: "string", description: "Notes from the AI conversation to include" },
+        lead_source: { type: "string", description: "Source of the lead" }
+      },
+      required: ["first_name", "last_name", "phone", "issue_description"]
+    }
+  } as any,
+  async (raw) => {
+    const correlationId = randomUUID();
+
+    try {
+      const input = CreateLeadInput.parse(raw || {});
+      log.info({ input: redactCustomerLookupInput(input), correlationId }, "create_lead: start");
+
+      // Build the lead notes with all context
+      const timestamp = new Date().toISOString();
+      const noteParts = [
+        `[AI Lead] Created via AI Assistant on ${timestamp}`,
+        `\n\nISSUE: ${input.issue_description}`,
+        input.preferred_callback_time ? `\nPREFERRED CALLBACK: ${input.preferred_callback_time}` : "",
+        `\nURGENCY: ${input.urgency.toUpperCase()}`,
+        input.conversation_notes ? `\n\nCONVERSATION NOTES:\n${input.conversation_notes}` : ""
+      ].filter(Boolean).join("");
+
+      // First, check if customer already exists
+      const searchResult = await hcpGet("/customers", { q: input.phone, page_size: 5 }, correlationId) as any;
+      const existingCustomer = (searchResult.customers || [])[0];
+
+      let customerId: string;
+      
+      if (existingCustomer?.id) {
+        customerId = existingCustomer.id;
+        log.info({ correlationId, customer_id: customerId }, "create_lead: using existing customer");
+      } else {
+        // Create new customer
+        const customerPayload: any = {
+          first_name: input.first_name,
+          last_name: input.last_name,
+          mobile_number: input.phone,
+          notifications_enabled: true,
+          lead_source: input.lead_source,
+          tags: ["AI Lead", `Urgency: ${input.urgency}`]
+        };
+
+        if (input.email) customerPayload.email = input.email;
+        
+        if (input.street && input.city && input.state && input.zip) {
+          customerPayload.addresses = [{
+            street: input.street,
+            city: input.city,
+            state: input.state,
+            zip: input.zip,
+            country: "USA"
+          }];
+        }
+
+        const newCustomer = await hcpPost("/customers", customerPayload, correlationId) as any;
+        customerId = newCustomer.id;
+        log.info({ correlationId, customer_id: customerId }, "create_lead: created new customer");
+      }
+
+      // Create the lead in HousecallPro
+      const leadPayload = {
+        customer_id: customerId,
+        source: input.lead_source,
+        notes: noteParts,
+        tags: ["AI Lead", `Urgency: ${input.urgency}`, "Callback Requested"]
+      };
+
+      let leadId: string | null = null;
+      try {
+        const lead = await hcpPost("/leads", leadPayload, correlationId) as any;
+        leadId = lead?.id;
+      } catch (err: any) {
+        // Some HCP plans may not have leads API - fall back to adding a note
+        log.warn({ correlationId, error: err.message }, "create_lead: leads API unavailable, adding customer note instead");
+        
+        // Add as a customer note instead
+        try {
+          await hcpPost(`/customers/${customerId}/notes`, { content: noteParts }, correlationId);
+        } catch (noteErr: any) {
+          log.warn({ correlationId, error: noteErr.message }, "create_lead: customer notes also unavailable");
+        }
+      }
+
+      const result = {
+        success: true,
+        lead_id: leadId,
+        customer_id: customerId,
+        message: `Thank you, ${input.first_name}! We've received your request and our office will call you back ${input.preferred_callback_time || "as soon as possible"}.`,
+        urgency: input.urgency,
+        next_steps: input.urgency === "emergency" 
+          ? "For emergencies, you can also reach us immediately at (617) 479-9911."
+          : "Our team typically responds within 1-2 business hours.",
+        correlation_id: correlationId
+      };
+
+      log.info({ correlationId, lead_id: leadId, customer_id: customerId }, "create_lead: success");
+
+      return {
+        content: [
+          { type: "text", text: JSON.stringify(result, null, 2) }
+        ]
+      };
+
+    } catch (err: any) {
+      log.error({ error: err.message, correlationId }, "create_lead: error");
+
+      return {
+        content: [{
+          type: "text",
+          text: JSON.stringify({
+            success: false,
+            error: "Unable to create the lead. Please call us directly at (617) 479-9911.",
+            correlation_id: correlationId
+          }, null, 2)
+        }]
+      };
+    }
+  }
+);
+
+// Get Service History Tool
+const GetServiceHistoryInput = z.object({
+  first_name: z.string().min(1),
+  last_name: z.string().min(1),
+  phone: z.string().min(7),
+  limit: z.number().int().min(1).max(20).default(5)
+});
+
+server.registerTool(
+  "get_service_history",
+  {
+    title: "Get Service History",
+    description: "Retrieves past service history for a verified customer. Shows previous jobs, dates, and work performed.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        first_name: { type: "string", description: "Customer's first name" },
+        last_name: { type: "string", description: "Customer's last name" },
+        phone: { type: "string", description: "Customer's phone number" },
+        limit: { type: "number", description: "Maximum number of past jobs to return (default 5, max 20)" }
+      },
+      required: ["first_name", "last_name", "phone"]
+    }
+  } as any,
+  async (raw) => {
+    const correlationId = randomUUID();
+
+    try {
+      const input = GetServiceHistoryInput.parse(raw || {});
+      log.info({ input: redactCustomerLookupInput(input), correlationId }, "get_service_history: start");
+
+      const lookup = await lookupCustomerStrict(input, correlationId);
+      if (!lookup.selected) {
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify({
+              success: false,
+              error: "Unable to verify customer with the provided details.",
+              correlation_id: correlationId
+            }, null, 2)
+          }]
+        };
+      }
+
+      const customerId = lookup.selected.id;
+
+      // Fetch jobs for this customer
+      const jobsResponse = await hcpGet("/jobs", { 
+        customer_id: customerId, 
+        page_size: input.limit 
+      }, correlationId) as any;
+
+      const jobs = extractJobsResponse(jobsResponse);
+      
+      if (!jobs.length) {
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify({
+              success: true,
+              customer_verified: true,
+              service_history: [],
+              message: "No previous service records found for this customer.",
+              correlation_id: correlationId
+            }, null, 2)
+          }]
+        };
+      }
+
+      // Format job history
+      const serviceHistory = jobs.map((job: any) => {
+        const scheduledStart = job?.schedule?.scheduled_start || job?.scheduled_start;
+        const workStatus = job?.work_status || job?.status || "unknown";
+        
+        return {
+          job_id: job.id,
+          date: scheduledStart ? toYmd(scheduledStart) : "Unknown",
+          status: workStatus,
+          description: job.notes || job.description || "Service call",
+          total: job.total_amount || job.invoice_total || null
+        };
+      });
+
+      const result = {
+        success: true,
+        customer_verified: true,
+        customer_name: `${lookup.selected.first_name} ${lookup.selected.last_name}`,
+        total_jobs_shown: serviceHistory.length,
+        service_history: serviceHistory,
+        message: `Found ${serviceHistory.length} service record(s) for ${lookup.selected.first_name}.`,
+        correlation_id: correlationId
+      };
+
+      log.info({ correlationId, customer_id: customerId, job_count: serviceHistory.length }, "get_service_history: success");
+
+      return {
+        content: [
+          { type: "text", text: JSON.stringify(result, null, 2) }
+        ]
+      };
+
+    } catch (err: any) {
+      log.error({ error: err.message, correlationId }, "get_service_history: error");
+
+      return {
+        content: [{
+          type: "text",
+          text: JSON.stringify({
+            success: false,
+            error: "Unable to retrieve service history at this time.",
+            correlation_id: correlationId
+          }, null, 2)
+        }]
+      };
+    }
+  }
+);
+
+// Search FAQ Tool
+const SearchFaqInput = z.object({
+  query: z.string().optional(),
+  category: z.string().optional(),
+  return_all: z.boolean().default(false)
+});
+
+// Static FAQs (will be replaced with database lookup)
+const STATIC_FAQS = [
+  {
+    id: "pricing-service-fee",
+    question: "What is the service call fee?",
+    answer: "Our service call fee is $99. This diagnostic fee is waived if you proceed with the repair work.",
+    category: "pricing",
+    keywords: ["fee", "cost", "price", "service call", "diagnostic"]
+  },
+  {
+    id: "hours-operation",
+    question: "What are your hours of operation?",
+    answer: "We're available Monday-Friday 7am-6pm for regular service. Emergency plumbing service is available 24/7.",
+    category: "hours",
+    keywords: ["hours", "open", "available", "schedule", "when"]
+  },
+  {
+    id: "service-area",
+    question: "What areas do you service?",
+    answer: "We serve the South Shore of Massachusetts including Norfolk, Suffolk, and Plymouth counties. This includes Quincy, Braintree, Weymouth, Abington, Rockland, and surrounding towns.",
+    category: "service_area",
+    keywords: ["area", "location", "service", "towns", "cities", "where"]
+  },
+  {
+    id: "emergency-service",
+    question: "Do you offer emergency plumbing service?",
+    answer: "Yes! We offer 24/7 emergency plumbing service for burst pipes, major leaks, sewage backups, and no-water situations. Call (617) 479-9911 for emergencies.",
+    category: "services",
+    keywords: ["emergency", "urgent", "24/7", "after hours", "weekend"]
+  },
+  {
+    id: "payment-methods",
+    question: "What payment methods do you accept?",
+    answer: "We accept cash, checks, and all major credit cards (Visa, Mastercard, American Express, Discover). Payment is due upon completion of service.",
+    category: "policies",
+    keywords: ["payment", "pay", "credit card", "cash", "check"]
+  },
+  {
+    id: "family-discount",
+    question: "What is The Family Discount program?",
+    answer: "The Family Discount is our $99/year membership program. Members get priority scheduling, waived service call fees, 10% off all jobs, and 1 referral gift per year. It's our way of treating loyal customers like family.",
+    category: "pricing",
+    keywords: ["family discount", "membership", "member", "discount", "loyalty"]
+  },
+  {
+    id: "licensed-insured",
+    question: "Are you licensed and insured?",
+    answer: "Yes, Johnson Bros. Plumbing is fully licensed and insured in Massachusetts. We carry comprehensive liability insurance and workers' compensation for your protection.",
+    category: "policies",
+    keywords: ["license", "insured", "insurance", "certified", "bonded"]
+  },
+  {
+    id: "warranty",
+    question: "Do you offer warranties on your work?",
+    answer: "Yes, we stand behind our work. Parts and labor come with manufacturer warranties plus our satisfaction guarantee. Specific warranty terms vary by service type.",
+    category: "policies",
+    keywords: ["warranty", "guarantee", "guarantee", "covered"]
+  }
+];
+
+server.registerTool(
+  "search_faq",
+  {
+    title: "Search Business FAQs",
+    description: "Search frequently asked questions about Johnson Bros. Plumbing. Can search by keyword, category, or return all FAQs.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "Search query or question" },
+        category: { type: "string", description: "Filter by category: pricing, hours, service_area, services, policies" },
+        return_all: { type: "boolean", description: "Return all FAQs as raw data (for context loading)" }
+      }
+    }
+  } as any,
+  async (raw) => {
+    const correlationId = randomUUID();
+
+    try {
+      const input = SearchFaqInput.parse(raw || {});
+      log.info({ input, correlationId }, "search_faq: start");
+
+      let faqs = [...STATIC_FAQS];
+
+      // Return all if requested
+      if (input.return_all) {
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify({
+              success: true,
+              total_faqs: faqs.length,
+              faqs: faqs,
+              categories: ["pricing", "hours", "service_area", "services", "policies"],
+              correlation_id: correlationId
+            }, null, 2)
+          }]
+        };
+      }
+
+      // Filter by category
+      if (input.category) {
+        const categoryFilter = input.category.toLowerCase();
+        faqs = faqs.filter(faq => faq.category === categoryFilter);
+      }
+
+      // Search by query
+      if (input.query) {
+        const searchTerms = input.query.toLowerCase().split(/\s+/);
+        faqs = faqs.filter(faq => {
+          const searchableText = `${faq.question} ${faq.answer} ${faq.keywords.join(" ")}`.toLowerCase();
+          return searchTerms.some(term => searchableText.includes(term));
+        });
+
+        // Sort by relevance (keyword matches)
+        faqs.sort((a, b) => {
+          const aMatches = searchTerms.filter(term => a.keywords.some(kw => kw.includes(term))).length;
+          const bMatches = searchTerms.filter(term => b.keywords.some(kw => kw.includes(term))).length;
+          return bMatches - aMatches;
+        });
+      }
+
+      if (!faqs.length) {
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify({
+              success: true,
+              matches: 0,
+              message: "No FAQs found matching your query. Please call (617) 479-9911 for specific questions.",
+              correlation_id: correlationId
+            }, null, 2)
+          }]
+        };
+      }
+
+      const result = {
+        success: true,
+        matches: faqs.length,
+        faqs: faqs.slice(0, 5).map(faq => ({
+          question: faq.question,
+          answer: faq.answer,
+          category: faq.category
+        })),
+        correlation_id: correlationId
+      };
+
+      log.info({ correlationId, matches: faqs.length }, "search_faq: success");
+
+      return {
+        content: [
+          { type: "text", text: JSON.stringify(result, null, 2) }
+        ]
+      };
+
+    } catch (err: any) {
+      log.error({ error: err.message, correlationId }, "search_faq: error");
+
+      return {
+        content: [{
+          type: "text",
+          text: JSON.stringify({
+            success: false,
+            error: "Unable to search FAQs.",
+            correlation_id: correlationId
+          }, null, 2)
+        }]
+      };
+    }
+  }
+);
+
+// Request Review Tool (OFFLINE - documented for future use)
+const RequestReviewInput = z.object({
+  first_name: z.string().min(1),
+  last_name: z.string().min(1),
+  phone: z.string().min(7),
+  job_id: z.string().optional()
+});
+
+server.registerTool(
+  "request_review",
+  {
+    title: "Request Google Review [OFFLINE]",
+    description: "[CURRENTLY OFFLINE] This tool will send a Google review request link to satisfied customers. Feature is documented for future activation.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        first_name: { type: "string", description: "Customer's first name" },
+        last_name: { type: "string", description: "Customer's last name" },
+        phone: { type: "string", description: "Customer's phone number" },
+        job_id: { type: "string", description: "Job ID to associate with review request" }
+      },
+      required: ["first_name", "last_name", "phone"]
+    }
+  } as any,
+  async (raw) => {
+    const correlationId = randomUUID();
+
+    try {
+      const input = RequestReviewInput.parse(raw || {});
+      log.info({ input: redactCustomerLookupInput(input), correlationId }, "request_review: start (OFFLINE)");
+
+      // This tool is intentionally offline
+      const result = {
+        success: false,
+        status: "OFFLINE",
+        message: "The review request feature is currently offline. This feature will be activated in a future update.",
+        documentation: {
+          purpose: "Sends a Google review request link via SMS to satisfied customers after service completion",
+          trigger: "Can be called manually or automatically after job completion",
+          expected_behavior: "When online, will verify customer, check job completion status, and send review link"
+        },
+        alternative: "In the meantime, you can ask satisfied customers to search 'Johnson Bros Plumbing' on Google and leave a review.",
+        correlation_id: correlationId
+      };
+
+      log.info({ correlationId }, "request_review: returned offline status");
+
+      return {
+        content: [
+          { type: "text", text: JSON.stringify(result, null, 2) }
+        ]
+      };
+
+    } catch (err: any) {
+      log.error({ error: err.message, correlationId }, "request_review: error");
+
+      return {
+        content: [{
+          type: "text",
+          text: JSON.stringify({
+            success: false,
+            status: "OFFLINE",
+            error: "Review request feature is currently offline.",
+            correlation_id: correlationId
+          }, null, 2)
+        }]
+      };
+    }
+  }
+);
+
 // Export the server for use in different transports
 export { server };
