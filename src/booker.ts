@@ -184,7 +184,7 @@ async function hcpPost(path: string, body: unknown, correlationId?: string) {
     });
     if (!res.ok) {
       const errorText = await res.text();
-      log.error({ path, errorText, body, status: res.status, correlationId: corrId }, `HCP API POST error: ${res.status}`);
+      log.error({ path, errorText, body: redactPayload(body), status: res.status, correlationId: corrId }, `HCP API POST error: ${res.status}`);
       
       if (res.status === 401 || res.status === 403) {
         throw createStructuredError(
@@ -202,7 +202,7 @@ async function hcpPost(path: string, body: unknown, correlationId?: string) {
           `Validation error: ${errorText}`,
           "Some of the provided information is invalid. Please check the customer details and try again.",
           corrId,
-          { status: res.status, path, body }
+          { status: res.status, path, body: redactPayload(body) }
         );
       } else if (res.status >= 500) {
         throw createStructuredError(
@@ -220,7 +220,7 @@ async function hcpPost(path: string, body: unknown, correlationId?: string) {
           `HCP API error: ${res.status} ${errorText}`,
           "There was an issue creating the booking. Please check the provided information and try again.",
           corrId,
-          { status: res.status, path, body }
+          { status: res.status, path, body: redactPayload(body) }
         );
       }
     }
@@ -228,7 +228,7 @@ async function hcpPost(path: string, body: unknown, correlationId?: string) {
   } catch (err: any) {
     if (err.type) throw err; // Already a structured error
     
-    log.error({ path, error: err.message, body, correlationId: corrId }, `Failed to POST to HCP API`);
+    log.error({ path, error: err.message, body: redactPayload(body), correlationId: corrId }, `Failed to POST to HCP API`);
     throw createStructuredError(
       ErrorType.NETWORK,
       "NETWORK_ERROR",
@@ -238,6 +238,97 @@ async function hcpPost(path: string, body: unknown, correlationId?: string) {
       { path, originalError: err.message }
     );
   }
+}
+
+function normPhone(input: string) {
+  const digits = input.replace(/\D/g, "");
+  if (!digits) return "";
+  return digits.length > 10 ? digits.slice(-10) : digits;
+}
+
+function normName(input: string) {
+  return input
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[^a-z\s]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function phoneLast4(input?: string) {
+  if (!input) return undefined;
+  const digits = normPhone(input);
+  return digits ? digits.slice(-4) : undefined;
+}
+
+function maskPhone(input?: string) {
+  const last4 = phoneLast4(input);
+  return last4 ? `***-***-${last4}` : undefined;
+}
+
+function redactPayload(payload: unknown) {
+  if (!payload || typeof payload !== "object") {
+    return { type: typeof payload };
+  }
+  if (Array.isArray(payload)) {
+    return { type: "array", length: payload.length };
+  }
+  const record = payload as Record<string, unknown>;
+  const keys = Object.keys(record);
+  return {
+    type: "object",
+    keys,
+    has_phone: keys.some(key => key.includes("phone") || key.includes("number")),
+    has_email: keys.includes("email"),
+    has_address: keys.some(key => key.includes("address") || key.includes("street") || key.includes("zip"))
+  };
+}
+
+function redactCustomerLookupInput(input: { first_name?: string; last_name?: string; phone?: string }) {
+  return {
+    has_first_name: Boolean(input.first_name),
+    has_last_name: Boolean(input.last_name),
+    phone_last4: phoneLast4(input.phone)
+  };
+}
+
+function redactBookingInput(input: BookInput) {
+  return {
+    has_first_name: Boolean(input.first_name),
+    has_last_name: Boolean(input.last_name),
+    phone_last4: phoneLast4(input.phone),
+    has_email: Boolean(input.email),
+    zip_prefix: input.zip ? input.zip.slice(0, 3) : undefined
+  };
+}
+
+function buildFullAddress(address: any) {
+  if (!address) return undefined;
+  return [address.street, address.street_line_2, address.city, address.state, address.zip]
+    .filter(Boolean)
+    .join(", ");
+}
+
+function getCustomerPhoneCandidates(customer: any) {
+  return [customer.mobile_number, customer.home_number, customer.work_number].filter(Boolean);
+}
+
+function parseDate(value?: string) {
+  if (!value) return undefined;
+  const parsed = new Date(value);
+  return isNaN(parsed.getTime()) ? undefined : parsed;
+}
+
+function formatJobScheduleSummary(job: any, appointment?: any) {
+  const scheduledStart = appointment?.start_time || appointment?.scheduled_start || job?.schedule?.scheduled_start || job?.scheduled_start;
+  const scheduledEnd = appointment?.end_time || appointment?.scheduled_end || job?.schedule?.scheduled_end || job?.scheduled_end;
+  if (scheduledStart && scheduledEnd) {
+    return `Scheduled for ${scheduledStart} to ${scheduledEnd}.`;
+  }
+  if (scheduledStart) {
+    return `Scheduled for ${scheduledStart}.`;
+  }
+  return "Schedule not yet assigned.";
 }
 
 /** Choose a booking window by time-of-day preference in COMPANY_TZ */
@@ -362,6 +453,100 @@ async function createAppointment(jobId: string, window: { start_time: string; en
   return null;
 }
 
+type StrictCustomerLookupInput = {
+  first_name: string;
+  last_name: string;
+  phone: string;
+};
+
+async function lookupCustomerStrict(input: StrictCustomerLookupInput, correlationId: string) {
+  const normalizedInput = {
+    first_name: normName(input.first_name),
+    last_name: normName(input.last_name),
+    phone: normPhone(input.phone)
+  };
+
+  const searchResult = await hcpGet("/customers", {
+    q: input.phone,
+    page_size: 10
+  }, correlationId) as any;
+
+  const customers = searchResult.customers || [];
+  const strictMatches = customers.filter((customer: any) => {
+    const first = normName(customer.first_name || "");
+    const last = normName(customer.last_name || "");
+    const phoneMatches = getCustomerPhoneCandidates(customer)
+      .some((phone: string) => normPhone(phone) === normalizedInput.phone);
+
+    return first === normalizedInput.first_name
+      && last === normalizedInput.last_name
+      && phoneMatches;
+  });
+
+  const rankedMatches = strictMatches
+    .map((customer: any, index: number) => ({
+      customer,
+      index,
+      createdAt: parseDate(customer.created_at)
+    }))
+    .sort((a, b) => {
+      if (a.createdAt && b.createdAt) {
+        return b.createdAt.getTime() - a.createdAt.getTime();
+      }
+      if (a.createdAt) return -1;
+      if (b.createdAt) return 1;
+      return a.index - b.index;
+    });
+
+  return {
+    customers,
+    strictMatches,
+    selected: rankedMatches[0]?.customer || null
+  };
+}
+
+function formatCustomerSummary(customer: any) {
+  const primaryAddress = customer?.addresses?.[0];
+  return {
+    customer_id: customer.id,
+    first_name: customer.first_name,
+    last_name: customer.last_name,
+    phone: maskPhone(getCustomerPhoneCandidates(customer)[0]),
+    primary_address: primaryAddress ? buildFullAddress(primaryAddress) : undefined
+  };
+}
+
+function extractJobsResponse(response: any) {
+  return response?.jobs || response?.data || response?.items || [];
+}
+
+function getJobTimestamp(job: any) {
+  return parseDate(
+    job?.schedule?.scheduled_start
+    || job?.scheduled_start
+    || job?.scheduled_end
+    || job?.created_at
+  );
+}
+
+function selectJobByPreference(jobs: any[], preference: "upcoming" | "most_recent") {
+  const now = Date.now();
+  const withDates = jobs
+    .map(job => ({ job, date: getJobTimestamp(job) }))
+    .filter(({ date }) => date);
+
+  if (preference === "upcoming") {
+    const upcoming = withDates
+      .filter(({ date }) => (date as Date).getTime() >= now)
+      .sort((a, b) => (a.date as Date).getTime() - (b.date as Date).getTime());
+    return upcoming[0]?.job || null;
+  }
+
+  const recent = withDates
+    .sort((a, b) => (b.date as Date).getTime() - (a.date as Date).getTime());
+  return recent[0]?.job || null;
+}
+
 const server = new McpServer({
   name: "jb-booker",
   version: "1.0.0"
@@ -402,7 +587,7 @@ server.registerTool(
     try {
       // Input validation
       const input = BookInput.parse(raw);
-      log.info({ input, correlationId }, "book_service_call: start");
+      log.info({ input: redactBookingInput(input), correlationId }, "book_service_call: start");
 
       // Step 1: fetch booking windows
       const params: Record<string, string> = {};
@@ -1280,25 +1465,46 @@ server.registerTool(
   }
 );
 
-// Lookup Customer Tool - search for existing customers by phone or email
+// Lookup Customer Tool - strict identification by name + phone
 const LookupCustomerInput = z.object({
-  phone: z.string().optional().describe("Customer's phone number to search for"),
-  email: z.string().email().optional().describe("Customer's email address to search for"),
-  name: z.string().optional().describe("Customer's name to search for")
+  first_name: z.string().min(1).describe("Customer's first name"),
+  last_name: z.string().min(1).describe("Customer's last name"),
+  phone: z.string().min(7).describe("Customer's phone number")
+});
+
+const CallbackRequestInput = z.object({
+  first_name: z.string().min(1),
+  last_name: z.string().min(1),
+  phone: z.string().min(7),
+  job_id: z.string().optional(),
+  requested_times: z.string().optional(),
+  reason: z.string().optional()
+});
+
+const RescheduleCallbackInput = CallbackRequestInput;
+const CancellationCallbackInput = CallbackRequestInput.omit({ requested_times: true });
+
+const JobStatusInput = z.object({
+  first_name: z.string().min(1),
+  last_name: z.string().min(1),
+  phone: z.string().min(7),
+  job_id: z.string().optional(),
+  job_selection: z.enum(["most_recent", "upcoming"]).optional().default("upcoming")
 });
 
 server.registerTool(
   "lookup_customer",
   {
     title: "Look Up Existing Customer",
-    description: "Search for an existing customer in HousecallPro by phone number, email, or name. Returns customer details including address and service history if found.",
+    description: "Strictly identify an existing customer in HousecallPro by first name, last name, and phone number.",
     inputSchema: {
       type: "object",
       properties: {
-        phone: { type: "string", description: "Customer's phone number" },
-        email: { type: "string", description: "Customer's email address" },
-        name: { type: "string", description: "Customer's name" }
-      }
+        first_name: { type: "string", description: "Customer's first name" },
+        last_name: { type: "string", description: "Customer's last name" },
+        phone: { type: "string", description: "Customer's phone number" }
+      },
+      required: ["first_name", "last_name", "phone"]
     }
   } as any,
   async (raw) => {
@@ -1306,93 +1512,42 @@ server.registerTool(
     
     try {
       const input = LookupCustomerInput.parse(raw || {});
-      log.info({ input, correlationId }, "lookup_customer: start");
+      log.info({ input: redactCustomerLookupInput(input), correlationId }, "lookup_customer: start");
 
-      // Need at least one search parameter
-      if (!input.phone && !input.email && !input.name) {
-        return {
-          content: [{
-            type: "text",
-            text: JSON.stringify({
-              success: false,
-              error: "Please provide a phone number, email, or name to look up the customer.",
-              correlation_id: correlationId
-            }, null, 2)
-          }]
-        };
-      }
+      const lookup = await lookupCustomerStrict(input, correlationId);
+      if (!lookup.selected) {
+        log.info({ correlationId, phone_last4: phoneLast4(input.phone) }, "lookup_customer: no strict match");
 
-      // Build search query - prioritize phone, then email, then name
-      const searchQuery = input.phone || input.email || input.name;
-      
-      // Search HousecallPro for existing customer
-      const searchResult = await hcpGet("/customers", { 
-        q: searchQuery,
-        page_size: 5 
-      }, correlationId) as any;
-      
-      const customers = searchResult.customers || [];
-      
-      if (customers.length === 0) {
-        log.info({ correlationId, searchQuery }, "lookup_customer: no customers found");
-        
         return {
           content: [{
             type: "text",
             text: JSON.stringify({
               success: true,
               found: false,
-              message: `No customer found matching "${searchQuery}". Would you like to create a new booking? I'll just need your details.`,
-              search_query: searchQuery,
+              message: "No customer found matching the provided details. If you are a returning customer, please verify your first name, last name, and phone number.",
               correlation_id: correlationId
             }, null, 2)
           }]
         };
       }
 
-      // Format customer data for response
-      const formattedCustomers = customers.map((c: any) => ({
-        id: c.id,
-        name: `${c.first_name || ''} ${c.last_name || ''}`.trim(),
-        first_name: c.first_name,
-        last_name: c.last_name,
-        phone: c.mobile_number || c.home_number || c.work_number,
-        email: c.email,
-        addresses: (c.addresses || []).map((addr: any) => ({
-          id: addr.id,
-          street: addr.street,
-          street_line_2: addr.street_line_2,
-          city: addr.city,
-          state: addr.state,
-          zip: addr.zip,
-          full_address: [addr.street, addr.street_line_2, addr.city, addr.state, addr.zip]
-            .filter(Boolean)
-            .join(', ')
-        })),
-        tags: c.tags || [],
-        created_at: c.created_at
-      }));
+      const customerSummary = formatCustomerSummary(lookup.selected);
 
-      const primaryCustomer = formattedCustomers[0];
-      
       const result = {
         success: true,
         found: true,
-        customer_count: customers.length,
-        customer: primaryCustomer,
-        all_matches: formattedCustomers.length > 1 ? formattedCustomers : undefined,
-        message: `Found ${customers.length > 1 ? customers.length + ' customers' : 'your account'}: ${primaryCustomer.name}${primaryCustomer.addresses.length > 0 ? ` at ${primaryCustomer.addresses[0].full_address}` : ''}`,
-        next_steps: "I have your information on file. Would you like to book a service appointment at this address, or do you have a different location?",
+        customer: customerSummary,
+        message: "Customer verified. I have your information on file.",
+        next_steps: "Would you like to book a service appointment, or do you need help with an existing job?",
         correlation_id: correlationId
       };
 
-      log.info({ 
-        result: { 
-          found: true, 
-          customer_count: customers.length,
-          customer_id: primaryCustomer.id 
-        }, 
-        correlationId 
+      log.info({
+        result: {
+          found: true,
+          customer_id: customerSummary.customer_id
+        },
+        correlationId
       }, "lookup_customer: success");
 
       return {
@@ -1426,6 +1581,382 @@ server.registerTool(
             success: false,
             error: structuredError.userMessage,
             error_code: structuredError.code,
+            correlation_id: correlationId
+          }, null, 2)
+        }]
+      };
+    }
+  }
+);
+
+server.registerTool(
+  "request_reschedule_callback",
+  {
+    title: "Request Reschedule Callback",
+    description: "Logs a reschedule callback request for an existing job without modifying the schedule.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        first_name: { type: "string", description: "Customer's first name" },
+        last_name: { type: "string", description: "Customer's last name" },
+        phone: { type: "string", description: "Customer's phone number" },
+        job_id: { type: "string", description: "Housecall Pro job ID" },
+        requested_times: { type: "string", description: "Preferred reschedule times or window" },
+        reason: { type: "string", description: "Reason for reschedule request" }
+      },
+      required: ["first_name", "last_name", "phone"]
+    }
+  } as any,
+  async (raw) => {
+    const correlationId = randomUUID();
+
+    try {
+      const input = RescheduleCallbackInput.parse(raw || {});
+      log.info({ input: redactCustomerLookupInput(input), job_id: input.job_id, correlationId }, "request_reschedule_callback: start");
+
+      const lookup = await lookupCustomerStrict(input, correlationId);
+      if (!lookup.selected) {
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify({
+              success: false,
+              error: "Unable to verify customer with the provided details.",
+              correlation_id: correlationId
+            }, null, 2)
+          }]
+        };
+      }
+
+      const customerId = lookup.selected.id;
+      let jobId = input.job_id;
+      let jobDetails: any = null;
+
+      if (!jobId) {
+        const jobsResponse = await hcpGet("/jobs", { customer_id: customerId, page_size: 25 }, correlationId) as any;
+        const jobs = extractJobsResponse(jobsResponse);
+        const selectedJob = selectJobByPreference(jobs, "upcoming");
+        jobId = selectedJob?.id;
+      }
+
+      if (!jobId) {
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify({
+              success: false,
+              error: "No upcoming jobs were found for this customer.",
+              correlation_id: correlationId
+            }, null, 2)
+          }]
+        };
+      }
+
+      jobDetails = await hcpGet(`/jobs/${jobId}`, undefined, correlationId) as any;
+
+      if (jobDetails?.customer_id && jobDetails.customer_id !== customerId) {
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify({
+              success: false,
+              error: "The specified job does not belong to the verified customer.",
+              correlation_id: correlationId
+            }, null, 2)
+          }]
+        };
+      }
+
+      const timestamp = new Date().toISOString();
+      const noteContent = [
+        "[AI Request] Customer requested a reschedule callback.",
+        `Requested times: ${input.requested_times || "Not provided"}.`,
+        `Reason: ${input.reason || "Not provided"}.`,
+        `Requested via AI on ${timestamp}.`
+      ].join(" ");
+
+      // Business rule: log the request only; never mutate schedules or appointments.
+      await hcpPost(`/jobs/${jobId}/notes`, { content: noteContent }, correlationId);
+
+      const summary = formatJobScheduleSummary(jobDetails);
+
+      const result = {
+        success: true,
+        action_required: "CALL_US",
+        call_phone: "(617) 555-0123",
+        call_reason: "Reschedule request logged. Please call to confirm changes.",
+        job_id: jobId,
+        current_schedule_summary: summary,
+        next_steps: "Please call us at (617) 555-0123. Say: \"I need to reschedule my service appointment. My name is "
+          + `${lookup.selected.first_name} ${lookup.selected.last_name}` + ".\"",
+        correlation_id: correlationId
+      };
+
+      log.info({ correlationId, job_id: jobId, customer_id: customerId }, "request_reschedule_callback: success");
+
+      return {
+        content: [
+          { type: "text", text: JSON.stringify(result, null, 2) }
+        ]
+      };
+    } catch (err: any) {
+      log.error({ error: err.message, correlationId }, "request_reschedule_callback: error");
+
+      return {
+        content: [{
+          type: "text",
+          text: JSON.stringify({
+            success: false,
+            error: "Unable to log the reschedule request. Please call us directly at (617) 555-0123.",
+            correlation_id: correlationId
+          }, null, 2)
+        }]
+      };
+    }
+  }
+);
+
+server.registerTool(
+  "request_cancellation_callback",
+  {
+    title: "Request Cancellation Callback",
+    description: "Logs a cancellation callback request for an existing job without modifying the schedule.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        first_name: { type: "string", description: "Customer's first name" },
+        last_name: { type: "string", description: "Customer's last name" },
+        phone: { type: "string", description: "Customer's phone number" },
+        job_id: { type: "string", description: "Housecall Pro job ID" },
+        reason: { type: "string", description: "Reason for cancellation request" }
+      },
+      required: ["first_name", "last_name", "phone"]
+    }
+  } as any,
+  async (raw) => {
+    const correlationId = randomUUID();
+
+    try {
+      const input = CancellationCallbackInput.parse(raw || {});
+      log.info({ input: redactCustomerLookupInput(input), job_id: input.job_id, correlationId }, "request_cancellation_callback: start");
+
+      const lookup = await lookupCustomerStrict(input, correlationId);
+      if (!lookup.selected) {
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify({
+              success: false,
+              error: "Unable to verify customer with the provided details.",
+              correlation_id: correlationId
+            }, null, 2)
+          }]
+        };
+      }
+
+      const customerId = lookup.selected.id;
+      let jobId = input.job_id;
+      let jobDetails: any = null;
+
+      if (!jobId) {
+        const jobsResponse = await hcpGet("/jobs", { customer_id: customerId, page_size: 25 }, correlationId) as any;
+        const jobs = extractJobsResponse(jobsResponse);
+        const selectedJob = selectJobByPreference(jobs, "upcoming");
+        jobId = selectedJob?.id;
+      }
+
+      if (!jobId) {
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify({
+              success: false,
+              error: "No upcoming jobs were found for this customer.",
+              correlation_id: correlationId
+            }, null, 2)
+          }]
+        };
+      }
+
+      jobDetails = await hcpGet(`/jobs/${jobId}`, undefined, correlationId) as any;
+
+      if (jobDetails?.customer_id && jobDetails.customer_id !== customerId) {
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify({
+              success: false,
+              error: "The specified job does not belong to the verified customer.",
+              correlation_id: correlationId
+            }, null, 2)
+          }]
+        };
+      }
+
+      const timestamp = new Date().toISOString();
+      const noteContent = [
+        "[AI Request] Customer requested a cancellation callback.",
+        `Reason: ${input.reason || "Not provided"}.`,
+        `Requested via AI on ${timestamp}.`
+      ].join(" ");
+
+      // Business rule: log the request only; never mutate schedules or appointments.
+      await hcpPost(`/jobs/${jobId}/notes`, { content: noteContent }, correlationId);
+
+      const summary = formatJobScheduleSummary(jobDetails);
+
+      const result = {
+        success: true,
+        action_required: "CALL_US",
+        call_phone: "(617) 555-0123",
+        call_reason: "Cancellation request logged. Please call to confirm changes.",
+        job_id: jobId,
+        current_schedule_summary: summary,
+        next_steps: "Please call us at (617) 555-0123. Say: \"I need to cancel my service appointment. My name is "
+          + `${lookup.selected.first_name} ${lookup.selected.last_name}` + ".\"",
+        correlation_id: correlationId
+      };
+
+      log.info({ correlationId, job_id: jobId, customer_id: customerId }, "request_cancellation_callback: success");
+
+      return {
+        content: [
+          { type: "text", text: JSON.stringify(result, null, 2) }
+        ]
+      };
+    } catch (err: any) {
+      log.error({ error: err.message, correlationId }, "request_cancellation_callback: error");
+
+      return {
+        content: [{
+          type: "text",
+          text: JSON.stringify({
+            success: false,
+            error: "Unable to log the cancellation request. Please call us directly at (617) 555-0123.",
+            correlation_id: correlationId
+          }, null, 2)
+        }]
+      };
+    }
+  }
+);
+
+server.registerTool(
+  "get_job_status",
+  {
+    title: "Get Job Status",
+    description: "Retrieve the status of a customer's job without modifying schedules or appointments.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        first_name: { type: "string", description: "Customer's first name" },
+        last_name: { type: "string", description: "Customer's last name" },
+        phone: { type: "string", description: "Customer's phone number" },
+        job_id: { type: "string", description: "Housecall Pro job ID" },
+        job_selection: { type: "string", enum: ["most_recent", "upcoming"], description: "Which job to retrieve if job_id is not provided" }
+      },
+      required: ["first_name", "last_name", "phone"]
+    }
+  } as any,
+  async (raw) => {
+    const correlationId = randomUUID();
+
+    try {
+      const input = JobStatusInput.parse(raw || {});
+      log.info({ input: redactCustomerLookupInput(input), job_id: input.job_id, correlationId }, "get_job_status: start");
+
+      const lookup = await lookupCustomerStrict(input, correlationId);
+      if (!lookup.selected) {
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify({
+              success: false,
+              error: "Unable to verify customer with the provided details.",
+              correlation_id: correlationId
+            }, null, 2)
+          }]
+        };
+      }
+
+      const customerId = lookup.selected.id;
+      let jobId = input.job_id;
+      let jobDetails: any = null;
+
+      if (!jobId) {
+        const jobsResponse = await hcpGet("/jobs", { customer_id: customerId, page_size: 25 }, correlationId) as any;
+        const jobs = extractJobsResponse(jobsResponse);
+        const selectedJob = selectJobByPreference(jobs, input.job_selection || "upcoming");
+        jobId = selectedJob?.id;
+      }
+
+      if (!jobId) {
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify({
+              success: false,
+              error: "No jobs were found for this customer.",
+              correlation_id: correlationId
+            }, null, 2)
+          }]
+        };
+      }
+
+      jobDetails = await hcpGet(`/jobs/${jobId}`, undefined, correlationId) as any;
+
+      if (jobDetails?.customer_id && jobDetails.customer_id !== customerId) {
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify({
+              success: false,
+              error: "The specified job does not belong to the verified customer.",
+              correlation_id: correlationId
+            }, null, 2)
+          }]
+        };
+      }
+
+      let appointment: any = null;
+      try {
+        const appointmentsResponse = await hcpGet(`/jobs/${jobId}/appointments`, undefined, correlationId) as any;
+        const appointments = appointmentsResponse?.appointments || appointmentsResponse?.data || [];
+        appointment = appointments
+          .filter((appt: any) => appt?.start_time)
+          .sort((a: any, b: any) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())[0];
+      } catch (err: any) {
+        log.warn({ error: err.message, correlationId }, "get_job_status: appointments lookup failed");
+      }
+
+      const scheduleSummary = formatJobScheduleSummary(jobDetails, appointment);
+      const workStatus = jobDetails?.work_status || jobDetails?.status || "unknown";
+
+      const result = {
+        success: true,
+        job_id: jobId,
+        work_status: workStatus,
+        current_schedule_summary: scheduleSummary,
+        summary: `Your job is currently ${workStatus}. ${scheduleSummary}`,
+        correlation_id: correlationId
+      };
+
+      log.info({ correlationId, job_id: jobId, customer_id: customerId }, "get_job_status: success");
+
+      return {
+        content: [
+          { type: "text", text: JSON.stringify(result, null, 2) }
+        ]
+      };
+    } catch (err: any) {
+      log.error({ error: err.message, correlationId }, "get_job_status: error");
+
+      return {
+        content: [{
+          type: "text",
+          text: JSON.stringify({
+            success: false,
+            error: "Unable to retrieve job status at this time.",
             correlation_id: correlationId
           }, null, 2)
         }]
