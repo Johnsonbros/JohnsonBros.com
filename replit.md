@@ -36,12 +36,24 @@ The frontend is built with React and TypeScript, utilizing Radix UI primitives a
 - **Express Booking System**: Real-time capacity monitoring via HousecallPro, dynamic capacity states (SAME_DAY_FEE_WAIVED, LIMITED_SAME_DAY, NEXT_DAY), smart pricing (fee waivers), time-based rules (e.g., 12 PM cutoff), and weekend logic.
 - **Smart Booking Modal**: Multi-step flow for service selection, date/time, customer info, and confirmation, with new/returning customer detection and direct HousecallPro job creation.
 - **The Family Discount Membership**: $99/year program offering priority scheduling, waived service call fees, 10% discount on all jobs, and 1 referral gift ability per year. Managed through dedicated page at /family-discount with customer portal at /my-plan.
-- **MCP Server / ChatGPT App**: Enables AI assistants (ChatGPT, Claude) to interact with the plumbing business through 5 tools:
-  - `book_service_call` - Book plumbing appointments directly with HousecallPro
+- **MCP Server / ChatGPT App**: Enables AI assistants (ChatGPT, Claude) to interact with the plumbing business through 11 tools with comprehensive guardrails:
+  - `book_service_call` - Book plumbing appointments directly with HousecallPro (with service area validation)
   - `search_availability` - Check available time slots for services
   - `get_quote` - Get instant price estimates based on service type and urgency
   - `get_services` - List all available plumbing services with descriptions
   - `emergency_help` - Provide emergency guidance for plumbing issues (burst pipes, gas leaks, etc.)
+  - `lookup_customer` - Look up existing customer by phone/email
+  - `get_job_status` - Check appointment/job status
+  - `create_lead` - Request callback with conversation notes logged to HousecallPro
+  - `get_service_history` - View past jobs for a customer
+  - `search_faq` - Query FAQ database for common questions
+  - `reschedule_appointment` - Soft redirect to phone call (no direct modification)
+  - `cancel_appointment` - Soft redirect to phone call (no direct modification)
+  - `request_review` - [OFFLINE] Request Google review after completed jobs (documented for future activation)
+  - **Rate Limiting**: 100 requests/15min per session, 200 requests/hour per IP, 500ms cooldown between requests
+  - **Service Area Validation**: 158 zip codes covering Norfolk, Suffolk, and Plymouth Counties MA; out-of-area customers automatically get leads created with office notification
+  - **Security**: Reschedule/cancel tools intentionally don't modify schedules - they log requests and redirect to phone
+  - **Business Notifications**: Owner receives SMS after AI interactions with customer details, outcome, and sentiment analysis
 - **Multi-Channel AI Chat System**: OpenAI-powered chatbot available across web, SMS, and voice:
   - **Web Chat Widget**: Floating chat button with company logo, opens branded chat panel with quick action prompts
   - **SMS**: Twilio integration at +18577546617 for text-based support
