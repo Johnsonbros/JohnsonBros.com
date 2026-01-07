@@ -77,8 +77,8 @@ The MCP server is automatically spawned as a child process in development mode. 
 
 1. Your MCP server is ready to deploy
 2. Click the "Deploy" button in Replit or use the publish feature
-3. Your deployed URL will be: `https://your-repl-name.repl.co`
-4. The MCP endpoint will be at: `https://your-repl-name.repl.co/mcp`
+3. Your deployed URL will be: `https://your-repl-name.replit.app`
+4. The MCP endpoint will be at: `https://your-repl-name.replit.app/mcp`
 
 ### Environment Variables
 
@@ -97,8 +97,8 @@ Make sure these environment variables are set:
 
 1. **Get your deployed URL**
    - Deploy your Replit app
-   - Note the public URL (e.g., `https://your-app.repl.co`)
-   - Your MCP endpoint will be at: `https://your-app.repl.co/mcp`
+   - Note the public URL (e.g., `https://your-app.replit.app`)
+   - Your MCP endpoint will be at: `https://your-app.replit.app/mcp`
 
 2. **Create a ChatGPT Connector** (when available)
    - Go to ChatGPT settings
