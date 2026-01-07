@@ -54,6 +54,40 @@ const DEFAULT_DISPATCH_EMPLOYEE_IDS = (process.env.DEFAULT_DISPATCH_EMPLOYEE_IDS
 
 const HCP_BASE = "https://api.housecallpro.com";
 
+// Service Area Validation - In-memory set of valid zip codes
+// Norfolk, Suffolk, and Plymouth County MA zip codes
+const SERVICE_AREA_ZIPS = new Set([
+  // Norfolk County
+  "02021", "02025", "02026", "02027", "02030", "02032", "02035", "02038", "02043", "02045",
+  "02047", "02050", "02052", "02053", "02054", "02056", "02061", "02062", "02066", "02067",
+  "02070", "02071", "02072", "02081", "02090", "02093", "02169", "02170", "02171", "02184",
+  "02185", "02186", "02187", "02188", "02189", "02190", "02191", "02269", "02368", "02375",
+  "02382", "02445", "02446", "02447", "02457", "02459", "02460", "02461", "02462", "02464",
+  "02465", "02466", "02467", "02468", "02481", "02482", "02492", "02494",
+  // Suffolk County
+  "02108", "02109", "02110", "02111", "02113", "02114", "02115", "02116", "02117", "02118",
+  "02119", "02120", "02121", "02122", "02124", "02125", "02126", "02127", "02128", "02129",
+  "02130", "02131", "02132", "02133", "02134", "02135", "02136", "02137", "02150", "02151",
+  "02152", "02163", "02199", "02201", "02203", "02204", "02205", "02206", "02210", "02211",
+  "02212", "02215", "02217", "02222", "02228", "02241", "02266", "02283", "02284", "02293",
+  "02297", "02298",
+  // Plymouth County
+  "02018", "02020", "02040", "02041", "02044", "02048", "02050", "02051", "02055", "02059",
+  "02060", "02061", "02065", "02066", "02330", "02331", "02332", "02333", "02337", "02338",
+  "02339", "02340", "02341", "02343", "02344", "02345", "02346", "02347", "02349", "02350",
+  "02351", "02355", "02356", "02357", "02358", "02359", "02360", "02361", "02362", "02364",
+  "02366", "02367", "02368", "02370", "02375", "02379", "02381", "02382"
+]);
+
+function isInServiceArea(zipCode: string): boolean {
+  const normalizedZip = zipCode.trim().substring(0, 5);
+  return SERVICE_AREA_ZIPS.has(normalizedZip);
+}
+
+function getServiceAreaMessage(): string {
+  return "Johnson Bros. Plumbing serves Norfolk, Suffolk, and Plymouth Counties in Massachusetts, including Quincy, Braintree, Weymouth, Abington, Rockland, and surrounding South Shore communities.";
+}
+
 const BookInput = z.object({
   first_name: z.string().min(1),
   last_name: z.string().min(1),
@@ -588,6 +622,100 @@ server.registerTool(
       // Input validation
       const input = BookInput.parse(raw);
       log.info({ input: redactBookingInput(input), correlationId }, "book_service_call: start");
+
+      // Step 0.5: Service area validation - check if zip code is within our service area
+      if (!isInServiceArea(input.zip)) {
+        log.info({ 
+          correlationId, 
+          zip: input.zip, 
+          phone_last4: phoneLast4(input.phone) 
+        }, "book_service_call: out of service area - creating lead instead");
+
+        // Create a lead for out-of-area customers so they get a callback
+        const timestamp = new Date().toISOString();
+        const leadNotes = [
+          `[AI Lead - Out of Area] Customer requested service at ZIP ${input.zip}`,
+          `\n\nISSUE: ${input.description}`,
+          `\nAddress: ${input.street}, ${input.city}, ${input.state} ${input.zip}`,
+          `\nPreferred time: ${input.time_preference || 'any'}`,
+          `\n\nAuto-created via AI on ${timestamp} - ZIP outside service area`,
+          `\nCustomer should be contacted to discuss service options.`
+        ].join("");
+
+        // Try to create customer and log lead
+        try {
+          const searchResult = await hcpGet("/customers", { q: input.phone, page_size: 5 }, correlationId) as any;
+          const existingCustomer = (searchResult.customers || [])[0];
+
+          let customerId: string;
+          
+          if (existingCustomer?.id) {
+            customerId = existingCustomer.id;
+          } else {
+            const customerPayload = {
+              first_name: input.first_name,
+              last_name: input.last_name,
+              mobile_number: input.phone,
+              email: input.email,
+              notifications_enabled: true,
+              lead_source: input.lead_source || "AI Assistant - Out of Area",
+              tags: ["Out of Area", "AI Lead", "Callback Requested"],
+              addresses: [{
+                street: input.street,
+                street_line_2: input.street_line_2 || null,
+                city: input.city,
+                state: input.state,
+                zip: input.zip,
+                country: input.country || "USA"
+              }]
+            };
+
+            const newCustomer = await hcpPost("/customers", customerPayload, correlationId) as any;
+            customerId = newCustomer.id;
+          }
+
+          // Try to create a lead
+          try {
+            await hcpPost("/leads", {
+              customer_id: customerId,
+              source: input.lead_source || "AI Assistant - Out of Area",
+              notes: leadNotes,
+              tags: ["Out of Area", "Callback Requested"]
+            }, correlationId);
+          } catch (leadErr: any) {
+            // Fall back to adding a note to the customer
+            try {
+              await hcpPost(`/customers/${customerId}/notes`, { content: leadNotes }, correlationId);
+            } catch (noteErr: any) {
+              log.warn({ correlationId, error: noteErr.message }, "Failed to add out-of-area note");
+            }
+          }
+        } catch (err: any) {
+          log.error({ correlationId, error: err.message }, "Failed to create out-of-area lead");
+        }
+
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify({
+              success: false,
+              out_of_service_area: true,
+              error_code: "OUT_OF_SERVICE_AREA",
+              zip_provided: input.zip,
+              message: `We're sorry, but ZIP code ${input.zip} is outside our service area. ${getServiceAreaMessage()}`,
+              lead_created: true,
+              next_steps: "We've noted your request and our office will contact you to discuss options. For immediate assistance, please call (617) 479-9911.",
+              service_area_info: {
+                counties: ["Norfolk", "Suffolk", "Plymouth"],
+                state: "Massachusetts",
+                example_cities: ["Quincy", "Braintree", "Weymouth", "Abington", "Rockland", "Plymouth", "Hingham"]
+              },
+              phone: "(617) 479-9911",
+              correlation_id: correlationId
+            }, null, 2)
+          }]
+        };
+      }
 
       // Step 1: fetch booking windows
       const params: Record<string, string> = {};

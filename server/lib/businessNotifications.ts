@@ -7,6 +7,9 @@ import { sendSMS } from './twilio';
 import { Logger } from '../src/logger';
 import { eq } from 'drizzle-orm';
 
+// Re-export Logger for module compatibility
+const log = Logger;
+
 // Business owner phone number for notifications
 const BUSINESS_OWNER_PHONE = process.env.BUSINESS_NOTIFICATION_PHONE || '+16174799911';
 
