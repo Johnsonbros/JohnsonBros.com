@@ -1,19 +1,103 @@
-// SMS Booking Agent - Handles proactive follow-up SMS for lead conversion
-// Sends delayed SMS after form submission and manages AI-powered conversations
+// SMS Booking Agent - Uses OpenAI Agents SDK with MCP Server for HousecallPro booking
+// Sends delayed SMS after form submission and manages AI-powered conversations via MCP tools
 
 import { db } from '../db';
-import { scheduledSms, smsConversations, smsMessages, leads } from '@shared/schema';
+import { scheduledSms, smsConversations, smsMessages } from '@shared/schema';
 import { eq, and, lte, sql } from 'drizzle-orm';
-import { sendSMS, getTwilioPhoneNumber } from './twilio';
-import { processChat, clearSession } from './aiChat';
+import { sendSMS } from './twilio';
 import { Logger } from '../src/logger';
-import OpenAI from 'openai';
-
-// the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+// @ts-ignore - openai-agents types resolution issue
+import { OpenAIAgent } from 'openai-agents';
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
 
 // Delay for follow-up SMS: 3 minutes and 57 seconds = 237 seconds
 const FOLLOW_UP_DELAY_MS = 237 * 1000;
+
+// MCP Server URL
+const MCP_SERVER_URL = process.env.MCP_SERVER_URL || 'http://localhost:3001/mcp';
+
+// Store active agent sessions with conversation history
+const agentSessions: Map<string, {
+  messages: ChatCompletionMessageParam[];
+  customerName: string;
+  serviceDetails: string | null;
+  conversationId: number;
+}> = new Map();
+
+// MCP Client singleton
+let mcpClient: Client | null = null;
+let mcpTools: any[] = [];
+
+// Initialize MCP client connection
+async function getMcpClient(): Promise<Client> {
+  if (mcpClient) {
+    return mcpClient;
+  }
+
+  try {
+    const transport = new StreamableHTTPClientTransport(
+      new URL(MCP_SERVER_URL)
+    );
+
+    mcpClient = new Client({
+      name: 'sms-booking-agent',
+      version: '1.0.0'
+    }, {
+      capabilities: {}
+    });
+
+    await mcpClient.connect(transport);
+    
+    // Fetch available tools from MCP server
+    const { tools } = await mcpClient.listTools();
+    mcpTools = tools;
+    
+    Logger.info(`[SMS Agent] Connected to MCP server with ${tools.length} tools: ${tools.map((t: any) => t.name).join(', ')}`);
+    
+    return mcpClient;
+  } catch (error: any) {
+    Logger.error('[SMS Agent] Failed to connect to MCP server:', { error: error.message });
+    throw error;
+  }
+}
+
+// Convert MCP tools to OpenAI function format
+function mcpToolsToOpenAIFunctions(tools: any[]): any[] {
+  return tools.map(tool => ({
+    type: 'function' as const,
+    function: {
+      name: tool.name,
+      description: tool.description,
+      parameters: tool.inputSchema || { type: 'object', properties: {} }
+    }
+  }));
+}
+
+// Execute an MCP tool call
+async function executeMcpTool(name: string, args: any): Promise<string> {
+  const client = await getMcpClient();
+  
+  try {
+    Logger.info(`[SMS Agent] Executing MCP tool: ${name}`, { args });
+    
+    const result = await client.callTool({
+      name,
+      arguments: args
+    });
+    
+    // Extract text content from result
+    const content = result.content;
+    if (Array.isArray(content)) {
+      return content.map((c: any) => c.text || JSON.stringify(c)).join('\n');
+    }
+    return typeof content === 'string' ? content : JSON.stringify(content);
+  } catch (error: any) {
+    Logger.error(`[SMS Agent] MCP tool ${name} failed:`, { error: error.message });
+    throw error;
+  }
+}
 
 // Format phone number to E.164 format for Twilio
 function formatPhoneNumber(phone: string): string {
@@ -24,6 +108,50 @@ function formatPhoneNumber(phone: string): string {
     return `+${digits}`;
   }
   return `+${digits}`;
+}
+
+// Create the SMS booking agent with MCP tools
+async function createSmsAgent(): Promise<OpenAIAgent> {
+  // Ensure MCP client is connected and tools are loaded
+  await getMcpClient();
+  
+  const agent = new OpenAIAgent({
+    model: 'gpt-4o',
+    system_instruction: `You are a friendly, professional AI assistant for Johnson Bros. Plumbing. You're having an SMS conversation with a potential customer to help them schedule a service call.
+
+YOUR ROLE:
+- Engage warmly and understand their plumbing issue
+- Collect necessary information: name, address, phone, service description
+- Book them for a $99 service call using the book_service_call tool
+- The $99 service fee gets applied toward the cost of repairs
+
+CONVERSATION STYLE:
+- Keep messages short (SMS-friendly, under 160 chars when possible)
+- Be helpful and empathetic about their plumbing problem
+- Ask one question at a time
+- Use the customer's first name
+
+BOOKING PROCESS:
+1. Understand their issue (use emergency_help if it's urgent like a burst pipe or gas leak)
+2. Get their full address if not already known
+3. Ask about their preferred timing (morning, afternoon, evening)
+4. Use search_availability to find slots
+5. Confirm the booking with book_service_call
+6. Let them know about the $99 service call fee that applies to repairs
+
+TOOLS AVAILABLE:
+- book_service_call: Book a plumbing service appointment
+- search_availability: Check available appointment slots  
+- get_quote: Get instant price estimates
+- get_services: List available plumbing services
+- emergency_help: Provide emergency guidance for urgent issues
+
+Remember: After booking, make sure the job notes include their issue description so the technician knows what to expect.`,
+    temperature: 0.7,
+    max_completion_tokens: 300
+  });
+
+  return agent;
 }
 
 // Schedule a follow-up SMS for a new lead
@@ -54,34 +182,34 @@ export async function scheduleLeadFollowUp(
   return scheduled.id;
 }
 
-// Generate personalized opening message using AI
+// Generate personalized opening message using the agent
 async function generateOpeningMessage(customerName: string, serviceDetails: string): Promise<string> {
   try {
-    const response = await openai.chat.completions.create({
-      model: 'gpt-5',
+    const agent = await createSmsAgent();
+    
+    const result = await agent.chat.completions.create({
+      model: 'gpt-4o',
       messages: [
         {
           role: 'system',
-          content: `You are a friendly AI assistant for Johnson Bros. Plumbing. Generate a brief, warm opening SMS message (under 160 chars) to follow up with a customer who just submitted a contact form. 
+          content: `Generate a brief, warm opening SMS message (under 160 chars) to follow up with a customer who just submitted a contact form.
 
 Key points:
 - Be warm and personal, use their first name
-- Reference their plumbing issue briefly
+- Reference their plumbing issue briefly  
 - Ask if you can help schedule a service call
 - Mention the $99 service fee gets credited toward repairs
-- Keep it conversational, not salesy
-
-Example: "Hi [Name]! This is Johnson Bros. Plumbing following up on your [issue]. Ready to help! Our $99 service call fee applies to your repair. When works best to schedule?"`
+- Keep it conversational, not salesy`
         },
         {
           role: 'user',
-          content: `Customer name: ${customerName}\nService details they provided: ${serviceDetails || 'general plumbing help'}`
+          content: `Customer name: ${customerName}\nService details: ${serviceDetails || 'general plumbing help'}`
         }
       ],
       max_completion_tokens: 200
     });
     
-    return response.choices[0].message.content || getDefaultOpeningMessage(customerName);
+    return result.choices[0].message.content || getDefaultOpeningMessage(customerName);
   } catch (error: any) {
     Logger.error('[SMS Agent] Error generating opening message:', { error: error?.message });
     return getDefaultOpeningMessage(customerName);
@@ -96,7 +224,6 @@ function getDefaultOpeningMessage(customerName: string): string {
 // Send a scheduled SMS
 async function sendScheduledSms(scheduledId: number): Promise<void> {
   try {
-    // Get the scheduled SMS
     const [scheduled] = await db
       .select()
       .from(scheduledSms)
@@ -157,16 +284,29 @@ async function sendScheduledSms(scheduledId: number): Promise<void> {
       })
       .where(eq(smsConversations.id, conversation.id));
     
-    // Initialize the AI chat session with context about the customer
+    // Initialize agent session with context
     const sessionId = `sms_${scheduled.phoneNumber.replace(/\D/g, '')}`;
-    await initializeConversationContext(sessionId, scheduled.customerName, scheduled.serviceDetails);
+    agentSessions.set(sessionId, {
+      messages: [
+        {
+          role: 'system',
+          content: `You are helping ${scheduled.customerName} with their plumbing issue. Their stated problem: "${scheduled.serviceDetails || 'Not specified'}". You've just sent them an opening message. Continue the conversation to book them for a $99 service call.`
+        },
+        {
+          role: 'assistant',
+          content: message
+        }
+      ],
+      customerName: scheduled.customerName,
+      serviceDetails: scheduled.serviceDetails,
+      conversationId: conversation.id
+    });
     
     Logger.info(`[SMS Agent] Sent follow-up SMS to ${scheduled.phoneNumber}, SID: ${result.sid}`);
     
   } catch (error: any) {
     Logger.error(`[SMS Agent] Failed to send scheduled SMS ${scheduledId}:`, error);
     
-    // Update status to failed
     await db.update(scheduledSms)
       .set({
         status: 'failed',
@@ -176,27 +316,14 @@ async function sendScheduledSms(scheduledId: number): Promise<void> {
   }
 }
 
-// Initialize AI conversation with customer context
-async function initializeConversationContext(
-  sessionId: string,
-  customerName: string,
-  serviceDetails: string | null
-): Promise<void> {
-  // Pre-seed the conversation with customer context
-  // The AI will pick up from here when the customer replies
-  const contextMessage = `[System context: This is a proactive follow-up for ${customerName} who submitted a contact form. Their stated issue: "${serviceDetails || 'Not specified'}". The customer has already received our opening message. Wait for their response and continue the booking conversation naturally. Remember to book them for the $99 service call and add their issue details to the job notes.]`;
-  
-  // This seeds the context for when processChat is called on their reply
-  Logger.info(`[SMS Agent] Initialized conversation context for ${sessionId}`);
-}
-
-// Handle incoming SMS reply in an ongoing conversation
+// Handle incoming SMS reply using the agent with MCP tools
 export async function handleIncomingSms(
   phoneNumber: string,
   messageBody: string,
   messageSid: string
 ): Promise<string> {
   const formattedPhone = formatPhoneNumber(phoneNumber);
+  const sessionId = `sms_${formattedPhone.replace(/\D/g, '')}`;
   
   // Get or create conversation
   let [conversation] = await db
@@ -205,7 +332,6 @@ export async function handleIncomingSms(
     .where(eq(smsConversations.phoneNumber, formattedPhone));
   
   if (!conversation) {
-    // New conversation from customer-initiated SMS
     [conversation] = await db.insert(smsConversations).values({
       phoneNumber: formattedPhone,
       status: 'active',
@@ -230,13 +356,36 @@ export async function handleIncomingSms(
     })
     .where(eq(smsConversations.id, conversation.id));
   
-  // Process through AI chat
-  const sessionId = `sms_${formattedPhone.replace(/\D/g, '')}`;
-  const response = await processChat(sessionId, messageBody, 'sms');
+  // Get or create agent session
+  let session = agentSessions.get(sessionId);
+  if (!session) {
+    session = {
+      messages: [
+        {
+          role: 'system',
+          content: `You are a friendly AI assistant for Johnson Bros. Plumbing having an SMS conversation. Help the customer with their plumbing issue and book them for a $99 service call.`
+        }
+      ],
+      customerName: 'Customer',
+      serviceDetails: null,
+      conversationId: conversation.id
+    };
+    agentSessions.set(sessionId, session);
+  }
   
-  // Record outbound response
+  // Add user message to history
+  session.messages.push({
+    role: 'user',
+    content: messageBody
+  });
+  
+  // Process through agent with MCP tools
+  const response = await processAgentResponse(session);
+  
+  // Send response via SMS
   const outboundResult = await sendSMS(formattedPhone, response.message);
   
+  // Record outbound message
   await db.insert(smsMessages).values({
     conversationId: conversation.id,
     direction: 'outbound',
@@ -245,17 +394,18 @@ export async function handleIncomingSms(
     status: 'sent',
   });
   
-  // Update conversation with extracted issue description if a booking tool was used
-  if (response.toolsUsed?.includes('book_service_call')) {
+  // Update conversation status if booking was made
+  if (response.bookingMade) {
     await db.update(smsConversations)
       .set({
         status: 'booked',
+        bookingNotes: response.summary,
         updatedAt: new Date(),
       })
       .where(eq(smsConversations.id, conversation.id));
   }
   
-  // Update message count again for outbound
+  // Update message count
   await db.update(smsConversations)
     .set({
       messageCount: sql`${smsConversations.messageCount} + 1`,
@@ -266,7 +416,99 @@ export async function handleIncomingSms(
   return response.message;
 }
 
-// Process any pending scheduled SMS that might have been missed (e.g., server restart)
+// Process agent response with MCP tool execution loop
+async function processAgentResponse(session: {
+  messages: ChatCompletionMessageParam[];
+  customerName: string;
+  serviceDetails: string | null;
+  conversationId: number;
+}): Promise<{ message: string; bookingMade: boolean; summary?: string }> {
+  const agent = await createSmsAgent();
+  
+  // Ensure MCP tools are loaded
+  await getMcpClient();
+  const tools = mcpToolsToOpenAIFunctions(mcpTools);
+  
+  let bookingMade = false;
+  let summary: string | undefined;
+  let iterations = 0;
+  const maxIterations = 5;
+  
+  while (iterations < maxIterations) {
+    iterations++;
+    
+    // Call the agent
+    const completion = await agent.chat.completions.create({
+      model: 'gpt-4o',
+      messages: session.messages,
+      tools: tools.length > 0 ? tools : undefined,
+      tool_choice: tools.length > 0 ? 'auto' : undefined,
+      max_completion_tokens: 500
+    });
+    
+    const message = completion.choices[0].message;
+    
+    // Add assistant message to history
+    session.messages.push(message as ChatCompletionMessageParam);
+    
+    // Check if there are tool calls to execute
+    if (message.tool_calls && message.tool_calls.length > 0) {
+      for (const toolCall of message.tool_calls) {
+        const toolName = toolCall.function.name;
+        const toolArgs = JSON.parse(toolCall.function.arguments);
+        
+        Logger.info(`[SMS Agent] Tool call: ${toolName}`, { args: toolArgs });
+        
+        try {
+          // Execute the MCP tool
+          const toolResult = await executeMcpTool(toolName, toolArgs);
+          
+          // Track if booking was made
+          if (toolName === 'book_service_call') {
+            bookingMade = true;
+            summary = `Booked service call for ${session.customerName}. Issue: ${toolArgs.description || session.serviceDetails || 'Not specified'}`;
+          }
+          
+          // Add tool result to conversation
+          session.messages.push({
+            role: 'tool',
+            tool_call_id: toolCall.id,
+            content: toolResult
+          } as ChatCompletionMessageParam);
+          
+        } catch (error: any) {
+          // Add error as tool result
+          session.messages.push({
+            role: 'tool',
+            tool_call_id: toolCall.id,
+            content: `Error: ${error.message}`
+          } as ChatCompletionMessageParam);
+        }
+      }
+      
+      // Continue the loop to get the final response after tool execution
+      continue;
+    }
+    
+    // No tool calls, we have the final response
+    const responseText = message.content || "I'm here to help! What plumbing issue can I assist you with today?";
+    
+    // Add to session history
+    return {
+      message: responseText,
+      bookingMade,
+      summary
+    };
+  }
+  
+  // Fallback if max iterations reached
+  return {
+    message: "I'd be happy to help schedule your service call! Can you tell me more about the plumbing issue you're experiencing?",
+    bookingMade: false
+  };
+}
+
+// Process any pending scheduled SMS that might have been missed
 export async function processPendingScheduledSms(): Promise<void> {
   const now = new Date();
   
@@ -314,6 +556,11 @@ export async function getConversationHistory(phoneNumber: string): Promise<{
 
 // Start the pending SMS processor on server startup
 export function startScheduledSmsProcessor(): void {
+  // Initialize MCP connection on startup
+  getMcpClient().catch(err => {
+    Logger.warn('[SMS Agent] MCP connection failed on startup, will retry on first use:', { error: err.message });
+  });
+  
   // Process any missed messages immediately
   processPendingScheduledSms().catch(err => {
     Logger.error('[SMS Agent] Error processing pending SMS on startup:', err);
