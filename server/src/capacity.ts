@@ -398,9 +398,12 @@ export class CapacityCalculator {
 
     // Check if any windows remain TODAY (with 30 min booking buffer)
     const hasWindowsToday = bookingWindows.some(window => {
-      const windowDate = window.date ? window.date.split('T')[0] : todayStr;
+      const windowDate = window.start_time
+        ? window.start_time.split('T')[0]
+        : (window.date ? window.date.split('T')[0] : todayStr);
       if (windowDate !== todayStr) return false;
-      const windowStart = this.parseWindowTime(window.start_time, new Date(window.date || now));
+      const baseDate = window.start_time || window.date || now;
+      const windowStart = this.parseWindowTime(window.start_time, new Date(baseDate));
       const bookingCutoff = new Date(windowStart.getTime() - 30 * 60000);
       return window.available && bookingCutoff > now;
     });
@@ -408,11 +411,14 @@ export class CapacityCalculator {
     // Check if we're past the last window TODAY
     const lastWindowEnd = bookingWindows
       .filter(window => {
-        const windowDate = window.date ? window.date.split('T')[0] : todayStr;
+        const windowDate = window.start_time
+          ? window.start_time.split('T')[0]
+          : (window.date ? window.date.split('T')[0] : todayStr);
         return windowDate === todayStr;
       })
       .reduce((latest, window) => {
-        const windowEnd = this.parseWindowTime(window.end_time, new Date(window.date || now));
+        const baseDate = window.start_time || window.date || now;
+        const windowEnd = this.parseWindowTime(window.end_time, new Date(baseDate));
         return windowEnd > latest ? windowEnd : latest;
       }, new Date(0));
 
