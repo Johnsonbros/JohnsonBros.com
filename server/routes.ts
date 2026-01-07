@@ -31,6 +31,7 @@ import { cachePresets } from "./src/cachingMiddleware";
 import { authenticate } from "./src/auth";
 import { loadConfig } from "./src/config";
 import { scheduleLeadFollowUp, startScheduledSmsProcessor } from "./lib/smsBookingAgent";
+import { callMcpTool } from "./lib/mcpClient";
 
 // Housecall Pro API client
 const HOUSECALL_API_BASE = 'https://api.housecallpro.com';
@@ -1182,190 +1183,83 @@ $50 REFERRAL CREDIT APPLIES - New customer receives $50 credit toward any servic
         return res.status(400).json({ error: "Missing required booking information" });
       }
       
-      Logger.info(`[Booking] Creating real booking in Housecall Pro:`, { bookingData });
-      
+      Logger.info(`[Booking] Creating booking via MCP:`, { bookingData });
+
       const customerInfo = bookingData.customerInfo;
-      const housecallClient = HousecallProClient.getInstance();
-      
-      // Extract enhanced data from booking request
-      const {
-        selectedService,
-        problemDetails,
-        photos,
-        estimatedPrice,
-        isExpressBooking,
-        isFeeWaived
-      } = bookingData;
-      
-      // Step 1: Find or create customer
-      let customer;
-      try {
-        const existingCustomers = await housecallClient.searchCustomers({
-          phone: customerInfo.phone,
-          name: `${customerInfo.firstName} ${customerInfo.lastName}`
-        });
-        
-        if (existingCustomers.length > 0) {
-          customer = existingCustomers[0];
-          Logger.info(`[Booking] Found existing customer: ${customer.first_name} ${customer.last_name}`);
-        } else {
-          customer = await housecallClient.createCustomer({
-            first_name: customerInfo.firstName,
-            last_name: customerInfo.lastName,
-            email: customerInfo.email,
-            mobile_number: customerInfo.phone,
-            addresses: [{
-              street: customerInfo.address,
-              city: customerInfo.city || "Quincy",
-              state: customerInfo.state || "MA",
-              zip: customerInfo.zipCode || "02169",
-              country: "USA"
-            }]
-          });
-          Logger.info(`[Booking] Created new customer: ${customer.first_name} ${customer.last_name}`);
-        }
-      } catch (error) {
-        logError("[Booking] Customer lookup/creation failed:", error);
-        return res.status(500).json({ error: "Failed to find or create customer", details: getErrorMessage(error) });
-      }
-      
-      // Step 2: Get customer address
-      let addressId = customer.addresses?.[0]?.id;
-      if (!addressId) {
-        // Try to fetch existing addresses for the customer from HousecallPro
-        try {
-          const customerAddresses = await housecallClient.callAPI(`/customers/${customer.id}/addresses`, {});
-          if (customerAddresses && (customerAddresses as any).addresses?.length > 0) {
-            addressId = (customerAddresses as any).addresses[0].id;
-            Logger.info(`[Booking] Using existing address from HousecallPro for customer`);
-          }
-        } catch (fetchError) {
-          Logger.debug(`[Booking] Could not fetch existing addresses, will try to create: ${getErrorMessage(fetchError)}`);
-        }
-      }
-      
-      // If still no address, try to create one with the provided info
-      if (!addressId) {
-        // Validate we have the required address info
-        if (!customerInfo.address || !customerInfo.address.trim()) {
-          return res.status(400).json({ 
-            error: "Missing street address", 
-            message: "Street address is required to create a booking. Please provide the full service address." 
-          });
-        }
-        
-        try {
-          addressId = await housecallClient.createCustomerAddress(customer.id, {
-            street: customerInfo.address,
-            city: customerInfo.city || "Quincy",
-            state: customerInfo.state || "MA", 
-            zip: customerInfo.zipCode || "02169",
-            country: "USA"
-          });
-          Logger.info(`[Booking] Created new address for customer`);
-        } catch (addressError) {
-          logError("[Booking] Failed to create address:", addressError);
-          return res.status(500).json({ 
-            error: "Failed to create customer address",
-            message: "Unable to create address in HousecallPro. Please ensure all address information is valid.",
-            details: getErrorMessage(addressError)
-          });
-        }
-      }
-      
-      if (!addressId) {
-        return res.status(500).json({ error: "Unable to determine customer address" });
-      }
-      
-      // Step 3: Create scheduled job with proper time information (handle EST timezone)
-      // Parse the date and time in EST timezone
-      // Determine if we're in EST (-05:00) or EDT (-04:00) based on the date
-      const testDate = new Date(`${bookingData.selectedDate}T12:00:00`);
-      const isDST = testDate.getTimezoneOffset() < new Date(testDate.getFullYear(), 0, 1).getTimezoneOffset();
-      const offset = isDST ? '-04:00' : '-05:00';
-      const easternTime = `${bookingData.selectedDate}T${bookingData.selectedTime}:00${offset}`;
-      const scheduledDate = new Date(easternTime);
-      
-      // Validate the date is valid and in the future
-      if (isNaN(scheduledDate.getTime())) {
-        return res.status(400).json({ error: "Invalid date or time format" });
-      }
-      
-      if (scheduledDate < new Date()) {
-        return res.status(400).json({ error: "Cannot book appointments in the past" });
-      }
-      const scheduledEnd = new Date(scheduledDate.getTime() + 3 * 60 * 60 * 1000); // 3 hour window
-      
-      const jobData = {
-        customer_id: customer.id,
-        address_id: addressId,
-        schedule: {
-          scheduled_start: scheduledDate.toISOString(),
-          scheduled_end: scheduledEnd.toISOString(),
-          arrival_window: 180 // 3 hour window in minutes
-        },
-        // Use the specific HousecallPro line item (olit_9412353009f546e28a0b0fb7c9a96fe2) for $99.00
-        line_items: [{
-          name: "Service Call - $99 Fee Waived",
-          pricing_form: {
-            id: 'olit_9412353009f546e28a0b0fb7c9a96fe2'
-          },
-          quantity: 1
-        }],
-        // Add tags for online booking
-        tags: ["online-booking", "$99-fee-waived", "website-lead"],
-        // Set lead source to website
-        lead_source: "Website",
-        // Enable notifications
-        notify_customer: true,
-        notify_pro: true,
-        // Add comprehensive notes about online booking with enhanced details
-        internal_memo: `ONLINE BOOKING - ${isFeeWaived ? '$99 Service Fee Waived' : 'Standard Service Call'}
-Service: ${selectedService?.name || 'General Service'}
-Severity: ${problemDetails?.severity || 'Not specified'}
-Duration: ${problemDetails?.duration || 'Not specified'}
-Common Issues: ${problemDetails?.commonIssues?.join(', ') || 'None selected'}
-Customer Problem: ${bookingData.problemDescription || problemDetails?.description || "Service requested"}
-Photos Attached: ${photos?.length || 0}
-Estimated Price: $${estimatedPrice?.total || 'TBD'}
-Booking Type: ${isExpressBooking ? 'EXPRESS BOOKING' : 'Standard Booking'}
-Booked via: Johnson Bros Website
-Special Promotion: ${isFeeWaived ? '$99 service fee waived for online bookings' : 'Standard pricing applies'}`,
-        // Add job description visible to customer
-        description: `${selectedService?.name || 'Service Call'} - ${problemDetails?.severity === 'emergency' ? 'EMERGENCY' : 'Scheduled Service'} ${isFeeWaived ? '($99 Fee Waived)' : ''}`
+      const selectedService = bookingData.selectedService;
+      const problemDetails = bookingData.problemDetails;
+      const problemDescription = bookingData.problemDescription || problemDetails?.description || "Service requested";
+      const selectedDate = bookingData.selectedDate;
+      const selectedTime = bookingData.selectedTime;
+
+      const inferTimePreference = (timeValue: string | undefined) => {
+        if (!timeValue) return "any";
+        const hour = Number(timeValue.split(":")[0]);
+        if (Number.isNaN(hour)) return "any";
+        if (hour < 11) return "morning";
+        if (hour < 14) return "afternoon";
+        return "evening";
       };
-      
-      const job = await housecallClient.createJob(jobData);
-      Logger.info(`[Booking] Created scheduled job in Housecall Pro: ${job.id} for ${scheduledDate.toISOString()}`);
-      
-      // Step 4: Upload photos if provided
-      if (bookingData.photos && Array.isArray(bookingData.photos) && bookingData.photos.length > 0) {
-        Logger.info(`[Booking] Uploading ${bookingData.photos.length} photos to job ${job.id}`);
-        
+
+      const timePreference = inferTimePreference(selectedTime);
+
+      const mcpPayload = {
+        first_name: customerInfo.firstName,
+        last_name: customerInfo.lastName,
+        phone: customerInfo.phone,
+        email: customerInfo.email,
+        street: customerInfo.address,
+        city: customerInfo.city || "Quincy",
+        state: customerInfo.state || "MA",
+        zip: customerInfo.zipCode || "02169",
+        description: `${selectedService?.name || "Service Call"}: ${problemDescription}`,
+        lead_source: "Website",
+        time_preference: timePreference,
+        earliest_date: selectedDate,
+        latest_date: selectedDate,
+        show_for_days: 1,
+        tags: ["website-booking", "online-booking", "website-lead"]
+      };
+
+      const { parsed } = await callMcpTool<any>("book_service_call", mcpPayload);
+
+      if (!parsed?.success) {
+        return res.status(500).json({
+          error: parsed?.error || "Failed to create booking",
+          details: parsed
+        });
+      }
+
+      const jobId = parsed.job_id;
+
+      if (bookingData.photos && Array.isArray(bookingData.photos) && bookingData.photos.length > 0 && jobId) {
+        const housecallClient = HousecallProClient.getInstance();
+        Logger.info(`[Booking] Uploading ${bookingData.photos.length} photos to job ${jobId}`);
+
         for (let i = 0; i < bookingData.photos.length; i++) {
           const photo = bookingData.photos[i];
           try {
-            await housecallClient.uploadAttachment(job.id, {
+            await housecallClient.uploadAttachment(jobId, {
               filename: photo.filename || `photo-${i + 1}.jpg`,
               mimeType: photo.mimeType || 'image/jpeg',
               base64: photo.base64
             });
-            Logger.info(`[Booking] Successfully uploaded photo ${i + 1} to job ${job.id}`);
+            Logger.info(`[Booking] Successfully uploaded photo ${i + 1} to job ${jobId}`);
           } catch (photoError) {
-            logError(`[Booking] Failed to upload photo ${i + 1} to job ${job.id}:`, photoError);
+            logError(`[Booking] Failed to upload photo ${i + 1} to job ${jobId}:`, photoError);
           }
         }
       }
-      
+
       res.json({
         success: true,
-        jobId: job.id,
-        appointmentId: null,
+        jobId,
+        appointmentId: parsed.appointment_id || null,
         message: "Booking confirmed successfully",
         appointment: {
-          id: job.id,
-          service: "Service call",
-          scheduledDate: scheduledDate.toISOString(),
+          id: jobId,
+          service: selectedService?.name || "Service call",
+          scheduledDate: parsed.scheduled_start || null,
           estimatedPrice: "$99.00",
           customer: {
             name: `${customerInfo.firstName} ${customerInfo.lastName}`,

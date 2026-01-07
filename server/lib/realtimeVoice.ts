@@ -4,6 +4,7 @@
 import WebSocket from 'ws';
 import { Logger } from '../src/logger';
 import { agentTracing } from './agentTracing';
+import { callMcpTool, listMcpTools } from './mcpClient';
 
 interface TwilioStreamMessage {
   event: string;
@@ -80,6 +81,7 @@ export function handleMediaStream(twilioWs: WebSocket, request: any) {
   let streamSid: string | null = null;
   let callSid: string | null = null;
   let sessionId: string | null = null;
+  let mcpToolNames = new Set<string>();
   
   Logger.info('[Realtime] New media stream connection');
   
@@ -100,59 +102,76 @@ export function handleMediaStream(twilioWs: WebSocket, request: any) {
     
     openaiWs.on('open', () => {
       Logger.info('[Realtime] Connected to OpenAI Realtime API');
-      
-      // Configure the session
-      const sessionConfig = {
-        type: 'session.update',
-        session: {
-          modalities: ['text', 'audio'],
-          instructions: VOICE_SYSTEM_INSTRUCTIONS,
-          voice: 'alloy',
-          input_audio_format: 'g711_ulaw',
-          output_audio_format: 'g711_ulaw',
-          input_audio_transcription: {
-            model: 'whisper-1'
-          },
-          turn_detection: {
-            type: 'server_vad',
-            threshold: 0.5,
-            prefix_padding_ms: 300,
-            silence_duration_ms: 500
-          },
-          tools: [
-            {
+
+      listMcpTools()
+        .then((tools) => {
+          const mcpTools = tools.map((tool) => {
+            mcpToolNames.add(tool.name);
+            return {
               type: 'function',
-              name: 'transfer_to_human',
-              description: 'Transfer the call to a human agent when the customer requests it or the issue is too complex',
-              parameters: {
-                type: 'object',
-                properties: {
-                  reason: {
-                    type: 'string',
-                    description: 'Reason for the transfer'
+              name: tool.name,
+              description: tool.description,
+              parameters: tool.inputSchema || { type: 'object', properties: {} }
+            };
+          });
+
+          // Configure the session
+          const sessionConfig = {
+            type: 'session.update',
+            session: {
+              modalities: ['text', 'audio'],
+              instructions: VOICE_SYSTEM_INSTRUCTIONS,
+              voice: 'alloy',
+              input_audio_format: 'g711_ulaw',
+              output_audio_format: 'g711_ulaw',
+              input_audio_transcription: {
+                model: 'whisper-1'
+              },
+              turn_detection: {
+                type: 'server_vad',
+                threshold: 0.5,
+                prefix_padding_ms: 300,
+                silence_duration_ms: 500
+              },
+              tools: [
+                {
+                  type: 'function',
+                  name: 'transfer_to_human',
+                  description: 'Transfer the call to a human agent when the customer requests it or the issue is too complex',
+                  parameters: {
+                    type: 'object',
+                    properties: {
+                      reason: {
+                        type: 'string',
+                        description: 'Reason for the transfer'
+                      }
+                    }
                   }
-                }
-              }
-            },
-            {
-              type: 'function',
-              name: 'end_call',
-              description: 'End the call politely after booking is complete or customer is done',
-              parameters: {
-                type: 'object',
-                properties: {
-                  summary: {
-                    type: 'string',
-                    description: 'Brief summary of the call outcome'
+                },
+                {
+                  type: 'function',
+                  name: 'end_call',
+                  description: 'End the call politely after booking is complete or customer is done',
+                  parameters: {
+                    type: 'object',
+                    properties: {
+                      summary: {
+                        type: 'string',
+                        description: 'Brief summary of the call outcome'
+                      }
+                    }
                   }
-                }
-              }
+                },
+                ...mcpTools
+              ]
             }
-          ]
-        }
-      };
-      
-      openaiWs!.send(JSON.stringify(sessionConfig));
+          };
+
+          openaiWs!.send(JSON.stringify(sessionConfig));
+        })
+        .catch((error: any) => {
+          Logger.error('[Realtime] Failed to load MCP tools:', { error: error?.message });
+        });
       
       // Send initial greeting
       setTimeout(() => {
@@ -233,6 +252,7 @@ export function handleMediaStream(twilioWs: WebSocket, request: any) {
             // Handle function calls
             const functionName = (message as any).name;
             const args = JSON.parse((message as any).arguments || '{}');
+            const callId = (message as any).call_id;
             
             Logger.info(`[Realtime] Function call: ${functionName}`, args);
             
@@ -241,6 +261,32 @@ export function handleMediaStream(twilioWs: WebSocket, request: any) {
               setTimeout(() => {
                 twilioWs.close();
               }, 2000);
+              break;
+            }
+
+            if (mcpToolNames.has(functionName) && callId) {
+              callMcpTool(functionName, args)
+                .then((result) => {
+                  if (!openaiWs) return;
+                  openaiWs.send(JSON.stringify({
+                    type: 'conversation.item.create',
+                    item: {
+                      type: 'function_call_output',
+                      call_id: callId,
+                      output: result.raw
+                    }
+                  }));
+                  openaiWs.send(JSON.stringify({
+                    type: 'response.create',
+                    response: {
+                      modalities: ['audio', 'text'],
+                      instructions: 'Confirm the booking details or next steps with the caller.'
+                    }
+                  }));
+                })
+                .catch((error: any) => {
+                  Logger.error('[Realtime] MCP tool call failed:', { error: error?.message, functionName });
+                });
             }
             break;
             
