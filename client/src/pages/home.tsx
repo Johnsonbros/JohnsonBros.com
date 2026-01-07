@@ -12,7 +12,7 @@ import { WhyTrustUs } from "@/components/WhyTrustUs";
 import { Helmet } from "react-helmet-async";
 import { LocalBusinessSchema, FAQSchema, ReviewSchema, BreadcrumbSchema } from "@/components/schema-markup";
 import { commonFAQs, generateSocialMetaTags, staticPageMetadata } from "@/lib/seoMetadata";
-import { Shield, Star, Award, ArrowRight, Users } from "lucide-react";
+import { Shield, Star, Award, ArrowRight, Users, Sparkles, MessageCircle, CalendarCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 
@@ -141,6 +141,72 @@ export default function Home() {
           <section aria-label="Our Services" id="services">
             <ServicesSection onBookService={openBookingModal} />
           </section>
+
+          {/* Agentic Experience Section */}
+          <section aria-label="Agentic Service Experience" className="bg-slate-50 py-16">
+            <div className="container mx-auto px-4">
+              <div className="text-center mb-12">
+                <div className="inline-flex items-center gap-2 bg-johnson-blue/10 text-johnson-blue text-sm font-semibold px-4 py-2 rounded-full mb-4">
+                  <Sparkles className="h-4 w-4" />
+                  Agentic Advantage
+                </div>
+                <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                  Agentic Service, Human-First Care
+                </h2>
+                <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+                  Our AI assistant captures your issue, finds real-time availability, and keeps you updated, while our licensed plumbers
+                  deliver the fix across Quincy, Greater Boston, and the South Shore.
+                </p>
+              </div>
+
+              <div className="grid md:grid-cols-3 gap-6 mb-10">
+                <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-lg transition-shadow">
+                  <div className="w-12 h-12 rounded-xl bg-johnson-blue/10 flex items-center justify-center mb-4">
+                    <MessageCircle className="h-6 w-6 text-johnson-blue" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">Smart Issue Intake</h3>
+                  <p className="text-gray-600">
+                    Describe the problem once. Our assistant gathers symptoms, photos, and access details so the right tools arrive.
+                  </p>
+                </div>
+
+                <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-lg transition-shadow">
+                  <div className="w-12 h-12 rounded-xl bg-johnson-orange/10 flex items-center justify-center mb-4">
+                    <CalendarCheck className="h-6 w-6 text-johnson-orange" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">Real-Time Scheduling</h3>
+                  <p className="text-gray-600">
+                    See live appointment windows, book instantly, and get reminders synced to your preferred contact method.
+                  </p>
+                </div>
+
+                <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-lg transition-shadow">
+                  <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center mb-4">
+                    <Sparkles className="h-6 w-6 text-green-600" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">Proactive Updates</h3>
+                  <p className="text-gray-600">
+                    Get ETA alerts, technician notes, and follow-up care tips so you always know what’s next.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <Button
+                  size="lg"
+                  className="bg-gradient-to-r from-johnson-orange to-orange-500 hover:from-orange-500 hover:to-johnson-orange text-white font-bold shadow-lg hover:shadow-xl transition-all duration-300"
+                  onClick={() => openBookingModal()}
+                >
+                  Start Agentic Booking
+                </Button>
+                <Link href="/ai-booking">
+                  <Button size="lg" variant="outline" className="border-johnson-blue text-johnson-blue hover:bg-johnson-blue hover:text-white">
+                    See How AI Booking Works
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </section>
           
           {/* Consolidated Trust & Reviews Section */}
           <section aria-label="Why Choose Us & Reviews" className="bg-white py-16">
@@ -151,7 +217,7 @@ export default function Home() {
                   Why Choose Johnson Bros. Plumbing?
                 </h2>
                 <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                  Family-owned and trusted by thousands of homeowners across Massachusetts since 2008
+                  Family-owned, licensed, and on call 24/7 for Quincy, Greater Boston, and the South Shore.
                 </p>
               </div>
 
@@ -172,7 +238,7 @@ export default function Home() {
                   </div>
                   <h3 className="text-xl font-bold text-gray-900 mb-2">4.9/5 Google Rating</h3>
                   <p className="text-gray-600">
-                    Over 200+ five-star reviews from satisfied customers across the South Shore.
+                    Hundreds of five-star reviews from Quincy and the South Shore.
                   </p>
                 </div>
 
@@ -180,9 +246,9 @@ export default function Home() {
                   <div className="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
                     <Award className="h-8 w-8 text-white" />
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">25+ Years Experience</h3>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">16+ Years Experience</h3>
                   <p className="text-gray-600">
-                    Three generations of master plumbers serving families throughout Massachusetts.
+                    Trusted local plumbers known for courtesy, clean work, and reliable fixes.
                   </p>
                 </div>
               </div>

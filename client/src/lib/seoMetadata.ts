@@ -138,9 +138,9 @@ export const landingPageMetadata: Record<string, SEOMetadata> = {
 // Static page SEO metadata
 export const staticPageMetadata: Record<string, SEOMetadata> = {
   'home': {
-    title: 'Johnson Bros. Plumbing & Drain | Expert Plumbers in Quincy, MA',
-    description: 'Professional plumbing services in Quincy & South Shore MA. Emergency plumbing, drain cleaning, water heaters. Family-owned since 2008. Call 617-479-9911',
-    keywords: ['plumber Quincy MA', 'Johnson Bros Plumbing', 'emergency plumber', 'drain cleaning', 'water heater repair', 'South Shore plumber'],
+    title: 'Trusted Plumber in Quincy, MA | Plumbing, Heating, Drain Cleaning',
+    description: 'Expert Quincy plumbers providing reliable plumbing, heating, and drain cleaning services. 24/7 emergency help across Greater Boston and the South Shore. Call 617-479-9911.',
+    keywords: ['plumber Quincy MA', 'plumbing and heating', 'drain cleaning', 'emergency plumber', 'South Shore plumber', 'Greater Boston plumbing'],
     canonicalUrl: '/',
     type: 'website'
   },

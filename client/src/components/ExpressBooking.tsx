@@ -161,6 +161,10 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
               </div>
             )}
 
+            <p className="text-sm sm:text-base font-semibold text-blue-100 mb-3">
+              Trusted Plumber in Quincy, MA • Plumbing • Heating • Drain Cleaning
+            </p>
+
             {/* Dynamic Headline */}
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 leading-tight">
               {hasToday ? (
@@ -186,7 +190,7 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
                 <>
                   Schedule Your Service
                   <span className="text-johnson-orange block text-2xl sm:text-3xl lg:text-4xl mt-2">
-                    Abington & Quincy, MA
+                    Quincy, Greater Boston & the South Shore
                   </span>
                 </>
               )}
@@ -195,12 +199,12 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
             {/* Dynamic Subhead */}
             <p className="text-base sm:text-lg lg:text-xl mb-6 sm:mb-8 text-blue-100">
               {hasToday 
-                ? "Book now for same-day service - emergency fee waived!"
+                ? "Book now for same-day plumbing, heating, or drain cleaning with the $99 service fee waived."
                 : hasTomorrow
-                  ? "Guaranteed appointment tomorrow with $99 service fee waived!"
+                  ? "Reserve a guaranteed appointment tomorrow for Quincy, Greater Boston, and the South Shore with the $99 service fee waived."
                   : isEmergency
-                    ? "Weekend and after-hours emergency plumbing service available. Our expert technicians are ready to help!"
-                    : "Fast, reliable, and professional plumbing solutions. Licensed, insured, and available 24/7 for emergencies."}
+                    ? "Emergency plumbing help is available 24/7 across Quincy, Greater Boston, and the South Shore. Call or text anytime."
+                    : "Fast, reliable service with real-time scheduling, trusted by Quincy, Greater Boston, and the South Shore homeowners."}
             </p>
 
             {/* Time Slot Selection */}
@@ -277,7 +281,7 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
               </div>
               <div className="flex items-center space-x-2 bg-white/10 rounded-lg p-2 sm:p-0 sm:bg-transparent">
                 <DollarSign className="h-5 w-5 text-johnson-orange flex-shrink-0" />
-                <span className="font-medium text-sm sm:text-base">{isEmergency ? 'Emergency Rates Apply' : '$99 Fee Waived'}</span>
+                <span className="font-medium text-sm sm:text-base">{isEmergency ? 'Emergency Rates Apply' : '1-Year Parts Warranty'}</span>
               </div>
             </div>
 
