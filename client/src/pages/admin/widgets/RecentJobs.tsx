@@ -62,10 +62,10 @@ export default function RecentJobs() {
           className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-900 rounded-lg"
         >
           <div className="flex items-center gap-2 flex-1">
-            {getStatusIcon(job.status || 'completed')}
+            {getStatusIcon('completed')}
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">
-                {job.service}
+                {job.jobSummary || job.serviceType || 'Completed service'}
               </p>
               <p className="text-xs text-muted-foreground">
                 {job.city}, {job.state}
@@ -73,7 +73,7 @@ export default function RecentJobs() {
             </div>
           </div>
           <span className="text-xs text-muted-foreground whitespace-nowrap">
-            {formatTimeAgo(job.completedAt)}
+            {job.completedAt ? formatTimeAgo(job.completedAt) : 'Recently'}
           </span>
         </div>
       ))}

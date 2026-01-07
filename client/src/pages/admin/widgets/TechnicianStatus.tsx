@@ -1,11 +1,20 @@
 import { useQuery } from '@tanstack/react-query';
-import { User, Circle, Wrench, Coffee, Home } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { User, Circle, Wrench, Clock, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { authenticatedFetch } from '@/lib/auth';
+
+interface OperationsResponse {
+  technicians: Array<{
+    id: string;
+    name: string;
+    status: 'available' | 'busy' | 'scheduled';
+  }>;
+}
 
 export default function TechnicianStatus() {
-  const { data: operations, isLoading } = useQuery({
+  const { data: operations, isLoading } = useQuery<OperationsResponse>({
     queryKey: ['/api/v1/admin/dashboard/operations'],
+    queryFn: () => authenticatedFetch('/api/admin/dashboard/operations'),
     refetchInterval: 120000, // Refresh every 2 minutes
     staleTime: 60000, // Consider data stale after 1 minute
     refetchIntervalInBackground: false, // Don't poll when tab is inactive
@@ -19,14 +28,12 @@ export default function TechnicianStatus() {
 
   const getStatusIcon = (status: string) => {
     switch (status?.toLowerCase()) {
-      case 'working':
+      case 'busy':
         return <Wrench className="h-3 w-3" />;
+      case 'scheduled':
+        return <Clock className="h-3 w-3" />;
       case 'available':
-        return <Circle className="h-3 w-3" />;
-      case 'break':
-        return <Coffee className="h-3 w-3" />;
-      case 'off_duty':
-        return <Home className="h-3 w-3" />;
+        return <CheckCircle className="h-3 w-3" />;
       default:
         return <User className="h-3 w-3" />;
     }
@@ -34,14 +41,12 @@ export default function TechnicianStatus() {
 
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
-      case 'working':
-        return 'bg-green-500';
-      case 'available':
+      case 'busy':
         return 'bg-blue-500';
-      case 'break':
+      case 'scheduled':
         return 'bg-yellow-500';
-      case 'off_duty':
-        return 'bg-gray-400';
+      case 'available':
+        return 'bg-green-500';
       default:
         return 'bg-gray-300';
     }
@@ -69,7 +74,7 @@ export default function TechnicianStatus() {
           <div className="flex items-center gap-2">
             {getStatusIcon(tech.status)}
             <span className="text-xs text-muted-foreground capitalize">
-              {tech.status?.replace('_', ' ')}
+              {tech.status === 'busy' ? 'in progress' : tech.status?.replace('_', ' ')}
             </span>
           </div>
         </div>

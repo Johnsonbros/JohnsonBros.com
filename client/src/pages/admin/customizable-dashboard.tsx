@@ -24,6 +24,7 @@ import { Settings, RotateCcw, Eye, EyeOff, GripHorizontal, Save } from 'lucide-r
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { authenticatedFetch } from '@/lib/auth';
 import CapacityGauge from './widgets/CapacityGauge';
 import RevenueTracker from './widgets/RevenueTracker';
 import JobBoard from './widgets/JobBoard';
@@ -71,6 +72,7 @@ export default function CustomizableDashboard() {
   // Fetch widget configurations
   const { data: widgets, isLoading } = useQuery({
     queryKey: ['/api/v1/admin/dashboard/widgets'],
+    queryFn: () => authenticatedFetch('/api/admin/dashboard/widgets'),
     refetchInterval: false,
   });
 

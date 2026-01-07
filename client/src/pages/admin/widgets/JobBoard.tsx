@@ -1,10 +1,35 @@
 import { useQuery } from '@tanstack/react-query';
 import { Clock, MapPin, User, DollarSign } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { authenticatedFetch } from '@/lib/auth';
+
+interface JobBoardResponse {
+  jobs: Array<{
+    id: string;
+    customer: {
+      name: string;
+    };
+    address: {
+      city?: string;
+    };
+    service: {
+      type: string;
+    };
+    schedule: {
+      start: string;
+    };
+    technician: Array<{
+      name: string;
+    }>;
+    status: string;
+    amount: number;
+  }>;
+}
 
 export default function JobBoard() {
-  const { data: jobs, isLoading } = useQuery({
+  const { data: jobBoard, isLoading } = useQuery<JobBoardResponse>({
     queryKey: ['/api/v1/admin/dashboard/job-board'],
+    queryFn: () => authenticatedFetch('/api/admin/dashboard/job-board'),
     refetchInterval: 120000, // Refresh every 2 minutes
     staleTime: 60000, // Consider data stale after 1 minute
     refetchIntervalInBackground: false, // Don't poll when tab is inactive
@@ -14,8 +39,7 @@ export default function JobBoard() {
     return <div className="animate-pulse h-full bg-gray-100 rounded" />;
   }
 
-  const todayJobs = jobs?.todayJobs || [];
-  const displayJobs = todayJobs.slice(0, 3);
+  const displayJobs = jobBoard?.jobs?.slice(0, 3) || [];
 
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
@@ -37,6 +61,15 @@ export default function JobBoard() {
     });
   };
 
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
   if (displayJobs.length === 0) {
     return (
       <div className="flex items-center justify-center h-full text-muted-foreground">
@@ -54,8 +87,8 @@ export default function JobBoard() {
         >
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              <h4 className="font-medium text-sm">{job.customer?.first_name} {job.customer?.last_name}</h4>
-              <p className="text-xs text-muted-foreground">{job.job_type}</p>
+              <h4 className="font-medium text-sm">{job.customer?.name || 'Unknown Customer'}</h4>
+              <p className="text-xs text-muted-foreground">{job.service?.type || 'Service'}</p>
             </div>
             <Badge variant="outline" className={getStatusColor(job.status)}>
               {job.status}
@@ -65,11 +98,11 @@ export default function JobBoard() {
           <div className="grid grid-cols-2 gap-2 text-xs">
             <div className="flex items-center gap-1 text-muted-foreground">
               <Clock className="h-3 w-3" />
-              <span>{formatTime(job.scheduled_start)}</span>
+              <span>{job.schedule?.start ? formatTime(job.schedule.start) : 'TBD'}</span>
             </div>
             <div className="flex items-center gap-1 text-muted-foreground">
               <User className="h-3 w-3" />
-              <span>{job.employee?.first_name || 'Unassigned'}</span>
+              <span>{job.technician?.[0]?.name || 'Unassigned'}</span>
             </div>
             <div className="flex items-center gap-1 text-muted-foreground">
               <MapPin className="h-3 w-3" />
@@ -77,7 +110,7 @@ export default function JobBoard() {
             </div>
             <div className="flex items-center gap-1 text-muted-foreground">
               <DollarSign className="h-3 w-3" />
-              <span>${job.total_amount || '0'}</span>
+              <span>{formatCurrency(job.amount || 0)}</span>
             </div>
           </div>
         </div>
