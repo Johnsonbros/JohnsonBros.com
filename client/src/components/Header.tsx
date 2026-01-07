@@ -147,7 +147,23 @@ export default function Header({ onBookService }: HeaderProps) {
 
         {/* Mobile Menu Overlay */}
         {isMobileMenuOpen && (
-          <div className="lg:hidden fixed left-0 right-0 bg-johnson-blue z-40 shadow-2xl overflow-y-auto" style={{ top: '0px', bottom: '70px', paddingTop: '122px' }}>
+          <div className="lg:hidden fixed left-0 right-0 bg-johnson-blue z-40 shadow-2xl overflow-y-auto" style={{ top: '0px', bottom: '70px' }}>
+            {/* Solid header with logo in mobile menu */}
+            <div className="bg-johnson-blue px-2 py-1 flex justify-between items-center gap-1 border-b border-white/10">
+              <img 
+                src="/JB_logo_New_1756136293648.png" 
+                alt="Johnson Bros. Plumbing & Drain Cleaning" 
+                className="h-20 w-auto object-contain"
+                style={{ maxWidth: 'calc(100% - 50px)' }}
+              />
+              <button
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="text-white p-2 hover:bg-white/10 rounded-lg transition-colors flex-shrink-0"
+                aria-label="Close menu"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
             <nav className="flex flex-col p-3 space-y-0.5">
               <Link 
                 href="/" 
