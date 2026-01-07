@@ -30,6 +30,7 @@ import { Logger, logError, getErrorMessage } from "./src/logger";
 import { cachePresets } from "./src/cachingMiddleware";
 import { authenticate } from "./src/auth";
 import { loadConfig } from "./src/config";
+import { scheduleLeadFollowUp, startScheduledSmsProcessor } from "./lib/smsBookingAgent";
 
 // Housecall Pro API client
 const HOUSECALL_API_BASE = 'https://api.housecallpro.com';
@@ -967,13 +968,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const lead = await housecallClient.createLead(leadData);
       Logger.info(`[Lead Creation] Successfully created lead: ${lead.id}`);
 
+      // Schedule SMS follow-up if customer opted in for marketing (3 min 57 sec delay)
+      let scheduledSmsId: number | null = null;
+      if (customer.notifications_enabled) {
+        try {
+          const customerName = `${customer.first_name} ${customer.last_name}`;
+          scheduledSmsId = await scheduleLeadFollowUp(
+            lead.id ? parseInt(lead.id) : 0,
+            customer.mobile_number,
+            customerName,
+            customer.notes || ''
+          );
+          Logger.info(`[Lead Creation] Scheduled SMS follow-up ${scheduledSmsId} for lead ${lead.id}`);
+        } catch (smsError) {
+          Logger.error('[Lead Creation] Failed to schedule SMS follow-up:', { error: smsError instanceof Error ? smsError.message : String(smsError) });
+        }
+      }
+
       res.json({ 
         success: true, 
         lead: {
           id: lead.id,
           customer_id: lead.customer_id,
           status: lead.status
-        }
+        },
+        smsFollowUpScheduled: scheduledSmsId !== null
       });
     } catch (error) {
       logError("Lead creation error:", error);
@@ -3578,6 +3597,9 @@ Sitemap: ${siteUrl}/sitemap.xml
   });
   
   Logger.info('[WebSocket] Media Stream WebSocket server initialized');
+  
+  // Start the scheduled SMS processor for AI follow-up messages
+  startScheduledSmsProcessor();
   
   return httpServer;
 }

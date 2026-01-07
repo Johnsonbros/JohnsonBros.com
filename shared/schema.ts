@@ -1765,3 +1765,92 @@ export type FineTuningExample = {
     tool_call_id?: string;
   }>;
 };
+
+// ============================================
+// SCHEDULED SMS & AI FOLLOW-UP SYSTEM
+// ============================================
+
+// Scheduled SMS messages for delayed follow-up
+export const scheduledSms = pgTable('scheduled_sms', {
+  id: serial('id').primaryKey(),
+  leadId: integer('lead_id').references(() => leads.id),
+  phoneNumber: text('phone_number').notNull(),
+  customerName: text('customer_name').notNull(),
+  serviceDetails: text('service_details'),
+  scheduledFor: timestamp('scheduled_for').notNull(),
+  status: text('status').default('pending').notNull(), // pending, sent, failed, cancelled
+  sentAt: timestamp('sent_at'),
+  messageSid: text('message_sid'), // Twilio message SID
+  errorMessage: text('error_message'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  statusIdx: index('scheduled_sms_status_idx').on(table.status),
+  scheduledForIdx: index('scheduled_sms_scheduled_for_idx').on(table.scheduledFor),
+  phoneIdx: index('scheduled_sms_phone_idx').on(table.phoneNumber),
+}));
+
+// SMS conversation tracking for AI follow-up
+export const smsConversations = pgTable('sms_conversations', {
+  id: serial('id').primaryKey(),
+  phoneNumber: text('phone_number').notNull(),
+  leadId: integer('lead_id').references(() => leads.id),
+  customerId: integer('customer_id').references(() => customers.id),
+  status: text('status').default('active').notNull(), // active, booked, closed, escalated
+  issueDescription: text('issue_description'),
+  bookingNotes: text('booking_notes'),
+  appointmentId: text('appointment_id'), // HousecallPro job ID if booked
+  messageCount: integer('message_count').default(0).notNull(),
+  lastMessageAt: timestamp('last_message_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  phoneIdx: uniqueIndex('sms_conv_phone_idx').on(table.phoneNumber),
+  statusIdx: index('sms_conv_status_idx').on(table.status),
+  leadIdx: index('sms_conv_lead_idx').on(table.leadId),
+}));
+
+// Individual SMS messages in conversations
+export const smsMessages = pgTable('sms_messages', {
+  id: serial('id').primaryKey(),
+  conversationId: integer('conversation_id').references(() => smsConversations.id).notNull(),
+  direction: text('direction').notNull(), // inbound, outbound
+  content: text('content').notNull(),
+  messageSid: text('message_sid'),
+  status: text('status').default('sent'), // sent, delivered, failed
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  conversationIdx: index('sms_msg_conversation_idx').on(table.conversationId),
+  createdAtIdx: index('sms_msg_created_at_idx').on(table.createdAt),
+}));
+
+// Insert schemas for SMS system
+export const insertScheduledSmsSchema = createInsertSchema(scheduledSms).omit({
+  id: true,
+  sentAt: true,
+  messageSid: true,
+  errorMessage: true,
+  createdAt: true,
+});
+
+export const insertSmsConversationSchema = createInsertSchema(smsConversations).omit({
+  id: true,
+  messageCount: true,
+  lastMessageAt: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertSmsMessageSchema = createInsertSchema(smsMessages).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Types for SMS system
+export type ScheduledSms = typeof scheduledSms.$inferSelect;
+export type InsertScheduledSms = z.infer<typeof insertScheduledSmsSchema>;
+
+export type SmsConversation = typeof smsConversations.$inferSelect;
+export type InsertSmsConversation = z.infer<typeof insertSmsConversationSchema>;
+
+export type SmsMessage = typeof smsMessages.$inferSelect;
+export type InsertSmsMessage = z.infer<typeof insertSmsMessageSchema>;
