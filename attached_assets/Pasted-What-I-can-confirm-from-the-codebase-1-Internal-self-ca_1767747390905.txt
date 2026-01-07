@@ -1,0 +1,21 @@
+What I can confirm from the codebase
+1) Internal “self-call” URLs are hard-coded to *.repl.co in production
+In production, the server builds its own host URL using REPL_SLUG + REPL_OWNER and the legacy repl.co domain. This is used for background syncs and other internal calls. If your deployment URL is now on the newer replit.app domain, those internal calls will hit the wrong host and can fail silently. You can see this in the production host logic inside server/routes.ts (used for initial sync and other background tasks).
+
+Why this matters: If the app depends on those internal syncs for “working correctly” (e.g., customer address syncs, heat map, admin reports), the production site may appear partially broken even if the homepage loads.
+
+2) Replit requires secrets to be set in its Secrets UI
+The deployment guide explicitly says environment variables must be set in Replit’s Secrets tab and not in a .env file. Missing secrets will break API features (HousecallPro, Google Maps, etc.), even if the UI loads. Please confirm all required secrets are set per DEPLOYMENT.md instructions.
+
+3) Twilio integration depends on Replit connector env vars
+Twilio integration expects Replit-specific environment variables (REPLIT_CONNECTORS_HOSTNAME, REPL_IDENTITY / WEB_REPL_RENEWAL) and throws if they’re missing. If SMS/voice features appear broken, that’s likely the cause. See server/lib/twilio.ts.
+
+What I observed from the production URL
+When I probed the URL directly with curl -I, I got a 200 OK from the edge, which suggests the app is reachable at the top-level URL. That indicates the issue is likely feature-level (API calls, background sync, or missing secrets) rather than the site being completely down.
+
+Most likely root cause (based on the code)
+If the site “isn’t working correctly,” the strongest candidate is the hard-coded repl.co domain being used for internal server calls in production. If Replit’s production deployments are on *.replit.app, those calls will fail.
+
+Where to look:
+
+server/routes.ts → host computed using ${REPL_SLUG}.${REPL_OWNER}.repl.co in production.
