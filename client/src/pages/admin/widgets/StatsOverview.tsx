@@ -1,9 +1,22 @@
 import { useQuery } from '@tanstack/react-query';
-import { Users, Briefcase, Star, TrendingUp } from 'lucide-react';
+import { Users, Briefcase, UserPlus, FileText } from 'lucide-react';
+import { authenticatedFetch } from '@/lib/auth';
+
+interface DashboardStats {
+  today: {
+    jobsCompleted: number;
+    newCustomers: number;
+    estimatesSent: number;
+  };
+  customers: {
+    total: number;
+  };
+}
 
 export default function StatsOverview() {
-  const { data: stats, isLoading } = useQuery({
+  const { data: stats, isLoading } = useQuery<DashboardStats>({
     queryKey: ['/api/v1/admin/dashboard/stats'],
+    queryFn: () => authenticatedFetch('/api/admin/dashboard/stats'),
     refetchInterval: 120000, // Refresh every 2 minutes
     staleTime: 60000, // Consider data stale after 1 minute
     refetchIntervalInBackground: false, // Don't poll when tab is inactive
@@ -22,23 +35,23 @@ export default function StatsOverview() {
       bgColor: 'bg-blue-100 dark:bg-blue-900',
     },
     {
-      label: 'Jobs Today',
-      value: stats?.jobs?.today || 0,
+      label: 'Jobs Completed Today',
+      value: stats?.today?.jobsCompleted || 0,
       icon: Briefcase,
       color: 'text-green-600',
       bgColor: 'bg-green-100 dark:bg-green-900',
     },
     {
-      label: 'Avg Rating',
-      value: '4.8',
-      icon: Star,
+      label: 'New Customers Today',
+      value: stats?.today?.newCustomers || 0,
+      icon: UserPlus,
       color: 'text-yellow-600',
       bgColor: 'bg-yellow-100 dark:bg-yellow-900',
     },
     {
-      label: 'Completion Rate',
-      value: '96%',
-      icon: TrendingUp,
+      label: 'Estimates Sent Today',
+      value: stats?.today?.estimatesSent || 0,
+      icon: FileText,
       color: 'text-purple-600',
       bgColor: 'bg-purple-100 dark:bg-purple-900',
     },
@@ -54,7 +67,7 @@ export default function StatsOverview() {
               <stat.icon className={`h-3 w-3 ${stat.color}`} />
             </div>
           </div>
-          <p className="text-xl font-bold">{stat.value.toLocaleString()}</p>
+          <p className="text-xl font-bold">{Number(stat.value).toLocaleString()}</p>
         </div>
       ))}
     </div>

@@ -730,20 +730,20 @@ router.get('/dashboard/stats', authenticate, requirePermission('dashboard.view')
     try {
       // Fetch today's jobs from HousecallPro
       todayJobs = await hcpClient.getJobs({
-        scheduled_start_min: today.toISOString().split('T')[0],
-        scheduled_start_max: tomorrow.toISOString().split('T')[0]
+        scheduled_start_min: today.toISOString(),
+        scheduled_start_max: tomorrow.toISOString()
       });
       
       // Fetch this week's jobs
       weekJobs = await hcpClient.getJobs({
-        scheduled_start_min: weekAgo.toISOString().split('T')[0],
-        scheduled_start_max: tomorrow.toISOString().split('T')[0]
+        scheduled_start_min: weekAgo.toISOString(),
+        scheduled_start_max: tomorrow.toISOString()
       });
       
       // Fetch this month's jobs
       monthJobs = await hcpClient.getJobs({
-        scheduled_start_min: monthAgo.toISOString().split('T')[0],
-        scheduled_start_max: tomorrow.toISOString().split('T')[0]
+        scheduled_start_min: monthAgo.toISOString(),
+        scheduled_start_max: tomorrow.toISOString()
       });
       
       // Fetch recent customers
@@ -758,17 +758,23 @@ router.get('/dashboard/stats', authenticate, requirePermission('dashboard.view')
     }
     
     // Calculate real-time stats from HousecallPro data
-    const todayRevenue = todayJobs.reduce((sum, job) => sum + (job.total_amount || 0), 0);
+    const todayRevenue = todayJobs
+      .filter(job => job.work_status === 'completed')
+      .reduce((sum, job) => sum + (job.total_amount || 0), 0);
     const todayJobsCompleted = todayJobs.filter(job => job.work_status === 'completed').length;
     const todayJobsInProgress = todayJobs.filter(job => job.work_status === 'in_progress').length;
     const todayJobsScheduled = todayJobs.filter(job => job.work_status === 'scheduled').length;
     
-    const weekRevenue = weekJobs.reduce((sum, job) => sum + (job.total_amount || 0), 0);
-    const weekJobsCompleted = weekJobs.length;
+    const weekRevenue = weekJobs
+      .filter(job => job.work_status === 'completed')
+      .reduce((sum, job) => sum + (job.total_amount || 0), 0);
+    const weekJobsCompleted = weekJobs.filter(job => job.work_status === 'completed').length;
     const weekNewCustomers = recentCustomers.length;
     
-    const monthRevenue = monthJobs.reduce((sum, job) => sum + (job.total_amount || 0), 0);
-    const monthJobsCompleted = monthJobs.length;
+    const monthRevenue = monthJobs
+      .filter(job => job.work_status === 'completed')
+      .reduce((sum, job) => sum + (job.total_amount || 0), 0);
+    const monthJobsCompleted = monthJobs.filter(job => job.work_status === 'completed').length;
     
     // Get webhook analytics for today (as fallback/additional data)
     const [todayAnalytics] = await db.select({
