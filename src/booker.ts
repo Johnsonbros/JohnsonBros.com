@@ -298,7 +298,13 @@ async function findOrCreateCustomer(input: BookInput, correlationId?: string) {
 }
 
 function toYmd(dateIso: string) {
-  return new Date(dateIso).toISOString().slice(0, 10);
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: COMPANY_TZ,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  });
+  return formatter.format(new Date(dateIso));
 }
 
 function minutesBetween(aIso: string, bIso: string) {
