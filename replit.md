@@ -36,11 +36,12 @@ The frontend is built with React and TypeScript, utilizing Radix UI primitives a
 - **Express Booking System**: Real-time capacity monitoring via HousecallPro, dynamic capacity states (SAME_DAY_FEE_WAIVED, LIMITED_SAME_DAY, NEXT_DAY), smart pricing (fee waivers), time-based rules (e.g., 12 PM cutoff), and weekend logic.
 - **Smart Booking Modal**: Multi-step flow for service selection, date/time, customer info, and confirmation, with new/returning customer detection and direct HousecallPro job creation.
 - **The Family Discount Membership**: $99/year program offering priority scheduling, waived service call fees, 10% discount on all jobs, and 1 referral gift ability per year. Managed through dedicated page at /family-discount with customer portal at /my-plan.
-- **MCP Server / ChatGPT App**: Enables AI assistants (ChatGPT, Claude) to interact with the plumbing business through 11 tools with comprehensive guardrails:
+- **MCP Server / ChatGPT App**: Enables AI assistants (ChatGPT, Claude) to interact with the plumbing business through 12 tools with comprehensive guardrails:
   - `book_service_call` - Book plumbing appointments directly with HousecallPro (with service area validation)
   - `search_availability` - Check available time slots for services
   - `get_quote` - Get instant price estimates based on service type and urgency
   - `get_services` - List all available plumbing services with descriptions
+  - `get_promotions` - Get current deals, discounts, coupons, rebates, and seasonal offers (filters by type, service, active status)
   - `emergency_help` - Provide emergency guidance for plumbing issues (burst pipes, gas leaks, etc.)
   - `lookup_customer` - Look up existing customer by phone/email
   - `get_job_status` - Check appointment/job status
