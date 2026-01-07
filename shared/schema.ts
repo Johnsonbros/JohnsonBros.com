@@ -1854,3 +1854,171 @@ export type InsertSmsConversation = z.infer<typeof insertSmsConversationSchema>;
 
 export type SmsMessage = typeof smsMessages.$inferSelect;
 export type InsertSmsMessage = z.infer<typeof insertSmsMessageSchema>;
+
+// ============================================
+// SERVICE AREA ZIP CODES
+// ============================================
+
+export const serviceAreaZipcodes = pgTable('service_area_zipcodes', {
+  id: serial('id').primaryKey(),
+  zipCode: text('zip_code').notNull().unique(),
+  city: text('city').notNull(),
+  county: text('county').notNull(),
+  state: text('state').notNull().default('MA'),
+  isActive: boolean('is_active').notNull().default(true),
+  notes: text('notes'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  zipCodeIdx: uniqueIndex('service_zip_code_idx').on(table.zipCode),
+  countyIdx: index('service_county_idx').on(table.county),
+  isActiveIdx: index('service_is_active_idx').on(table.isActive),
+}));
+
+export const insertServiceAreaZipcodeSchema = createInsertSchema(serviceAreaZipcodes).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type ServiceAreaZipcode = typeof serviceAreaZipcodes.$inferSelect;
+export type InsertServiceAreaZipcode = z.infer<typeof insertServiceAreaZipcodeSchema>;
+
+// ============================================
+// BUSINESS FAQ DATABASE
+// ============================================
+
+export const businessFaqs = pgTable('business_faqs', {
+  id: serial('id').primaryKey(),
+  question: text('question').notNull(),
+  answer: text('answer').notNull(),
+  category: text('category').notNull(), // pricing, services, policies, hours, service_area, general
+  keywords: text('keywords').array(),
+  priority: integer('priority').default(0).notNull(), // higher = more relevant
+  isActive: boolean('is_active').notNull().default(true),
+  viewCount: integer('view_count').default(0).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  categoryIdx: index('faq_category_idx').on(table.category),
+  isActiveIdx: index('faq_is_active_idx').on(table.isActive),
+  priorityIdx: index('faq_priority_idx').on(table.priority),
+}));
+
+export const insertBusinessFaqSchema = createInsertSchema(businessFaqs).omit({
+  id: true,
+  viewCount: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type BusinessFaq = typeof businessFaqs.$inferSelect;
+export type InsertBusinessFaq = z.infer<typeof insertBusinessFaqSchema>;
+
+// ============================================
+// AI CONVERSATION LOGGING
+// ============================================
+
+export const aiConversations = pgTable('ai_conversations', {
+  id: serial('id').primaryKey(),
+  sessionId: text('session_id').notNull(),
+  channel: text('channel').notNull(), // web_chat, sms, voice, mcp
+  customerPhone: text('customer_phone'),
+  customerName: text('customer_name'),
+  customerEmail: text('customer_email'),
+  issueDescription: text('issue_description'),
+  outcome: text('outcome'), // booked, lead_created, quote_given, faq_answered, referred_to_phone, abandoned
+  sentiment: text('sentiment'), // positive, neutral, negative, frustrated
+  bookingId: text('booking_id'),
+  leadId: integer('lead_id'),
+  messageCount: integer('message_count').default(0).notNull(),
+  toolsUsed: text('tools_used').array(),
+  conversationSummary: text('conversation_summary'),
+  notificationSent: boolean('notification_sent').default(false).notNull(),
+  duration: integer('duration'), // in seconds
+  startedAt: timestamp('started_at').defaultNow().notNull(),
+  endedAt: timestamp('ended_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  sessionIdx: index('ai_conv_session_idx').on(table.sessionId),
+  channelIdx: index('ai_conv_channel_idx').on(table.channel),
+  outcomeIdx: index('ai_conv_outcome_idx').on(table.outcome),
+  sentimentIdx: index('ai_conv_sentiment_idx').on(table.sentiment),
+  createdAtIdx: index('ai_conv_created_at_idx').on(table.createdAt),
+}));
+
+export const insertAiConversationSchema = createInsertSchema(aiConversations).omit({
+  id: true,
+  notificationSent: true,
+  createdAt: true,
+});
+
+export type AiConversation = typeof aiConversations.$inferSelect;
+export type InsertAiConversation = z.infer<typeof insertAiConversationSchema>;
+
+// ============================================
+// MCP REQUEST LOGGING (Rate Limiting & Monitoring)
+// ============================================
+
+export const mcpRequestLogs = pgTable('mcp_request_logs', {
+  id: serial('id').primaryKey(),
+  sessionId: text('session_id').notNull(),
+  ipAddress: text('ip_address'),
+  toolName: text('tool_name').notNull(),
+  requestPayload: json('request_payload'),
+  responseStatus: text('response_status').notNull(), // success, error, rate_limited, blocked
+  errorCode: text('error_code'),
+  executionTimeMs: integer('execution_time_ms'),
+  correlationId: text('correlation_id'),
+  userAgent: text('user_agent'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  sessionIdx: index('mcp_log_session_idx').on(table.sessionId),
+  toolNameIdx: index('mcp_log_tool_idx').on(table.toolName),
+  ipAddressIdx: index('mcp_log_ip_idx').on(table.ipAddress),
+  createdAtIdx: index('mcp_log_created_at_idx').on(table.createdAt),
+  statusIdx: index('mcp_log_status_idx').on(table.responseStatus),
+}));
+
+export const insertMcpRequestLogSchema = createInsertSchema(mcpRequestLogs).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type McpRequestLog = typeof mcpRequestLogs.$inferSelect;
+export type InsertMcpRequestLog = z.infer<typeof insertMcpRequestLogSchema>;
+
+// ============================================
+// BUSINESS NOTIFICATIONS
+// ============================================
+
+export const businessNotifications = pgTable('business_notifications', {
+  id: serial('id').primaryKey(),
+  type: text('type').notNull(), // ai_interaction, out_of_area_lead, abuse_alert, booking_confirmation
+  channel: text('channel').notNull(), // sms, email
+  recipientPhone: text('recipient_phone'),
+  recipientEmail: text('recipient_email'),
+  subject: text('subject'),
+  message: text('message').notNull(),
+  metadata: json('metadata'),
+  status: text('status').default('pending').notNull(), // pending, sent, failed
+  sentAt: timestamp('sent_at'),
+  messageSid: text('message_sid'),
+  errorMessage: text('error_message'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  typeIdx: index('biz_notif_type_idx').on(table.type),
+  statusIdx: index('biz_notif_status_idx').on(table.status),
+  createdAtIdx: index('biz_notif_created_at_idx').on(table.createdAt),
+}));
+
+export const insertBusinessNotificationSchema = createInsertSchema(businessNotifications).omit({
+  id: true,
+  sentAt: true,
+  messageSid: true,
+  errorMessage: true,
+  createdAt: true,
+});
+
+export type BusinessNotification = typeof businessNotifications.$inferSelect;
+export type InsertBusinessNotification = z.infer<typeof insertBusinessNotificationSchema>;
