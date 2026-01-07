@@ -2547,6 +2547,285 @@ server.registerTool(
   }
 );
 
+// Static promotions data - loaded from database in production
+const STATIC_PROMOTIONS = [
+  {
+    id: 1,
+    name: "The Family Discount",
+    type: "bundle",
+    code: "FAMILY99",
+    description: "Annual membership program for $99/year. Members receive priority scheduling, waived service call fees on every visit, 10% discount on all repair work, and one referral gift per year.",
+    short_description: "$99/year membership with priority service & 10% off all work",
+    discount_type: "waived_fee",
+    discount_value: 99,
+    applicable_services: ["service_call", "drain_cleaning", "emergency_repair", "water_heater_service", "pipe_repair"],
+    terms: "Membership valid for one year from purchase date. Service fee waiver applies to standard service calls only.",
+    restrictions: "One membership per household. Must be renewed annually.",
+    is_stackable: false,
+    is_featured: true,
+    benefits: [
+      "Priority scheduling",
+      "Waived $99 service call fee",
+      "10% discount on all labor and parts",
+      "One referral gift per year"
+    ]
+  },
+  {
+    id: 2,
+    name: "Winter Freeze Prevention Special",
+    type: "seasonal",
+    code: "WINTER25",
+    description: "Protect your pipes this winter! Get 15% off pipe insulation and freeze prevention services.",
+    short_description: "15% off pipe insulation & freeze prevention",
+    discount_type: "percentage",
+    discount_value: 15,
+    applicable_services: ["pipe_repair", "general_plumbing"],
+    terms: "Valid for pipe insulation and freeze prevention services only.",
+    restrictions: "Offer valid November through March.",
+    is_stackable: false,
+    is_featured: true,
+    valid_period: "November - March"
+  },
+  {
+    id: 3,
+    name: "First-Time Customer Discount",
+    type: "coupon",
+    code: "WELCOME50",
+    description: "New customers receive $50 off their first service call. Minimum $150 service required.",
+    short_description: "$50 off your first service",
+    discount_type: "fixed_amount",
+    discount_value: 50,
+    minimum_purchase: 150,
+    applicable_services: ["service_call", "drain_cleaning", "emergency_repair", "water_heater_service", "pipe_repair"],
+    terms: "Valid for first-time customers only. Minimum service of $150 required.",
+    restrictions: "One use per household. Cannot be combined with other offers.",
+    is_stackable: false,
+    is_featured: true
+  },
+  {
+    id: 4,
+    name: "Water Heater Replacement Rebate",
+    type: "rebate",
+    code: null,
+    description: "Replace your old water heater and receive a $100 rebate! Includes free old unit removal.",
+    short_description: "$100 rebate on new water heater installation",
+    discount_type: "fixed_amount",
+    discount_value: 100,
+    minimum_purchase: 800,
+    applicable_services: ["water_heater_service"],
+    terms: "Rebate applied after installation. Valid for tank or tankless water heater replacements.",
+    restrictions: "Must be a full replacement, not repair.",
+    is_stackable: true,
+    is_featured: false
+  },
+  {
+    id: 5,
+    name: "Senior Citizen Discount",
+    type: "deal",
+    code: "SENIOR10",
+    description: "Customers 65 and older receive 10% off all services.",
+    short_description: "10% off for customers 65+",
+    discount_type: "percentage",
+    discount_value: 10,
+    applicable_services: ["service_call", "drain_cleaning", "emergency_repair", "water_heater_service", "pipe_repair"],
+    terms: "Valid for customers 65 years and older. Must provide valid ID.",
+    restrictions: "Cannot be combined with The Family Discount.",
+    is_stackable: false,
+    is_featured: false
+  },
+  {
+    id: 6,
+    name: "Military & First Responder Discount",
+    type: "deal",
+    code: "HERO15",
+    description: "Active military, veterans, police, firefighters, and EMTs receive 15% off all services.",
+    short_description: "15% off for military & first responders",
+    discount_type: "percentage",
+    discount_value: 15,
+    applicable_services: ["service_call", "drain_cleaning", "emergency_repair", "water_heater_service", "pipe_repair"],
+    terms: "Valid for active military, veterans, police, firefighters, and EMTs. Valid ID required.",
+    restrictions: "Cannot be combined with other percentage discounts.",
+    is_stackable: false,
+    is_featured: false
+  },
+  {
+    id: 7,
+    name: "Drain Cleaning Bundle",
+    type: "bundle",
+    code: "DRAIN2FOR1",
+    description: "Book multiple drain cleanings - get the second drain cleaned at 50% off!",
+    short_description: "50% off second drain cleaning",
+    discount_type: "percentage",
+    discount_value: 50,
+    applicable_services: ["drain_cleaning"],
+    terms: "Second drain must be cleaned during the same service visit.",
+    restrictions: "Cannot be combined with other drain cleaning offers.",
+    is_stackable: false,
+    is_featured: false
+  },
+  {
+    id: 8,
+    name: "Referral Reward",
+    type: "deal",
+    code: "REFER50",
+    description: "Refer a friend - they get $50 off, you get $50 credit toward your next service!",
+    short_description: "Give $50, Get $50 referral program",
+    discount_type: "fixed_amount",
+    discount_value: 50,
+    applicable_services: ["service_call", "drain_cleaning", "emergency_repair", "water_heater_service", "pipe_repair"],
+    terms: "Referral must complete a paid service of $100 or more.",
+    restrictions: "Referral must be a new customer. Unlimited referrals allowed.",
+    is_stackable: true,
+    is_featured: false
+  }
+];
+
+const GetPromotionsInput = z.object({
+  type: z.enum(["all", "coupon", "rebate", "seasonal", "sale", "deal", "bundle"]).optional().default("all"),
+  service: z.string().optional(),
+  featured_only: z.boolean().optional().default(false),
+  code: z.string().optional()
+});
+
+server.registerTool(
+  "get_promotions",
+  {
+    title: "Get Current Promotions & Deals",
+    description: "Retrieve available promotions, coupons, rebates, seasonal specials, and deals from Johnson Bros. Plumbing. Returns machine-readable JSON with all promotion details including codes, discounts, terms, and restrictions.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        type: { 
+          type: "string", 
+          enum: ["all", "coupon", "rebate", "seasonal", "sale", "deal", "bundle"],
+          description: "Filter by promotion type. Use 'all' to get all promotions."
+        },
+        service: { 
+          type: "string", 
+          description: "Filter promotions applicable to a specific service (e.g., 'drain_cleaning', 'water_heater_service')"
+        },
+        featured_only: { 
+          type: "boolean", 
+          description: "If true, only return featured/highlighted promotions"
+        },
+        code: { 
+          type: "string", 
+          description: "Look up a specific promotion by promo code"
+        }
+      }
+    }
+  } as any,
+  async (raw) => {
+    const correlationId = randomUUID();
+
+    try {
+      const input = GetPromotionsInput.parse(raw || {});
+      log.info({ input, correlationId }, "get_promotions: start");
+
+      let promotions = [...STATIC_PROMOTIONS];
+
+      // Filter by code if provided
+      if (input.code) {
+        const code = input.code.toUpperCase().trim();
+        promotions = promotions.filter(p => p.code?.toUpperCase() === code);
+        
+        if (promotions.length === 0) {
+          return {
+            content: [{
+              type: "text",
+              text: JSON.stringify({
+                success: true,
+                found: false,
+                message: `Promo code '${input.code}' not found or has expired. Contact (617) 479-9911 for current promotions.`,
+                available_codes: STATIC_PROMOTIONS.filter(p => p.code).map(p => p.code),
+                correlation_id: correlationId
+              }, null, 2)
+            }]
+          };
+        }
+      }
+
+      // Filter by type
+      if (input.type && input.type !== "all") {
+        promotions = promotions.filter(p => p.type === input.type);
+      }
+
+      // Filter by applicable service
+      if (input.service) {
+        const service = input.service.toLowerCase().trim();
+        promotions = promotions.filter(p => 
+          p.applicable_services.some(s => s.toLowerCase().includes(service) || service.includes(s.toLowerCase()))
+        );
+      }
+
+      // Filter by featured
+      if (input.featured_only) {
+        promotions = promotions.filter(p => p.is_featured);
+      }
+
+      const result = {
+        success: true,
+        total_promotions: promotions.length,
+        query: {
+          type: input.type,
+          service: input.service,
+          featured_only: input.featured_only,
+          code: input.code
+        },
+        promotions: promotions.map(p => ({
+          id: p.id,
+          name: p.name,
+          type: p.type,
+          code: p.code,
+          description: p.description,
+          short_description: p.short_description,
+          discount: {
+            type: p.discount_type,
+            value: p.discount_value,
+            minimum_purchase: (p as any).minimum_purchase || null
+          },
+          applicable_services: p.applicable_services,
+          terms: p.terms,
+          restrictions: p.restrictions,
+          is_stackable: p.is_stackable,
+          is_featured: p.is_featured,
+          additional_info: {
+            benefits: (p as any).benefits || null,
+            valid_period: (p as any).valid_period || null
+          }
+        })),
+        business_info: {
+          phone: "(617) 479-9911",
+          note: "Mention promotion when booking. Some restrictions apply."
+        },
+        correlation_id: correlationId
+      };
+
+      log.info({ correlationId, count: promotions.length }, "get_promotions: success");
+
+      return {
+        content: [
+          { type: "text", text: JSON.stringify(result, null, 2) }
+        ]
+      };
+
+    } catch (err: any) {
+      log.error({ error: err.message, correlationId }, "get_promotions: error");
+
+      return {
+        content: [{
+          type: "text",
+          text: JSON.stringify({
+            success: false,
+            error: "Unable to retrieve promotions.",
+            correlation_id: correlationId
+          }, null, 2)
+        }]
+      };
+    }
+  }
+);
+
 // Request Review Tool (OFFLINE - documented for future use)
 const RequestReviewInput = z.object({
   first_name: z.string().min(1),

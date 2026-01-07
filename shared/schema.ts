@@ -1916,6 +1916,55 @@ export type BusinessFaq = typeof businessFaqs.$inferSelect;
 export type InsertBusinessFaq = z.infer<typeof insertBusinessFaqSchema>;
 
 // ============================================
+// PROMOTIONS & DEALS DATABASE
+// ============================================
+
+export const promotions = pgTable('promotions', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull(),
+  type: text('type').notNull(), // coupon, rebate, seasonal, sale, deal, bundle
+  code: text('code'), // promo code if applicable
+  description: text('description').notNull(),
+  shortDescription: text('short_description'), // For quick display
+  discountType: text('discount_type').notNull(), // percentage, fixed_amount, free_service, waived_fee
+  discountValue: real('discount_value'), // e.g., 10 for 10% or $10
+  minimumPurchase: real('minimum_purchase'), // minimum order amount to qualify
+  maximumDiscount: real('maximum_discount'), // cap on discount amount
+  applicableServices: text('applicable_services').array(), // which services this applies to
+  terms: text('terms'), // terms and conditions
+  restrictions: text('restrictions'), // any restrictions
+  priority: integer('priority').default(0).notNull(), // higher = show first
+  isStackable: boolean('is_stackable').default(false).notNull(), // can combine with other promos
+  isActive: boolean('is_active').default(true).notNull(),
+  isFeatured: boolean('is_featured').default(false).notNull(), // highlight this promo
+  startDate: timestamp('start_date'),
+  endDate: timestamp('end_date'),
+  usageLimit: integer('usage_limit'), // max times it can be used
+  usageCount: integer('usage_count').default(0).notNull(),
+  metadata: json('metadata'), // flexible JSON for additional data
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  typeIdx: index('promo_type_idx').on(table.type),
+  codeIdx: uniqueIndex('promo_code_idx').on(table.code),
+  isActiveIdx: index('promo_is_active_idx').on(table.isActive),
+  isFeaturedIdx: index('promo_is_featured_idx').on(table.isFeatured),
+  priorityIdx: index('promo_priority_idx').on(table.priority),
+  startDateIdx: index('promo_start_date_idx').on(table.startDate),
+  endDateIdx: index('promo_end_date_idx').on(table.endDate),
+}));
+
+export const insertPromotionSchema = createInsertSchema(promotions).omit({
+  id: true,
+  usageCount: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type Promotion = typeof promotions.$inferSelect;
+export type InsertPromotion = z.infer<typeof insertPromotionSchema>;
+
+// ============================================
 // AI CONVERSATION LOGGING
 // ============================================
 
