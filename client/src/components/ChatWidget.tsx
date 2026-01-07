@@ -126,10 +126,10 @@ export function ChatWidget() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.2 }}
-            className="fixed bottom-36 md:bottom-24 left-4 z-50 w-[380px] max-w-[calc(100vw-2rem)] rounded-2xl shadow-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 overflow-hidden"
+            className="fixed bottom-36 md:bottom-24 left-4 z-50 w-[380px] max-w-[calc(100vw-2rem)] max-h-[calc(100dvh-180px)] md:max-h-[500px] rounded-2xl shadow-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col"
             data-testid="chat-widget-container"
           >
-            <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4">
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 flex-shrink-0">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
@@ -152,7 +152,7 @@ export function ChatWidget() {
               </div>
             </div>
 
-            <ScrollArea className="h-[350px] p-4" ref={scrollRef}>
+            <ScrollArea className="flex-1 min-h-0 p-4" ref={scrollRef}>
               {messages.length === 0 ? (
                 <div className="space-y-4">
                   <div className="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-4">
@@ -216,7 +216,7 @@ export function ChatWidget() {
               )}
             </ScrollArea>
 
-            <form onSubmit={handleSubmit} className="p-4 border-t border-gray-200 dark:border-gray-700">
+            <form onSubmit={handleSubmit} className="p-4 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
               <div className="flex gap-2">
                 <Input
                   ref={inputRef}
