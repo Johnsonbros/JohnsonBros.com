@@ -159,6 +159,78 @@ export default function ABTestingDashboard() {
   const formatPercentage = (value: number) => `${(value * 100).toFixed(2)}%`;
   const formatCurrency = (value: number) => `$${value.toFixed(2)}`;
 
+  const exportResultsToCSV = () => {
+    if (!tests || tests.length === 0) {
+      toast({
+        title: 'No data to export',
+        description: 'There are no A/B tests to export.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // Create CSV header
+    const headers = [
+      'Test Name',
+      'Status',
+      'Variant Name',
+      'Is Control',
+      'Impressions',
+      'Conversions',
+      'Conversion Rate',
+      'Revenue',
+      'Statistical Significance',
+      'Traffic Allocation',
+      'Start Date',
+      'End Date'
+    ];
+
+    // Create CSV rows
+    const rows: string[][] = [];
+    tests.forEach(test => {
+      test.variants.forEach(variant => {
+        const metric = test.metrics?.find(m => m.variantId === variant.variantId);
+        rows.push([
+          test.name,
+          test.status,
+          variant.name,
+          variant.isControl ? 'Yes' : 'No',
+          (metric?.impressions || 0).toString(),
+          (metric?.conversions || 0).toString(),
+          formatPercentage(metric?.conversionRate || 0),
+          formatCurrency(metric?.revenue || 0),
+          metric?.statisticalSignificance ? `${metric.statisticalSignificance}%` : 'N/A',
+          `${(test.trafficAllocation * 100).toFixed(0)}%`,
+          test.startDate ? new Date(test.startDate).toLocaleDateString() : 'N/A',
+          test.endDate ? new Date(test.endDate).toLocaleDateString() : 'N/A'
+        ]);
+      });
+    });
+
+    // Convert to CSV format
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n');
+
+    // Create blob and download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute('href', url);
+    link.setAttribute('download', `ab-test-results-${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast({
+      title: 'Export successful',
+      description: 'A/B test results have been exported to CSV.'
+    });
+  };
+
   return (
     <div className="space-y-6 p-6">
       <div className="flex justify-between items-center">
@@ -166,9 +238,9 @@ export default function ABTestingDashboard() {
           <h1 className="text-3xl font-bold text-gray-900">A/B Testing Dashboard</h1>
           <p className="text-gray-600 mt-1">Manage and monitor your A/B tests</p>
         </div>
-        <Button 
+        <Button
           variant="outline"
-          onClick={() => {/* TODO: Export functionality */}}
+          onClick={exportResultsToCSV}
           data-testid="button-export-results"
         >
           <Download className="h-4 w-4 mr-2" />
