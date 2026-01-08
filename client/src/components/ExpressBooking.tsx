@@ -121,8 +121,10 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
         </div>
       )}
       <div className="container mx-auto px-3 sm:px-4 relative z-10">
-        <div className="grid lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-12 items-center">
-          <div>
+        {/* Desktop: Multi-row grid for alignment | Mobile: Single column */}
+        <div className="grid lg:grid-cols-[1fr_1fr] gap-6 sm:gap-8 lg:gap-x-12 lg:gap-y-6">
+          {/* Row 1: Hero content spans full width on mobile, left column on desktop */}
+          <div className="lg:col-start-1">
             {/* Express, Next Day, or Emergency Badge */}
             {activeCapacity && (
               <div className="mb-4">
@@ -197,7 +199,7 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
             </h2>
 
             {/* Dynamic Subhead */}
-            <p className="text-base sm:text-lg lg:text-xl mb-6 sm:mb-8 text-blue-100">
+            <p className="text-base sm:text-lg lg:text-xl text-blue-100">
               {hasToday 
                 ? "Book now for same-day plumbing, heating, or drain cleaning with the $99 service fee waived."
                 : hasTomorrow
@@ -206,7 +208,60 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
                     ? "Emergency plumbing help is available 24/7 across Quincy, Greater Boston, and the South Shore. Call or text anytime."
                     : "Fast, reliable service with real-time scheduling, trusted by Quincy, Greater Boston, and the South Shore homeowners."}
             </p>
+          </div>
 
+          {/* Row 2: Video card on desktop - aligns with time slot row */}
+          <div className="hidden lg:flex lg:col-start-2 lg:row-start-1 lg:row-span-2 items-end">
+            <div className="relative w-full aspect-video rounded-xl overflow-hidden shadow-xl border-4 border-white/20">
+              <video 
+                src={plumberVideo}
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="w-full h-full object-cover"
+                aria-label="Professional plumber at work"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+              <div className="absolute bottom-3 left-3 flex items-center space-x-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                <span className="text-white text-xs font-bold uppercase tracking-wider">Live Service Feed</span>
+              </div>
+
+              {/* Floating Service Badge - Positioned bottom right of the video on desktop */}
+              <div className={`absolute bottom-4 right-4 bg-white p-4 rounded-xl shadow-lg transform transition-all duration-300 hover:scale-105 z-20 ${hasToday || hasTomorrow ? 'ring-4 ring-green-400 ring-opacity-50' : ''}`}>
+                <div className="text-center">
+                  {hasToday ? (
+                    <>
+                      <Zap className="h-6 w-6 text-green-500 mx-auto mb-1 animate-bounce" />
+                      <div className="text-lg font-bold text-green-600 leading-tight">EXPRESS</div>
+                      <div className="text-[10px] text-gray-600 uppercase font-bold">Same-Day</div>
+                      <div className="mt-1 bg-green-50 rounded p-1">
+                        <div className="text-sm font-bold text-green-600">FREE FEE</div>
+                      </div>
+                    </>
+                  ) : hasTomorrow ? (
+                    <>
+                      <Calendar className="h-6 w-6 text-blue-500 mx-auto mb-1" />
+                      <div className="text-lg font-bold text-blue-600 leading-tight">NEXT DAY</div>
+                      <div className="text-[10px] text-gray-600 uppercase font-bold">Guaranteed</div>
+                      <div className="mt-1 bg-green-50 rounded p-1">
+                        <div className="text-sm font-bold text-green-600">FREE FEE</div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="text-xl font-bold text-johnson-blue">$99</div>
+                      <div className="text-[10px] text-gray-600 uppercase font-bold">Service Fee</div>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Row 2: Time Slot Selection + Key Benefits + CTAs */}
+          <div className="lg:col-start-1">
             {/* Time Slot Selection */}
             {uniqueSlots.length > 0 && (
               <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 mb-6 border border-white/20">
@@ -345,59 +400,8 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
               </div>
             )}
 
-          </div>
-
-          <div className="relative mt-8 lg:mt-0 flex flex-col items-center sm:block self-end">
-            {/* Express Video Preview for Desktop View */}
-            <div className="hidden lg:block relative w-full aspect-video rounded-xl overflow-hidden shadow-xl border-4 border-white/20">
-              <video 
-                src={plumberVideo}
-                autoPlay
-                loop
-                muted
-                playsInline
-                className="w-full h-full object-cover"
-                aria-label="Professional plumber at work"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
-              <div className="absolute bottom-3 left-3 flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                <span className="text-white text-xs font-bold uppercase tracking-wider">Live Service Feed</span>
-              </div>
-
-              {/* Floating Service Badge - Positioned bottom right of the video on desktop */}
-              <div className={`absolute bottom-4 right-4 bg-white p-4 rounded-xl shadow-lg transform transition-all duration-300 hover:scale-105 z-20 ${hasToday || hasTomorrow ? 'ring-4 ring-green-400 ring-opacity-50' : ''}`}>
-                <div className="text-center">
-                  {hasToday ? (
-                    <>
-                      <Zap className="h-6 w-6 text-green-500 mx-auto mb-1 animate-bounce" />
-                      <div className="text-lg font-bold text-green-600 leading-tight">EXPRESS</div>
-                      <div className="text-[10px] text-gray-600 uppercase font-bold">Same-Day</div>
-                      <div className="mt-1 bg-green-50 rounded p-1">
-                        <div className="text-sm font-bold text-green-600">FREE FEE</div>
-                      </div>
-                    </>
-                  ) : hasTomorrow ? (
-                    <>
-                      <Calendar className="h-6 w-6 text-blue-500 mx-auto mb-1" />
-                      <div className="text-lg font-bold text-blue-600 leading-tight">NEXT DAY</div>
-                      <div className="text-[10px] text-gray-600 uppercase font-bold">Guaranteed</div>
-                      <div className="mt-1 bg-green-50 rounded p-1">
-                        <div className="text-sm font-bold text-green-600">FREE FEE</div>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="text-xl font-bold text-johnson-blue">$99</div>
-                      <div className="text-[10px] text-gray-600 uppercase font-bold">Service Fee</div>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Mobile-only Service Badge (Original position) */}
-            <div className={`lg:hidden bg-white p-6 rounded-xl shadow-lg w-full sm:w-auto ${hasToday || hasTomorrow ? 'ring-4 ring-green-400 ring-opacity-50' : ''}`}>
+            {/* Mobile-only Service Badge */}
+            <div className={`lg:hidden bg-white p-6 rounded-xl shadow-lg w-full sm:w-auto mt-6 ${hasToday || hasTomorrow ? 'ring-4 ring-green-400 ring-opacity-50' : ''}`}>
               <div className="text-center">
                 {hasToday ? (
                   <>
