@@ -186,7 +186,7 @@ export default function Blog() {
     queryFn: async ({ queryKey }) => {
       const [_, params] = queryKey as [string, any];
       const searchParams = new URLSearchParams(params);
-      const response = await fetch(`/api/blog/posts?${searchParams}`);
+      const response = await fetch(`/api/v1/blog/posts?${searchParams}`);
       if (!response.ok) throw new Error("Failed to fetch posts");
       return response.json();
     }
@@ -236,8 +236,10 @@ export default function Blog() {
               
               {/* Search Bar */}
               <div className="relative max-w-xl mx-auto">
+                <label htmlFor="blog-search" className="sr-only">Search blog articles</label>
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <Input
+                  id="blog-search"
                   type="text"
                   placeholder="Search articles..."
                   value={searchTerm}

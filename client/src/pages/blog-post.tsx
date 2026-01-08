@@ -44,9 +44,9 @@ export default function BlogPostPage() {
   const { toast } = useToast();
 
   const { data: post, isLoading, error } = useQuery<BlogPostWithKeywords>({
-    queryKey: [`/api/blog/posts/${slug}`],
+    queryKey: [`/api/v1/blog/posts/${slug}`],
     queryFn: async () => {
-      const response = await fetch(`/api/blog/posts/${slug}`);
+      const response = await fetch(`/api/v1/blog/posts/${slug}`);
       if (!response.ok) {
         if (response.status === 404) {
           throw new Error("Post not found");

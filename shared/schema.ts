@@ -464,7 +464,7 @@ export const blogPosts = pgTable('blog_posts', {
   metaTitle: text('meta_title'),
   metaDescription: text('meta_description'),
   author: text('author').notNull().default('Johnson Bros. Plumbing'),
-  status: text('status').notNull().default('draft'), // draft, published, scheduled
+  status: text('status').notNull().default('draft'), // draft, review, published, scheduled
   publishDate: timestamp('publish_date'),
   viewCount: integer('view_count').default(0).notNull(),
   readingTime: integer('reading_time'), // in minutes
@@ -574,7 +574,7 @@ export const insertBlogPostSchema = createInsertSchema(blogPosts)
     title: z.string().min(1, 'Title is required').max(200),
     slug: z.string().min(1, 'Slug is required').regex(/^[a-z0-9-]+$/, 'Slug must contain only lowercase letters, numbers, and hyphens'),
     content: z.string().min(100, 'Content must be at least 100 characters'),
-    status: z.enum(['draft', 'published', 'scheduled']),
+    status: z.enum(['draft', 'review', 'published', 'scheduled']),
     publishDate: z.string().optional(),
     metaTitle: z.string().max(60).optional(),
     metaDescription: z.string().max(160).optional(),

@@ -87,12 +87,32 @@ async function callHousecallAPI(endpoint: string, params: Record<string, any> = 
 const smsVerificationStore = new Map<string, { code: string; expiresAt: number; attempts: number }>();
 const SMS_VERIFICATION_TTL_MS = 10 * 60 * 1000;
 const SMS_VERIFICATION_MAX_ATTEMPTS = 5;
+const BLOG_REVIEW_NOTIFICATION_PHONE = process.env.BUSINESS_NOTIFICATION_PHONE || '+16174799911';
 
 function normalizePhone(phone: string) {
   const digits = phone.replace(/\D/g, "");
   if (digits.length === 10) return `+1${digits}`;
   if (digits.startsWith("1") && digits.length === 11) return `+${digits}`;
   return phone;
+}
+
+async function notifyBlogReviewQueueIfReady() {
+  try {
+    const reviewPosts = await storage.getAllBlogPosts('review');
+    if (reviewPosts.length !== 3) {
+      return;
+    }
+
+    const titles = reviewPosts
+      .slice(0, 3)
+      .map((post) => `• ${post.title}`)
+      .join("\n");
+
+    const message = `📝 Blog review queue ready (3 posts).\n${titles}\nReview in the admin dashboard.`;
+    await sendSMS(normalizePhone(BLOG_REVIEW_NOTIFICATION_PHONE), message);
+  } catch (error) {
+    logError("Failed to send blog review notification:", error);
+  }
 }
 
 // Helper function to generate testimonial text based on service type
@@ -702,6 +722,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
       }
+
+      if (post.status === 'review') {
+        await notifyBlogReviewQueueIfReady();
+      }
       
       res.status(201).json(post);
     } catch (error) {
@@ -718,11 +742,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const postId = parseInt(req.params.id);
       const postData = req.body;
+      const existingPost = await storage.getBlogPost(postId);
       
       const updatedPost = await storage.updateBlogPost(postId, postData);
       
       if (!updatedPost) {
         return res.status(404).json({ error: "Post not found" });
+      }
+
+      if (existingPost?.status !== 'review' && updatedPost.status === 'review') {
+        await notifyBlogReviewQueueIfReady();
       }
       
       res.json(updatedPost);

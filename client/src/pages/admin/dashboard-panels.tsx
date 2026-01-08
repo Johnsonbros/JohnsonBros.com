@@ -1,10 +1,20 @@
-import { useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMemo, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { authenticatedFetch, getAdminUser, isAuthenticated } from '@/lib/auth';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 interface AnalyticsRecord {
   id: number;
@@ -89,8 +99,16 @@ interface AiChatSession {
 interface BlogPost {
   id: number;
   title: string;
-  status: string;
   slug: string;
+  status: string;
+  excerpt: string | null;
+  content: string;
+  featuredImage: string | null;
+  metaTitle: string | null;
+  metaDescription: string | null;
+  author: string | null;
+  category: string | null;
+  tags: string[] | null;
   publishDate: string | null;
   updatedAt: string;
 }
@@ -139,6 +157,53 @@ const formatCurrency = (value?: number | null) => {
   if (value === null || value === undefined) return '—';
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value);
 };
+
+const blogFormSchema = z.object({
+  title: z.string().min(1, 'Title is required').max(200),
+  slug: z.string().min(1, 'Slug is required').regex(/^[a-z0-9-]+$/, 'Slug must contain only lowercase letters, numbers, and hyphens'),
+  status: z.enum(['draft', 'review', 'published', 'scheduled']),
+  excerpt: z.string().max(400).optional().or(z.literal('')),
+  content: z.string().min(100, 'Content must be at least 100 characters'),
+  featuredImage: z.string().url('Featured image must be a valid URL').optional().or(z.literal('')),
+  metaTitle: z.string().max(60).optional().or(z.literal('')),
+  metaDescription: z.string().max(160).optional().or(z.literal('')),
+  author: z.string().max(120).optional().or(z.literal('')),
+  category: z.string().max(80).optional().or(z.literal('')),
+  tags: z.string().optional().or(z.literal('')),
+  keywords: z.string().optional().or(z.literal('')),
+  publishDate: z.string().optional().or(z.literal('')),
+});
+
+type BlogFormValues = z.infer<typeof blogFormSchema>;
+
+const slugify = (value: string) =>
+  value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-');
+
+const toLocalInputValue = (value?: string | null) => {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const offsetMs = date.getTimezoneOffset() * 60 * 1000;
+  return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16);
+};
+
+const toIsoString = (value?: string) => {
+  if (!value) return undefined;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return undefined;
+  return date.toISOString();
+};
+
+const toDelimitedList = (value?: string) =>
+  value
+    ?.split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
 
 export function AnalyticsPanel() {
   const { data, isLoading } = useQuery<AnalyticsOverviewResponse>({
@@ -429,16 +494,142 @@ export function AIAgentPanel() {
 }
 
 export function BlogPanel() {
-  const { data, isLoading } = useQuery<BlogPost[]>({
-    queryKey: ['/api/v1/blog/posts'],
-    queryFn: async () => {
-      const response = await fetch('/api/v1/blog/posts?limit=8');
-      if (!response.ok) {
-        throw new Error('Failed to fetch blog posts');
-      }
-      return response.json();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
+
+  const form = useForm<BlogFormValues>({
+    resolver: zodResolver(blogFormSchema),
+    defaultValues: {
+      title: '',
+      slug: '',
+      status: 'draft',
+      excerpt: '',
+      content: '',
+      featuredImage: '',
+      metaTitle: '',
+      metaDescription: '',
+      author: '',
+      category: '',
+      tags: '',
+      keywords: '',
+      publishDate: '',
     },
   });
+
+  const { data, isLoading } = useQuery<BlogPost[]>({
+    queryKey: ['/api/v1/blog/posts'],
+    queryFn: () => authenticatedFetch('/api/v1/blog/posts?limit=20'),
+    enabled: isAuthenticated(),
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: async (values: BlogFormValues) => {
+      const payload = {
+        title: values.title,
+        slug: values.slug,
+        status: values.status,
+        excerpt: values.excerpt || null,
+        content: values.content,
+        featuredImage: values.featuredImage || null,
+        metaTitle: values.metaTitle || null,
+        metaDescription: values.metaDescription || null,
+        author: values.author || null,
+        category: values.category || null,
+        tags: toDelimitedList(values.tags) || null,
+        publishDate: toIsoString(values.publishDate),
+      };
+
+      if (editingPost) {
+        return authenticatedFetch(`/api/v1/blog/posts/${editingPost.id}`, {
+          method: 'PUT',
+          body: JSON.stringify(payload),
+        });
+      }
+
+      return authenticatedFetch('/api/v1/blog/posts', {
+        method: 'POST',
+        body: JSON.stringify({
+          ...payload,
+          keywords: toDelimitedList(values.keywords) || [],
+        }),
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: editingPost ? 'Blog post updated' : 'Blog post created',
+        description: 'Your changes have been saved.',
+      });
+      setDialogOpen(false);
+      setEditingPost(null);
+      form.reset();
+      queryClient.invalidateQueries({ queryKey: ['/api/v1/blog/posts'] });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Unable to save blog post',
+        description: error instanceof Error ? error.message : 'Please try again.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (postId: number) =>
+      authenticatedFetch(`/api/v1/blog/posts/${postId}`, { method: 'DELETE' }),
+    onSuccess: () => {
+      toast({ title: 'Blog post deleted' });
+      queryClient.invalidateQueries({ queryKey: ['/api/v1/blog/posts'] });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Unable to delete blog post',
+        description: error instanceof Error ? error.message : 'Please try again.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const openForCreate = () => {
+    setEditingPost(null);
+    form.reset({
+      title: '',
+      slug: '',
+      status: 'draft',
+      excerpt: '',
+      content: '',
+      featuredImage: '',
+      metaTitle: '',
+      metaDescription: '',
+      author: '',
+      category: '',
+      tags: '',
+      keywords: '',
+      publishDate: '',
+    });
+    setDialogOpen(true);
+  };
+
+  const openForEdit = (post: BlogPost) => {
+    setEditingPost(post);
+    form.reset({
+      title: post.title,
+      slug: post.slug,
+      status: post.status as BlogFormValues['status'],
+      excerpt: post.excerpt ?? '',
+      content: post.content ?? '',
+      featuredImage: post.featuredImage ?? '',
+      metaTitle: post.metaTitle ?? '',
+      metaDescription: post.metaDescription ?? '',
+      author: post.author ?? '',
+      category: post.category ?? '',
+      tags: post.tags?.join(', ') ?? '',
+      keywords: '',
+      publishDate: toLocalInputValue(post.publishDate),
+    });
+    setDialogOpen(true);
+  };
 
   return (
     <div className="space-y-6">
@@ -447,7 +638,12 @@ export function BlogPanel() {
           <h2 className="text-2xl font-bold text-gray-900">Blog Management</h2>
           <p className="text-sm text-gray-600">Latest content published across the website.</p>
         </div>
-        <Badge variant="outline" className="text-xs">{data?.length ?? 0} posts</Badge>
+        <div className="flex items-center gap-3">
+          <Badge variant="outline" className="text-xs">{data?.length ?? 0} posts</Badge>
+          <Button size="sm" onClick={openForCreate} data-testid="button-new-blog-post">
+            New Post
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -463,6 +659,7 @@ export function BlogPanel() {
                 <TableHead>Status</TableHead>
                 <TableHead>Publish Date</TableHead>
                 <TableHead>Updated</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -470,17 +667,41 @@ export function BlogPanel() {
                 <TableRow key={post.id}>
                   <TableCell className="font-medium">{post.title}</TableCell>
                   <TableCell>
-                    <Badge className={cn('capitalize', post.status === 'published' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700')}>
+                    <Badge
+                      className={cn(
+                        'capitalize',
+                        post.status === 'published'
+                          ? 'bg-green-100 text-green-700'
+                          : post.status === 'review'
+                          ? 'bg-yellow-100 text-yellow-700'
+                          : 'bg-gray-100 text-gray-700'
+                      )}
+                    >
                       {post.status}
                     </Badge>
                   </TableCell>
                   <TableCell>{formatDate(post.publishDate)}</TableCell>
                   <TableCell>{formatDate(post.updatedAt)}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <Button size="sm" variant="outline" onClick={() => openForEdit(post)}>
+                        Edit
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => deleteMutation.mutate(post.id)}
+                        disabled={deleteMutation.isPending}
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))}
               {(!data || data.length === 0) && (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center text-sm text-gray-500">
+                  <TableCell colSpan={5} className="text-center text-sm text-gray-500">
                     {isLoading ? 'Loading posts…' : 'No blog posts found.'}
                   </TableCell>
                 </TableRow>
@@ -489,6 +710,239 @@ export function BlogPanel() {
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog
+        open={dialogOpen}
+        onOpenChange={(open) => {
+          setDialogOpen(open);
+          if (!open) {
+            setEditingPost(null);
+            form.reset();
+          }
+        }}
+      >
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>{editingPost ? 'Edit Blog Post' : 'Create Blog Post'}</DialogTitle>
+            <DialogDescription>
+              Add or update blog content that will appear on the public site.
+            </DialogDescription>
+          </DialogHeader>
+
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit((values) => saveMutation.mutate(values))} className="space-y-6">
+              <div className="grid gap-4 md:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem className="md:col-span-2">
+                      <FormLabel>Title</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Post title" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="slug"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Slug</FormLabel>
+                      <FormControl>
+                        <Input placeholder="example-post-slug" {...field} />
+                      </FormControl>
+                      <FormDescription>Lowercase letters, numbers, and hyphens only.</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="flex items-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => form.setValue('slug', slugify(form.getValues('title')))}
+                  >
+                    Generate from title
+                  </Button>
+                </div>
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Status</FormLabel>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="draft">Draft</SelectItem>
+                          <SelectItem value="review">Review</SelectItem>
+                          <SelectItem value="published">Published</SelectItem>
+                          <SelectItem value="scheduled">Scheduled</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="publishDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Publish Date</FormLabel>
+                      <FormControl>
+                        <Input type="datetime-local" {...field} />
+                      </FormControl>
+                      <FormDescription>Leave blank for drafts.</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="author"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Author</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Johnson Bros. Plumbing" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="category"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Category</FormLabel>
+                      <FormControl>
+                        <Input placeholder="maintenance" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="tags"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tags</FormLabel>
+                      <FormControl>
+                        <Input placeholder="winter, plumbing, tips" {...field} />
+                      </FormControl>
+                      <FormDescription>Comma-separated tags.</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="keywords"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>SEO Keywords</FormLabel>
+                      <FormControl>
+                        <Input placeholder="frozen pipes, quincy plumber" {...field} />
+                      </FormControl>
+                      <FormDescription>Used to track SEO keywords (applied on new posts).</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="excerpt"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Excerpt</FormLabel>
+                    <FormControl>
+                      <Textarea rows={3} placeholder="Short summary for previews" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="content"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Content</FormLabel>
+                    <FormControl>
+                      <Textarea rows={10} placeholder="Write the full post in Markdown..." {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="featuredImage"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Featured Image URL</FormLabel>
+                      <FormControl>
+                        <Input placeholder="https://..." {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="metaTitle"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Meta Title</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Meta title for search results" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="metaDescription"
+                  render={({ field }) => (
+                    <FormItem className="md:col-span-2">
+                      <FormLabel>Meta Description</FormLabel>
+                      <FormControl>
+                        <Textarea rows={3} placeholder="SEO description for search results" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={saveMutation.isPending}>
+                  {saveMutation.isPending ? 'Saving...' : editingPost ? 'Update Post' : 'Create Post'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
