@@ -5,6 +5,9 @@ import { Link } from "wouter";
 import { MapPin, ChevronRight, Phone, Clock, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { InteractiveCoverageMap } from "@/components/InteractiveCoverageMap";
+import BookingModalEnhanced from "@/components/BookingModalEnhanced";
+import { useState } from "react";
 
 const areas = [
   { name: "Quincy", desc: "Our headquarters, serving all neighborhoods with fast response times." },
@@ -22,6 +25,16 @@ const areas = [
 ];
 
 export default function ServiceAreasDirectory() {
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+
+  const openBookingModal = () => {
+    setIsBookingModalOpen(true);
+  };
+
+  const closeBookingModal = () => {
+    setIsBookingModalOpen(false);
+  };
+
   return (
     <>
       <Helmet>
@@ -30,7 +43,7 @@ export default function ServiceAreasDirectory() {
       </Helmet>
 
       <div className="min-h-screen flex flex-col bg-gray-50">
-        <Header onBookService={() => {}} />
+        <Header onBookService={openBookingModal} />
         
         <main className="flex-grow">
           {/* Hero Section */}
@@ -43,6 +56,19 @@ export default function ServiceAreasDirectory() {
               <p className="text-xl text-blue-100 max-w-2xl mx-auto">
                 Providing expert plumbing and drain cleaning services across the South Shore of Massachusetts. We're your local 24/7 plumbing partners.
               </p>
+            </div>
+          </section>
+
+          {/* Interactive Coverage Map */}
+          <section className="py-12 sm:py-16 bg-white">
+            <div className="container mx-auto px-4">
+              <div className="text-center mb-8">
+                <h2 className="text-3xl font-bold text-gray-900 mb-4">Interactive Service Coverage Map</h2>
+                <p className="text-gray-600 max-w-2xl mx-auto">
+                  Click on any marker to see detailed information about our services in that area. Use the "Check My Area" button to verify if we service your location.
+                </p>
+              </div>
+              <InteractiveCoverageMap onBookService={openBookingModal} />
             </div>
           </section>
 
@@ -97,6 +123,12 @@ export default function ServiceAreasDirectory() {
 
         <Footer />
       </div>
+
+      <BookingModalEnhanced
+        isOpen={isBookingModalOpen}
+        onClose={closeBookingModal}
+        preSelectedService={null}
+      />
     </>
   );
 }
