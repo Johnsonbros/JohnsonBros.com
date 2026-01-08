@@ -56,6 +56,9 @@ type ChatCard = {
   description: string;
   action: string;
   icon: JSX.Element;
+  badge?: string;
+  meta?: { label: string; value: string }[];
+  footnote?: string;
 };
 
 type ChatMessage = {
@@ -80,10 +83,54 @@ const ChatSimulator = () => {
           role: "assistant", 
           content: "To speed things up, tap a card to fill key details:",
           cards: [
-            { title: "Service Type", description: "Emergency leak repair", action: "Add service", icon: <Zap className="h-4 w-4" /> },
-            { title: "Service Address", description: "Enter location", action: "Add address", icon: <Home className="h-4 w-4" /> },
-            { title: "Preferred Window", description: "Today, 2–5 PM", action: "Add time", icon: <Calendar className="h-4 w-4" /> },
-            { title: "Contact Info", description: "Phone + email", action: "Add contact", icon: <Phone className="h-4 w-4" /> }
+            {
+              title: "Service Type",
+              description: "Emergency leak repair",
+              action: "Add service",
+              icon: <Zap className="h-4 w-4" />,
+              badge: "Priority",
+              meta: [
+                { label: "Estimated time", value: "90–120 min" },
+                { label: "Typical fix", value: "Valve + seal" }
+              ],
+              footnote: "Same-day response available."
+            },
+            {
+              title: "Service Address",
+              description: "Enter location",
+              action: "Add address",
+              icon: <Home className="h-4 w-4" />,
+              badge: "Coverage",
+              meta: [
+                { label: "Distance", value: "4.2 miles" },
+                { label: "Dispatch zone", value: "North Dallas" }
+              ],
+              footnote: "Technician arrival ETA updates by text."
+            },
+            {
+              title: "Preferred Window",
+              description: "Today, 2–5 PM",
+              action: "Add time",
+              icon: <Calendar className="h-4 w-4" />,
+              badge: "Fast slot",
+              meta: [
+                { label: "Arrival band", value: "2:30–4:30 PM" },
+                { label: "Technicians", value: "2 nearby" }
+              ],
+              footnote: "We’ll lock the earliest slot."
+            },
+            {
+              title: "Contact Info",
+              description: "Phone + email",
+              action: "Add contact",
+              icon: <Phone className="h-4 w-4" />,
+              badge: "Secure",
+              meta: [
+                { label: "Verification", value: "SMS link" },
+                { label: "Updates", value: "Real-time" }
+              ],
+              footnote: "We never share your info."
+            }
           ]
         },
         { role: "assistant", content: "✅ Good news! Johnson Bros has same-day availability. They can arrive between 2-5 PM today." },
@@ -101,10 +148,54 @@ const ChatSimulator = () => {
           role: "assistant", 
           content: "Quick form cards make this easy:",
           cards: [
-            { title: "Service Type", description: "Bathroom drain cleaning", action: "Use this", icon: <Sparkles className="h-4 w-4" /> },
-            { title: "Issue Details", description: "Slow drain + gurgling", action: "Add details", icon: <MessageSquare className="h-4 w-4" /> },
-            { title: "Preferred Day", description: "Tomorrow", action: "Pick day", icon: <Calendar className="h-4 w-4" /> },
-            { title: "Contact Info", description: "Mobile + email", action: "Add contact", icon: <Phone className="h-4 w-4" /> }
+            {
+              title: "Service Type",
+              description: "Bathroom drain cleaning",
+              action: "Use this",
+              icon: <Sparkles className="h-4 w-4" />,
+              badge: "Popular",
+              meta: [
+                { label: "Avg. visit", value: "60–90 min" },
+                { label: "Warranty", value: "90 days" }
+              ],
+              footnote: "Includes inspection + cleanout."
+            },
+            {
+              title: "Issue Details",
+              description: "Slow drain + gurgling",
+              action: "Add details",
+              icon: <MessageSquare className="h-4 w-4" />,
+              badge: "Symptoms",
+              meta: [
+                { label: "Severity", value: "Moderate" },
+                { label: "Likely cause", value: "Soap buildup" }
+              ],
+              footnote: "Sharing symptoms speeds diagnosis."
+            },
+            {
+              title: "Preferred Day",
+              description: "Tomorrow",
+              action: "Pick day",
+              icon: <Calendar className="h-4 w-4" />,
+              badge: "Openings",
+              meta: [
+                { label: "Soonest", value: "9–12 AM" },
+                { label: "Alt. slots", value: "2 more" }
+              ],
+              footnote: "We’ll hold the slot for 15 minutes."
+            },
+            {
+              title: "Contact Info",
+              description: "Mobile + email",
+              action: "Add contact",
+              icon: <Phone className="h-4 w-4" />,
+              badge: "Secure",
+              meta: [
+                { label: "Reminder", value: "2 hours prior" },
+                { label: "Confirmation", value: "Instant" }
+              ],
+              footnote: "Opt-in to text updates."
+            }
           ]
         },
         { role: "assistant", content: "🔍 Checking availability for drain cleaning service..." },
@@ -122,10 +213,54 @@ const ChatSimulator = () => {
           role: "assistant", 
           content: "Prefer cards over typing? Fill these:",
           cards: [
-            { title: "Service Type", description: "Water heater diagnostic", action: "Use this", icon: <Activity className="h-4 w-4" /> },
-            { title: "Symptoms", description: "No hot water", action: "Add symptom", icon: <AlertCircle className="h-4 w-4" /> },
-            { title: "Time Window", description: "Today after 3 PM", action: "Set time", icon: <Calendar className="h-4 w-4" /> },
-            { title: "Contact Info", description: "Text updates", action: "Add contact", icon: <Phone className="h-4 w-4" /> }
+            {
+              title: "Service Type",
+              description: "Water heater diagnostic",
+              action: "Use this",
+              icon: <Activity className="h-4 w-4" />,
+              badge: "Expert",
+              meta: [
+                { label: "Tech match", value: "Specialist" },
+                { label: "Report", value: "Same visit" }
+              ],
+              footnote: "Get repair options on-site."
+            },
+            {
+              title: "Symptoms",
+              description: "No hot water",
+              action: "Add symptom",
+              icon: <AlertCircle className="h-4 w-4" />,
+              badge: "Urgency",
+              meta: [
+                { label: "Risk", value: "High" },
+                { label: "Likely fix", value: "Thermostat" }
+              ],
+              footnote: "Provide any error codes if shown."
+            },
+            {
+              title: "Time Window",
+              description: "Today after 3 PM",
+              action: "Set time",
+              icon: <Calendar className="h-4 w-4" />,
+              badge: "Today",
+              meta: [
+                { label: "ETA window", value: "3–6 PM" },
+                { label: "Availability", value: "1 slot" }
+              ],
+              footnote: "We’ll notify you when the tech is en route."
+            },
+            {
+              title: "Contact Info",
+              description: "Text updates",
+              action: "Add contact",
+              icon: <Phone className="h-4 w-4" />,
+              badge: "Secure",
+              meta: [
+                { label: "Channel", value: "SMS" },
+                { label: "Frequency", value: "Live updates" }
+              ],
+              footnote: "Stop texts anytime."
+            }
           ]
         },
         { role: "assistant", content: "🔧 Checking technician availability for water heater service..." },
@@ -220,7 +355,7 @@ const ChatSimulator = () => {
                     {msg.cards.map((card, cardIndex) => (
                       <div
                         key={`${card.title}-${cardIndex}`}
-                        className="rounded-lg border border-blue-500/40 bg-gradient-to-br from-gray-900 via-gray-900 to-blue-950/60 p-3 shadow-lg"
+                        className="rounded-lg border border-blue-500/40 bg-gradient-to-br from-gray-900 via-gray-900 to-blue-950/60 p-4 shadow-lg transition hover:border-blue-400/60 hover:shadow-xl"
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex items-start gap-3">
@@ -228,7 +363,14 @@ const ChatSimulator = () => {
                               {card.icon}
                             </span>
                             <div>
-                              <p className="text-sm font-semibold text-white">{card.title}</p>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <p className="text-sm font-semibold text-white">{card.title}</p>
+                                {card.badge && (
+                                  <span className="rounded-full border border-blue-400/40 bg-blue-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-blue-200">
+                                    {card.badge}
+                                  </span>
+                                )}
+                              </div>
                               <p className="text-xs text-blue-100/80">{card.description}</p>
                             </div>
                           </div>
@@ -236,6 +378,22 @@ const ChatSimulator = () => {
                             {card.action}
                           </span>
                         </div>
+                        {card.meta && (
+                          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                            {card.meta.map((item) => (
+                              <div
+                                key={`${card.title}-${item.label}`}
+                                className="rounded-md border border-blue-500/20 bg-blue-500/10 px-2 py-1"
+                              >
+                                <p className="text-[10px] uppercase tracking-wide text-blue-200/80">{item.label}</p>
+                                <p className="text-xs font-semibold text-white">{item.value}</p>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {card.footnote && (
+                          <p className="mt-3 text-[11px] text-blue-100/70">{card.footnote}</p>
+                        )}
                       </div>
                     ))}
                   </div>
