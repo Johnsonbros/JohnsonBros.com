@@ -114,14 +114,19 @@ const configuredOrigins = process.env.MCP_CORS_ORIGINS
 
 const defaultDevOrigins = ['http://localhost:5173', 'http://localhost:4173'];
 
+// In production, allow all origins for MCP protocol (AI assistants need open access)
+// Use configured origins if set, otherwise default to open access in production
 const allowedOrigins = configuredOrigins.length > 0
   ? configuredOrigins
-  : (process.env.NODE_ENV === 'production' ? [] : defaultDevOrigins);
+  : (process.env.NODE_ENV === 'production' ? null : defaultDevOrigins); // null = allow all origins
 
 app.use(cors({
   origin(origin, callback) {
     // Allow non-browser requests (no Origin header) for server-to-server calls
     if (!origin) return callback(null, true);
+
+    // If allowedOrigins is null, allow all origins (production default for MCP)
+    if (allowedOrigins === null) return callback(null, true);
 
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
@@ -171,14 +176,16 @@ function clearSession(sessionId: string) {
 // Handle all MCP Streamable HTTP requests (GET, POST, DELETE) on a single endpoint
 app.all('/mcp', async (req, res) => {
   const ipAddress = req.ip || req.socket.remoteAddress || 'unknown';
-  const sessionId = req.headers['mcp-session-id'] as string || 'new-session';
-  
-  log.info({ method: req.method, path: req.path, ip: ipAddress }, 'Received MCP request');
+  // Only use existing session ID if provided in header, otherwise leave undefined for new sessions
+  const sessionId = req.headers['mcp-session-id'] as string | undefined;
+  const rateLimitSessionId = sessionId || `new-${ipAddress}-${Date.now()}`;
 
-  // Apply rate limiting
-  const rateLimitResult = checkMcpRateLimit(sessionId, ipAddress);
+  log.info({ method: req.method, path: req.path, ip: ipAddress, sessionId: sessionId || 'new' }, 'Received MCP request');
+
+  // Apply rate limiting (use IP-based ID for new sessions)
+  const rateLimitResult = checkMcpRateLimit(rateLimitSessionId, ipAddress);
   if (!rateLimitResult.allowed) {
-    log.warn({ sessionId, ip: ipAddress, reason: rateLimitResult.reason }, 'MCP request rate limited');
+    log.warn({ sessionId: rateLimitSessionId, ip: ipAddress, reason: rateLimitResult.reason }, 'MCP request rate limited');
     return res.status(429).json({
       jsonrpc: '2.0',
       error: {
@@ -200,8 +207,19 @@ app.all('/mcp', async (req, res) => {
       if (transports[sessionId].timeout) clearTimeout(transports[sessionId].timeout);
       transports[sessionId].timeout = setTimeout(() => clearSession(sessionId), SESSION_TTL_MS);
       log.info({ sessionId }, 'Reusing existing transport');
+    } else if (sessionId && !transports[sessionId]) {
+      // Client sent a session ID that we don't recognize (expired or invalid)
+      log.warn({ sessionId }, 'Unknown session ID, client should reinitialize');
+      return res.status(400).json({
+        jsonrpc: '2.0',
+        error: {
+          code: -32001,
+          message: 'Session expired or invalid. Please reinitialize the connection.'
+        },
+        id: null
+      });
     } else {
-      // Create new transport with session management
+      // Create new transport with session management (no session ID provided)
       transport = new StreamableHTTPServerTransport({
         sessionIdGenerator: () => randomUUID(),
         onsessioninitialized: async (newSessionId: string) => {
@@ -220,7 +238,7 @@ app.all('/mcp', async (req, res) => {
 
       // Connect the server to the transport
       await server.connect(transport);
-      log.info('Connected MCP server to transport');
+      log.info('Connected MCP server to new transport');
     }
 
     // Handle the request using the transport
@@ -231,7 +249,7 @@ app.all('/mcp', async (req, res) => {
     );
   } catch (error: any) {
     log.error({ error: error.message, stack: error.stack }, 'Error handling MCP request');
-    
+
     if (!res.headersSent) {
       res.status(500).json({
         jsonrpc: '2.0',

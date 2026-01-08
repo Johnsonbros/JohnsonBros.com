@@ -2742,6 +2742,9 @@ Sitemap: ${siteUrl}/sitemap.xml
           "General plumbing service calls"
         ],
         "mcp": {
+          "server_url": "/mcp",
+          "server_port": process.env.MCP_PORT || "3001",
+          "protocol": "streamable-http",
           "manifest_url": "/api/mcp/manifest",
           "documentation_url": "/api/mcp/docs",
           "authentication": {
@@ -2752,6 +2755,12 @@ Sitemap: ${siteUrl}/sitemap.xml
             "client_header": "X-MCP-Client",
             "user_agent_pattern": "mcp-client|ai-assistant",
             "rate_limit": "20 requests per minute"
+          },
+          "connection_info": {
+            "endpoint": "/mcp",
+            "method": "POST",
+            "content_type": "application/json",
+            "session_header": "Mcp-Session-Id"
           }
         },
         "capabilities": {
