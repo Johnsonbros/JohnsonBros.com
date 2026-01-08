@@ -204,10 +204,11 @@ app.use((req, res, next) => {
     log(`serving on port ${port}`);
   });
 
-  // Start MCP Server automatically in development
-  if (app.get("env") === "development") {
+  // Start MCP Server automatically
+  const startMcpServer = async () => {
     const { spawn, exec } = await import('child_process');
     const { promisify } = await import('util');
+    const path = await import('path');
     const execAsync = promisify(exec);
     const mcpPort = process.env.MCP_PORT || '3001';
     
@@ -217,28 +218,48 @@ app.use((req, res, next) => {
       log(`MCP server already running on port ${mcpPort}`);
     } catch (error) {
       // Port is not in use, start the MCP server
-      const mcpServer = spawn('tsx', ['src/mcp-http-server.ts'], {
+      const mcpServerPath = path.resolve(process.cwd(), 'src/mcp-http-server.ts');
+      log(`Starting MCP server from: ${mcpServerPath}`);
+      
+      const mcpServer = spawn('npx', ['tsx', mcpServerPath], {
         env: { ...process.env, MCP_PORT: mcpPort },
-        stdio: 'inherit',
-        detached: false
+        stdio: ['ignore', 'pipe', 'pipe'],
+        detached: false,
+        cwd: process.cwd()
+      });
+
+      mcpServer.stdout?.on('data', (data) => {
+        log(`[MCP] ${data.toString().trim()}`);
+      });
+
+      mcpServer.stderr?.on('data', (data) => {
+        console.error(`[MCP Error] ${data.toString().trim()}`);
       });
 
       mcpServer.on('error', (error) => {
         console.error('Failed to start MCP server:', error);
       });
 
-      // Cleanup on exit
-      process.on('SIGTERM', () => {
-        mcpServer.kill();
-        process.exit(0);
+      mcpServer.on('exit', (code) => {
+        if (code !== 0 && code !== null) {
+          console.error(`MCP server exited with code ${code}`);
+        }
       });
 
-      process.on('SIGINT', () => {
-        mcpServer.kill();
-        process.exit(0);
-      });
+      // Cleanup on exit
+      const cleanup = () => {
+        if (mcpServer && !mcpServer.killed) {
+          mcpServer.kill();
+        }
+      };
+      
+      process.on('SIGTERM', cleanup);
+      process.on('SIGINT', cleanup);
 
       log(`MCP server starting on port ${mcpPort}`);
     }
-  }
+  };
+  
+  // Start MCP server with a small delay to ensure main server is ready
+  setTimeout(startMcpServer, 2000);
 })();
