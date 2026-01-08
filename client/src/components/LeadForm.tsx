@@ -20,6 +20,7 @@ const leadFormSchema = z.object({
   email: z.string().email("Please enter a valid email address").optional().or(z.literal("")),
   address: z.string().min(3, "Address is required"),
   serviceDetails: z.string().min(3, "Please describe what's going on"),
+  isEmergency: z.boolean().optional(),
   smsConsent: z.literal(true, { errorMap: () => ({ message: "You must agree to receive texts" }) }),
   website: z.string().optional(),
 });
@@ -45,6 +46,7 @@ export default function LeadForm({ onSuccess, leadSource = "Website Contact Form
       email: "",
       address: "",
       serviceDetails: "",
+      isEmergency: false,
       smsConsent: undefined as unknown as true,
       website: "",
     },
@@ -65,6 +67,7 @@ export default function LeadForm({ onSuccess, leadSource = "Website Contact Form
           address: data.address,
           notifications_enabled: true,
           sms_consent: data.smsConsent,
+          is_emergency: data.isEmergency || false,
           lead_source: leadSource,
           notes: data.serviceDetails,
           tags: ["Website Lead"],
@@ -226,6 +229,23 @@ export default function LeadForm({ onSuccess, leadSource = "Website Contact Form
             tabIndex={-1}
             autoComplete="off"
           />
+
+          <div className="flex items-start space-x-2 rounded-lg border border-red-100 bg-red-50/70 p-3">
+            <Checkbox
+              id="emergency-flag"
+              className="mt-1"
+              checked={form.watch("isEmergency") === true}
+              onCheckedChange={(checked) => form.setValue("isEmergency", checked === true)}
+              data-testid="checkbox-emergency-flag"
+            />
+            <label
+              htmlFor="emergency-flag"
+              className="text-xs text-red-700 leading-relaxed cursor-pointer"
+              data-testid="label-emergency-flag"
+            >
+              This is an emergency — please route my request to the on-call team right away.
+            </label>
+          </div>
 
           <div className="flex items-start space-x-2">
             <Checkbox
