@@ -4,6 +4,7 @@ import { z } from "zod";
 import { fetch } from "undici";
 import pino from "pino";
 import { randomUUID } from "crypto";
+import { CapacityCalculator } from "../server/src/capacity.js";
 
 const log = pino({ name: "jb-booker", level: process.env.LOG_LEVEL || "info" });
 
@@ -121,6 +122,14 @@ const SearchAvailabilityInput = z.object({
 });
 
 type SearchAvailabilityInput = z.infer<typeof SearchAvailabilityInput>;
+
+const GetCapacityInput = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format").optional(),
+  zip: z.string().optional(),
+  service_area: z.string().optional()
+});
+
+type GetCapacityInput = z.infer<typeof GetCapacityInput>;
 
 function hcpHeaders(correlationId?: string) {
   const apiKey = getHousecallApiKey(correlationId);
@@ -1177,6 +1186,86 @@ registerToolWithDiagnostics(
             error_type: structuredError.type,
             correlation_id: correlationId,
             details: structuredError.details
+          }, null, 2)
+        }]
+      };
+    }
+  }
+);
+
+// Get Capacity Tool
+server.registerTool(
+  "get_capacity",
+  {
+    title: "Get Real-Time Service Capacity",
+    description: "Returns real-time capacity state, score, and express windows to guide optimal scheduling decisions.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        date: { type: "string", format: "date", description: "Preferred date (YYYY-MM-DD). Defaults to today." },
+        zip: { type: "string", description: "Customer zip code for localized capacity messaging" },
+        service_area: { type: "string", description: "City or service area label if zip is not available" }
+      }
+    }
+  } as any,
+  async (raw) => {
+    const correlationId = randomUUID();
+
+    try {
+      const input = GetCapacityInput.parse(raw || {});
+      log.info({ input, correlationId }, "get_capacity: start");
+
+      const calculator = CapacityCalculator.getInstance();
+      let capacity;
+
+      if (input.date) {
+        const date = new Date(`${input.date}T12:00:00`);
+        capacity = await calculator.calculateCapacity(date, input.zip || input.service_area);
+      } else {
+        capacity = await calculator.getTodayCapacity(input.zip || input.service_area);
+      }
+
+      const expressWindows = capacity.unique_express_windows || [];
+      const nextExpressWindow = expressWindows.find((window) => window.available_techs.length > 0) || null;
+
+      const result = {
+        success: true,
+        capacity_state: capacity.overall.state,
+        capacity_score: capacity.overall.score,
+        express_eligible: capacity.express_eligible || false,
+        express_windows: expressWindows,
+        next_express_window: nextExpressWindow,
+        ui_copy: capacity.ui_copy,
+        expires_at: capacity.expires_at,
+        guidance: {
+          recommended_action: capacity.overall.state === "SAME_DAY_FEE_WAIVED"
+            ? "Promote same-day booking and highlight waived fee."
+            : capacity.overall.state === "LIMITED_SAME_DAY"
+            ? "Offer remaining same-day windows and encourage quick booking."
+            : capacity.overall.state === "NEXT_DAY"
+            ? "Steer customer toward next-day scheduling."
+            : "Offer emergency booking only and recommend calling for urgent issues."
+        },
+        correlation_id: correlationId
+      };
+
+      log.info({ result: { state: capacity.overall.state, score: capacity.overall.score }, correlationId }, "get_capacity: success");
+
+      return {
+        content: [
+          { type: "text", text: JSON.stringify(result, null, 2) }
+        ]
+      };
+    } catch (err: any) {
+      log.error({ error: err.message, correlationId }, "get_capacity: error");
+
+      return {
+        content: [{
+          type: "text",
+          text: JSON.stringify({
+            success: false,
+            error: "Unable to retrieve capacity information right now.",
+            correlation_id: correlationId
           }, null, 2)
         }]
       };

@@ -12,6 +12,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { getTimeSlots, createBooking, getServices } from "@/lib/housecallApi";
 import { createCustomer, lookupCustomer } from "@/lib/customerApi";
+import { startSmsVerification, confirmSmsVerification } from "@/lib/smsVerification";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Calendar, X, User, UserPlus, Clock, DollarSign, ChevronLeft, ChevronRight, 
@@ -84,6 +85,23 @@ interface BookingData {
   selectedDate: string;
   selectedTimeSlot: AvailableTimeSlot | null;
   customer: Customer | null;
+  bookingFor: {
+    isForSomeoneElse: boolean;
+    recipient: {
+      name: string;
+      phone: string;
+      relationship: string;
+    };
+  };
+  recurring: {
+    frequency: "one_time" | "monthly" | "quarterly" | "biannual" | "annual";
+    notes: string;
+  };
+  smsVerification: {
+    status: "unverified" | "pending" | "verified";
+    phone: string;
+    verifiedAt?: string;
+  };
   estimatedPrice: {
     base: number;
     additionalFees: number;
@@ -201,6 +219,22 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
     selectedDate: "",
     selectedTimeSlot: null,
     customer: null,
+    bookingFor: {
+      isForSomeoneElse: false,
+      recipient: {
+        name: "",
+        phone: "",
+        relationship: "",
+      },
+    },
+    recurring: {
+      frequency: "one_time",
+      notes: "",
+    },
+    smsVerification: {
+      status: "unverified",
+      phone: "",
+    },
     estimatedPrice: {
       base: 0,
       additionalFees: 0,
@@ -213,6 +247,8 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
   const [isFeeWaived, setIsFeeWaived] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(0);
   const [weekOffset, setWeekOffset] = useState(0);
+  const [smsCode, setSmsCode] = useState("");
+  const [smsError, setSmsError] = useState<string | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -260,6 +296,10 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
     },
   });
 
+  const smsPhone = customerType === "returning"
+    ? returningCustomerForm.watch("phone")
+    : newCustomerForm.watch("phone");
+
   // Load time slots
   const { data: timeSlots, isLoading: timeSlotsLoading } = useQuery({
     queryKey: ["/api/v1/timeslots", bookingData.selectedDate],
@@ -304,6 +344,20 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
       }
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (smsPhone && bookingData.smsVerification.phone && smsPhone !== bookingData.smsVerification.phone) {
+      setBookingData(prev => ({
+        ...prev,
+        smsVerification: {
+          status: "unverified",
+          phone: smsPhone,
+        }
+      }));
+      setSmsCode("");
+      setSmsError(null);
+    }
+  }, [smsPhone, bookingData.smsVerification.phone]);
 
   // Calculate pricing
   useEffect(() => {
@@ -466,6 +520,59 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
     },
   });
 
+  const startSmsVerificationMutation = useMutation({
+    mutationFn: startSmsVerification,
+    onSuccess: (data: any) => {
+      setBookingData(prev => ({
+        ...prev,
+        smsVerification: {
+          status: "pending",
+          phone: data.phone || smsPhone || "",
+        }
+      }));
+      setSmsError(null);
+      toast({
+        title: "Verification sent",
+        description: "Check your phone for the 6-digit code."
+      });
+    },
+    onError: (error: any) => {
+      setSmsError(error?.response?.data?.error || "Unable to send verification code.");
+      toast({
+        title: "Verification failed",
+        description: error?.response?.data?.error || "Unable to send verification code.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const confirmSmsVerificationMutation = useMutation({
+    mutationFn: ({ phone, code }: { phone: string; code: string }) => confirmSmsVerification(phone, code),
+    onSuccess: (data: any) => {
+      setBookingData(prev => ({
+        ...prev,
+        smsVerification: {
+          status: "verified",
+          phone: data.phone || smsPhone || "",
+          verifiedAt: data.verified_at,
+        }
+      }));
+      setSmsError(null);
+      toast({
+        title: "Phone verified",
+        description: "Thanks! Your number is verified."
+      });
+    },
+    onError: (error: any) => {
+      setSmsError(error?.response?.data?.error || "Verification failed.");
+      toast({
+        title: "Verification failed",
+        description: error?.response?.data?.error || "Verification failed.",
+        variant: "destructive",
+      });
+    }
+  });
+
   // Create Booking Mutation
   const createBookingMutation = useMutation({
     mutationFn: createBooking,
@@ -503,6 +610,22 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
       selectedDate: "",
       selectedTimeSlot: null,
       customer: null,
+      bookingFor: {
+        isForSomeoneElse: false,
+        recipient: {
+          name: "",
+          phone: "",
+          relationship: "",
+        },
+      },
+      recurring: {
+        frequency: "one_time",
+        notes: "",
+      },
+      smsVerification: {
+        status: "unverified",
+        phone: "",
+      },
       estimatedPrice: {
         base: 0,
         additionalFees: 0,
@@ -514,6 +637,8 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
     setIsExpressBooking(false);
     setIsFeeWaived(false);
     setProblemDescription("");
+    setSmsCode("");
+    setSmsError(null);
     newCustomerForm.reset();
     returningCustomerForm.reset();
   };
@@ -526,6 +651,18 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
         variant: "destructive",
       });
       return;
+    }
+
+    if (bookingData.bookingFor.isForSomeoneElse) {
+      const recipient = bookingData.bookingFor.recipient;
+      if (!recipient.name || !recipient.phone) {
+        toast({
+          title: "Recipient details needed",
+          description: "Please provide the recipient's name and phone number.",
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     const bookingPayload: any = {
@@ -546,7 +683,13 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
         commonIssues: [],
         duration: "unknown"
       },
-      photos: [],
+      photos: bookingData.photos.map(photo => ({
+        id: photo.id,
+        filename: photo.filename,
+        mimeType: photo.mimeType,
+        base64: photo.base64,
+        size: photo.size,
+      })),
       selectedDate: bookingData.selectedDate,
       selectedTime: new Date(bookingData.selectedTimeSlot.startTime).toLocaleTimeString('en-US', {
         timeZone: 'America/New_York',
@@ -555,6 +698,9 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
         minute: '2-digit'
       }),
       problemDescription: bookingData.problemDetails.description,
+      bookingFor: bookingData.bookingFor,
+      recurring: bookingData.recurring,
+      smsVerification: bookingData.smsVerification,
       estimatedPrice: bookingData.estimatedPrice,
       isExpressBooking,
       isFeeWaived,
@@ -968,6 +1114,86 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
               </div>
             )}
 
+            <div className="space-y-3 mt-4">
+              <Label className="flex items-center gap-2">
+                <Clock className="h-4 w-4 text-johnson-blue" />
+                Recurring maintenance
+              </Label>
+              <Select
+                value={bookingData.recurring.frequency}
+                onValueChange={(value) => setBookingData(prev => ({
+                  ...prev,
+                  recurring: {
+                    ...prev.recurring,
+                    frequency: value as BookingData["recurring"]["frequency"]
+                  }
+                }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="One-time visit" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="one_time">One-time visit</SelectItem>
+                  <SelectItem value="monthly">Monthly</SelectItem>
+                  <SelectItem value="quarterly">Quarterly</SelectItem>
+                  <SelectItem value="biannual">Twice a year</SelectItem>
+                  <SelectItem value="annual">Yearly</SelectItem>
+                </SelectContent>
+              </Select>
+              {bookingData.recurring.frequency !== "one_time" && (
+                <Textarea
+                  placeholder="Any notes about your recurring schedule?"
+                  value={bookingData.recurring.notes}
+                  onChange={(e) => setBookingData(prev => ({
+                    ...prev,
+                    recurring: {
+                      ...prev.recurring,
+                      notes: e.target.value
+                    }
+                  }))}
+                  rows={2}
+                  className="resize-none"
+                />
+              )}
+            </div>
+
+            <div className="space-y-3 mt-4">
+              <Label className="flex items-center gap-2">
+                <Camera className="h-4 w-4 text-johnson-blue" />
+                Add photos (optional)
+              </Label>
+              <Input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handlePhotoUpload}
+              />
+              <p className="text-xs text-gray-500">
+                Upload up to 5 photos (max 5MB each) to help our team prepare.
+              </p>
+              {bookingData.photos.length > 0 && (
+                <div className="grid grid-cols-3 gap-2">
+                  {bookingData.photos.map((photo) => (
+                    <div key={photo.id} className="relative group">
+                      <img
+                        src={photo.preview}
+                        alt={photo.filename}
+                        className="h-20 w-full rounded-md object-cover border"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removePhoto(photo.id)}
+                        className="absolute top-1 right-1 rounded-full bg-white/80 p-1 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                        aria-label={`Remove ${photo.filename}`}
+                      >
+                        <Trash2 className="h-3 w-3 text-red-600" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Service Fee Info */}
             {!(bookingData.selectedDate === new Date(new Date().toLocaleString("en-US", {timeZone: "America/New_York"})).toISOString().split('T')[0] && 
               new Date(new Date().toLocaleString("en-US", {timeZone: "America/New_York"})).getHours() >= 12) && (
@@ -1085,6 +1311,71 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
                       )}
                     />
 
+                    <div className="border border-blue-100 bg-blue-50/60 rounded-lg p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Shield className="h-4 w-4 text-blue-600" />
+                          <span className="text-sm font-medium text-blue-900">Verify phone by SMS</span>
+                        </div>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          disabled={!smsPhone || smsPhone.length < 10 || startSmsVerificationMutation.isPending || bookingData.smsVerification.status === "verified"}
+                          onClick={() => {
+                            if (!smsPhone || smsPhone.length < 10) {
+                              toast({
+                                title: "Phone number required",
+                                description: "Enter a valid phone number to receive a verification code.",
+                                variant: "destructive",
+                              });
+                              return;
+                            }
+                            startSmsVerificationMutation.mutate(smsPhone);
+                          }}
+                        >
+                          {bookingData.smsVerification.status === "verified"
+                            ? "Verified"
+                            : startSmsVerificationMutation.isPending
+                            ? "Sending..."
+                            : "Send Code"}
+                        </Button>
+                      </div>
+
+                      {bookingData.smsVerification.status === "pending" && (
+                        <div className="flex items-center gap-2">
+                          <Input
+                            value={smsCode}
+                            onChange={(e) => setSmsCode(e.target.value)}
+                            placeholder="Enter 6-digit code"
+                            className="h-9"
+                          />
+                          <Button
+                            type="button"
+                            size="sm"
+                            disabled={smsCode.trim().length < 4 || confirmSmsVerificationMutation.isPending}
+                            onClick={() => {
+                              if (!smsPhone) return;
+                              confirmSmsVerificationMutation.mutate({ phone: smsPhone, code: smsCode.trim() });
+                            }}
+                          >
+                            {confirmSmsVerificationMutation.isPending ? "Verifying..." : "Verify"}
+                          </Button>
+                        </div>
+                      )}
+
+                      {bookingData.smsVerification.status === "verified" && (
+                        <div className="flex items-center gap-2 text-sm text-green-700">
+                          <CheckCircle className="h-4 w-4" />
+                          Phone verified
+                        </div>
+                      )}
+
+                      {smsError && (
+                        <p className="text-xs text-red-600">{smsError}</p>
+                      )}
+                    </div>
+
                     <FormField
                       control={newCustomerForm.control}
                       name="address"
@@ -1154,6 +1445,71 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
                       )}
                     />
 
+                    <div className="border border-blue-100 bg-blue-50/60 rounded-lg p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Shield className="h-4 w-4 text-blue-600" />
+                          <span className="text-sm font-medium text-blue-900">Verify phone by SMS</span>
+                        </div>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          disabled={!smsPhone || smsPhone.length < 10 || startSmsVerificationMutation.isPending || bookingData.smsVerification.status === "verified"}
+                          onClick={() => {
+                            if (!smsPhone || smsPhone.length < 10) {
+                              toast({
+                                title: "Phone number required",
+                                description: "Enter a valid phone number to receive a verification code.",
+                                variant: "destructive",
+                              });
+                              return;
+                            }
+                            startSmsVerificationMutation.mutate(smsPhone);
+                          }}
+                        >
+                          {bookingData.smsVerification.status === "verified"
+                            ? "Verified"
+                            : startSmsVerificationMutation.isPending
+                            ? "Sending..."
+                            : "Send Code"}
+                        </Button>
+                      </div>
+
+                      {bookingData.smsVerification.status === "pending" && (
+                        <div className="flex items-center gap-2">
+                          <Input
+                            value={smsCode}
+                            onChange={(e) => setSmsCode(e.target.value)}
+                            placeholder="Enter 6-digit code"
+                            className="h-9"
+                          />
+                          <Button
+                            type="button"
+                            size="sm"
+                            disabled={smsCode.trim().length < 4 || confirmSmsVerificationMutation.isPending}
+                            onClick={() => {
+                              if (!smsPhone) return;
+                              confirmSmsVerificationMutation.mutate({ phone: smsPhone, code: smsCode.trim() });
+                            }}
+                          >
+                            {confirmSmsVerificationMutation.isPending ? "Verifying..." : "Verify"}
+                          </Button>
+                        </div>
+                      )}
+
+                      {bookingData.smsVerification.status === "verified" && (
+                        <div className="flex items-center gap-2 text-sm text-green-700">
+                          <CheckCircle className="h-4 w-4" />
+                          Phone verified
+                        </div>
+                      )}
+
+                      {smsError && (
+                        <p className="text-xs text-red-600">{smsError}</p>
+                      )}
+                    </div>
+
                     <div className="flex justify-between gap-2">
                       <Button
                         type="button"
@@ -1176,6 +1532,80 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
                 </Form>
               </TabsContent>
             </Tabs>
+
+            <div className="border border-gray-200 rounded-lg p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="booking-for-someone-else"
+                  checked={bookingData.bookingFor.isForSomeoneElse}
+                  onCheckedChange={(checked) => setBookingData(prev => ({
+                    ...prev,
+                    bookingFor: {
+                      ...prev.bookingFor,
+                      isForSomeoneElse: Boolean(checked)
+                    }
+                  }))}
+                />
+                <Label htmlFor="booking-for-someone-else">Booking for someone else</Label>
+              </div>
+
+              {bookingData.bookingFor.isForSomeoneElse && (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1">
+                    <Label>Recipient Name</Label>
+                    <Input
+                      value={bookingData.bookingFor.recipient.name}
+                      onChange={(e) => setBookingData(prev => ({
+                        ...prev,
+                        bookingFor: {
+                          ...prev.bookingFor,
+                          recipient: {
+                            ...prev.bookingFor.recipient,
+                            name: e.target.value
+                          }
+                        }
+                      }))}
+                      placeholder="Full name"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Recipient Phone</Label>
+                    <Input
+                      type="tel"
+                      value={bookingData.bookingFor.recipient.phone}
+                      onChange={(e) => setBookingData(prev => ({
+                        ...prev,
+                        bookingFor: {
+                          ...prev.bookingFor,
+                          recipient: {
+                            ...prev.bookingFor.recipient,
+                            phone: e.target.value
+                          }
+                        }
+                      }))}
+                      placeholder="(555) 123-4567"
+                    />
+                  </div>
+                  <div className="space-y-1 sm:col-span-2">
+                    <Label>Relationship (optional)</Label>
+                    <Input
+                      value={bookingData.bookingFor.recipient.relationship}
+                      onChange={(e) => setBookingData(prev => ({
+                        ...prev,
+                        bookingFor: {
+                          ...prev.bookingFor,
+                          recipient: {
+                            ...prev.bookingFor.recipient,
+                            relationship: e.target.value
+                          }
+                        }
+                      }))}
+                      placeholder="Property manager, family member, tenant, etc."
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -1220,6 +1650,38 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
                 <span className="font-medium">Address:</span>
                 <span className="text-right">{bookingData.customer.address}</span>
               </div>
+
+              {bookingData.bookingFor.isForSomeoneElse && (
+                <div className="flex flex-col gap-1">
+                  <span className="font-medium">Booking For:</span>
+                  <span className="text-sm text-gray-600">
+                    {bookingData.bookingFor.recipient.name || "Recipient"} {bookingData.bookingFor.recipient.relationship ? `(${bookingData.bookingFor.recipient.relationship})` : ""}
+                  </span>
+                </div>
+              )}
+
+              {bookingData.recurring.frequency !== "one_time" && (
+                <div className="flex flex-col gap-1">
+                  <span className="font-medium">Recurring:</span>
+                  <span className="text-sm text-gray-600">
+                    {bookingData.recurring.frequency.replace(/_/g, " ")}
+                  </span>
+                </div>
+              )}
+
+              {bookingData.smsVerification.status === "verified" && (
+                <div className="flex items-center gap-2 text-sm text-green-700">
+                  <CheckCircle className="h-4 w-4" />
+                  Phone verified via SMS
+                </div>
+              )}
+
+              {bookingData.photos.length > 0 && (
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Photos:</span>
+                  <span>{bookingData.photos.length} attached</span>
+                </div>
+              )}
 
               {problemDescription && (
                 <div className="flex flex-col gap-1">
