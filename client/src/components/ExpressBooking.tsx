@@ -348,6 +348,24 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
           </div>
 
           <div className="relative mt-8 lg:mt-0 flex flex-col items-center sm:block">
+            {/* Express Video Preview for Desktop View */}
+            <div className="hidden lg:block mb-6 relative w-full aspect-video rounded-xl overflow-hidden shadow-xl border-4 border-white/20">
+              <video 
+                src={plumberVideo}
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="w-full h-full object-cover"
+                aria-label="Professional plumber at work"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+              <div className="absolute bottom-3 left-3 flex items-center space-x-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                <span className="text-white text-xs font-bold uppercase tracking-wider">Live Service Feed</span>
+              </div>
+            </div>
+
             {/* Floating Service Badge */}
             <div className={`bg-white p-6 rounded-xl shadow-lg w-full sm:w-auto ${hasToday || hasTomorrow ? 'ring-4 ring-green-400 ring-opacity-50' : ''}`}>
               <div className="text-center">

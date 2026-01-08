@@ -29,7 +29,7 @@ export function HeroVideoCard() {
   }, []);
 
   return (
-    <div className="container mx-auto px-4 -mt-8 relative z-20 mb-12">
+    <div className="container mx-auto px-4 -mt-8 relative z-20 mb-12 lg:hidden">
       <Card className="overflow-hidden shadow-2xl border-none rounded-2xl bg-johnson-blue">
         <CardContent className="p-0">
           <div ref={videoContainerRef} className="relative w-full aspect-video bg-johnson-blue">
