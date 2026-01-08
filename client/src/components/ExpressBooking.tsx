@@ -223,13 +223,9 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
                 aria-label="Professional plumber at work"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
-              <div className="absolute bottom-3 left-3 flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                <span className="text-white text-xs font-bold uppercase tracking-wider">Live Service Feed</span>
-              </div>
-
-              {/* Floating Service Badge - Positioned bottom right of the video on desktop */}
-              <div className={`absolute bottom-4 right-4 bg-white p-4 rounded-xl shadow-lg transform transition-all duration-300 hover:scale-105 z-20 ${hasToday || hasTomorrow ? 'ring-4 ring-green-400 ring-opacity-50' : ''}`}>
+              
+              {/* Floating Service Badge - Positioned bottom LEFT of the video on desktop (Switched) */}
+              <div className={`absolute bottom-4 left-4 bg-white p-4 rounded-xl shadow-lg transform transition-all duration-300 hover:scale-105 z-20 ${hasToday || hasTomorrow ? 'ring-4 ring-green-400 ring-opacity-50' : ''}`}>
                 <div className="text-center">
                   {hasToday ? (
                     <>
@@ -256,6 +252,11 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
                     </>
                   )}
                 </div>
+              </div>
+
+              <div className="absolute bottom-3 right-3 flex items-center space-x-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                <span className="text-white text-xs font-bold uppercase tracking-wider">Live Service Feed</span>
               </div>
             </div>
           </div>
