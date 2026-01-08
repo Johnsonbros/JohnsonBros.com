@@ -2,8 +2,9 @@ import { useQuery } from "@tanstack/react-query";
 import { getServices } from "@/lib/housecallApi";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertTriangle, Droplets, Flame, Wrench, Settings, Home, ArrowRight, HardHat } from "lucide-react";
+import { AlertTriangle, Droplets, Flame, Wrench, Settings, Home, ArrowRight, HardHat, MapPin } from "lucide-react";
 import { Link } from "wouter";
+import { InteractiveCoverageMap } from "@/components/InteractiveCoverageMap";
 import emergencyImage from "@assets/emergency_1764896582532.jpg";
 import pipeRepairImage from "@assets/NC_1764896608320.jpg";
 import serviceCallImage from "@assets/plumbing_1764896658519.jpg";
@@ -194,6 +195,31 @@ export default function ServicesSection({ onBookService }: ServicesSectionProps)
               );
             })
           )}
+        </div>
+
+        {/* Service Area Map */}
+        <div className="mt-16 pt-12 border-t border-gray-200">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-2 bg-johnson-blue/10 text-johnson-blue text-sm font-semibold px-4 py-2 rounded-full mb-4">
+              <MapPin className="h-4 w-4" />
+              Service Coverage
+            </div>
+            <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">
+              Serving the South Shore & Greater Boston
+            </h3>
+            <p className="text-gray-600 max-w-2xl mx-auto">
+              Fast response times across 14 communities. Click a location to see available services.
+            </p>
+          </div>
+          <InteractiveCoverageMap onBookService={() => onBookService('service_call')} compact />
+          <div className="text-center mt-6">
+            <Link href="/service-areas">
+              <Button variant="outline" className="border-johnson-blue text-johnson-blue hover:bg-johnson-blue hover:text-white">
+                View All Service Areas
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
     </section>

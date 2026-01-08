@@ -13,9 +13,10 @@ import { WhyTrustUs } from "@/components/WhyTrustUs";
 import { Helmet } from "react-helmet-async";
 import { LocalBusinessSchema, FAQSchema, ReviewSchema, BreadcrumbSchema } from "@/components/schema-markup";
 import { commonFAQs, generateSocialMetaTags, staticPageMetadata } from "@/lib/seoMetadata";
-import { Shield, Star, Award, ArrowRight, Users, Sparkles, MessageCircle, CalendarCheck } from "lucide-react";
+import { Shield, Star, Award, ArrowRight, Users, Sparkles, MessageCircle, CalendarCheck, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
+import { InteractiveCoverageMap } from "@/components/InteractiveCoverageMap";
 
 export default function Home() {
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
@@ -349,6 +350,27 @@ export default function Home() {
             </div>
           </section>
           
+          {/* Service Area Map - Desktop Only Widget */}
+          <section aria-label="Service Coverage Map" className="hidden lg:block bg-gradient-to-br from-slate-50 to-white py-16">
+            <div className="container mx-auto px-4">
+              <div className="text-center mb-10">
+                <div className="inline-flex items-center gap-2 bg-johnson-blue/10 text-johnson-blue text-sm font-semibold px-4 py-2 rounded-full mb-4">
+                  <MapPin className="h-4 w-4" />
+                  Where We Serve
+                </div>
+                <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                  Local Plumbers, Fast Response
+                </h2>
+                <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                  Serving 14 communities across the South Shore with response times as fast as 15 minutes.
+                </p>
+              </div>
+              <div className="max-w-6xl mx-auto">
+                <InteractiveCoverageMap onBookService={() => openBookingModal()} />
+              </div>
+            </div>
+          </section>
+
           {/* Truck Section */}
           <aside aria-label="Service Fleet">
             <TruckSection />
