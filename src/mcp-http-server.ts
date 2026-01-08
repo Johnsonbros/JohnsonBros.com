@@ -114,11 +114,14 @@ const configuredOrigins = process.env.MCP_CORS_ORIGINS
 
 const defaultDevOrigins = ['http://localhost:5173', 'http://localhost:4173'];
 
-// In production, allow all origins for MCP protocol (AI assistants need open access)
-// Use configured origins if set, otherwise default to open access in production
-const allowedOrigins = configuredOrigins.length > 0
-  ? configuredOrigins
-  : (process.env.NODE_ENV === 'production' ? null : defaultDevOrigins); // null = allow all origins
+const allowAllOrigins = configuredOrigins.includes('*');
+const allowedOrigins = allowAllOrigins
+  ? null
+  : (configuredOrigins.length > 0 ? configuredOrigins : defaultDevOrigins); // null = allow all origins
+
+if (process.env.NODE_ENV === 'production' && !allowAllOrigins && configuredOrigins.length === 0) {
+  log.warn('MCP_CORS_ORIGINS is not set in production; defaulting to localhost origins only.');
+}
 
 app.use(cors({
   origin(origin, callback) {

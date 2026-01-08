@@ -8,103 +8,39 @@ import { sendSMS } from './twilio';
 import { Logger } from '../src/logger';
 // @ts-ignore - openai-agents types resolution issue
 import { OpenAIAgent } from 'openai-agents';
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+import { callMcpTool, listMcpTools, resetMcpClient } from './mcpClient';
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
 
 // Delay for follow-up SMS: 3 minutes and 57 seconds = 237 seconds
 const FOLLOW_UP_DELAY_MS = 237 * 1000;
 
-// MCP Server URL
-const MCP_SERVER_URL = process.env.MCP_SERVER_URL || 'http://localhost:3001/mcp';
-
-// Store active agent sessions with conversation history
-const agentSessions: Map<string, {
+interface AgentSession {
   messages: ChatCompletionMessageParam[];
   customerName: string;
   serviceDetails: string | null;
   conversationId: number;
-}> = new Map();
+  createdAt: number;
+  lastActivityAt: number;
+}
 
-// MCP Client singleton
-let mcpClient: Client | null = null;
-let mcpTools: any[] = [];
-let mcpConnectionPromise: Promise<Client> | null = null;
+// Store active agent sessions with conversation history
+const agentSessions: Map<string, AgentSession> = new Map();
 
-// Retry configuration for MCP connection
-const MCP_RETRY_CONFIG = {
-  maxRetries: 5,
-  initialDelayMs: 1000,
-  maxDelayMs: 30000,
-  backoffMultiplier: 2
-};
+const SESSION_TTL_MS = 2 * 60 * 60 * 1000;
+const SESSION_CLEANUP_INTERVAL_MS = 30 * 60 * 1000;
 
-// Initialize MCP client connection with retry and exponential backoff
-async function getMcpClient(): Promise<Client> {
-  if (mcpClient) {
-    return mcpClient;
-  }
-
-  // Prevent concurrent connection attempts
-  if (mcpConnectionPromise) {
-    return mcpConnectionPromise;
-  }
-
-  mcpConnectionPromise = connectWithRetry();
-  
-  try {
-    const client = await mcpConnectionPromise;
-    return client;
-  } finally {
-    mcpConnectionPromise = null;
+function cleanupExpiredSessions(): void {
+  const now = Date.now();
+  for (const [sessionId, session] of agentSessions.entries()) {
+    if (now - session.lastActivityAt > SESSION_TTL_MS) {
+      agentSessions.delete(sessionId);
+    }
   }
 }
 
-async function connectWithRetry(): Promise<Client> {
-  let lastError: Error | null = null;
-  let delay = MCP_RETRY_CONFIG.initialDelayMs;
-
-  for (let attempt = 1; attempt <= MCP_RETRY_CONFIG.maxRetries; attempt++) {
-    try {
-      Logger.info(`[SMS Agent] Connecting to MCP server (attempt ${attempt}/${MCP_RETRY_CONFIG.maxRetries})...`);
-      
-      const transport = new StreamableHTTPClientTransport(
-        new URL(MCP_SERVER_URL)
-      );
-
-      const client = new Client({
-        name: 'sms-booking-agent',
-        version: '1.0.0'
-      }, {
-        capabilities: {}
-      });
-
-      await client.connect(transport);
-      
-      // Fetch available tools from MCP server
-      const { tools } = await client.listTools();
-      mcpTools = tools;
-      mcpClient = client;
-      
-      Logger.info(`[SMS Agent] Connected to MCP server with ${tools.length} tools: ${tools.map((t: any) => t.name).join(', ')}`);
-      
-      return client;
-    } catch (error: any) {
-      lastError = error;
-      Logger.warn(`[SMS Agent] MCP connection attempt ${attempt} failed: ${error.message}`);
-      
-      if (attempt < MCP_RETRY_CONFIG.maxRetries) {
-        const jitter = Math.random() * 0.2 * delay;
-        const waitTime = Math.min(delay + jitter, MCP_RETRY_CONFIG.maxDelayMs);
-        Logger.info(`[SMS Agent] Retrying MCP connection in ${Math.round(waitTime)}ms...`);
-        await new Promise(resolve => setTimeout(resolve, waitTime));
-        delay *= MCP_RETRY_CONFIG.backoffMultiplier;
-      }
-    }
-  }
-
-  Logger.error('[SMS Agent] Failed to connect to MCP server after all retries:', { error: lastError?.message });
-  throw lastError || new Error('Failed to connect to MCP server');
+const sessionCleanupInterval = setInterval(cleanupExpiredSessions, SESSION_CLEANUP_INTERVAL_MS);
+if (typeof sessionCleanupInterval.unref === 'function') {
+  sessionCleanupInterval.unref();
 }
 
 // Convert MCP tools to OpenAI function format
@@ -121,22 +57,10 @@ function mcpToolsToOpenAIFunctions(tools: any[]): any[] {
 
 // Execute an MCP tool call
 async function executeMcpTool(name: string, args: any): Promise<string> {
-  const client = await getMcpClient();
-  
   try {
     Logger.info(`[SMS Agent] Executing MCP tool: ${name}`, { args });
-    
-    const result = await client.callTool({
-      name,
-      arguments: args
-    });
-    
-    // Extract text content from result
-    const content = result.content;
-    if (Array.isArray(content)) {
-      return content.map((c: any) => c.text || JSON.stringify(c)).join('\n');
-    }
-    return typeof content === 'string' ? content : JSON.stringify(content);
+    const result = await callMcpTool(name, args);
+    return result.raw;
   } catch (error: any) {
     Logger.error(`[SMS Agent] MCP tool ${name} failed:`, { error: error.message });
     throw error;
@@ -156,9 +80,6 @@ function formatPhoneNumber(phone: string): string {
 
 // Create the SMS booking agent with MCP tools
 async function createSmsAgent(): Promise<OpenAIAgent> {
-  // Ensure MCP client is connected and tools are loaded
-  await getMcpClient();
-  
   const agent = new OpenAIAgent({
     model: 'gpt-4o',
     system_instruction: `You are a friendly, professional AI assistant for Johnson Bros. Plumbing. You're having an SMS conversation with a potential customer to help them schedule a service call.
@@ -330,6 +251,7 @@ async function sendScheduledSms(scheduledId: number): Promise<void> {
     
     // Initialize agent session with context
     const sessionId = `sms_${scheduled.phoneNumber.replace(/\D/g, '')}`;
+    const now = Date.now();
     agentSessions.set(sessionId, {
       messages: [
         {
@@ -343,7 +265,9 @@ async function sendScheduledSms(scheduledId: number): Promise<void> {
       ],
       customerName: scheduled.customerName,
       serviceDetails: scheduled.serviceDetails,
-      conversationId: conversation.id
+      conversationId: conversation.id,
+      createdAt: now,
+      lastActivityAt: now
     });
     
     Logger.info(`[SMS Agent] Sent follow-up SMS to ${scheduled.phoneNumber}, SID: ${result.sid}`);
@@ -401,8 +325,10 @@ export async function handleIncomingSms(
     .where(eq(smsConversations.id, conversation.id));
   
   // Get or create agent session
+  cleanupExpiredSessions();
   let session = agentSessions.get(sessionId);
   if (!session) {
+    const now = Date.now();
     session = {
       messages: [
         {
@@ -412,10 +338,13 @@ export async function handleIncomingSms(
       ],
       customerName: 'Customer',
       serviceDetails: null,
-      conversationId: conversation.id
+      conversationId: conversation.id,
+      createdAt: now,
+      lastActivityAt: now
     };
     agentSessions.set(sessionId, session);
   }
+  session.lastActivityAt = Date.now();
   
   // Add user message to history
   session.messages.push({
@@ -461,17 +390,10 @@ export async function handleIncomingSms(
 }
 
 // Process agent response with MCP tool execution loop
-async function processAgentResponse(session: {
-  messages: ChatCompletionMessageParam[];
-  customerName: string;
-  serviceDetails: string | null;
-  conversationId: number;
-}): Promise<{ message: string; bookingMade: boolean; summary?: string }> {
+async function processAgentResponse(session: AgentSession): Promise<{ message: string; bookingMade: boolean; summary?: string }> {
   const agent = await createSmsAgent();
   
-  // Ensure MCP tools are loaded
-  await getMcpClient();
-  const tools = mcpToolsToOpenAIFunctions(mcpTools);
+  const tools = mcpToolsToOpenAIFunctions(await listMcpTools());
   
   let bookingMade = false;
   let summary: string | undefined;
@@ -547,7 +469,7 @@ async function processAgentResponse(session: {
   
   // Fallback if max iterations reached
   return {
-    message: "I'd be happy to help schedule your service call! Can you tell me more about the plumbing issue you're experiencing?",
+    message: "I'm having a little trouble reaching our booking tools right now. Could you briefly describe the issue and your preferred time, and I'll take it from there?",
     bookingMade: false
   };
 }
@@ -607,8 +529,8 @@ export function startScheduledSmsProcessor(): void {
   const initMcpWithRetry = async (retries = 3, delay = 2000) => {
     for (let i = 0; i < retries; i++) {
       try {
-        await getMcpClient();
-        Logger.info('[SMS Agent] MCP connection established successfully');
+        await listMcpTools();
+        Logger.info('[SMS Agent] MCP tools loaded successfully');
         return;
       } catch (err: any) {
         if (i < retries - 1) {
@@ -622,7 +544,9 @@ export function startScheduledSmsProcessor(): void {
     }
   };
   
-  initMcpWithRetry().catch(() => {});
+  initMcpWithRetry().catch((err: any) => {
+    Logger.error('[SMS Agent] MCP initialization failed:', { error: err?.message || err });
+  });
   
   // Process any missed messages immediately
   processPendingScheduledSms().catch(err => {
@@ -647,11 +571,6 @@ export function stopScheduledSmsProcessor(): void {
     Logger.info('[SMS Agent] Scheduled SMS processor stopped');
   }
   
-  // Close MCP client connection if active
-  if (mcpClient) {
-    mcpClient.close().catch(() => {});
-    mcpClient = null;
-    mcpTools = [];
-    Logger.info('[SMS Agent] MCP client connection closed');
-  }
+  resetMcpClient();
+  Logger.info('[SMS Agent] MCP client connection reset');
 }

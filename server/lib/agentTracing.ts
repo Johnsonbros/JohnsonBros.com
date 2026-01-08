@@ -18,15 +18,32 @@ import { Logger } from "../src/logger";
 
 export class AgentTracingService {
   private static instance: AgentTracingService;
-  private conversationCache: Map<string, number> = new Map();
+  private static readonly CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+  private static readonly CACHE_CLEANUP_INTERVAL_MS = 30 * 60 * 1000;
+  private conversationCache: Map<string, { id: number; lastAccessed: number }> = new Map();
+  private cleanupInterval: NodeJS.Timeout;
 
-  private constructor() {}
+  private constructor() {
+    this.cleanupInterval = setInterval(() => this.cleanupCache(), AgentTracingService.CACHE_CLEANUP_INTERVAL_MS);
+    if (typeof this.cleanupInterval.unref === "function") {
+      this.cleanupInterval.unref();
+    }
+  }
 
   static getInstance(): AgentTracingService {
     if (!AgentTracingService.instance) {
       AgentTracingService.instance = new AgentTracingService();
     }
     return AgentTracingService.instance;
+  }
+
+  private cleanupCache(): void {
+    const now = Date.now();
+    for (const [sessionId, cached] of this.conversationCache.entries()) {
+      if (now - cached.lastAccessed > AgentTracingService.CACHE_TTL_MS) {
+        this.conversationCache.delete(sessionId);
+      }
+    }
   }
 
   async createConversation(data: {
@@ -48,7 +65,7 @@ export class AgentTracingService {
         totalToolCalls: 0,
       }).returning();
 
-      this.conversationCache.set(data.sessionId, conversation.id);
+      this.conversationCache.set(data.sessionId, { id: conversation.id, lastAccessed: Date.now() });
       Logger.debug(`[AgentTracing] Created conversation ${conversation.id} for session ${data.sessionId}`);
       return conversation;
     } catch (error: any) {
@@ -58,8 +75,13 @@ export class AgentTracingService {
   }
 
   async getOrCreateConversation(sessionId: string, channel: string = 'web_chat', systemPrompt?: string): Promise<number> {
-    if (this.conversationCache.has(sessionId)) {
-      return this.conversationCache.get(sessionId)!;
+    const cached = this.conversationCache.get(sessionId);
+    if (cached) {
+      if (Date.now() - cached.lastAccessed < AgentTracingService.CACHE_TTL_MS) {
+        cached.lastAccessed = Date.now();
+        return cached.id;
+      }
+      this.conversationCache.delete(sessionId);
     }
 
     const [existing] = await db.select()
@@ -68,7 +90,7 @@ export class AgentTracingService {
       .limit(1);
 
     if (existing) {
-      this.conversationCache.set(sessionId, existing.id);
+      this.conversationCache.set(sessionId, { id: existing.id, lastAccessed: Date.now() });
       return existing.id;
     }
 
@@ -161,18 +183,18 @@ export class AgentTracingService {
 
   async endConversation(sessionId: string, outcome: string): Promise<void> {
     try {
-      const conversationId = this.conversationCache.get(sessionId);
-      if (!conversationId) return;
+      const cached = this.conversationCache.get(sessionId);
+      if (!cached) return;
 
       await db.update(agentConversations)
         .set({ 
           outcome,
           endedAt: new Date(),
         })
-        .where(eq(agentConversations.id, conversationId));
+        .where(eq(agentConversations.id, cached.id));
 
       this.conversationCache.delete(sessionId);
-      Logger.debug(`[AgentTracing] Ended conversation ${conversationId} with outcome: ${outcome}`);
+      Logger.debug(`[AgentTracing] Ended conversation ${cached.id} with outcome: ${outcome}`);
     } catch (error: any) {
       Logger.error('[AgentTracing] Failed to end conversation:', error);
     }
