@@ -19,7 +19,7 @@ const chatMessageSchema = z.object({
 router.post('/chat', async (req: Request, res: Response) => {
   try {
     const { message, sessionId } = chatMessageSchema.parse(req.body);
-    const session = sessionId || randomUUID();
+    const session = sessionId || `web_${randomUUID()}`;
     
     Logger.info('Web chat message received', { sessionId: session, messageLength: message.length });
     
@@ -95,7 +95,7 @@ router.post('/twilio/sms', async (req: Request, res: Response) => {
     }
     
     // Use phone number as session ID for SMS continuity
-    const sessionId = `sms:${From}`;
+    const sessionId = `sms_${From.replace(/\D/g, '')}`;
     
     // Process through AI chat
     const response = await processChat(sessionId, Body, 'sms');
@@ -137,7 +137,7 @@ router.post('/twilio/voice', async (req: Request, res: Response) => {
     }
     
     // Use phone number as session ID for call continuity
-    const sessionId = `voice:${From}`;
+    const sessionId = CallSid ? `voice_${CallSid}` : `voice_${From.replace(/\D/g, '')}`;
     
     // Process speech through AI chat
     const response = await processChat(sessionId, SpeechResult, 'voice');

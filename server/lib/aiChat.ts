@@ -430,6 +430,34 @@ Never quote full job prices. If asked for pricing, say exactly: "Thanks for aski
 - If unsure about anything, say so and invite them to call (617) 479-9911
 - For any life-threatening emergency, tell them to call 911 first`;
 
+const CHANNEL_GUIDANCE: Record<'web' | 'sms' | 'voice', { maxTokens: number; promptSuffix: string }> = {
+  web: {
+    maxTokens: 500,
+    promptSuffix: `\n\n## Channel Guidance (Web Chat)
+- You can use short paragraphs or bullets for clarity.
+- It's okay to share links when relevant (Google review link after booking).
+- Ask one question at a time and keep responses under ~5 sentences.`,
+  },
+  sms: {
+    maxTokens: 260,
+    promptSuffix: `\n\n## Channel Guidance (SMS)
+- Keep replies short and friendly; aim for ~1-2 short sentences.
+- Ask one question at a time.
+- Avoid long lists, URLs, or heavy formatting. If a URL is essential, keep it short.`,
+  },
+  voice: {
+    maxTokens: 220,
+    promptSuffix: `\n\n## Channel Guidance (Voice)
+- Keep responses concise and easy to say out loud (1-2 short sentences).
+- Avoid long lists, complex punctuation, or URLs.
+- Confirm key details briefly and ask one question at a time.`,
+  },
+};
+
+function getChannelPrompt(channel: 'web' | 'sms' | 'voice'): string {
+  return `${SYSTEM_PROMPT}${CHANNEL_GUIDANCE[channel].promptSuffix}`;
+}
+
 // Store conversation history per session
 const conversationHistory: Map<string, OpenAI.Chat.Completions.ChatCompletionMessageParam[]> = new Map();
 
@@ -449,13 +477,15 @@ export async function processChat(
   channel: 'web' | 'sms' | 'voice' = 'web'
 ): Promise<ChatResponse> {
   const channelMap = { web: 'web_chat', sms: 'sms', voice: 'voice' } as const;
+  const channelConfig = CHANNEL_GUIDANCE[channel];
+  const systemPrompt = getChannelPrompt(channel);
   
   try {
     // Ensure conversation is tracked
     const conversationId = await agentTracing.getOrCreateConversation(
       sessionId, 
       channelMap[channel],
-      SYSTEM_PROMPT
+      systemPrompt
     );
     
     // Get or create conversation history
@@ -463,7 +493,7 @@ export async function processChat(
     
     // Add system prompt if new conversation
     if (history.length === 0) {
-      history.push({ role: 'system', content: SYSTEM_PROMPT });
+      history.push({ role: 'system', content: systemPrompt });
     }
     
     // Add user message
@@ -486,7 +516,7 @@ export async function processChat(
       messages: history,
       tools: PLUMBING_TOOLS,
       tool_choice: 'auto',
-      max_tokens: channel === 'sms' ? 300 : 500
+      max_tokens: channelConfig.maxTokens
     });
     
     const assistantMessage = response.choices[0].message;
@@ -569,7 +599,7 @@ export async function processChat(
       const finalResponse = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: history,
-        max_tokens: channel === 'sms' ? 300 : 500
+        max_tokens: channelConfig.maxTokens
       });
       
       const finalMessage = finalResponse.choices[0].message;
