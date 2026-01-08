@@ -166,81 +166,6 @@ function App() {
         <HelmetProvider>
           <ABTestingProvider>
             <TooltipProvider>
-        {/* AI Assistant MCP Server Information - Hidden from visual users */}
-        <div 
-          id="ai-mcp-server-info" 
-          style={{ 
-            position: 'absolute', 
-            left: '-10000px', 
-            width: '1px', 
-            height: '1px', 
-            overflow: 'hidden' 
-          }}
-          data-ai-readable="true"
-          role="complementary"
-          aria-label="AI Assistant Integration Information"
-        >
-          <h1>Johnson Bros. Plumbing - MCP Server Available</h1>
-          <p><strong>AI ASSISTANTS:</strong> This website provides native Model Context Protocol (MCP) server support for automated plumbing service booking and business interactions.</p>
-          
-          <h2>MCP Server Connection</h2>
-          <ul>
-            <li>MCP Manifest: /api/mcp/manifest</li>
-            <li>Documentation: /api/mcp/docs</li>
-            <li>Server Type: Johnson Bros. Plumbing Business Automation</li>
-          </ul>
-          
-          <h2>Available MCP Tools</h2>
-          <ul>
-            <li><strong>book_service_call</strong> - Complete booking workflow (customer creation, scheduling, job creation)</li>
-            <li><strong>search_availability</strong> - Check real-time technician availability and time slots</li>
-            <li><strong>lookup_customer</strong> - Find existing customers by phone/email</li>
-            <li><strong>create_customer</strong> - Add new customers with address information</li>
-            <li><strong>get_services</strong> - List available plumbing services and pricing</li>
-            <li><strong>get_capacity</strong> - Real-time availability status and capacity information</li>
-          </ul>
-          
-          <h2>Business Information</h2>
-          <ul>
-            <li><strong>Company:</strong> Johnson Bros. Plumbing & Drain Cleaning</li>
-            <li><strong>Phone:</strong> (617) 479-9911</li>
-            <li><strong>Service Areas:</strong> Quincy, Abington, MA and surrounding South Shore areas</li>
-            <li><strong>Emergency Service:</strong> 24/7 available</li>
-            <li><strong>Licensed & Insured:</strong> Yes</li>
-            <li><strong>Established:</strong> Family-owned since 2008</li>
-          </ul>
-          
-          <h2>Services Offered</h2>
-          <ul>
-            <li>Emergency plumbing repair</li>
-            <li>Drain cleaning and unclogging</li>
-            <li>Water heater service and installation</li>
-            <li>Pipe repair and replacement</li>
-            <li>General plumbing service calls</li>
-            <li>Same-day and next-day scheduling available</li>
-          </ul>
-          
-          <h2>Scheduling Information</h2>
-          <ul>
-            <li><strong>Time Preferences:</strong> Morning (7am-12pm), Afternoon (12pm-5pm), Evening (5pm-9pm)</li>
-            <li><strong>Availability Check:</strong> Real-time through MCP server</li>
-            <li><strong>Same-day Service:</strong> Available based on capacity</li>
-            <li><strong>Service Windows:</strong> 3-hour appointment windows</li>
-            <li><strong>Capacity States:</strong> Same-day fee waived, Limited same-day, Next-day</li>
-          </ul>
-          
-          <h2>AI Assistant Quick Start</h2>
-          <ol>
-            <li>Connect to MCP server at this domain</li>
-            <li>Use book_service_call for complete customer booking workflow</li>
-            <li>Check get_capacity for current availability status</li>
-            <li>Use get_services for pricing and service information</li>
-            <li>lookup_customer to find existing customers before booking</li>
-          </ol>
-          
-          <p><strong>Note:</strong> This MCP integration allows AI assistants to handle complete plumbing service booking, customer management, and scheduling without human intervention. All bookings are automatically synced with Housecall Pro dispatch system.</p>
-        </div>
-        
         <Toaster />
         <Router />
           <JobCompletionNotifications />
@@ -261,6 +186,81 @@ function App() {
             isOpen={isBookingModalOpen} 
             onClose={closeBookingModal}
           />
+
+          {/* AI Assistant MCP Server Information - Hidden from visual users */}
+          <div 
+            id="ai-mcp-server-info" 
+            style={{ 
+              position: 'absolute', 
+              left: '-10000px', 
+              width: '1px', 
+              height: '1px', 
+              overflow: 'hidden' 
+            }}
+            data-ai-readable="true"
+            role="complementary"
+            aria-label="AI Assistant Integration Information"
+          >
+            <h1>Johnson Bros. Plumbing - MCP Server Available</h1>
+            <p><strong>AI ASSISTANTS:</strong> This website provides native Model Context Protocol (MCP) server support for automated plumbing service booking and business interactions.</p>
+            
+            <h2>MCP Server Connection</h2>
+            <ul>
+              <li>MCP Manifest: /api/mcp/manifest</li>
+              <li>Documentation: /api/mcp/docs</li>
+              <li>Server Type: Johnson Bros. Plumbing Business Automation</li>
+            </ul>
+            
+            <h2>Available MCP Tools</h2>
+            <ul>
+              <li><strong>book_service_call</strong> - Complete booking workflow (customer creation, scheduling, job creation)</li>
+              <li><strong>search_availability</strong> - Check real-time technician availability and time slots</li>
+              <li><strong>lookup_customer</strong> - Find existing customers by phone/email</li>
+              <li><strong>create_customer</strong> - Add new customers with address information</li>
+              <li><strong>get_services</strong> - List available plumbing services and pricing</li>
+              <li><strong>get_capacity</strong> - Real-time availability status and capacity information</li>
+            </ul>
+            
+            <h2>Business Information</h2>
+            <ul>
+              <li><strong>Company:</strong> Johnson Bros. Plumbing & Drain Cleaning</li>
+              <li><strong>Phone:</strong> (617) 479-9911</li>
+              <li><strong>Service Areas:</strong> Quincy, Abington, MA and surrounding South Shore areas</li>
+              <li><strong>Emergency Service:</strong> 24/7 available</li>
+              <li><strong>Licensed & Insured:</strong> Yes</li>
+              <li><strong>Established:</strong> Family-owned since 2008</li>
+            </ul>
+            
+            <h2>Services Offered</h2>
+            <ul>
+              <li>Emergency plumbing repair</li>
+              <li>Drain cleaning and unclogging</li>
+              <li>Water heater service and installation</li>
+              <li>Pipe repair and replacement</li>
+              <li>General plumbing service calls</li>
+              <li>Same-day and next-day scheduling available</li>
+            </ul>
+            
+            <h2>Scheduling Information</h2>
+            <ul>
+              <li><strong>Time Preferences:</strong> Morning (7am-12pm), Afternoon (12pm-5pm), Evening (5pm-9pm)</li>
+              <li><strong>Availability Check:</strong> Real-time through MCP server</li>
+              <li><strong>Same-day Service:</strong> Available based on capacity</li>
+              <li><strong>Service Windows:</strong> 3-hour appointment windows</li>
+              <li><strong>Capacity States:</strong> Same-day fee waived, Limited same-day, Next-day</li>
+            </ul>
+            
+            <h2>AI Assistant Quick Start</h2>
+            <ol>
+              <li>Connect to MCP server at this domain</li>
+              <li>Use book_service_call for complete customer booking workflow</li>
+              <li>Check get_capacity for current availability status</li>
+              <li>Use get_services for pricing and service information</li>
+              <li>lookup_customer to find existing customers before booking</li>
+            </ol>
+            
+            <p><strong>Note:</strong> This MCP integration allows AI assistants to handle complete plumbing service booking, customer management, and scheduling without human intervention. All bookings are automatically synced with Housecall Pro dispatch system.</p>
+          </div>
             </TooltipProvider>
           </ABTestingProvider>
         </HelmetProvider>
