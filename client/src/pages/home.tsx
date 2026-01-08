@@ -1,5 +1,6 @@
 import Header from "@/components/Header";
 import ExpressBooking from "@/components/ExpressBooking";
+import { HeroVideoCard } from "@/components/HeroVideoCard";
 import ServicesSection from "@/components/ServicesSection";
 import TruckSection from "@/components/TruckSection";
 import GoogleReviewsSection from "@/components/GoogleReviewsSection";
@@ -136,6 +137,9 @@ export default function Home() {
           <section aria-label="Express Booking">
             <ExpressBooking onBookService={() => openBookingModal()} />
           </section>
+
+          {/* Hero Video Section */}
+          <HeroVideoCard />
           
           {/* Services Section */}
           <section aria-label="Our Services" id="services">

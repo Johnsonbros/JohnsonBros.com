@@ -72,6 +72,7 @@ const AIBooking = lazy(() => import("@/pages/ai-booking"));
 // The Family Discount & Member Portal Pages
 const FamilyDiscount = lazy(() => import("@/pages/family-discount"));
 const MyPlan = lazy(() => import("@/pages/my-plan"));
+const ReviewsPage = lazy(() => import("@/pages/reviews"));
 
 function ScrollToTop() {
   const [location] = useLocation();
@@ -103,6 +104,7 @@ function Router() {
           <Route path="/referral" component={Referral} />
           <Route path="/family-discount" component={FamilyDiscount} />
           <Route path="/my-plan" component={MyPlan} />
+          <Route path="/reviews" component={ReviewsPage} />
           <Route path="/webhooks" component={Webhooks} />
           <Route path="/check-ins" component={CheckIns} />
           <Route path="/admin/login" component={AdminLogin} />

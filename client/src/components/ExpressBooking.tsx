@@ -46,30 +46,6 @@ interface CapacityData {
 export default function ExpressBooking({ onBookService }: HeroSectionProps) {
   const [userZip, setUserZip] = useState<string | null>(null);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<ExpressWindow | null>(null);
-  const [videoLoaded, setVideoLoaded] = useState(false);
-  const [videoInView, setVideoInView] = useState(false);
-  const videoContainerRef = useRef<HTMLDivElement>(null);
-
-  // Lazy load video when it comes into view
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setVideoInView(true);
-            observer.disconnect();
-          }
-        });
-      },
-      { rootMargin: '200px', threshold: 0.1 }
-    );
-
-    if (videoContainerRef.current) {
-      observer.observe(videoContainerRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, []);
   
   // Fetch today's capacity data (using v1 API endpoint)
   const { data: todayCapacity } = useQuery<CapacityData>({
@@ -372,8 +348,8 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
           </div>
 
           <div className="relative mt-8 lg:mt-0 flex flex-col items-center sm:block">
-            {/* Floating Service Badge - Now above video on mobile */}
-            <div className={`mb-6 sm:mb-0 sm:absolute sm:bottom-2 sm:left-2 sm:-bottom-6 sm:-left-6 bg-white p-6 rounded-xl shadow-lg w-full sm:w-auto ${hasToday || hasTomorrow ? 'ring-4 ring-green-400 ring-opacity-50' : ''}`}>
+            {/* Floating Service Badge */}
+            <div className={`bg-white p-6 rounded-xl shadow-lg w-full sm:w-auto ${hasToday || hasTomorrow ? 'ring-4 ring-green-400 ring-opacity-50' : ''}`}>
               <div className="text-center">
                 {hasToday ? (
                   <>
@@ -407,32 +383,6 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
                   </>
                 )}
               </div>
-            </div>
-
-            {/* Professional plumber working video - lazy loaded with poster */}
-            <div ref={videoContainerRef} className="relative rounded-xl shadow-2xl w-full overflow-hidden bg-gradient-to-br from-johnson-blue to-johnson-teal aspect-video">
-              {!videoLoaded && (
-                <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-johnson-blue to-johnson-teal">
-                  <div className="text-center text-white">
-                    <div className="w-16 h-16 border-4 border-white/30 border-t-white rounded-full animate-spin mx-auto mb-3" />
-                    <p className="text-sm text-white/70">Loading video...</p>
-                  </div>
-                </div>
-              )}
-              {videoInView && (
-                <video 
-                  src={plumberVideo}
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  preload="none"
-                  onLoadedData={() => setVideoLoaded(true)}
-                  onCanPlay={() => setVideoLoaded(true)}
-                  className={`w-full h-full object-cover transition-opacity duration-500 ${videoLoaded ? 'opacity-100' : 'opacity-0'}`}
-                  aria-label="Professional plumber at work"
-                />
-              )}
             </div>
           </div>
         </div>

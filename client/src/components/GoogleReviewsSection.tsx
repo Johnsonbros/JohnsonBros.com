@@ -1,10 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
-import { Star, ExternalLink, MapPin, Clock } from "lucide-react";
+import { Star, ExternalLink, MapPin, Clock, ChevronLeft, ChevronRight, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import useEmblaCarousel from 'embla-carousel-react';
+import Autoplay from 'embla-carousel-autoplay';
+import { Link } from "wouter";
 
 interface GoogleReview {
   id: string;
@@ -37,14 +40,17 @@ export default function GoogleReviewsSection() {
     return () => clearTimeout(timer);
   }, []);
   
-  const { data: googleData, isLoading, error } = useQuery<GoogleReviewsData>({
-    queryKey: ["/api/v1/google-reviews"],
-    refetchOnWindowFocus: true,
-    enabled: shouldFetch,
-    staleTime: 5 * 60 * 1000,
-  });
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, align: 'start' }, [Autoplay()]);
 
-  const formatTimeAgo = (dateString: string) => {
+  const scrollPrev = useCallback(() => {
+    if (emblaApi) emblaApi.scrollPrev();
+  }, [emblaApi]);
+
+  const scrollNext = useCallback(() => {
+    if (emblaApi) emblaApi.scrollNext();
+  }, [emblaApi]);
+
+  if (error) {
     const now = new Date();
     const date = new Date(dateString);
     const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
@@ -131,154 +137,71 @@ export default function GoogleReviewsSection() {
 
   return (
     <section className="py-16 bg-white" data-testid="google-reviews-section">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header with ratings summary */}
-        <div className="text-center mb-16">
-          <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl lg:text-5xl mb-4" data-testid="reviews-title">
-            Real Google Reviews from Our Customers
-          </h2>
-          <p className="text-lg text-gray-600 mb-12 max-w-3xl mx-auto">
-            See what our satisfied customers are saying about our exceptional plumbing services across Massachusetts
-          </p>
-          
-          {/* Enhanced rating display for desktop */}
-          <div className="bg-gradient-to-r from-green-50 via-blue-50 to-green-50 rounded-2xl p-8 lg:p-12 mb-8 shadow-lg border border-green-100">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12 items-center max-w-4xl mx-auto">
-              
-              {/* Average Rating - Larger on desktop */}
-              <div className="text-center">
-                <div className="flex justify-center space-x-1 mb-4">
-                  {renderStars(Math.round(googleData.averageRating))}
-                </div>
-                <div className="text-4xl lg:text-5xl font-bold text-gray-900 mb-2" data-testid="average-rating">
-                  {googleData.averageRating.toFixed(1)}
-                </div>
-                <div className="text-sm lg:text-base text-gray-600 font-medium">Average Rating</div>
+      <div className="container mx-auto px-4">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
+          <div>
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">Customer Success Stories</h2>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-1">
+                {renderStars(5)}
+                <span className="ml-2 font-bold text-lg">{googleData.averageRating.toFixed(1)}</span>
               </div>
-              
-              {/* Total Reviews */}
-              <div className="text-center">
-                <div className="text-4xl lg:text-5xl font-bold text-blue-600 mb-2" data-testid="total-reviews">
-                  {googleData.totalReviews.toLocaleString()}
-                </div>
-                <div className="text-sm lg:text-base text-gray-600 font-medium">Google Reviews</div>
-                <div className="text-xs text-gray-500 mt-1">And growing daily!</div>
-              </div>
-              
-              {/* Locations */}
-              <div className="text-center">
-                <div className="text-4xl lg:text-5xl font-bold text-green-600 mb-2">
-                  {googleData.locations.length}
-                </div>
-                <div className="text-sm lg:text-base text-gray-600 font-medium">Service Locations</div>
-                <div className="text-xs text-gray-500 mt-1">Across Massachusetts</div>
-              </div>
-              
+              <div className="h-4 w-px bg-gray-300" />
+              <div className="text-gray-600 font-medium">{googleData.totalReviews} Google Reviews</div>
             </div>
           </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="icon" onClick={scrollPrev} className="rounded-full">
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" size="icon" onClick={scrollNext} className="rounded-full">
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
 
-          {/* Enhanced location badges */}
-          <div className="flex flex-wrap justify-center gap-3 mb-8">
-            {googleData.locations.map((location) => (
-              <Badge
-                key={location.placeId}
-                variant="outline"
-                className="bg-white border-blue-200 text-blue-700 px-4 py-2 text-sm font-medium hover:bg-blue-50 transition-colors duration-200 shadow-sm"
-                data-testid={`location-badge-${location.placeId}`}
-              >
-                <MapPin className="h-4 w-4 mr-2" />
-                {location.name.replace('Johnson Bros. Plumbing & Drain Cleaning - ', '')}
-              </Badge>
+        <div className="overflow-hidden" ref={emblaRef}>
+          <div className="flex">
+            {googleData.reviews.filter(r => r.rating === 5).slice(0, 12).map((review) => (
+              <div key={review.id} className="flex-[0_0_100%] min-w-0 md:flex-[0_0_50%] lg:flex-[0_0_33.33%] pl-4">
+                <Card className="h-full shadow-md border-slate-100 hover:shadow-lg transition-shadow">
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      {review.profilePhoto ? (
+                        <img src={review.profilePhoto} alt="" className="h-10 w-10 rounded-full" />
+                      ) : (
+                        <div className="h-10 w-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
+                          {review.author[0]}
+                        </div>
+                      )}
+                      <div>
+                        <div className="font-bold text-sm text-gray-900">{review.author}</div>
+                        <div className="flex gap-0.5">{renderStars(review.rating)}</div>
+                      </div>
+                    </div>
+                    <p className="text-gray-700 text-sm line-clamp-4 italic mb-4">"{review.text}"</p>
+                    <div className="flex items-center justify-between mt-auto pt-4 border-t border-slate-50 text-[10px] text-gray-400 uppercase tracking-widest font-bold">
+                      <div className="flex items-center gap-1">
+                        <MapPin className="h-3 w-3" />
+                        {review.location.split('-').pop()?.trim()}
+                      </div>
+                      <div>{formatTimeAgo(review.time)}</div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             ))}
           </div>
         </div>
 
-        {/* Reviews grid */}
-        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 mb-12">
-          {googleData.reviews.filter(review => review.rating === 5).slice(0, 9).map((review) => (
-            <Card key={review.id} className="shadow-lg hover:shadow-xl transition-shadow duration-300" data-testid={`review-${review.id}`}>
-              <CardContent className="p-6">
-                <div className="flex items-start space-x-4 mb-4">
-                  {review.profilePhoto ? (
-                    <img 
-                      src={review.profilePhoto} 
-                      alt={review.author}
-                      className="h-12 w-12 rounded-full object-cover"
-                      data-testid={`reviewer-photo-${review.id}`}
-                    />
-                  ) : (
-                    <div className="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center">
-                      <span className="text-gray-600 font-medium">
-                        {review.author.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                  )}
-                  
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-gray-900" data-testid={`reviewer-name-${review.id}`}>
-                      {review.author}
-                    </h4>
-                    <div className="flex items-center space-x-2 mt-1">
-                      <div className="flex space-x-1">
-                        {renderStars(review.rating)}
-                      </div>
-                      <span className="text-sm text-gray-500">
-                        {review.rating}/5
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <p className="text-gray-700 mb-4 line-clamp-4" data-testid={`review-text-${review.id}`}>
-                  {review.text}
-                </p>
-
-                <div className="flex items-center justify-between text-sm text-gray-500">
-                  <div className="flex items-center">
-                    <Clock className="h-3 w-3 mr-1" />
-                    <span data-testid={`review-time-${review.id}`}>
-                      {formatTimeAgo(review.time)}
-                    </span>
-                  </div>
-                  
-                  <Badge variant="secondary" className="text-xs">
-                    <MapPin className="h-3 w-3 mr-1" />
-                    {review.location.replace('Johnson Bros. Plumbing & Drain Cleaning - ', '')}
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* Call to action */}
-        <div className="text-center">
-          <p className="text-gray-600 mb-6">
-            Experience the Johnson Bros. difference for yourself
-          </p>
-          <div className="space-x-4">
-            <Button size="lg" data-testid="book-service-btn">
-              Book Your Service
+        <div className="mt-10 text-center">
+          <Link href="/reviews">
+            <Button variant="outline" className="border-johnson-blue text-johnson-blue hover:bg-johnson-blue hover:text-white font-bold group">
+              <MessageSquare className="mr-2 h-4 w-4" />
+              View All Customer Reviews
+              <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
             </Button>
-            <Button 
-              variant="outline" 
-              size="lg" 
-              onClick={() => {
-                // Open Google reviews for the primary location
-                const primaryLocation = googleData.locations[0];
-                if (primaryLocation?.placeId) {
-                  window.open(`https://www.google.com/maps/place/?q=place_id:${primaryLocation.placeId}`, '_blank');
-                } else {
-                  // Fallback to search
-                  window.open('https://www.google.com/search?q=Johnson+Bros+Plumbing+reviews', '_blank');
-                }
-              }}
-              data-testid="view-more-reviews-btn"
-            >
-              <ExternalLink className="h-4 w-4 mr-2" />
-              View More on Google
-            </Button>
-          </div>
+          </Link>
         </div>
       </div>
     </section>
