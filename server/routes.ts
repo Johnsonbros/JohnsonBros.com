@@ -32,6 +32,7 @@ import { authenticate } from "./src/auth";
 import { loadConfig } from "./src/config";
 import { scheduleLeadFollowUp, startScheduledSmsProcessor } from "./lib/smsBookingAgent";
 import { callMcpTool } from "./lib/mcpClient";
+import { sendSMS } from "./lib/twilio";
 
 // Housecall Pro API client
 const HOUSECALL_API_BASE = 'https://api.housecallpro.com';
@@ -80,6 +81,17 @@ async function callHousecallAPI(endpoint: string, params: Record<string, any> = 
   }
 
   return response.json();
+}
+
+const smsVerificationStore = new Map<string, { code: string; expiresAt: number; attempts: number }>();
+const SMS_VERIFICATION_TTL_MS = 10 * 60 * 1000;
+const SMS_VERIFICATION_MAX_ATTEMPTS = 5;
+
+function normalizePhone(phone: string) {
+  const digits = phone.replace(/\D/g, "");
+  if (digits.length === 10) return `+1${digits}`;
+  if (digits.startsWith("1") && digits.length === 11) return `+${digits}`;
+  return phone;
 }
 
 // Helper function to generate testimonial text based on service type
@@ -1221,6 +1233,71 @@ $50 REFERRAL CREDIT APPLIES - New customer receives $50 credit toward any servic
     }
   });
 
+  // Start SMS verification
+  app.post("/api/v1/sms-verification/start", publicWriteLimiter, async (req, res) => {
+    try {
+      const schema = z.object({
+        phone: z.string().min(10)
+      });
+      const { phone } = schema.parse(req.body);
+      const normalizedPhone = normalizePhone(phone);
+      const code = Math.floor(100000 + Math.random() * 900000).toString();
+      const expiresAt = Date.now() + SMS_VERIFICATION_TTL_MS;
+
+      smsVerificationStore.set(normalizedPhone, { code, expiresAt, attempts: 0 });
+
+      await sendSMS(normalizedPhone, `Your Johnson Bros. verification code is ${code}. It expires in 10 minutes.`);
+
+      res.json({
+        success: true,
+        phone: normalizedPhone,
+        expires_at: new Date(expiresAt).toISOString()
+      });
+    } catch (error) {
+      logError("SMS verification start error:", error);
+      res.status(500).json({ error: "Unable to send verification code. Please try again later." });
+    }
+  });
+
+  // Confirm SMS verification
+  app.post("/api/v1/sms-verification/confirm", publicWriteLimiter, async (req, res) => {
+    try {
+      const schema = z.object({
+        phone: z.string().min(10),
+        code: z.string().min(4)
+      });
+      const { phone, code } = schema.parse(req.body);
+      const normalizedPhone = normalizePhone(phone);
+      const entry = smsVerificationStore.get(normalizedPhone);
+
+      if (!entry) {
+        return res.status(400).json({ error: "Verification code not found. Please request a new code." });
+      }
+
+      if (Date.now() > entry.expiresAt) {
+        smsVerificationStore.delete(normalizedPhone);
+        return res.status(400).json({ error: "Verification code expired. Please request a new code." });
+      }
+
+      entry.attempts += 1;
+      if (entry.attempts > SMS_VERIFICATION_MAX_ATTEMPTS) {
+        smsVerificationStore.delete(normalizedPhone);
+        return res.status(429).json({ error: "Too many attempts. Please request a new code." });
+      }
+
+      if (entry.code !== code) {
+        return res.status(400).json({ error: "Invalid verification code. Please try again." });
+      }
+
+      smsVerificationStore.delete(normalizedPhone);
+
+      res.json({ success: true, phone: normalizedPhone, verified_at: new Date().toISOString() });
+    } catch (error) {
+      logError("SMS verification confirm error:", error);
+      res.status(500).json({ error: "Unable to confirm verification code. Please try again later." });
+    }
+  });
+
   // Create a new booking
   app.post("/api/v1/bookings", publicWriteLimiter, async (req, res) => {
     try {
@@ -1239,6 +1316,27 @@ $50 REFERRAL CREDIT APPLIES - New customer receives $50 credit toward any servic
       const problemDescription = bookingData.problemDescription || problemDetails?.description || "Service requested";
       const selectedDate = bookingData.selectedDate;
       const selectedTime = bookingData.selectedTime;
+      const bookingNotes: string[] = [];
+
+      if (bookingData?.bookingFor?.isForSomeoneElse) {
+        const recipient = bookingData.bookingFor.recipient || {};
+        const recipientLine = [
+          recipient.name ? `Name: ${recipient.name}` : null,
+          recipient.phone ? `Phone: ${recipient.phone}` : null,
+          recipient.relationship ? `Relationship: ${recipient.relationship}` : null
+        ].filter(Boolean).join(", ");
+        bookingNotes.push(`Booking for someone else. ${recipientLine || "Recipient details provided."}`.trim());
+      }
+
+      if (bookingData?.recurring?.frequency && bookingData.recurring.frequency !== "one_time") {
+        const recurringLabel = bookingData.recurring.frequency.replace(/_/g, " ");
+        const recurringNotes = bookingData.recurring.notes ? ` Notes: ${bookingData.recurring.notes}` : "";
+        bookingNotes.push(`Recurring schedule requested: ${recurringLabel}.${recurringNotes}`);
+      }
+
+      if (bookingData?.smsVerification?.status === "verified") {
+        bookingNotes.push("Phone number verified via SMS.");
+      }
 
       const inferTimePreference = (timeValue: string | undefined) => {
         if (!timeValue) return "any";
@@ -1251,6 +1349,15 @@ $50 REFERRAL CREDIT APPLIES - New customer receives $50 credit toward any servic
 
       const timePreference = inferTimePreference(selectedTime);
 
+      const tags = ["website-booking", "online-booking", "website-lead"];
+      if (bookingData?.smsVerification?.status === "verified") tags.push("sms-verified");
+      if (bookingData?.recurring?.frequency && bookingData.recurring.frequency !== "one_time") {
+        tags.push(`recurring-${bookingData.recurring.frequency}`);
+      }
+      if (bookingData?.bookingFor?.isForSomeoneElse) tags.push("third-party-booking");
+
+      const descriptionSuffix = bookingNotes.length > 0 ? `\n\nAdditional notes:\n- ${bookingNotes.join("\n- ")}` : "";
+
       const mcpPayload = {
         first_name: customerInfo.firstName,
         last_name: customerInfo.lastName,
@@ -1260,13 +1367,13 @@ $50 REFERRAL CREDIT APPLIES - New customer receives $50 credit toward any servic
         city: customerInfo.city || "Quincy",
         state: customerInfo.state || "MA",
         zip: customerInfo.zipCode || "02169",
-        description: `${selectedService?.name || "Service Call"}: ${problemDescription}`,
+        description: `${selectedService?.name || "Service Call"}: ${problemDescription}${descriptionSuffix}`,
         lead_source: "Website",
         time_preference: timePreference,
         earliest_date: selectedDate,
         latest_date: selectedDate,
         show_for_days: 1,
-        tags: ["website-booking", "online-booking", "website-lead"]
+        tags
       };
 
       const { parsed } = await callMcpTool<any>("book_service_call", mcpPayload);
