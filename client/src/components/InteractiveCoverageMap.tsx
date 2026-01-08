@@ -397,46 +397,50 @@ export function InteractiveCoverageMap({ onBookService, compact = false }: Inter
             </div>
           )}
 
-          {!mapError && <div className="absolute top-4 left-4 flex flex-col gap-2">
-            <Button
-              size="sm"
-              onClick={checkUserLocation}
-              disabled={isLocating}
-              className="bg-white text-johnson-blue border border-gray-200 hover:bg-gray-50 shadow-lg"
-              data-testid="check-location-btn"
-            >
-              <Navigation className={`h-4 w-4 mr-2 ${isLocating ? "animate-spin" : ""}`} />
-              {isLocating ? "Locating..." : "Check My Area"}
-            </Button>
-          </div>
+          {!mapError && (
+            <>
+              <div className="absolute top-4 left-4 flex flex-col gap-2">
+                <Button
+                  size="sm"
+                  onClick={checkUserLocation}
+                  disabled={isLocating}
+                  className="bg-white text-johnson-blue border border-gray-200 hover:bg-gray-50 shadow-lg"
+                  data-testid="check-location-btn"
+                >
+                  <Navigation className={`h-4 w-4 mr-2 ${isLocating ? "animate-spin" : ""}`} />
+                  {isLocating ? "Locating..." : "Check My Area"}
+                </Button>
+              </div>
 
-          {userInServiceArea !== null && (
-            <div className={`absolute top-4 right-4 px-4 py-2 rounded-lg shadow-lg ${
-              userInServiceArea ? "bg-green-500 text-white" : "bg-yellow-500 text-white"
-            }`}>
-              {userInServiceArea ? (
-                <span className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4" />
-                  We service your area!
-                </span>
-              ) : (
-                <span>Call us to confirm coverage</span>
+              {userInServiceArea !== null && (
+                <div className={`absolute top-4 right-4 px-4 py-2 rounded-lg shadow-lg ${
+                  userInServiceArea ? "bg-green-500 text-white" : "bg-yellow-500 text-white"
+                }`}>
+                  {userInServiceArea ? (
+                    <span className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4" />
+                      We service your area!
+                    </span>
+                  ) : (
+                    <span>Call us to confirm coverage</span>
+                  )}
+                </div>
               )}
-            </div>
-          )}
 
-          <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-sm p-3 rounded-lg shadow-lg border border-gray-100">
-            <div className="flex items-center gap-4 text-xs font-medium">
-              <div className="flex items-center gap-1.5">
-                <div className="w-4 h-4 bg-gradient-to-r from-johnson-blue to-blue-600 rounded-full border-2 border-white shadow" />
-                <span>HQ Office</span>
+              <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-sm p-3 rounded-lg shadow-lg border border-gray-100">
+                <div className="flex items-center gap-4 text-xs font-medium">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-4 h-4 bg-gradient-to-r from-johnson-blue to-blue-600 rounded-full border-2 border-white shadow" />
+                    <span>HQ Office</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 bg-blue-500 rounded-full border-2 border-white shadow" />
+                    <span>Service Area</span>
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 bg-blue-500 rounded-full border-2 border-white shadow" />
-                <span>Service Area</span>
-              </div>
-            </div>
-          </div>
+            </>
+          )}
         </div>
 
         {!compact && (
