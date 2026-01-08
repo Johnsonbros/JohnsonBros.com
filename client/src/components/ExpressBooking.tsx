@@ -323,8 +323,8 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
               </div>
             )}
             
-            {/* Key Benefits */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
+            {/* Key Benefits + Call Option */}
+            <div className="flex flex-wrap items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
               <div className="flex items-center space-x-2 bg-white/10 rounded-lg p-2 sm:p-0 sm:bg-transparent">
                 <Clock className={`h-5 w-5 flex-shrink-0 ${hasToday ? 'text-green-400 animate-pulse' : isEmergency ? 'text-red-400 animate-pulse' : 'text-johnson-orange'}`} />
                 <span className="font-medium text-sm sm:text-base">
@@ -339,6 +339,16 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
                 <DollarSign className="h-5 w-5 text-johnson-orange flex-shrink-0" />
                 <span className="font-medium text-sm sm:text-base">{isEmergency ? 'Emergency Rates Apply' : '1-Year Parts Warranty'}</span>
               </div>
+              {/* Call Option inline on desktop */}
+              {uniqueSlots.length > 0 && !isEmergency && (
+                <a 
+                  href="tel:6174799911" 
+                  className="hidden lg:inline-flex items-center bg-white/20 text-white px-4 py-2 rounded-lg font-bold hover:bg-white/30 transition-all duration-300 border border-white/30"
+                >
+                  <Phone className="mr-2 h-4 w-4" />
+                  Call (617) 479-9911
+                </a>
+              )}
             </div>
 
             {/* CTA Buttons - Emergency call prompt or booking */}
@@ -387,9 +397,9 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
               </div>
             )}
 
-            {/* Call Option (shown for express/next day bookings) */}
+            {/* Call Option - Mobile only (desktop version is inline above) */}
             {uniqueSlots.length > 0 && !isEmergency && (
-              <div className="mt-4">
+              <div className="mt-4 lg:hidden">
                 <div className="text-sm text-blue-200 mb-2">Prefer to book by phone?</div>
                 <a 
                   href="tel:6174799911" 
