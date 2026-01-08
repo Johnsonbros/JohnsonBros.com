@@ -138,6 +138,8 @@ export default function ServicesSection({ onBookService }: ServicesSectionProps)
                         <img 
                           src={imageUrl}
                           alt={`${service.name} service`}
+                          loading="lazy"
+                          decoding="async"
                           className="w-full h-40 sm:h-48 object-cover rounded-lg group-hover:scale-105 transition-transform duration-300 cursor-pointer"
                         />
                       </Link>
@@ -145,6 +147,8 @@ export default function ServicesSection({ onBookService }: ServicesSectionProps)
                       <img 
                         src={imageUrl}
                         alt={`${service.name} service`}
+                        loading="lazy"
+                        decoding="async"
                         className="w-full h-40 sm:h-48 object-cover rounded-lg group-hover:scale-105 transition-transform duration-300"
                       />
                     )}

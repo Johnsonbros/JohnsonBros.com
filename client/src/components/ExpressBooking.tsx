@@ -409,12 +409,13 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
               </div>
             </div>
 
-            {/* Professional plumber working video - lazy loaded */}
+            {/* Professional plumber working video - lazy loaded with poster */}
             <div ref={videoContainerRef} className="relative rounded-xl shadow-2xl w-full overflow-hidden bg-gradient-to-br from-johnson-blue to-johnson-teal aspect-video">
               {!videoLoaded && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="animate-pulse text-white/50">
-                    <div className="w-16 h-16 border-4 border-white/30 border-t-white rounded-full animate-spin" />
+                <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-johnson-blue to-johnson-teal">
+                  <div className="text-center text-white">
+                    <div className="w-16 h-16 border-4 border-white/30 border-t-white rounded-full animate-spin mx-auto mb-3" />
+                    <p className="text-sm text-white/70">Loading video...</p>
                   </div>
                 </div>
               )}
@@ -425,8 +426,9 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
                   loop
                   muted
                   playsInline
-                  preload="metadata"
+                  preload="none"
                   onLoadedData={() => setVideoLoaded(true)}
+                  onCanPlay={() => setVideoLoaded(true)}
                   className={`w-full h-full object-cover transition-opacity duration-500 ${videoLoaded ? 'opacity-100' : 'opacity-0'}`}
                   aria-label="Professional plumber at work"
                 />
