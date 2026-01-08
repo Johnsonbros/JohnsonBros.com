@@ -551,7 +551,7 @@ export default function ABTestingDashboard() {
                     <Legend />
                     <Bar 
                       dataKey="conversionRate" 
-                      fill={(entry: any) => entry.isControl ? "#8884d8" : "#82ca9d"}
+                      fill="#82ca9d"
                       name="Conversion Rate (%)"
                     />
                   </BarChart>
