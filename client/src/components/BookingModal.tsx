@@ -209,10 +209,12 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
     { id: 7, name: "Confirm", icon: CheckCircle },
   ];
 
-  // Load services
+  // Load services - with staleTime to prevent duplicate calls
   const { data: services, isLoading: servicesLoading } = useQuery({
     queryKey: ["/api/v1/services"],
     queryFn: getServices,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 
   // Forms

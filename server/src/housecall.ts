@@ -401,16 +401,23 @@ export class HousecallProClient {
           created_after: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString() // Last 90 days
         });
         const jobs = jobsData.jobs || [];
+        Logger.debug(`[HousecallProClient] Fetched ${jobs.length} jobs from API`);
         
         const lineItems = new Set();
+        let jobsWithLineItems = 0;
         jobs.forEach(job => {
-          if (job.line_items) {
+          if (job.line_items && Array.isArray(job.line_items) && job.line_items.length > 0) {
+            jobsWithLineItems++;
             job.line_items.forEach((item: any) => {
-              if (item.type === 'service' && item.description) {
+              // Accept any line item that looks like a service
+              const isService = item.type === 'service' || 
+                               item.kind === 'service' ||
+                               (item.description && !item.type); // Fallback if type missing
+              if (isService && (item.description || item.name)) {
                 lineItems.add(JSON.stringify({
-                  id: item.id || `service_${item.description.replace(/\s+/g, '_').toLowerCase()}`,
-                  name: item.description,
-                  price: item.price || item.total || 0,
+                  id: item.id || `service_${(item.description || item.name).replace(/\s+/g, '_').toLowerCase()}`,
+                  name: item.description || item.name,
+                  price: item.price || item.total || item.unit_price || 0,
                   type: 'service',
                   source: 'housecall_pro'
                 }));
@@ -419,6 +426,7 @@ export class HousecallProClient {
           }
         });
         
+        Logger.debug(`[HousecallProClient] Jobs with line_items: ${jobsWithLineItems}/${jobs.length}`);
         const uniqueServices = Array.from(lineItems).map(item => JSON.parse(item as string));
         Logger.debug(`[HousecallProClient] Extracted ${uniqueServices.length} unique services from jobs`);
         

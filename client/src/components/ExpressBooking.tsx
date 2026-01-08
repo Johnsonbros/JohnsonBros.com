@@ -4,7 +4,7 @@ import { Clock, Shield, DollarSign, Calendar, Phone, MapPin, Zap, ChevronRight, 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/queryClient";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { formatTimeSlotWindow } from "@/lib/timeUtils";
 import { format, addDays } from "date-fns";
 import plumberVideo from "@assets/Website video_1759942431968.mp4";
@@ -46,6 +46,30 @@ interface CapacityData {
 export default function ExpressBooking({ onBookService }: HeroSectionProps) {
   const [userZip, setUserZip] = useState<string | null>(null);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<ExpressWindow | null>(null);
+  const [videoLoaded, setVideoLoaded] = useState(false);
+  const [videoInView, setVideoInView] = useState(false);
+  const videoContainerRef = useRef<HTMLDivElement>(null);
+
+  // Lazy load video when it comes into view
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setVideoInView(true);
+            observer.disconnect();
+          }
+        });
+      },
+      { rootMargin: '200px', threshold: 0.1 }
+    );
+
+    if (videoContainerRef.current) {
+      observer.observe(videoContainerRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
   
   // Fetch today's capacity data (using v1 API endpoint)
   const { data: todayCapacity } = useQuery<CapacityData>({
@@ -385,16 +409,29 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
               </div>
             </div>
 
-            {/* Professional plumber working video */}
-            <video 
-              src={plumberVideo}
-              autoPlay
-              loop
-              muted
-              playsInline
-              className="rounded-xl shadow-2xl w-full"
-              aria-label="Professional plumber at work"
-            />
+            {/* Professional plumber working video - lazy loaded */}
+            <div ref={videoContainerRef} className="relative rounded-xl shadow-2xl w-full overflow-hidden bg-gradient-to-br from-johnson-blue to-johnson-teal aspect-video">
+              {!videoLoaded && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="animate-pulse text-white/50">
+                    <div className="w-16 h-16 border-4 border-white/30 border-t-white rounded-full animate-spin" />
+                  </div>
+                </div>
+              )}
+              {videoInView && (
+                <video 
+                  src={plumberVideo}
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  preload="metadata"
+                  onLoadedData={() => setVideoLoaded(true)}
+                  className={`w-full h-full object-cover transition-opacity duration-500 ${videoLoaded ? 'opacity-100' : 'opacity-0'}`}
+                  aria-label="Professional plumber at work"
+                />
+              )}
+            </div>
           </div>
         </div>
       </div>

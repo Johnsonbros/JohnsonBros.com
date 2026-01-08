@@ -63,6 +63,8 @@ export default function ServicesSection({ onBookService }: ServicesSectionProps)
   const { data: apiServices, isLoading, error } = useQuery({
     queryKey: ["/api/v1/services"],
     queryFn: getServices,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 
   const services = apiServices ? [...apiServices, ...additionalServices] : additionalServices;
