@@ -2,7 +2,11 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { Logger } from '../src/logger';
 
-const MCP_SERVER_URL = process.env.MCP_SERVER_URL || 'http://localhost:3001/mcp';
+const DEFAULT_MCP_BASE_URL = 'http://localhost:3001';
+const MCP_SERVER_URL = (() => {
+  const configured = process.env.MCP_SERVER_URL || DEFAULT_MCP_BASE_URL;
+  return configured.endsWith('/mcp') ? configured : `${configured.replace(/\/$/, '')}/mcp`;
+})();
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 1000;
 

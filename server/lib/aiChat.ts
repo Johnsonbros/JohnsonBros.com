@@ -11,7 +11,8 @@ const openai = new OpenAI({
 });
 
 // MCP Server endpoint - running on port 3001
-const MCP_SERVER_URL = process.env.MCP_SERVER_URL || 'http://localhost:3001';
+const DEFAULT_MCP_BASE_URL = 'http://localhost:3001';
+const MCP_SERVER_URL = (process.env.MCP_SERVER_URL || DEFAULT_MCP_BASE_URL).replace(/\/$/, '');
 
 // Define the tools available to the AI (mirrors MCP server tools)
 const PLUMBING_TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [

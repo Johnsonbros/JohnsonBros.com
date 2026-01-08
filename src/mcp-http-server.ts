@@ -112,14 +112,19 @@ const configuredOrigins = process.env.MCP_CORS_ORIGINS
   ? process.env.MCP_CORS_ORIGINS.split(',').map(o => o.trim()).filter(Boolean)
   : [];
 
-const defaultDevOrigins = ['http://localhost:5173', 'http://localhost:4173'];
+const siteUrl = process.env.SITE_URL?.replace(/\/$/, '');
+const defaultDevOrigins = [
+  'http://localhost:5173',
+  'http://localhost:4173',
+  ...(siteUrl ? [siteUrl] : [])
+];
 
 const allowAllOrigins = configuredOrigins.includes('*');
 const allowedOrigins = allowAllOrigins
   ? null
   : (configuredOrigins.length > 0 ? configuredOrigins : defaultDevOrigins); // null = allow all origins
 
-if (process.env.NODE_ENV === 'production' && !allowAllOrigins && configuredOrigins.length === 0) {
+if (process.env.NODE_ENV === 'production' && !allowAllOrigins && configuredOrigins.length === 0 && !siteUrl) {
   log.warn('MCP_CORS_ORIGINS is not set in production; defaulting to localhost origins only.');
 }
 
