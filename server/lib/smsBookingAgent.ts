@@ -29,38 +29,82 @@ const agentSessions: Map<string, {
 // MCP Client singleton
 let mcpClient: Client | null = null;
 let mcpTools: any[] = [];
+let mcpConnectionPromise: Promise<Client> | null = null;
 
-// Initialize MCP client connection
+// Retry configuration for MCP connection
+const MCP_RETRY_CONFIG = {
+  maxRetries: 5,
+  initialDelayMs: 1000,
+  maxDelayMs: 30000,
+  backoffMultiplier: 2
+};
+
+// Initialize MCP client connection with retry and exponential backoff
 async function getMcpClient(): Promise<Client> {
   if (mcpClient) {
     return mcpClient;
   }
 
-  try {
-    const transport = new StreamableHTTPClientTransport(
-      new URL(MCP_SERVER_URL)
-    );
-
-    mcpClient = new Client({
-      name: 'sms-booking-agent',
-      version: '1.0.0'
-    }, {
-      capabilities: {}
-    });
-
-    await mcpClient.connect(transport);
-    
-    // Fetch available tools from MCP server
-    const { tools } = await mcpClient.listTools();
-    mcpTools = tools;
-    
-    Logger.info(`[SMS Agent] Connected to MCP server with ${tools.length} tools: ${tools.map((t: any) => t.name).join(', ')}`);
-    
-    return mcpClient;
-  } catch (error: any) {
-    Logger.error('[SMS Agent] Failed to connect to MCP server:', { error: error.message });
-    throw error;
+  // Prevent concurrent connection attempts
+  if (mcpConnectionPromise) {
+    return mcpConnectionPromise;
   }
+
+  mcpConnectionPromise = connectWithRetry();
+  
+  try {
+    const client = await mcpConnectionPromise;
+    return client;
+  } finally {
+    mcpConnectionPromise = null;
+  }
+}
+
+async function connectWithRetry(): Promise<Client> {
+  let lastError: Error | null = null;
+  let delay = MCP_RETRY_CONFIG.initialDelayMs;
+
+  for (let attempt = 1; attempt <= MCP_RETRY_CONFIG.maxRetries; attempt++) {
+    try {
+      Logger.info(`[SMS Agent] Connecting to MCP server (attempt ${attempt}/${MCP_RETRY_CONFIG.maxRetries})...`);
+      
+      const transport = new StreamableHTTPClientTransport(
+        new URL(MCP_SERVER_URL)
+      );
+
+      const client = new Client({
+        name: 'sms-booking-agent',
+        version: '1.0.0'
+      }, {
+        capabilities: {}
+      });
+
+      await client.connect(transport);
+      
+      // Fetch available tools from MCP server
+      const { tools } = await client.listTools();
+      mcpTools = tools;
+      mcpClient = client;
+      
+      Logger.info(`[SMS Agent] Connected to MCP server with ${tools.length} tools: ${tools.map((t: any) => t.name).join(', ')}`);
+      
+      return client;
+    } catch (error: any) {
+      lastError = error;
+      Logger.warn(`[SMS Agent] MCP connection attempt ${attempt} failed: ${error.message}`);
+      
+      if (attempt < MCP_RETRY_CONFIG.maxRetries) {
+        const jitter = Math.random() * 0.2 * delay;
+        const waitTime = Math.min(delay + jitter, MCP_RETRY_CONFIG.maxDelayMs);
+        Logger.info(`[SMS Agent] Retrying MCP connection in ${Math.round(waitTime)}ms...`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+        delay *= MCP_RETRY_CONFIG.backoffMultiplier;
+      }
+    }
+  }
+
+  Logger.error('[SMS Agent] Failed to connect to MCP server after all retries:', { error: lastError?.message });
+  throw lastError || new Error('Failed to connect to MCP server');
 }
 
 // Convert MCP tools to OpenAI function format

@@ -433,6 +433,14 @@ export class HousecallProClient {
       Logger.debug('[HousecallProClient] Using fallback service definitions');
       const fallbackServices = [
         {
+          id: 'service_fee',
+          name: 'Service Fee',
+          price: 99.00,
+          type: 'service',
+          source: 'fallback',
+          description: 'Standard $99 service fee applied to all service calls. This fee is credited toward the cost of repairs.'
+        },
+        {
           id: 'service_call',
           name: 'Service call',
           price: 99.00,
