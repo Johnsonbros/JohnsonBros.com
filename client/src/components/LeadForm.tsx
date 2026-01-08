@@ -18,8 +18,10 @@ const leadFormSchema = z.object({
   lastName: z.string().min(1, "Last name is required"),
   phone: z.string().min(10, "Please enter a valid phone number"),
   email: z.string().email("Please enter a valid email address").optional().or(z.literal("")),
-  serviceDetails: z.string().min(3, "Please describe the service you need"),
-  marketingConsent: z.boolean().default(false),
+  address: z.string().min(3, "Address is required"),
+  serviceDetails: z.string().min(3, "Please describe what's going on"),
+  smsConsent: z.literal(true, { errorMap: () => ({ message: "You must agree to receive texts" }) }),
+  website: z.string().optional(),
 });
 
 type LeadFormData = z.infer<typeof leadFormSchema>;
