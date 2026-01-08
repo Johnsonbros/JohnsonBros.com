@@ -5,9 +5,13 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { configureSecurityMiddleware, getCsrfToken, csrfProtection } from "./src/security";
 import { EnvValidator } from "./src/envValidator";
+import { setupShutdownHandlers } from "./src/shutdown";
 
 // Validate environment variables on startup
 EnvValidator.validateOnStartup();
+
+// Setup graceful shutdown handlers
+setupShutdownHandlers();
 
 const app = express();
 
@@ -126,8 +130,8 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Run initial capacity check and ads sync
-  setTimeout(async () => {
+  // Run initial capacity check and ads sync with proper async handling
+  const initializeAdsBridge = async () => {
     try {
       const { GoogleAdsBridge } = await import('./src/ads/bridge');
       const adsBridge = GoogleAdsBridge.getInstance();
@@ -135,17 +139,23 @@ app.use((req, res, next) => {
       console.log('Initial capacity check and ads sync completed');
       
       // Schedule periodic ads sync (every 5 minutes)
-      setInterval(async () => {
+      const adsSyncInterval = setInterval(async () => {
         try {
           await adsBridge.applyCapacityRules();
         } catch (error) {
           console.error('Error applying ads rules:', error);
         }
       }, 5 * 60 * 1000);
+      
+      // Store interval for potential cleanup
+      (global as any).__adsSyncInterval = adsSyncInterval;
     } catch (error) {
       console.error('Error initializing capacity system:', error);
     }
-  }, 5000);
+  };
+  
+  // Delay initialization to ensure server is ready
+  setTimeout(initializeAdsBridge, 5000);
 
   const server = await registerRoutes(app);
 

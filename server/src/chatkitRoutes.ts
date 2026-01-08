@@ -20,18 +20,37 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
+// Store interval reference for cleanup
+let sessionCleanupInterval: NodeJS.Timeout | null = null;
+
 // Session cleanup interval (clean up sessions older than 24 hours)
-setInterval(() => {
-  const now = new Date();
-  const maxAge = 24 * 60 * 60 * 1000; // 24 hours
-  
-  for (const [clientSecret, session] of activeSessions.entries()) {
-    if (now.getTime() - session.createdAt.getTime() > maxAge) {
-      activeSessions.delete(clientSecret);
-      clearSession(session.sessionId);
-    }
+function startSessionCleanup() {
+  if (!sessionCleanupInterval) {
+    sessionCleanupInterval = setInterval(() => {
+      const now = new Date();
+      const maxAge = 24 * 60 * 60 * 1000; // 24 hours
+      
+      for (const [clientSecret, session] of activeSessions.entries()) {
+        if (now.getTime() - session.createdAt.getTime() > maxAge) {
+          activeSessions.delete(clientSecret);
+          clearSession(session.sessionId);
+        }
+      }
+    }, 60 * 60 * 1000); // Run every hour
   }
-}, 60 * 60 * 1000); // Run every hour
+}
+
+// Stop session cleanup (for graceful shutdown)
+export function stopChatKitCleanup(): void {
+  if (sessionCleanupInterval) {
+    clearInterval(sessionCleanupInterval);
+    sessionCleanupInterval = null;
+    activeSessions.clear();
+  }
+}
+
+// Initialize cleanup on module load
+startSessionCleanup();
 
 // Create a ChatKit session
 // This endpoint is called by the ChatKit React component to get a client secret

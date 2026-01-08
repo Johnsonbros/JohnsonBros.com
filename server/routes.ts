@@ -62,12 +62,21 @@ async function callHousecallAPI(endpoint: string, params: Record<string, any> = 
   });
 
   if (!response.ok) {
+    // Try to get response body for more detailed error info
+    let responseBody = '';
+    try {
+      responseBody = await response.text();
+    } catch {
+      responseBody = 'Unable to read response body';
+    }
+    
     Logger.error(`Housecall API error details:`, {
       url: url.toString(),
       status: response.status,
-      statusText: response.statusText
+      statusText: response.statusText,
+      responseBody: responseBody.substring(0, 500) // Truncate for logging
     });
-    throw new Error(`Housecall API error: ${response.status} ${response.statusText}`);
+    throw new Error(`Housecall API error: ${response.status} ${response.statusText} - ${responseBody.substring(0, 200)}`);
   }
 
   return response.json();

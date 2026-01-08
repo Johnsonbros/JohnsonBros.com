@@ -349,10 +349,22 @@ export function sendToAnalytics(metric: VitalMetric) {
     });
   }
 
-  // Custom analytics endpoint
-  fetch('/api/v1/analytics/web-vitals', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(metric),
-  }).catch((err) => console.error('[Analytics] Failed to send web vitals:', err));
+  // Use sendBeacon for reliability during page unload, fall back to fetch
+  const data = JSON.stringify(metric);
+  
+  if (navigator.sendBeacon) {
+    // sendBeacon is more reliable for analytics during page unload
+    const blob = new Blob([data], { type: 'application/json' });
+    navigator.sendBeacon('/api/v1/analytics/web-vitals', blob);
+  } else {
+    // Fallback to fetch with keepalive for older browsers
+    fetch('/api/v1/analytics/web-vitals', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: data,
+      keepalive: true, // Allows request to complete even if page is unloading
+    }).catch(() => {
+      // Silently fail - analytics should not disrupt user experience
+    });
+  }
 }

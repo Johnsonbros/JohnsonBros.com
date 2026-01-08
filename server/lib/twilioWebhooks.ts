@@ -164,7 +164,7 @@ router.post('/voice/status', async (req: Request, res: Response) => {
         const outcome = CallStatus === 'completed' ? 'completed' : 'abandoned';
         await agentTracing.endConversation(sessionId, outcome);
       } catch (e) {
-        // Ignore tracing errors
+        Logger.warn('[Twilio Voice] Error ending conversation tracing:', { error: e instanceof Error ? e.message : 'Unknown error' });
       }
       
       clearSession(sessionId);
@@ -173,7 +173,12 @@ router.post('/voice/status', async (req: Request, res: Response) => {
     res.status(200).send('OK');
     
   } catch (error: any) {
-    Logger.error('[Twilio Voice] Status callback error:', error);
+    Logger.error('[Twilio Voice] Status callback error:', { 
+      error: error.message, 
+      stack: error.stack,
+      callSid: req.body?.CallSid 
+    });
+    // Still return 200 to prevent Twilio retry loops, but log the error properly
     res.status(200).send('OK');
   }
 });
@@ -212,17 +217,36 @@ router.post('/voice/realtime', async (req: Request, res: Response) => {
   }
 });
 
-// Cleanup old sessions periodically
-setInterval(() => {
-  const now = Date.now();
-  const timeout = 30 * 60 * 1000; // 30 minutes
-  
-  for (const [sessionId, session] of voiceSessions.entries()) {
-    if (now - session.lastActivity > timeout) {
-      voiceSessions.delete(sessionId);
-      clearSession(sessionId);
-    }
+// Store interval reference for cleanup
+let voiceSessionCleanupInterval: NodeJS.Timeout | null = null;
+
+// Start voice session cleanup
+function startVoiceSessionCleanup() {
+  if (!voiceSessionCleanupInterval) {
+    voiceSessionCleanupInterval = setInterval(() => {
+      const now = Date.now();
+      const timeout = 30 * 60 * 1000; // 30 minutes
+      
+      for (const [sessionId, session] of voiceSessions.entries()) {
+        if (now - session.lastActivity > timeout) {
+          voiceSessions.delete(sessionId);
+          clearSession(sessionId);
+        }
+      }
+    }, 5 * 60 * 1000); // Check every 5 minutes
   }
-}, 5 * 60 * 1000); // Check every 5 minutes
+}
+
+// Stop voice session cleanup (for graceful shutdown)
+export function stopTwilioCleanup(): void {
+  if (voiceSessionCleanupInterval) {
+    clearInterval(voiceSessionCleanupInterval);
+    voiceSessionCleanupInterval = null;
+    voiceSessions.clear();
+  }
+}
+
+// Initialize cleanup on module load
+startVoiceSessionCleanup();
 
 export default router;
