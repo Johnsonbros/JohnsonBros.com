@@ -5,7 +5,7 @@ import { IncomingMessage, ServerResponse } from 'node:http';
 import pino from 'pino';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
-import { server } from './booker.js';
+import { getToolMetricsSnapshot, server } from './booker.js';
 
 const log = pino({ name: 'mcp-http-server', level: process.env.LOG_LEVEL || 'info' });
 
@@ -271,6 +271,7 @@ app.get('/health', (req, res) => {
   const activeSessions = Object.keys(transports).length;
   const rateLimitedSessions = sessionRequestCounts.size;
   const rateLimitedIps = ipRequestCounts.size;
+  const toolMetrics = getToolMetricsSnapshot();
   
   res.json({
     status: 'ok',
@@ -287,7 +288,8 @@ app.get('/health', (req, res) => {
       sessionWindowMinutes: RATE_LIMIT_CONFIG.SESSION_WINDOW_MS / 60000,
       ipMax: RATE_LIMIT_CONFIG.IP_MAX_REQUESTS,
       ipWindowHours: RATE_LIMIT_CONFIG.IP_WINDOW_MS / 3600000
-    }
+    },
+    toolMetrics
   });
 });
 
@@ -331,7 +333,8 @@ app.get('/', (req, res) => {
       rate_limiting: 'Enabled',
       cors: 'Configured',
       authentication: process.env.MCP_AUTH_TOKEN ? 'Token required' : 'Open'
-    }
+    },
+    toolMetrics: getToolMetricsSnapshot()
   });
 });
 

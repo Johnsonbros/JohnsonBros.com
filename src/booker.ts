@@ -373,6 +373,15 @@ function formatJobScheduleSummary(job: any, appointment?: any) {
   return "Schedule not yet assigned.";
 }
 
+function getWorkStatus(job: any): string {
+  const rawStatus = job?.work_status || job?.status || "unknown";
+  return String(rawStatus).toLowerCase();
+}
+
+function isFinalizedStatus(status: string): boolean {
+  return ["completed", "cancelled", "canceled", "closed"].includes(status);
+}
+
 /** Choose a booking window by time-of-day preference in COMPANY_TZ */
 function chooseWindow(
   windows: Array<{ start_time: string; end_time: string; available: boolean }>,
@@ -616,7 +625,101 @@ const server = new McpServer({
   version: "1.0.0"
 });
 
-server.registerTool(
+type ToolMetrics = {
+  totalCalls: number;
+  successCalls: number;
+  failureCalls: number;
+  totalLatencyMs: number;
+  lastError?: string;
+  lastFailureAt?: string;
+};
+
+const toolMetrics = new Map<string, ToolMetrics>();
+
+function recordToolMetric(toolName: string, success: boolean, latencyMs: number, errorMessage?: string) {
+  const metric = toolMetrics.get(toolName) || {
+    totalCalls: 0,
+    successCalls: 0,
+    failureCalls: 0,
+    totalLatencyMs: 0
+  };
+
+  metric.totalCalls += 1;
+  metric.totalLatencyMs += latencyMs;
+
+  if (success) {
+    metric.successCalls += 1;
+  } else {
+    metric.failureCalls += 1;
+    metric.lastError = errorMessage;
+    metric.lastFailureAt = new Date().toISOString();
+  }
+
+  toolMetrics.set(toolName, metric);
+}
+
+function normalizeToolResponse(
+  toolName: string,
+  response: any,
+  latencyMs: number
+): { response: any; success: boolean } {
+  const content = response?.content?.[0];
+  if (!content?.text || typeof content.text !== "string") {
+    return { response, success: true };
+  }
+
+  try {
+    const payload = JSON.parse(content.text);
+    const correlationId = payload.correlation_id || randomUUID();
+    const success = payload.success !== false;
+
+    if (!payload.correlation_id) {
+      payload.correlation_id = correlationId;
+    }
+
+    if (!payload.status) {
+      payload.status = success ? "ok" : "error";
+    }
+
+    payload.diagnostics = {
+      ...(payload.diagnostics || {}),
+      tool: toolName,
+      correlation_id: correlationId,
+      latency_ms: latencyMs,
+      timestamp: new Date().toISOString()
+    };
+
+    content.text = JSON.stringify(payload, null, 2);
+    return { response, success };
+  } catch (error) {
+    return { response, success: true };
+  }
+}
+
+function registerToolWithDiagnostics(
+  name: string,
+  definition: any,
+  handler: (raw: any) => Promise<any>
+) {
+  server.registerTool(name, definition, async (raw) => {
+    const startTime = Date.now();
+
+    try {
+      const result = await handler(raw);
+      const latencyMs = Date.now() - startTime;
+      const normalized = normalizeToolResponse(name, result, latencyMs);
+
+      recordToolMetric(name, normalized.success, latencyMs);
+      return normalized.response;
+    } catch (error: any) {
+      const latencyMs = Date.now() - startTime;
+      recordToolMetric(name, false, latencyMs, error?.message || "Unknown error");
+      throw error;
+    }
+  });
+}
+
+registerToolWithDiagnostics(
   "book_service_call",
   {
     title: "Book a Johnson Bros. Plumbing service visit",
@@ -918,7 +1021,7 @@ server.registerTool(
 );
 
 // Register search_availability tool
-server.registerTool(
+registerToolWithDiagnostics(
   "search_availability",
   {
     title: "Search Johnson Bros. Plumbing service availability",
@@ -1283,7 +1386,7 @@ const GetQuoteInput = z.object({
   urgency: z.enum(["routine", "soon", "urgent", "emergency"]).default("routine")
 });
 
-server.registerTool(
+registerToolWithDiagnostics(
   "get_quote",
   {
     title: "Get Plumbing Service Quote",
@@ -1431,7 +1534,7 @@ const EmergencyHelpInput = z.object({
   additional_details: z.string().optional().describe("Any additional details about the situation")
 });
 
-server.registerTool(
+registerToolWithDiagnostics(
   "emergency_help",
   {
     title: "Emergency Plumbing Help",
@@ -1559,7 +1662,7 @@ const GetServicesInput = z.object({
   search: z.string().optional().describe("Search term to filter services")
 });
 
-server.registerTool(
+registerToolWithDiagnostics(
   "get_services",
   {
     title: "Get Available Plumbing Services",
@@ -1672,7 +1775,7 @@ const JobStatusInput = z.object({
   job_selection: z.enum(["most_recent", "upcoming"]).optional().default("upcoming")
 });
 
-server.registerTool(
+registerToolWithDiagnostics(
   "lookup_customer",
   {
     title: "Look Up Existing Customer",
@@ -1769,11 +1872,11 @@ server.registerTool(
   }
 );
 
-server.registerTool(
+registerToolWithDiagnostics(
   "request_reschedule_callback",
   {
     title: "Request Reschedule Callback",
-    description: "Logs a reschedule callback request for an existing job without modifying the schedule.",
+    description: "Logs a reschedule callback request for an existing job without modifying the schedule. Office confirmation is required; completed or unclear appointments must be handled by phone.",
     inputSchema: {
       type: "object",
       properties: {
@@ -1811,12 +1914,21 @@ server.registerTool(
       const customerId = lookup.selected.id;
       let jobId = input.job_id;
       let jobDetails: any = null;
+      let usedFallbackJob = false;
 
       if (!jobId) {
         const jobsResponse = await hcpGet("/jobs", { customer_id: customerId, page_size: 25 }, correlationId) as any;
         const jobs = extractJobsResponse(jobsResponse);
         const selectedJob = selectJobByPreference(jobs, "upcoming");
-        jobId = selectedJob?.id;
+        if (selectedJob?.id) {
+          jobId = selectedJob.id;
+        } else {
+          const fallbackJob = selectJobByPreference(jobs, "most_recent");
+          if (fallbackJob?.id) {
+            jobId = fallbackJob.id;
+            usedFallbackJob = true;
+          }
+        }
       }
 
       if (!jobId) {
@@ -1825,7 +1937,12 @@ server.registerTool(
             type: "text",
             text: JSON.stringify({
               success: false,
-              error: "No upcoming jobs were found for this customer.",
+              error: "No jobs were found for this customer.",
+              action_required: "CALL_US",
+              requires_office_call: true,
+              confirmation_required: true,
+              call_phone: "(617) 555-0123",
+              call_reason: "We couldn't locate an active appointment to reschedule. Please call the office so we can verify and assist.",
               correlation_id: correlationId
             }, null, 2)
           }]
@@ -1859,13 +1976,21 @@ server.registerTool(
       await hcpPost(`/jobs/${jobId}/notes`, { content: noteContent }, correlationId);
 
       const summary = formatJobScheduleSummary(jobDetails);
+      const workStatus = getWorkStatus(jobDetails);
+      const requiresOfficeCall = usedFallbackJob || isFinalizedStatus(workStatus);
+      const callReason = requiresOfficeCall
+        ? "Reschedule requests for completed or unclear appointments must be handled by the office."
+        : "Reschedule request logged. Please call to confirm changes.";
 
       const result = {
         success: true,
         action_required: "CALL_US",
+        requires_office_call: true,
+        confirmation_required: true,
         call_phone: "(617) 555-0123",
-        call_reason: "Reschedule request logged. Please call to confirm changes.",
+        call_reason: callReason,
         job_id: jobId,
+        job_status: workStatus,
         current_schedule_summary: summary,
         next_steps: "Please call us at (617) 555-0123. Say: \"I need to reschedule my service appointment. My name is "
           + `${lookup.selected.first_name} ${lookup.selected.last_name}` + ".\"",
@@ -1896,11 +2021,11 @@ server.registerTool(
   }
 );
 
-server.registerTool(
+registerToolWithDiagnostics(
   "request_cancellation_callback",
   {
     title: "Request Cancellation Callback",
-    description: "Logs a cancellation callback request for an existing job without modifying the schedule.",
+    description: "Logs a cancellation callback request for an existing job without modifying the schedule. Office confirmation is required; completed or unclear appointments must be handled by phone.",
     inputSchema: {
       type: "object",
       properties: {
@@ -1937,12 +2062,21 @@ server.registerTool(
       const customerId = lookup.selected.id;
       let jobId = input.job_id;
       let jobDetails: any = null;
+      let usedFallbackJob = false;
 
       if (!jobId) {
         const jobsResponse = await hcpGet("/jobs", { customer_id: customerId, page_size: 25 }, correlationId) as any;
         const jobs = extractJobsResponse(jobsResponse);
         const selectedJob = selectJobByPreference(jobs, "upcoming");
-        jobId = selectedJob?.id;
+        if (selectedJob?.id) {
+          jobId = selectedJob.id;
+        } else {
+          const fallbackJob = selectJobByPreference(jobs, "most_recent");
+          if (fallbackJob?.id) {
+            jobId = fallbackJob.id;
+            usedFallbackJob = true;
+          }
+        }
       }
 
       if (!jobId) {
@@ -1951,7 +2085,12 @@ server.registerTool(
             type: "text",
             text: JSON.stringify({
               success: false,
-              error: "No upcoming jobs were found for this customer.",
+              error: "No jobs were found for this customer.",
+              action_required: "CALL_US",
+              requires_office_call: true,
+              confirmation_required: true,
+              call_phone: "(617) 555-0123",
+              call_reason: "We couldn't locate an active appointment to cancel. Please call the office so we can verify and assist.",
               correlation_id: correlationId
             }, null, 2)
           }]
@@ -1984,13 +2123,21 @@ server.registerTool(
       await hcpPost(`/jobs/${jobId}/notes`, { content: noteContent }, correlationId);
 
       const summary = formatJobScheduleSummary(jobDetails);
+      const workStatus = getWorkStatus(jobDetails);
+      const requiresOfficeCall = usedFallbackJob || isFinalizedStatus(workStatus);
+      const callReason = requiresOfficeCall
+        ? "Cancellation requests for completed or unclear appointments must be handled by the office."
+        : "Cancellation request logged. Please call to confirm changes.";
 
       const result = {
         success: true,
         action_required: "CALL_US",
+        requires_office_call: true,
+        confirmation_required: true,
         call_phone: "(617) 555-0123",
-        call_reason: "Cancellation request logged. Please call to confirm changes.",
+        call_reason: callReason,
         job_id: jobId,
+        job_status: workStatus,
         current_schedule_summary: summary,
         next_steps: "Please call us at (617) 555-0123. Say: \"I need to cancel my service appointment. My name is "
           + `${lookup.selected.first_name} ${lookup.selected.last_name}` + ".\"",
@@ -2021,7 +2168,7 @@ server.registerTool(
   }
 );
 
-server.registerTool(
+registerToolWithDiagnostics(
   "get_job_status",
   {
     title: "Get Job Status",
@@ -2162,7 +2309,7 @@ const CreateLeadInput = z.object({
   lead_source: z.string().default("AI Assistant")
 });
 
-server.registerTool(
+registerToolWithDiagnostics(
   "create_lead",
   {
     title: "Create Lead for Callback",
@@ -2310,7 +2457,7 @@ const GetServiceHistoryInput = z.object({
   limit: z.number().int().min(1).max(20).default(5)
 });
 
-server.registerTool(
+registerToolWithDiagnostics(
   "get_service_history",
   {
     title: "Get Service History",
@@ -2488,7 +2635,7 @@ const STATIC_FAQS = [
   }
 ];
 
-server.registerTool(
+registerToolWithDiagnostics(
   "search_faq",
   {
     title: "Search Business FAQs",
@@ -2739,7 +2886,7 @@ const GetPromotionsInput = z.object({
   code: z.string().optional()
 });
 
-server.registerTool(
+registerToolWithDiagnostics(
   "get_promotions",
   {
     title: "Get Current Promotions & Deals",
@@ -2886,7 +3033,7 @@ const RequestReviewInput = z.object({
   job_id: z.string().optional()
 });
 
-server.registerTool(
+registerToolWithDiagnostics(
   "request_review",
   {
     title: "Request Google Review [OFFLINE]",
@@ -2948,6 +3095,55 @@ server.registerTool(
     }
   }
 );
+
+export function getToolMetricsSnapshot() {
+  const byTool: Record<string, {
+    total_calls: number;
+    success_rate: number;
+    avg_latency_ms: number;
+    failure_calls: number;
+    last_error?: string;
+    last_failure_at?: string;
+  }> = {};
+
+  let totalCalls = 0;
+  let successCalls = 0;
+  let totalLatencyMs = 0;
+
+  for (const [toolName, metric] of toolMetrics.entries()) {
+    totalCalls += metric.totalCalls;
+    successCalls += metric.successCalls;
+    totalLatencyMs += metric.totalLatencyMs;
+
+    byTool[toolName] = {
+      total_calls: metric.totalCalls,
+      success_rate: metric.totalCalls > 0 ? (metric.successCalls / metric.totalCalls) * 100 : 0,
+      avg_latency_ms: metric.totalCalls > 0 ? metric.totalLatencyMs / metric.totalCalls : 0,
+      failure_calls: metric.failureCalls,
+      last_error: metric.lastError,
+      last_failure_at: metric.lastFailureAt
+    };
+  }
+
+  const failureHotspots = Object.entries(byTool)
+    .map(([toolName, data]) => ({
+      tool: toolName,
+      failure_rate: data.total_calls > 0 ? (data.failure_calls / data.total_calls) * 100 : 0,
+      failure_calls: data.failure_calls,
+      total_calls: data.total_calls
+    }))
+    .filter(entry => entry.failure_calls > 0)
+    .sort((a, b) => b.failure_rate - a.failure_rate)
+    .slice(0, 5);
+
+  return {
+    total_calls: totalCalls,
+    success_rate: totalCalls > 0 ? (successCalls / totalCalls) * 100 : 0,
+    avg_latency_ms: totalCalls > 0 ? totalLatencyMs / totalCalls : 0,
+    by_tool: byTool,
+    failure_hotspots: failureHotspots
+  };
+}
 
 // Export the server for use in different transports
 export { server };
