@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { Router } from "express";
 import { createServer, type Server } from "http";
+import { Readable } from "node:stream";
 import { dbStorage as storage } from "./dbStorage";
 import { 
   insertCustomerSchema, insertAppointmentSchema, type BookingFormData, 
@@ -2711,6 +2712,66 @@ Sitemap: ${siteUrl}/sitemap.xml
     }
   });
 
+  const mcpAuthToken = process.env.MCP_AUTH_TOKEN;
+  const mcpAuthInfo = mcpAuthToken
+    ? {
+        type: "bearer",
+        description: "Bearer token required for MCP access. Send Authorization: Bearer <token>."
+      }
+    : {
+        type: "none",
+        description: "No authentication required - publicly accessible to all AI assistants"
+      };
+
+  const MCP_SERVER_INTERNAL_URL = (() => {
+    const configured = process.env.MCP_SERVER_INTERNAL_URL || 'http://localhost:3001/mcp';
+    return configured.endsWith('/mcp') ? configured : `${configured.replace(/\/$/, '')}/mcp`;
+  })();
+
+  // Public MCP transport proxy (exposes MCP over the main web port)
+  app.all('/mcp', async (req, res) => {
+    try {
+      const headers: Record<string, string> = {};
+      const contentType = req.headers['content-type'];
+      const accept = req.headers['accept'];
+      const sessionId = req.headers['mcp-session-id'];
+      const client = req.headers['x-mcp-client'];
+      const authorization = req.headers['authorization'];
+
+      if (contentType) headers['content-type'] = String(contentType);
+      if (accept) headers['accept'] = String(accept);
+      if (sessionId) headers['mcp-session-id'] = String(sessionId);
+      if (client) headers['x-mcp-client'] = String(client);
+      if (authorization) headers['authorization'] = String(authorization);
+
+      const body = req.method === 'GET' || req.method === 'HEAD'
+        ? undefined
+        : (req.body ? JSON.stringify(req.body) : undefined);
+
+      const response = await fetch(MCP_SERVER_INTERNAL_URL, {
+        method: req.method,
+        headers,
+        body
+      });
+
+      res.status(response.status);
+      response.headers.forEach((value, key) => {
+        if (key.toLowerCase() === 'transfer-encoding') return;
+        res.setHeader(key, value);
+      });
+
+      if (!response.body) {
+        return res.end();
+      }
+
+      const stream = Readable.fromWeb(response.body as unknown as ReadableStream);
+      stream.pipe(res);
+    } catch (error) {
+      logError('Error proxying MCP request:', error);
+      res.status(502).json({ error: 'Failed to reach MCP server' });
+    }
+  });
+
   // ========== MCP DISCOVERY ENDPOINTS ==========
   
   // Serve .well-known/mcp.json directly (ensure it works in all environments)
@@ -2749,10 +2810,7 @@ Sitemap: ${siteUrl}/sitemap.xml
           "protocol": "streamable-http",
           "manifest_url": "/api/mcp/manifest",
           "documentation_url": "/api/mcp/docs",
-          "authentication": {
-            "type": "none",
-            "description": "No authentication required - publicly accessible to all AI assistants"
-          },
+          "authentication": mcpAuthInfo,
           "discovery": {
             "client_header": "X-MCP-Client",
             "user_agent_pattern": "mcp-client|ai-assistant",
@@ -3000,7 +3058,8 @@ Sitemap: ${siteUrl}/sitemap.xml
           last_updated: new Date().toISOString(),
           api_version: "1.0.0",
           documentation_url: "/api/mcp/docs"
-        }
+        },
+        authentication: mcpAuthInfo
       };
 
       res.json(manifest);
@@ -3013,21 +3072,31 @@ Sitemap: ${siteUrl}/sitemap.xml
   // MCP Documentation Endpoint (public)
   app.get('/api/mcp/docs', mcpLimiter, mcpLoggingMiddleware, async (req, res) => {
     try {
+      const authDocs = mcpAuthToken
+        ? {
+            method: "Bearer token",
+            description: "Send Authorization: Bearer <token> with MCP requests.",
+            note: "Provide an X-MCP-Client header to identify the assistant for analytics."
+          }
+        : {
+            method: "None",
+            description: "No authentication required - publicly accessible to all AI assistants",
+            note: "Optional X-MCP-Client header can be included to identify the client for analytics"
+          };
+
       const docs = {
         title: "Johnson Bros. Plumbing MCP Integration Guide",
         version: "1.0.0",
         description: "Complete documentation for integrating with Johnson Bros. Plumbing services via Model Context Protocol",
         
-        authentication: {
-          method: "None",
-          description: "No authentication required - publicly accessible to all AI assistants",
-          note: "Optional X-MCP-Client header can be included to identify the client for analytics"
-        },
+        authentication: authDocs,
 
         getting_started: {
           discovery: "Use the .well-known/mcp.json file for initial discovery",
           manifest: "GET /api/mcp/manifest for complete tool specifications",
-          authentication: "No authentication required - endpoints are public",
+          authentication: mcpAuthToken
+            ? "Authorization required: Bearer token"
+            : "No authentication required - endpoints are public",
           rate_limits: "20 requests per minute for public access"
         },
 

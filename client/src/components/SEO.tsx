@@ -105,7 +105,7 @@ export function SEO({
     setMetaTag("mcp:enabled", "true");
     setMetaTag("mcp:version", "1.0");
     setMetaTag("mcp:discovery", "/.well-known/mcp.json");
-    setMetaTag("mcp:manifest", "/api/v1/mcp/manifest");
+    setMetaTag("mcp:manifest", "/api/mcp/manifest");
     setMetaTag("mcp:tools", "book_service_call,search_availability,lookup_customer,get_services,get_capacity");
     setMetaTag("ai:assistant-compatible", "chatgpt,claude,gpt-5");
     setMetaTag("ai:booking-enabled", "true");
