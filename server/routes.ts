@@ -957,9 +957,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Missing required customer fields: first_name, last_name, mobile_number" });
       }
 
+      // Validate address field
+      if (!customer.address) {
+        return res.status(400).json({ error: "Address is required" });
+      }
+
+      // Validate SMS consent
+      if (!customer.sms_consent) {
+        return res.status(400).json({ error: "SMS consent is required" });
+      }
+
       const housecallClient = HousecallProClient.getInstance();
 
-      // Create lead in HousecallPro
+      // Create lead in HousecallPro with address
       const leadData = {
         customer: {
           first_name: customer.first_name,
@@ -969,14 +979,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
           notifications_enabled: customer.notifications_enabled || false,
           lead_source: customer.lead_source || "Website Contact Form",
           tags: customer.tags || ["Website Lead"],
+          addresses: [{
+            street: customer.address,
+            type: "service"
+          }]
         },
-        notes: customer.notes || "New lead from website contact form"
+        notes: customer.notes ? `Address: ${customer.address}\n\n${customer.notes}` : `Address: ${customer.address}\n\nNew lead from website contact form`
       };
 
       Logger.info(`[Lead Creation] Creating lead for ${customer.first_name} ${customer.last_name} (${customer.mobile_number})`);
       
       const lead = await housecallClient.createLead(leadData);
       Logger.info(`[Lead Creation] Successfully created lead: ${lead.id}`);
+
+      // Send SMS notification to business owner
+      try {
+        const { sendBusinessNotification } = await import('./lib/businessNotifications');
+        
+        const notificationMessage = `📝 NEW WEBSITE LEAD\n` +
+          `Name: ${customer.first_name} ${customer.last_name}\n` +
+          `Phone: ${customer.mobile_number}\n` +
+          `Address: ${customer.address}\n` +
+          `Issue: ${customer.notes ? customer.notes.substring(0, 80) : 'Not specified'}`;
+        
+        await sendBusinessNotification('high_priority_lead', {
+          sessionId: `lead-${lead.id || Date.now()}`,
+          channel: 'web_chat',
+          customerName: `${customer.first_name} ${customer.last_name}`,
+          customerPhone: customer.mobile_number,
+          issueDescription: customer.notes || 'New website lead',
+          outcome: 'lead_created',
+          leadId: lead.id ? parseInt(lead.id) : undefined
+        }, notificationMessage);
+        
+        Logger.info(`[Lead Creation] Sent SMS notification to business owner for lead ${lead.id}`);
+      } catch (notifyError) {
+        Logger.error('[Lead Creation] Failed to send SMS notification:', { error: notifyError instanceof Error ? notifyError.message : String(notifyError) });
+      }
 
       // Schedule SMS follow-up if customer opted in for marketing (3 min 57 sec delay)
       let scheduledSmsId: number | null = null;

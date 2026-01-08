@@ -43,21 +43,28 @@ export default function LeadForm({ onSuccess, leadSource = "Website Contact Form
       lastName: "",
       phone: "",
       email: "",
+      address: "",
       serviceDetails: "",
-      marketingConsent: false,
+      smsConsent: undefined as unknown as true,
+      website: "",
     },
   });
 
   // Lead creation mutation
   const createLeadMutation = useMutation({
     mutationFn: async (data: LeadFormData) => {
+      if (data.website) {
+        return { ok: true };
+      }
       return apiRequest("POST", "/api/v1/leads", {
         customer: {
           first_name: data.firstName,
           last_name: data.lastName,
           email: data.email || undefined,
           mobile_number: data.phone,
-          notifications_enabled: data.marketingConsent,
+          address: data.address,
+          notifications_enabled: true,
+          sms_consent: data.smsConsent,
           lead_source: leadSource,
           notes: data.serviceDetails,
           tags: ["Website Lead"],
@@ -186,9 +193,23 @@ export default function LeadForm({ onSuccess, leadSource = "Website Contact Form
           </div>
 
           <div>
+            <Input
+              {...form.register("address")}
+              placeholder="Address"
+              className="w-full"
+              data-testid="input-address"
+            />
+            {form.formState.errors.address && (
+              <p className="text-red-500 text-xs mt-1" data-testid="error-address">
+                {form.formState.errors.address.message}
+              </p>
+            )}
+          </div>
+
+          <div>
             <Textarea
               {...form.register("serviceDetails")}
-              placeholder="Service details"
+              placeholder="What's going on?"
               className="w-full min-h-[80px] resize-none"
               data-testid="input-service-details"
             />
@@ -199,21 +220,34 @@ export default function LeadForm({ onSuccess, leadSource = "Website Contact Form
             )}
           </div>
 
+          <input
+            {...form.register("website")}
+            style={{ display: "none" }}
+            tabIndex={-1}
+            autoComplete="off"
+          />
+
           <div className="flex items-start space-x-2">
             <Checkbox
-              {...form.register("marketingConsent")}
-              id="marketing-consent"
+              id="sms-consent"
               className="mt-1"
-              data-testid="checkbox-marketing-consent"
+              checked={form.watch("smsConsent") === true}
+              onCheckedChange={(checked) => form.setValue("smsConsent", checked === true ? true : undefined as unknown as true)}
+              data-testid="checkbox-sms-consent"
             />
             <label 
-              htmlFor="marketing-consent" 
+              htmlFor="sms-consent" 
               className="text-xs text-gray-600 leading-relaxed cursor-pointer"
-              data-testid="label-marketing-consent"
+              data-testid="label-sms-consent"
             >
-              By checking this box, I consent to receive marketing and promotional text messages at the phone number I have provided above. Message and data rates may apply. Message frequency varies. Reply HELP for help and STOP to stop.
+              I agree to receive text messages about my request. Message and data rates may apply. Reply HELP for help and STOP to stop. <span className="text-red-500">*</span>
             </label>
           </div>
+          {form.formState.errors.smsConsent && (
+            <p className="text-red-500 text-xs -mt-2" data-testid="error-sms-consent">
+              {form.formState.errors.smsConsent.message}
+            </p>
+          )}
 
           <Button
             type="submit"
