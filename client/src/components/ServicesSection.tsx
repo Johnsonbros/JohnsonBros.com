@@ -121,7 +121,7 @@ export default function ServicesSection({ onBookService }: ServicesSectionProps)
               </div>
             ))
           ) : (
-            services?.map((service) => {
+            services?.filter(s => s.id !== 'service_call').map((service) => {
               const IconComponent = serviceIcons[service.category as keyof typeof serviceIcons] || serviceIcons.default;
               const imageUrl = serviceImages[service.id] || serviceImages["service_call"];
               const pageLink = servicePageLinks[service.id];
