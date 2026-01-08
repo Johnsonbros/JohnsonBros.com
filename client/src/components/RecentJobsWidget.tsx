@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, MapPin, Clock } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { useState, useEffect } from "react";
 
 interface RecentJob {
   id: string;
@@ -17,12 +18,22 @@ interface RecentJob {
 }
 
 export function RecentJobsWidget() {
+  const [shouldFetch, setShouldFetch] = useState(false);
+  
+  // Defer API call to improve initial page load performance
+  useEffect(() => {
+    const timer = setTimeout(() => setShouldFetch(true), 200);
+    return () => clearTimeout(timer);
+  }, []);
+  
   const { data: recentJobs = [], isLoading } = useQuery<RecentJob[]>({
     queryKey: ["/api/v1/social-proof/recent-jobs"],
     refetchOnWindowFocus: true,
+    enabled: shouldFetch,
+    staleTime: 5 * 60 * 1000,
   });
 
-  if (isLoading) {
+  if (isLoading || !shouldFetch) {
     return (
       <Card className="w-full max-w-md" data-testid="recent-jobs-loading">
         <CardHeader>

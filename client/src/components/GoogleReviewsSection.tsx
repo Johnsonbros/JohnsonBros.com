@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useState, useEffect } from "react";
 
 interface GoogleReview {
   id: string;
@@ -28,9 +29,19 @@ interface GoogleReviewsData {
 }
 
 export default function GoogleReviewsSection() {
+  const [shouldFetch, setShouldFetch] = useState(false);
+  
+  // Defer API call to improve initial page load performance
+  useEffect(() => {
+    const timer = setTimeout(() => setShouldFetch(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
+  
   const { data: googleData, isLoading, error } = useQuery<GoogleReviewsData>({
     queryKey: ["/api/v1/google-reviews"],
     refetchOnWindowFocus: true,
+    enabled: shouldFetch,
+    staleTime: 5 * 60 * 1000,
   });
 
   const formatTimeAgo = (dateString: string) => {
@@ -71,7 +82,7 @@ export default function GoogleReviewsSection() {
     );
   }
 
-  if (isLoading) {
+  if (isLoading || !shouldFetch) {
     return (
       <section className="py-16 bg-white" data-testid="google-reviews-loading">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
