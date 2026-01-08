@@ -1,10 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { 
   Select, 
   SelectContent, 
@@ -63,6 +67,15 @@ interface ABTestData {
     weight: number;
     isControl: boolean;
     changes: Record<string, any>;
+    metrics?: {
+      impressions: number;
+      conversions: number;
+      conversionRate: number;
+      bounceRate?: number;
+      revenue: number;
+      statisticalSignificance?: number;
+    };
+    confidence?: number;
   }>;
   metrics?: Array<{
     variantId: string;
@@ -78,18 +91,29 @@ interface ABTestData {
 export default function ABTestingDashboard() {
   const [selectedTestId, setSelectedTestId] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState('7d');
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [newTest, setNewTest] = useState({
+    name: '',
+    testId: '',
+    description: '',
+    trafficAllocation: 50,
+    controlName: 'Control',
+    controlWeight: 50,
+    variantName: 'Variant B',
+    variantWeight: 50
+  });
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   // Fetch all A/B tests
-  const { data: tests, isLoading: testsLoading } = useQuery<ABTestData[]>({
-    queryKey: ['/api/v1/ab-tests'],
-    queryFn: () => authenticatedFetch('/api/v1/ab-tests'),
+  const { data: experiments, isLoading: testsLoading } = useQuery<ABTestData[]>({
+    queryKey: ['/api/v1/experiments'],
+    queryFn: () => authenticatedFetch('/api/v1/experiments'),
     refetchInterval: 30000, // Refresh every 30 seconds
   });
 
   // Fetch metrics for selected test
-  const { data: metrics, isLoading: metricsLoading } = useQuery({
+  const { data: metrics } = useQuery({
     queryKey: ['/api/v1/ab-tests', selectedTestId, 'metrics'],
     queryFn: () => authenticatedFetch(`/api/v1/ab-tests/${selectedTestId}/metrics`),
     enabled: !!selectedTestId,
@@ -105,15 +129,32 @@ export default function ABTestingDashboard() {
         body: JSON.stringify({ status })
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/v1/ab-tests'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v1/experiments'] });
       toast({ title: 'Test status updated successfully' });
     }
   });
 
-  const activeTests = tests?.filter(t => t.status === 'active') || [];
-  const completedTests = tests?.filter(t => t.status === 'completed') || [];
+  const tests = useMemo(() => {
+    if (!experiments) return [];
+    return experiments.map(test => ({
+      ...test,
+      metrics: test.variants.map(variant => ({
+        variantId: variant.variantId,
+        impressions: variant.metrics?.impressions ?? 0,
+        conversions: variant.metrics?.conversions ?? 0,
+        conversionRate: variant.metrics?.conversionRate ?? 0,
+        bounceRate: variant.metrics?.bounceRate ?? 0,
+        revenue: variant.metrics?.revenue ?? 0,
+        statisticalSignificance: variant.confidence ?? variant.metrics?.statisticalSignificance
+      }))
+    }));
+  }, [experiments]);
+
+  const activeTests = tests.filter(t => t.status === 'active');
+  const completedTests = tests.filter(t => t.status === 'completed');
 
   const selectedTest = tests?.find(t => t.testId === selectedTestId);
+  const selectedMetrics = metrics ?? selectedTest?.metrics ?? [];
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -158,6 +199,108 @@ export default function ABTestingDashboard() {
 
   const formatPercentage = (value: number) => `${(value * 100).toFixed(2)}%`;
   const formatCurrency = (value: number) => `$${value.toFixed(2)}`;
+
+  const createExperimentMutation = useMutation({
+    mutationFn: (payload: { test: Record<string, any>; variants: Record<string, any>[] }) =>
+      authenticatedFetch('/api/v1/experiments', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/v1/experiments'] });
+      toast({ title: 'Experiment created', description: 'Your new A/B test is ready as a draft.' });
+      setShowCreateDialog(false);
+      setNewTest({
+        name: '',
+        testId: '',
+        description: '',
+        trafficAllocation: 50,
+        controlName: 'Control',
+        controlWeight: 50,
+        variantName: 'Variant B',
+        variantWeight: 50
+      });
+    },
+    onError: (error: unknown) => {
+      toast({
+        title: 'Failed to create experiment',
+        description: error instanceof Error ? error.message : 'Please try again.',
+        variant: 'destructive'
+      });
+    }
+  });
+
+  const slugifyId = (value: string, fallback: string) => {
+    const normalized = value
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '');
+    return normalized || fallback;
+  };
+
+  const handleCreateExperiment = () => {
+    const name = newTest.name.trim();
+    const description = newTest.description.trim();
+    const trafficAllocation = Math.min(Math.max(newTest.trafficAllocation, 1), 100);
+    let testId = newTest.testId.trim();
+
+    if (!name) {
+      toast({ title: 'Name is required', variant: 'destructive' });
+      return;
+    }
+
+    if (!testId) {
+      testId = slugifyId(name, 'ab-test');
+    }
+
+    const controlName = newTest.controlName.trim();
+    const variantName = newTest.variantName.trim();
+
+    if (!controlName || !variantName) {
+      toast({ title: 'Variant names are required', variant: 'destructive' });
+      return;
+    }
+
+    const controlWeight = Math.max(newTest.controlWeight, 1);
+    const variantWeight = Math.max(newTest.variantWeight, 1);
+
+    if (controlWeight + variantWeight !== 100) {
+      toast({ title: 'Variant weights must total 100%', variant: 'destructive' });
+      return;
+    }
+
+    let controlId = slugifyId(controlName, 'control');
+    let variantId = slugifyId(variantName, 'variant');
+    if (variantId === controlId) {
+      variantId = `${variantId}_b`;
+    }
+
+    createExperimentMutation.mutate({
+      test: {
+        testId,
+        name,
+        description: description || undefined,
+        trafficAllocation: trafficAllocation / 100
+      },
+      variants: [
+        {
+          variantId: controlId,
+          name: controlName,
+          weight: controlWeight,
+          isControl: true,
+          changes: {}
+        },
+        {
+          variantId,
+          name: variantName,
+          weight: variantWeight,
+          isControl: false,
+          changes: {}
+        }
+      ]
+    });
+  };
 
   const exportResultsToCSV = () => {
     if (!tests || tests.length === 0) {
@@ -333,7 +476,7 @@ export default function ABTestingDashboard() {
               </Select>
               <Button 
                 variant="default"
-                onClick={() => {/* TODO: Create new test */}}
+                onClick={() => setShowCreateDialog(true)}
                 data-testid="button-new-test"
               >
                 New Test
@@ -476,10 +619,10 @@ export default function ABTestingDashboard() {
                 <CardTitle>{selectedTest.name}</CardTitle>
                 <CardDescription>{selectedTest.description}</CardDescription>
               </div>
-              {selectedTest.metrics && selectedTest.metrics.length > 0 && (
+              {selectedMetrics.length > 0 && (
                 <div className="text-right">
                   {getSignificanceBadge(
-                    Math.max(...selectedTest.metrics.map(m => m.statisticalSignificance || 0))
+                    Math.max(...selectedMetrics.map(m => m.statisticalSignificance || 0))
                   )}
                 </div>
               )}
@@ -503,7 +646,7 @@ export default function ABTestingDashboard() {
                   </thead>
                   <tbody>
                     {selectedTest.variants.map(variant => {
-                      const metric = selectedTest.metrics?.find(m => m.variantId === variant.variantId);
+                      const metric = selectedMetrics.find(m => m.variantId === variant.variantId);
                       return (
                         <tr key={variant.variantId} className="border-b">
                           <td className="p-2">
@@ -532,12 +675,12 @@ export default function ABTestingDashboard() {
             </div>
 
             {/* Conversion Rate Chart */}
-            {selectedTest.metrics && selectedTest.metrics.length > 0 && (
+            {selectedMetrics.length > 0 && (
               <div>
                 <h3 className="font-semibold mb-4">Conversion Rate Comparison</h3>
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={selectedTest.variants.map(variant => {
-                    const metric = selectedTest.metrics?.find(m => m.variantId === variant.variantId);
+                    const metric = selectedMetrics.find(m => m.variantId === variant.variantId);
                     return {
                       name: variant.name,
                       conversionRate: metric ? metric.conversionRate * 100 : 0,
@@ -561,6 +704,117 @@ export default function ABTestingDashboard() {
           </CardContent>
         </Card>
       )}
+
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Create New A/B Test</DialogTitle>
+            <DialogDescription>
+              Set up a draft experiment and start it when you are ready.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="ab-test-name">Test name</Label>
+                <Input
+                  id="ab-test-name"
+                  value={newTest.name}
+                  onChange={(event) => setNewTest({ ...newTest, name: event.target.value })}
+                  placeholder="Homepage CTA copy test"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="ab-test-id">Test ID</Label>
+                <Input
+                  id="ab-test-id"
+                  value={newTest.testId}
+                  onChange={(event) => setNewTest({ ...newTest, testId: event.target.value })}
+                  placeholder="homepage_cta_copy"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="ab-test-description">Description</Label>
+              <Textarea
+                id="ab-test-description"
+                value={newTest.description}
+                onChange={(event) => setNewTest({ ...newTest, description: event.target.value })}
+                placeholder="Describe what success looks like for this experiment."
+              />
+            </div>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="ab-test-traffic">Traffic allocation (%)</Label>
+                <Input
+                  id="ab-test-traffic"
+                  type="number"
+                  min={1}
+                  max={100}
+                  value={newTest.trafficAllocation}
+                  onChange={(event) => setNewTest({ ...newTest, trafficAllocation: Number(event.target.value) })}
+                />
+              </div>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label>Variants</Label>
+                <span className="text-xs text-muted-foreground">Weights must total 100%</span>
+              </div>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-[2fr_1fr]">
+                <div className="space-y-2">
+                  <Label htmlFor="ab-test-control">Control name</Label>
+                  <Input
+                    id="ab-test-control"
+                    value={newTest.controlName}
+                    onChange={(event) => setNewTest({ ...newTest, controlName: event.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="ab-test-control-weight">Weight (%)</Label>
+                  <Input
+                    id="ab-test-control-weight"
+                    type="number"
+                    min={1}
+                    max={100}
+                    value={newTest.controlWeight}
+                    onChange={(event) => setNewTest({ ...newTest, controlWeight: Number(event.target.value) })}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-[2fr_1fr]">
+                <div className="space-y-2">
+                  <Label htmlFor="ab-test-variant">Variant name</Label>
+                  <Input
+                    id="ab-test-variant"
+                    value={newTest.variantName}
+                    onChange={(event) => setNewTest({ ...newTest, variantName: event.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="ab-test-variant-weight">Weight (%)</Label>
+                  <Input
+                    id="ab-test-variant-weight"
+                    type="number"
+                    min={1}
+                    max={100}
+                    value={newTest.variantWeight}
+                    onChange={(event) => setNewTest({ ...newTest, variantWeight: Number(event.target.value) })}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreateExperiment} disabled={createExperimentMutation.isPending}>
+              {createExperimentMutation.isPending ? 'Creating…' : 'Create Test'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
