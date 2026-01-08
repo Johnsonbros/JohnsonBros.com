@@ -347,7 +347,7 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
 
           </div>
 
-          <div className="relative mt-8 lg:mt-0 flex flex-col items-center sm:block">
+          <div className="relative mt-8 lg:mt-0 flex flex-col items-center sm:block self-end">
             {/* Express Video Preview for Desktop View */}
             <div className="hidden lg:block relative w-full aspect-video rounded-xl overflow-hidden shadow-xl border-4 border-white/20">
               <video 
