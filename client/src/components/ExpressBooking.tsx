@@ -211,7 +211,7 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
           </div>
 
           {/* Row 2: Video card on desktop - aligns with time slot row */}
-          <div className="hidden lg:flex lg:col-start-2 lg:row-start-1 lg:row-span-2 items-end">
+          <div className="hidden lg:flex lg:col-start-2 lg:row-start-2 items-start">
             <div className="relative w-full aspect-video rounded-xl overflow-hidden shadow-xl border-4 border-white/20">
               <video 
                 src={plumberVideo}
