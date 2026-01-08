@@ -47,7 +47,16 @@ export default function GoogleReviewsSection() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, align: 'start' }, [Autoplay()]);
+  const [emblaRef, emblaApi] = useEmblaCarousel(
+    { 
+      loop: true, 
+      align: 'start',
+      skipSnaps: false,
+      duration: 30,
+      dragFree: false
+    }, 
+    [Autoplay({ delay: 5000, stopOnInteraction: false, stopOnMouseEnter: true })]
+  );
 
   const scrollPrev = useCallback(() => {
     if (emblaApi) emblaApi.scrollPrev();
@@ -212,7 +221,7 @@ export default function GoogleReviewsSection() {
                     <div className="flex items-center justify-between mt-auto pt-4 border-t border-slate-100 dark:border-slate-800 text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-widest font-black">
                       <div className="flex items-center gap-1.5 group-hover:text-johnson-blue transition-colors">
                         <MapPin className="h-3 w-3" />
-                        {review.location.split('-').pop()?.trim() || 'South Shore'}
+                        {review.location}
                       </div>
                       <div className="flex items-center gap-1">
                         <Clock className="h-3 w-3" />

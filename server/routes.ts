@@ -1614,12 +1614,14 @@ Sitemap: ${siteUrl}/sitemap.xml
         {
           placeId: "ChIJTc2fRf_wZU4Ry1Mv_MR3GUc",
           name: "Johnson Bros. Plumbing & Drain Cleaning - Quincy",
-          address: "75 E Elm Ave, Quincy, MA 02170, USA"
+          address: "75 E Elm Ave, Quincy, MA 02170, USA",
+          shortName: "Quincy"
         },
         {
           placeId: "ChIJPePacTlw-kkR8qUHEEuX1bc", 
           name: "Johnson Bros. Plumbing & Drain Cleaning - Abington",
-          address: "55 Brighton St, Abington, MA 02351, USA"
+          address: "55 Brighton St, Abington, MA 02351, USA",
+          shortName: "Abington"
         }
       ];
 
@@ -1651,7 +1653,7 @@ Sitemap: ${siteUrl}/sitemap.xml
                   rating: review.rating,
                   text: review.text,
                   time: new Date(review.time * 1000).toISOString(),
-                  location: location.name,
+                  location: location.shortName,
                   profilePhoto: review.profile_photo_url,
                   source: 'google'
                 });
