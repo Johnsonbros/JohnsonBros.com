@@ -349,7 +349,7 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
 
           <div className="relative mt-8 lg:mt-0 flex flex-col items-center sm:block">
             {/* Express Video Preview for Desktop View */}
-            <div className="hidden lg:block mb-6 relative w-full aspect-video rounded-xl overflow-hidden shadow-xl border-4 border-white/20">
+            <div className="hidden lg:block relative w-full aspect-video rounded-xl overflow-hidden shadow-xl border-4 border-white/20">
               <video 
                 src={plumberVideo}
                 autoPlay
@@ -364,10 +364,40 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
                 <span className="text-white text-xs font-bold uppercase tracking-wider">Live Service Feed</span>
               </div>
+
+              {/* Floating Service Badge - Positioned bottom right of the video on desktop */}
+              <div className={`absolute bottom-4 right-4 bg-white p-4 rounded-xl shadow-lg transform transition-all duration-300 hover:scale-105 z-20 ${hasToday || hasTomorrow ? 'ring-4 ring-green-400 ring-opacity-50' : ''}`}>
+                <div className="text-center">
+                  {hasToday ? (
+                    <>
+                      <Zap className="h-6 w-6 text-green-500 mx-auto mb-1 animate-bounce" />
+                      <div className="text-lg font-bold text-green-600 leading-tight">EXPRESS</div>
+                      <div className="text-[10px] text-gray-600 uppercase font-bold">Same-Day</div>
+                      <div className="mt-1 bg-green-50 rounded p-1">
+                        <div className="text-sm font-bold text-green-600">FREE FEE</div>
+                      </div>
+                    </>
+                  ) : hasTomorrow ? (
+                    <>
+                      <Calendar className="h-6 w-6 text-blue-500 mx-auto mb-1" />
+                      <div className="text-lg font-bold text-blue-600 leading-tight">NEXT DAY</div>
+                      <div className="text-[10px] text-gray-600 uppercase font-bold">Guaranteed</div>
+                      <div className="mt-1 bg-green-50 rounded p-1">
+                        <div className="text-sm font-bold text-green-600">FREE FEE</div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="text-xl font-bold text-johnson-blue">$99</div>
+                      <div className="text-[10px] text-gray-600 uppercase font-bold">Service Fee</div>
+                    </>
+                  )}
+                </div>
+              </div>
             </div>
 
-            {/* Floating Service Badge */}
-            <div className={`bg-white p-6 rounded-xl shadow-lg w-full sm:w-auto ${hasToday || hasTomorrow ? 'ring-4 ring-green-400 ring-opacity-50' : ''}`}>
+            {/* Mobile-only Service Badge (Original position) */}
+            <div className={`lg:hidden bg-white p-6 rounded-xl shadow-lg w-full sm:w-auto ${hasToday || hasTomorrow ? 'ring-4 ring-green-400 ring-opacity-50' : ''}`}>
               <div className="text-center">
                 {hasToday ? (
                   <>
