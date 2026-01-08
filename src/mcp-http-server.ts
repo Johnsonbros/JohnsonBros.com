@@ -16,7 +16,8 @@ const ipRequestCounts = new Map<string, { count: number; firstRequest: number; l
 const RATE_LIMIT_CONFIG = {
   SESSION_MAX_REQUESTS: 100,
   SESSION_WINDOW_MS: 15 * 60 * 1000,
-  SESSION_COOLDOWN_MS: 500,
+  SESSION_COOLDOWN_MS: 100,
+  SESSION_INIT_BURST: 10,
   IP_MAX_REQUESTS: 200,
   IP_MAX_SESSIONS: 20,
   IP_WINDOW_MS: 60 * 60 * 1000,
@@ -38,8 +39,12 @@ function checkMcpRateLimit(sessionId: string, ipAddress: string): { allowed: boo
     session.firstRequest = now;
   }
   
-  // Cooldown check
-  if (session.count > 0 && now - session.lastRequest < RATE_LIMIT_CONFIG.SESSION_COOLDOWN_MS) {
+  // Allow burst of requests during session initialization (first 10 requests)
+  // MCP protocol requires several rapid requests during connection handshake
+  const isInitPhase = session.count < RATE_LIMIT_CONFIG.SESSION_INIT_BURST;
+  
+  // Cooldown check - skip during initialization phase to allow protocol handshake
+  if (!isInitPhase && session.count > 0 && now - session.lastRequest < RATE_LIMIT_CONFIG.SESSION_COOLDOWN_MS) {
     return { allowed: false, reason: 'Request too fast, please slow down' };
   }
   
