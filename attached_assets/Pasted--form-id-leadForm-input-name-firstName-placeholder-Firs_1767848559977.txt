@@ -1,0 +1,105 @@
+<form id="leadForm">
+  <input name="firstName" placeholder="First name" required />
+  <input name="lastName" placeholder="Last name" required />
+  <input name="phone" placeholder="Phone" required />
+  <input name="email" placeholder="Email (optional)" />
+  <input name="address" placeholder="Address" required />
+  <textarea name="notes" placeholder="What’s going on?"></textarea>
+
+  <label>
+    <input type="checkbox" name="smsConsent" required />
+    I agree to receive texts about my request.
+  </label>
+
+  <!-- simple bot trap -->
+  <input name="website" style="display:none" tabindex="-1" autocomplete="off" />
+
+  <button type="submit">Submit</button>
+</form>
+
+<script>
+document.getElementById("leadForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  const data = Object.fromEntries(new FormData(form).entries());
+
+  const res = await fetch("/api/leads", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+
+  const out = await res.json();
+  if (!res.ok) alert(out.error || "Something went wrong.");
+  else alert("Thanks! We’ll reach out shortly.");
+});
+</script>
+
+import express from "express";
+
+const app = express();
+app.use(express.json());
+
+// Basic phone cleanup
+function normalizePhone(phone = "") {
+  return phone.replace(/[^\d]/g, "").slice(-10);
+}
+
+app.post("/api/leads", async (req, res) => {
+  try {
+    const {
+      firstName,
+      lastName,
+      phone,
+      email,
+      address,
+      notes,
+      smsConsent,
+      website, // honeypot
+    } = req.body || {};
+
+    // Bot trap: if filled, silently accept but do nothing
+    if (website) return res.status(200).json({ ok: true });
+
+    // Validate
+    if (!firstName || !lastName || !phone || !address) {
+      return res.status(400).json({ error: "Missing required fields." });
+    }
+    if (!smsConsent) {
+      return res.status(400).json({ error: "SMS consent is required." });
+    }
+
+    const phone10 = normalizePhone(phone);
+    if (phone10.length !== 10) {
+      return res.status(400).json({ error: "Invalid phone number." });
+    }
+
+    const lead = {
+      firstName: String(firstName).trim(),
+      lastName: String(lastName).trim(),
+      phone: phone10,
+      email: email ? String(email).trim() : null,
+      address: String(address).trim(),
+      notes: notes ? String(notes).trim() : null,
+      smsConsent: true,
+      createdAt: new Date().toISOString(),
+      source: "website",
+    };
+
+    // 1) Store lead (DB, Airtable, Google Sheet, etc.)
+    // await db.insertLead(lead);
+
+    // 2) Notify you (email/SMS/Slack)
+    // await sendSlack(`New lead: ${lead.firstName} ${lead.lastName} - ${lead.phone}`);
+
+    // 3) Push into Housecall Pro (create customer + maybe create job/estimate)
+    // await housecallProUpsertCustomer(lead);
+
+    return res.status(200).json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Server error." });
+  }
+});
+
+app.listen(3000, () => console.log("Listening on :3000"));
