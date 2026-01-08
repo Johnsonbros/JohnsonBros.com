@@ -40,6 +40,13 @@ export default function GoogleReviewsSection() {
     return () => clearTimeout(timer);
   }, []);
   
+  const { data: googleData, isLoading, error } = useQuery<GoogleReviewsData>({
+    queryKey: ["/api/v1/google-reviews"],
+    refetchOnWindowFocus: true,
+    enabled: shouldFetch,
+    staleTime: 5 * 60 * 1000,
+  });
+
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, align: 'start' }, [Autoplay()]);
 
   const scrollPrev = useCallback(() => {
@@ -50,7 +57,7 @@ export default function GoogleReviewsSection() {
     if (emblaApi) emblaApi.scrollNext();
   }, [emblaApi]);
 
-  if (error) {
+  const formatTimeAgo = (dateString: string) => {
     const now = new Date();
     const date = new Date(dateString);
     const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
