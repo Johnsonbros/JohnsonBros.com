@@ -554,12 +554,31 @@ export async function getConversationHistory(phoneNumber: string): Promise<{
   return { conversation, messages };
 }
 
+// Store interval reference for cleanup
+let smsProcessorInterval: NodeJS.Timeout | null = null;
+
 // Start the pending SMS processor on server startup
 export function startScheduledSmsProcessor(): void {
-  // Initialize MCP connection on startup
-  getMcpClient().catch(err => {
-    Logger.warn('[SMS Agent] MCP connection failed on startup, will retry on first use:', { error: err.message });
-  });
+  // Initialize MCP connection on startup with retry logic
+  const initMcpWithRetry = async (retries = 3, delay = 2000) => {
+    for (let i = 0; i < retries; i++) {
+      try {
+        await getMcpClient();
+        Logger.info('[SMS Agent] MCP connection established successfully');
+        return;
+      } catch (err: any) {
+        if (i < retries - 1) {
+          Logger.warn(`[SMS Agent] MCP connection attempt ${i + 1} failed, retrying in ${delay}ms:`, { error: err.message });
+          await new Promise(resolve => setTimeout(resolve, delay));
+          delay *= 2; // Exponential backoff
+        } else {
+          Logger.warn('[SMS Agent] MCP connection failed after retries, will retry on first use:', { error: err.message });
+        }
+      }
+    }
+  };
+  
+  initMcpWithRetry().catch(() => {});
   
   // Process any missed messages immediately
   processPendingScheduledSms().catch(err => {
@@ -567,11 +586,28 @@ export function startScheduledSmsProcessor(): void {
   });
   
   // Check for pending messages every minute
-  setInterval(() => {
+  smsProcessorInterval = setInterval(() => {
     processPendingScheduledSms().catch(err => {
       Logger.error('[SMS Agent] Error in scheduled SMS processor:', err);
     });
   }, 60 * 1000);
   
   Logger.info('[SMS Agent] Scheduled SMS processor started');
+}
+
+// Stop the scheduled SMS processor (for graceful shutdown)
+export function stopScheduledSmsProcessor(): void {
+  if (smsProcessorInterval) {
+    clearInterval(smsProcessorInterval);
+    smsProcessorInterval = null;
+    Logger.info('[SMS Agent] Scheduled SMS processor stopped');
+  }
+  
+  // Close MCP client connection if active
+  if (mcpClient) {
+    mcpClient.close().catch(() => {});
+    mcpClient = null;
+    mcpTools = [];
+    Logger.info('[SMS Agent] MCP client connection closed');
+  }
 }

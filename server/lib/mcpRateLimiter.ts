@@ -84,8 +84,28 @@ function cleanupOldEntries() {
   }
 }
 
-// Run cleanup every 5 minutes
-setInterval(cleanupOldEntries, 5 * 60 * 1000);
+// Store interval reference for cleanup
+let cleanupInterval: NodeJS.Timeout | null = null;
+
+// Start cleanup interval
+function startCleanupInterval() {
+  if (!cleanupInterval) {
+    cleanupInterval = setInterval(cleanupOldEntries, 5 * 60 * 1000);
+  }
+}
+
+// Stop cleanup interval (for graceful shutdown)
+export function stopRateLimiterCleanup(): void {
+  if (cleanupInterval) {
+    clearInterval(cleanupInterval);
+    cleanupInterval = null;
+    sessionLimits.clear();
+    ipLimits.clear();
+  }
+}
+
+// Initialize cleanup on module load
+startCleanupInterval();
 
 // Check rate limit for a request
 export function checkRateLimit(

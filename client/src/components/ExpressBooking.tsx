@@ -47,11 +47,11 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
   const [userZip, setUserZip] = useState<string | null>(null);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<ExpressWindow | null>(null);
   
-  // Fetch today's capacity data
+  // Fetch today's capacity data (using v1 API endpoint)
   const { data: todayCapacity } = useQuery<CapacityData>({
     queryKey: ['/api/v1/capacity/today', userZip],
     queryFn: async () => {
-      const url = userZip ? `/api/capacity/today?zip=${userZip}` : '/api/capacity/today';
+      const url = userZip ? `/api/v1/capacity/today?zip=${userZip}` : '/api/v1/capacity/today';
       const response = await apiRequest("GET", url);
       return response.json();
     },
@@ -62,11 +62,11 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
   const shouldShowTomorrow = todayCapacity?.overall.state === 'NEXT_DAY' || 
     (todayCapacity?.unique_express_windows?.length === 0);
   
-  // Fetch tomorrow's capacity data if today has no slots
+  // Fetch tomorrow's capacity data if today has no slots (using v1 API endpoint)
   const { data: tomorrowCapacity } = useQuery<CapacityData>({
     queryKey: ['/api/v1/capacity/tomorrow', userZip],
     queryFn: async () => {
-      const url = userZip ? `/api/capacity/tomorrow?zip=${userZip}` : '/api/capacity/tomorrow';
+      const url = userZip ? `/api/v1/capacity/tomorrow?zip=${userZip}` : '/api/v1/capacity/tomorrow';
       const response = await apiRequest("GET", url);
       return response.json();
     },

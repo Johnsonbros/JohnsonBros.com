@@ -84,7 +84,8 @@ export class CapacityCalculator {
     const now = getNowInTZ();
 
     // Fetch data from Housecall Pro - ONLY use estimates (jobs API is failing with 400)
-    const [employees, bookingWindows, estimates] = await Promise.all([
+    // Use Promise.allSettled to handle individual failures gracefully
+    const results = await Promise.allSettled([
       this.hcpClient.getEmployees(),
       this.hcpClient.getBookingWindows(date.toISOString().split('T')[0]),
       this.hcpClient.getEstimates({
@@ -93,6 +94,22 @@ export class CapacityCalculator {
         work_status: ['scheduled', 'in_progress', 'completed'],
       }),
     ]);
+
+    // Extract results with fallback defaults for failed requests
+    const employees = results[0].status === 'fulfilled' ? results[0].value : [];
+    const bookingWindows = results[1].status === 'fulfilled' ? results[1].value : [];
+    const estimates = results[2].status === 'fulfilled' ? results[2].value : [];
+
+    // Log any failures for debugging
+    if (results[0].status === 'rejected') {
+      Logger.error('[Capacity] Failed to fetch employees:', { error: results[0].reason?.message });
+    }
+    if (results[1].status === 'rejected') {
+      Logger.error('[Capacity] Failed to fetch booking windows:', { error: results[1].reason?.message });
+    }
+    if (results[2].status === 'rejected') {
+      Logger.error('[Capacity] Failed to fetch estimates:', { error: results[2].reason?.message });
+    }
     
     const jobs: any[] = []; // Empty jobs array since jobs API is broken
 

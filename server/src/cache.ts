@@ -94,6 +94,11 @@ export class MemoryCache {
 // Singleton instance
 export const cache = new MemoryCache();
 
+// Graceful shutdown function
+export function shutdownCache(): void {
+  cache.destroy();
+}
+
 // Cache TTL constants (in seconds)
 export const CACHE_TTL = {
   HOUSECALL_PRO_API: 30,        // 30 seconds for API calls

@@ -13,3 +13,13 @@ if (!process.env.DATABASE_URL) {
 
 export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 export const db = drizzle({ client: pool, schema });
+
+// Graceful shutdown function for database pool
+export async function shutdownDatabase(): Promise<void> {
+  try {
+    await pool.end();
+    console.log('[Database] Connection pool closed gracefully');
+  } catch (error) {
+    console.error('[Database] Error closing connection pool:', error);
+  }
+}
