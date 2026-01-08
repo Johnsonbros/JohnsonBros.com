@@ -26,7 +26,8 @@ import {
   Lock,
   Activity,
   ExternalLink,
-  Cpu
+  Cpu,
+  AlertCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -50,9 +51,23 @@ const AIIcon = ({ platform }: { platform: string }) => {
   return icons[platform] || <Bot className="h-6 w-6" />;
 };
 
+type ChatCard = {
+  title: string;
+  description: string;
+  action: string;
+  icon: JSX.Element;
+};
+
+type ChatMessage = {
+  role: string;
+  content: string;
+  typing?: boolean;
+  cards?: ChatCard[];
+};
+
 // Animated Chat Simulator Component
 const ChatSimulator = () => {
-  const [messages, setMessages] = useState<Array<{ role: string; content: string; typing?: boolean }>>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [currentScenario, setCurrentScenario] = useState(0);
   
   const scenarios = [
@@ -61,6 +76,16 @@ const ChatSimulator = () => {
       messages: [
         { role: "user", content: "I have water leaking from under my kitchen sink! Can you help me book Johnson Bros Plumbing?" },
         { role: "assistant", content: "I can help you book Johnson Bros Plumbing right away! Let me check their emergency availability..." },
+        { 
+          role: "assistant", 
+          content: "To speed things up, tap a card to fill key details:",
+          cards: [
+            { title: "Service Type", description: "Emergency leak repair", action: "Add service", icon: <Zap className="h-4 w-4" /> },
+            { title: "Service Address", description: "Enter location", action: "Add address", icon: <Home className="h-4 w-4" /> },
+            { title: "Preferred Window", description: "Today, 2–5 PM", action: "Add time", icon: <Calendar className="h-4 w-4" /> },
+            { title: "Contact Info", description: "Phone + email", action: "Add contact", icon: <Phone className="h-4 w-4" /> }
+          ]
+        },
         { role: "assistant", content: "✅ Good news! Johnson Bros has same-day availability. They can arrive between 2-5 PM today." },
         { role: "assistant", content: "📅 I've booked your appointment:\n• Service: Emergency leak repair\n• Time: Today, 2-5 PM\n• Tech: Jake will be your plumber\n• Fee waived: $99 emergency fee waived!" },
         { role: "user", content: "That's perfect! Thank you!" },
@@ -72,6 +97,16 @@ const ChatSimulator = () => {
       messages: [
         { role: "user", content: "My bathroom drain is really slow. Can you schedule Johnson Bros to fix it?" },
         { role: "assistant", content: "I'll schedule Johnson Bros Plumbing for your drain cleaning. Let me find the best available time..." },
+        { 
+          role: "assistant", 
+          content: "Quick form cards make this easy:",
+          cards: [
+            { title: "Service Type", description: "Bathroom drain cleaning", action: "Use this", icon: <Sparkles className="h-4 w-4" /> },
+            { title: "Issue Details", description: "Slow drain + gurgling", action: "Add details", icon: <MessageSquare className="h-4 w-4" /> },
+            { title: "Preferred Day", description: "Tomorrow", action: "Pick day", icon: <Calendar className="h-4 w-4" /> },
+            { title: "Contact Info", description: "Mobile + email", action: "Add contact", icon: <Phone className="h-4 w-4" /> }
+          ]
+        },
         { role: "assistant", content: "🔍 Checking availability for drain cleaning service..." },
         { role: "assistant", content: "📅 Available times:\n• Tomorrow: 9 AM - 12 PM\n• Tomorrow: 12 PM - 3 PM\n• Thursday: 9 AM - 12 PM\n\nWhich works best for you?" },
         { role: "user", content: "Tomorrow morning would be great" },
@@ -83,6 +118,16 @@ const ChatSimulator = () => {
       messages: [
         { role: "user", content: "I'm not getting hot water. Can Johnson Bros check my water heater?" },
         { role: "assistant", content: "I'll help you book Johnson Bros for water heater diagnostics. Let me access their scheduling system..." },
+        { 
+          role: "assistant", 
+          content: "Prefer cards over typing? Fill these:",
+          cards: [
+            { title: "Service Type", description: "Water heater diagnostic", action: "Use this", icon: <Activity className="h-4 w-4" /> },
+            { title: "Symptoms", description: "No hot water", action: "Add symptom", icon: <AlertCircle className="h-4 w-4" /> },
+            { title: "Time Window", description: "Today after 3 PM", action: "Set time", icon: <Calendar className="h-4 w-4" /> },
+            { title: "Contact Info", description: "Text updates", action: "Add contact", icon: <Phone className="h-4 w-4" /> }
+          ]
+        },
         { role: "assistant", content: "🔧 Checking technician availability for water heater service..." },
         { role: "assistant", content: "📊 I found availability! Nick, their water heater specialist, has an opening today at 3 PM. Should I book it?" },
         { role: "user", content: "Yes please!" },
@@ -152,21 +197,48 @@ const ChatSimulator = () => {
               exit={{ opacity: 0 }}
               className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
             >
-              <div
-                className={`max-w-[80%] rounded-lg px-4 py-2 ${
-                  msg.role === "user"
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-800 text-gray-100"
-                } ${msg.typing ? "opacity-70" : ""}`}
-              >
-                {msg.typing ? (
-                  <div className="flex gap-1">
-                    <span className="animate-bounce">•</span>
-                    <span className="animate-bounce delay-100">•</span>
-                    <span className="animate-bounce delay-200">•</span>
+              <div className="max-w-[80%] space-y-3">
+                <div
+                  className={`rounded-lg px-4 py-2 ${
+                    msg.role === "user"
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-800 text-gray-100"
+                  } ${msg.typing ? "opacity-70" : ""}`}
+                >
+                  {msg.typing ? (
+                    <div className="flex gap-1">
+                      <span className="animate-bounce">•</span>
+                      <span className="animate-bounce delay-100">•</span>
+                      <span className="animate-bounce delay-200">•</span>
+                    </div>
+                  ) : (
+                    <div className="whitespace-pre-line">{msg.content}</div>
+                  )}
+                </div>
+                {!msg.typing && msg.cards && (
+                  <div className="grid gap-3">
+                    {msg.cards.map((card, cardIndex) => (
+                      <div
+                        key={`${card.title}-${cardIndex}`}
+                        className="rounded-lg border border-blue-500/40 bg-gradient-to-br from-gray-900 via-gray-900 to-blue-950/60 p-3 shadow-lg"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-start gap-3">
+                            <span className="mt-0.5 rounded-md bg-blue-500/20 p-1.5 text-blue-200">
+                              {card.icon}
+                            </span>
+                            <div>
+                              <p className="text-sm font-semibold text-white">{card.title}</p>
+                              <p className="text-xs text-blue-100/80">{card.description}</p>
+                            </div>
+                          </div>
+                          <span className="rounded-full bg-blue-500/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-blue-100">
+                            {card.action}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ) : (
-                  <div className="whitespace-pre-line">{msg.content}</div>
                 )}
               </div>
             </motion.div>
