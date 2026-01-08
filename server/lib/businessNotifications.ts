@@ -25,7 +25,8 @@ export type NotificationType =
   | 'out_of_area_lead'
   | 'abuse_alert'
   | 'booking_confirmation'
-  | 'high_priority_lead';
+  | 'high_priority_lead'
+  | 'emergency_lead';
 
 export interface AiInteractionReport {
   sessionId: string;

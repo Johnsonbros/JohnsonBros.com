@@ -951,6 +951,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/v1/leads", customerLookupLimiter, async (req, res) => {
     try {
       const { customer } = req.body;
+      const isEmergencyLead = customer?.is_emergency === true;
+      let capacityState: string | null = null;
 
       // Validate required fields
       if (!customer || !customer.first_name || !customer.last_name || !customer.mobile_number) {
@@ -967,7 +969,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "SMS consent is required" });
       }
 
+      if (isEmergencyLead) {
+        try {
+          const calculator = CapacityCalculator.getInstance();
+          const capacity = await calculator.getTodayCapacity();
+          capacityState = capacity.overall.state;
+        } catch (capacityError) {
+          Logger.warn("[Lead Creation] Failed to fetch capacity for emergency lead:", {
+            error: capacityError instanceof Error ? capacityError.message : String(capacityError),
+          });
+        }
+      }
+
       const housecallClient = HousecallProClient.getInstance();
+      const leadTags = customer.tags || ["Website Lead"];
 
       // Create lead in HousecallPro with address
       const leadData = {
@@ -978,13 +993,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           mobile_number: customer.mobile_number,
           notifications_enabled: customer.notifications_enabled || false,
           lead_source: customer.lead_source || "Website Contact Form",
-          tags: customer.tags || ["Website Lead"],
+          tags: isEmergencyLead
+            ? Array.from(new Set([...leadTags, "Emergency", ...(capacityState ? [`Capacity: ${capacityState}`] : [])]))
+            : leadTags,
           addresses: [{
             street: customer.address,
             type: "service"
           }]
         },
-        notes: customer.notes ? `Address: ${customer.address}\n\n${customer.notes}` : `Address: ${customer.address}\n\nNew lead from website contact form`
+        notes: customer.notes
+          ? `Address: ${customer.address}\n\n${customer.notes}${isEmergencyLead ? `\n\nEMERGENCY REQUEST: YES${capacityState ? `\nCAPACITY STATE: ${capacityState}` : ""}` : ""}`
+          : `Address: ${customer.address}\n\nNew lead from website contact form${isEmergencyLead ? `\n\nEMERGENCY REQUEST: YES${capacityState ? `\nCAPACITY STATE: ${capacityState}` : ""}` : ""}`
       };
 
       Logger.info(`[Lead Creation] Creating lead for ${customer.first_name} ${customer.last_name} (${customer.mobile_number})`);
@@ -996,13 +1015,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         const { sendBusinessNotification } = await import('./lib/businessNotifications');
         
-        const notificationMessage = `📝 NEW WEBSITE LEAD\n` +
+        const notificationMessage = `${isEmergencyLead ? '🚨 EMERGENCY WEBSITE LEAD' : '📝 NEW WEBSITE LEAD'}\n` +
           `Name: ${customer.first_name} ${customer.last_name}\n` +
           `Phone: ${customer.mobile_number}\n` +
           `Address: ${customer.address}\n` +
-          `Issue: ${customer.notes ? customer.notes.substring(0, 80) : 'Not specified'}`;
+          `Issue: ${customer.notes ? customer.notes.substring(0, 80) : 'Not specified'}${capacityState ? `\nCapacity: ${capacityState}` : ""}${isEmergencyLead ? "\nAction: Dispatch ASAP" : ""}`;
         
-        await sendBusinessNotification('high_priority_lead', {
+        await sendBusinessNotification(isEmergencyLead ? 'emergency_lead' : 'high_priority_lead', {
           sessionId: `lead-${lead.id || Date.now()}`,
           channel: 'web_chat',
           customerName: `${customer.first_name} ${customer.last_name}`,
