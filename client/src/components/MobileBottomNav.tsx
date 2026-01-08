@@ -11,12 +11,12 @@ export default function MobileBottomNav({ onBookService }: MobileBottomNavProps)
   const isActive = (path: string) => location === path;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.15)] lg:hidden z-50 pb-safe">
-      <div className="flex items-end justify-around px-2 pt-2 pb-2">
+    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.15)] lg:hidden z-50">
+      <div className="flex items-center justify-around px-2 py-1">
         {/* Home Button */}
         <Link
           href="/"
-          className={`flex flex-col items-center justify-center w-16 py-2 rounded-lg transition-all duration-200 ${
+          className={`flex flex-col items-center justify-center w-16 py-1 rounded-lg transition-all duration-200 ${
             isActive("/") 
               ? "text-johnson-blue" 
               : "text-gray-500 hover:text-gray-700"
@@ -24,7 +24,7 @@ export default function MobileBottomNav({ onBookService }: MobileBottomNavProps)
           data-testid="bottom-nav-home"
         >
           <Home className={`h-5 w-5 ${isActive("/") ? "stroke-[2.5]" : ""}`} />
-          <span className={`text-[10px] mt-1 font-semibold uppercase tracking-wide ${isActive("/") ? "text-johnson-blue" : "text-gray-500"}`}>
+          <span className={`text-[10px] mt-0.5 font-semibold uppercase tracking-wide ${isActive("/") ? "text-johnson-blue" : "text-gray-500"}`}>
             Home
           </span>
         </Link>
@@ -32,11 +32,11 @@ export default function MobileBottomNav({ onBookService }: MobileBottomNavProps)
         {/* Book Button */}
         <button
           onClick={onBookService}
-          className="flex flex-col items-center justify-center w-16 py-2 rounded-lg transition-all duration-200 text-gray-500 hover:text-gray-700 active:scale-95"
+          className="flex flex-col items-center justify-center w-16 py-1 rounded-lg transition-all duration-200 text-gray-500 hover:text-gray-700 active:scale-95"
           data-testid="bottom-nav-book"
         >
           <Calendar className="h-5 w-5" />
-          <span className="text-[10px] mt-1 font-semibold uppercase tracking-wide text-gray-500">
+          <span className="text-[10px] mt-0.5 font-semibold uppercase tracking-wide text-gray-500">
             Book
           </span>
         </button>
@@ -44,7 +44,7 @@ export default function MobileBottomNav({ onBookService }: MobileBottomNavProps)
         {/* CALL Button - Hero Center */}
         <a
           href="tel:6174799911"
-          className="relative flex flex-col items-center justify-center -mt-6 transition-all duration-300 active:scale-95"
+          className="relative flex flex-col items-center justify-center -mt-8 transition-all duration-300 active:scale-95"
           data-testid="bottom-nav-call"
         >
           {/* Outer glow ring */}
@@ -60,7 +60,7 @@ export default function MobileBottomNav({ onBookService }: MobileBottomNavProps)
           </div>
           
           {/* Label */}
-          <span className="text-[10px] mt-1.5 font-bold uppercase tracking-wider text-johnson-orange">
+          <span className="text-[10px] mt-2 font-bold uppercase tracking-wider text-johnson-orange bg-white px-1 rounded-sm">
             Call
           </span>
         </a>
@@ -68,7 +68,7 @@ export default function MobileBottomNav({ onBookService }: MobileBottomNavProps)
         {/* Referral Button */}
         <Link
           href="/referral"
-          className={`flex flex-col items-center justify-center w-16 py-2 rounded-lg transition-all duration-200 ${
+          className={`flex flex-col items-center justify-center w-16 py-1 rounded-lg transition-all duration-200 ${
             isActive("/referral") 
               ? "text-johnson-blue" 
               : "text-gray-500 hover:text-gray-700"
@@ -76,7 +76,7 @@ export default function MobileBottomNav({ onBookService }: MobileBottomNavProps)
           data-testid="bottom-nav-referral"
         >
           <Gift className={`h-5 w-5 ${isActive("/referral") ? "stroke-[2.5]" : ""}`} />
-          <span className={`text-[10px] mt-1 font-semibold uppercase tracking-wide ${isActive("/referral") ? "text-johnson-blue" : "text-gray-500"}`}>
+          <span className={`text-[10px] mt-0.5 font-semibold uppercase tracking-wide ${isActive("/referral") ? "text-johnson-blue" : "text-gray-500"}`}>
             Referral
           </span>
         </Link>
@@ -84,7 +84,7 @@ export default function MobileBottomNav({ onBookService }: MobileBottomNavProps)
         {/* Contact Button */}
         <Link
           href="/contact"
-          className={`flex flex-col items-center justify-center w-16 py-2 rounded-lg transition-all duration-200 ${
+          className={`flex flex-col items-center justify-center w-16 py-1 rounded-lg transition-all duration-200 ${
             isActive("/contact") 
               ? "text-johnson-blue" 
               : "text-gray-500 hover:text-gray-700"
@@ -92,7 +92,7 @@ export default function MobileBottomNav({ onBookService }: MobileBottomNavProps)
           data-testid="bottom-nav-contact"
         >
           <MessageSquare className={`h-5 w-5 ${isActive("/contact") ? "stroke-[2.5]" : ""}`} />
-          <span className={`text-[10px] mt-1 font-semibold uppercase tracking-wide ${isActive("/contact") ? "text-johnson-blue" : "text-gray-500"}`}>
+          <span className={`text-[10px] mt-0.5 font-semibold uppercase tracking-wide ${isActive("/contact") ? "text-johnson-blue" : "text-gray-500"}`}>
             Contact
           </span>
         </Link>
