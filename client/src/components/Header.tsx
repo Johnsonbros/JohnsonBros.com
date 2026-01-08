@@ -240,6 +240,14 @@ export default function Header({ onBookService }: HeaderProps) {
                 The Family Discount
               </Link>
               <Link 
+                href="/customer-portal" 
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="text-white text-base font-semibold py-3.5 px-4 hover:bg-white/15 active:bg-white/25 rounded-lg transition-all duration-200"
+                data-testid="mobile-nav-customer-portal"
+              >
+                Customer Portal
+              </Link>
+              <Link 
                 href="/blog" 
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="text-white text-base font-semibold py-3.5 px-4 hover:bg-white/15 active:bg-white/25 rounded-lg transition-all duration-200"
@@ -394,6 +402,9 @@ export default function Header({ onBookService }: HeaderProps) {
 
                 <Link href="/family-discount" className="text-white hover:text-blue-200 transition-colors font-medium text-sm xl:text-base whitespace-nowrap" data-testid="desktop-nav-family-discount">
                   Family Discount
+                </Link>
+                <Link href="/customer-portal" className="text-white hover:text-blue-200 transition-colors font-medium text-sm xl:text-base whitespace-nowrap" data-testid="desktop-nav-customer-portal">
+                  Customer Portal
                 </Link>
                 <Link href="/blog" className="text-white hover:text-blue-200 transition-colors font-medium text-sm xl:text-base whitespace-nowrap" data-testid="desktop-nav-blog">
                   Blog

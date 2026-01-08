@@ -703,6 +703,10 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
             <DialogTitle className="text-2xl font-bold text-johnson-blue">
               Book Your Service
             </DialogTitle>
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <Badge variant="secondary">Live availability</Badge>
+              <span>Real-time openings synced with our dispatch schedule.</span>
+            </div>
           </DialogHeader>
         )}
 

@@ -35,6 +35,7 @@ interface HCPJob {
   work_status: string;
   duration_minutes?: number;
   total_amount?: number; // Total amount in cents
+  outstanding_balance?: number;
 }
 
 export class HousecallProClient {
@@ -302,12 +303,17 @@ export class HousecallProClient {
     scheduled_start_max?: string;
     employee_ids?: string[];
     work_status?: string[];
+    customer_id?: string;
   }): Promise<HCPJob[]> {
     const data = await this.callAPI<{ jobs: HCPJob[] }>('/jobs', {
       ...params,
       page_size: 100,
     });
     return data.jobs || [];
+  }
+
+  async getCustomer(customerId: string): Promise<any> {
+    return this.callAPI(`/customers/${customerId}`);
   }
 
   async getEstimates(params: {
@@ -344,6 +350,9 @@ export class HousecallProClient {
         const cleanPhone = searchParams.phone.replace(/\D/g, '');
         params.q = cleanPhone;
         Logger.debug(`[HousecallProClient] Searching by phone: "${cleanPhone}"`);
+      } else if (searchParams.email) {
+        params.q = searchParams.email;
+        Logger.debug(`[HousecallProClient] Searching by email: "${searchParams.email}"`);
       } else if (searchParams.name) {
         // Fall back to name search if no phone
         params.q = searchParams.name;

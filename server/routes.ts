@@ -420,6 +420,159 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Authentication failed" });
     }
   });
+
+  // Customer portal authentication (service history + status)
+  app.post("/api/v1/customer/portal/auth", publicWriteLimiter, async (req, res) => {
+    try {
+      const { email, phone } = req.body;
+      
+      if (!email && !phone) {
+        return res.status(400).json({ error: "Email or phone required" });
+      }
+
+      if (API_KEY) {
+        const hcpClient = HousecallProClient.getInstance();
+        const customers = await hcpClient.searchCustomers({ email, phone });
+
+        if (!customers.length) {
+          return res.status(404).json({ error: "Customer not found" });
+        }
+
+        const customer = customers[0];
+        const token = `portal:${customer.id}:${Date.now()}`;
+
+        return res.json({
+          token,
+          customer: {
+            id: customer.id,
+            firstName: customer.first_name,
+            lastName: customer.last_name,
+            email: customer.email,
+            phone: customer.mobile_number || customer.home_number,
+            addresses: customer.addresses || []
+          }
+        });
+      }
+
+      let customer;
+      if (email) {
+        customer = await storage.getCustomerByEmail(email);
+      } else if (phone) {
+        customer = await storage.getCustomerByPhone(phone);
+      }
+
+      if (!customer) {
+        return res.status(404).json({ error: "Customer not found" });
+      }
+
+      const token = `portal:${customer.id}:${Date.now()}`;
+
+      return res.json({
+        token,
+        customer: {
+          id: customer.id,
+          firstName: customer.firstName,
+          lastName: customer.lastName,
+          email: customer.email,
+          phone: customer.phone
+        }
+      });
+    } catch (error) {
+      logError("Error authenticating customer portal:", error);
+      res.status(500).json({ error: "Authentication failed" });
+    }
+  });
+
+  // Customer portal data (profile + service history)
+  app.get("/api/v1/customer/portal", publicReadLimiter, async (req, res) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer portal:')) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      const tokenParts = authHeader.replace('Bearer portal:', '').split(':');
+      const customerId = tokenParts[0];
+
+      if (!customerId) {
+        return res.status(400).json({ error: "Invalid authentication token" });
+      }
+
+      if (API_KEY) {
+        const hcpClient = HousecallProClient.getInstance();
+        const [customer, jobs] = await Promise.all([
+          hcpClient.getCustomer(customerId),
+          hcpClient.getJobs({ customer_id: customerId })
+        ]);
+
+        const formattedJobs = (jobs || []).map((job: any) => ({
+          id: job.id,
+          description: job.description || job.name || job.line_items?.[0]?.name || "Service visit",
+          workStatus: job.work_status,
+          scheduledStart: job.scheduled_start || job.schedule?.scheduled_start,
+          scheduledEnd: job.scheduled_end || job.schedule?.scheduled_end,
+          arrivalWindow: job.schedule?.arrival_window,
+          totalAmount: job.total_amount || 0,
+          outstandingBalance: job.outstanding_balance || 0,
+          address: job.address || null
+        }));
+
+        const outstandingBalance = formattedJobs.reduce(
+          (sum: number, job: any) => sum + (job.outstandingBalance || 0),
+          0
+        );
+
+        return res.json({
+          customer: {
+            id: customer.id,
+            firstName: customer.first_name,
+            lastName: customer.last_name,
+            email: customer.email,
+            phone: customer.mobile_number || customer.home_number,
+            addresses: customer.addresses || []
+          },
+          jobs: formattedJobs,
+          totals: {
+            outstandingBalance
+          }
+        });
+      }
+
+      const localCustomer = await storage.getCustomer(customerId);
+      if (!localCustomer) {
+        return res.status(404).json({ error: "Customer not found" });
+      }
+
+      const appointments = await storage.getAppointmentsByCustomer(customerId);
+
+      return res.json({
+        customer: {
+          id: localCustomer.id,
+          firstName: localCustomer.firstName,
+          lastName: localCustomer.lastName,
+          email: localCustomer.email,
+          phone: localCustomer.phone
+        },
+        jobs: appointments.map((appointment) => ({
+          id: appointment.id,
+          description: appointment.serviceType,
+          workStatus: appointment.status,
+          scheduledStart: appointment.date,
+          scheduledEnd: null,
+          arrivalWindow: appointment.timeSlot,
+          totalAmount: 0,
+          outstandingBalance: 0,
+          address: appointment.address
+        })),
+        totals: {
+          outstandingBalance: 0
+        }
+      });
+    } catch (error) {
+      logError("Error fetching customer portal data:", error);
+      res.status(500).json({ error: "Failed to fetch customer portal data" });
+    }
+  });
   
   // Get member subscription (simplified authentication)
   app.get("/api/v1/maintenance-plans/subscription", publicReadLimiter, async (req, res) => {
