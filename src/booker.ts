@@ -54,6 +54,9 @@ const DEFAULT_DISPATCH_EMPLOYEE_IDS = (process.env.DEFAULT_DISPATCH_EMPLOYEE_IDS
 
 const HCP_BASE = "https://api.housecallpro.com";
 
+// In-memory locks for customer creation to prevent duplicate records
+const customerCreationLocks = new Map<string, Promise<any>>();
+
 // Service Area Validation - In-memory set of valid zip codes
 // Norfolk, Suffolk, and Plymouth County MA zip codes
 const SERVICE_AREA_ZIPS = new Set([
@@ -61,7 +64,7 @@ const SERVICE_AREA_ZIPS = new Set([
   "02021", "02025", "02026", "02027", "02030", "02032", "02035", "02038", "02043", "02045",
   "02047", "02050", "02052", "02053", "02054", "02056", "02061", "02062", "02066", "02067",
   "02070", "02071", "02072", "02081", "02090", "02093", "02169", "02170", "02171", "02184",
-  "02185", "02186", "02187", "02188", "02189", "02190", "02191", "02269", "02368", "02375",
+  "02185", "02186", "02187", "02188", "02189", "02190", "02191", "02269",
   "02382", "02445", "02446", "02447", "02457", "02459", "02460", "02461", "02462", "02464",
   "02465", "02466", "02467", "02468", "02481", "02482", "02492", "02494",
   // Suffolk County
@@ -274,10 +277,15 @@ async function hcpPost(path: string, body: unknown, correlationId?: string) {
   }
 }
 
-function normPhone(input: string) {
+function normPhone(input: string): string {
   const digits = input.replace(/\D/g, "");
   if (!digits) return "";
-  return digits.length > 10 ? digits.slice(-10) : digits;
+  const normalized = digits.length > 10 ? digits.slice(-10) : digits;
+  return normalized.length === 10 ? normalized : "";
+}
+
+function isValidPhone(input: string): boolean {
+  return normPhone(input).length === 10;
 }
 
 function normName(input: string) {
@@ -366,8 +374,10 @@ function formatJobScheduleSummary(job: any, appointment?: any) {
 }
 
 /** Choose a booking window by time-of-day preference in COMPANY_TZ */
-function chooseWindow(windows: Array<{ start_time: string; end_time: string; available: boolean }>,
-                      pref: "any" | "morning" | "afternoon" | "evening") {
+function chooseWindow(
+  windows: Array<{ start_time: string; end_time: string; available: boolean }>,
+  pref: "any" | "morning" | "afternoon" | "evening"
+): { window: { start_time: string; end_time: string; available: boolean }; matchedPreference: boolean } | undefined {
   const fmt = new Intl.DateTimeFormat("en-US", {
     hour: "2-digit", hour12: false, timeZone: COMPANY_TZ
   });
@@ -389,37 +399,57 @@ function chooseWindow(windows: Array<{ start_time: string; end_time: string; ava
   };
 
   const candidates = windows.filter(w => w.available && inPref(w.start_time));
-  return candidates[0] || windows.find(w => w.available);
+  if (candidates.length) {
+    return { window: candidates[0], matchedPreference: true };
+  }
+  const fallback = windows.find(w => w.available);
+  return fallback ? { window: fallback, matchedPreference: false } : undefined;
 }
 
 async function findOrCreateCustomer(input: BookInput, correlationId?: string) {
   const corrId = correlationId || randomUUID();
-  
-  // Try to find by phone/email using ?q
-  const q = input.email || input.phone;
-  const search = await hcpGet("/customers", { q, page_size: 1 }, corrId) as any;
-  const existing = (search.customers || [])[0];
-  if (existing?.id) return existing;
 
-  // Create new customer with address
-  const created = await hcpPost("/customers", {
-    first_name: input.first_name,
-    last_name: input.last_name,
-    email: input.email,
-    mobile_number: input.phone,
-    notifications_enabled: true,
-    lead_source: input.lead_source,
-    tags: input.tags,
-    addresses: [{
-      street: input.street,
-      street_line_2: input.street_line_2 || null,
-      city: input.city,
-      state: input.state,
-      zip: input.zip,
-      country: input.country
-    }]
-  }, corrId) as any;
-  return created;
+  const lockKey = (input.email || normPhone(input.phone) || `${input.first_name}-${input.last_name}-${input.zip}`)
+    .toLowerCase();
+  const existingLock = customerCreationLocks.get(lockKey);
+  if (existingLock) {
+    return existingLock;
+  }
+
+  const creationPromise = (async () => {
+    // Try to find by phone/email using ?q
+    const q = input.email || input.phone;
+    const search = await hcpGet("/customers", { q, page_size: 1 }, corrId) as any;
+    const existing = (search.customers || [])[0];
+    if (existing?.id) return existing;
+
+    // Create new customer with address
+    const created = await hcpPost("/customers", {
+      first_name: input.first_name,
+      last_name: input.last_name,
+      email: input.email,
+      mobile_number: input.phone,
+      notifications_enabled: true,
+      lead_source: input.lead_source,
+      tags: input.tags,
+      addresses: [{
+        street: input.street,
+        street_line_2: input.street_line_2 || null,
+        city: input.city,
+        state: input.state,
+        zip: input.zip,
+        country: input.country
+      }]
+    }, corrId) as any;
+    return created;
+  })();
+
+  customerCreationLocks.set(lockKey, creationPromise);
+  try {
+    return await creationPromise;
+  } finally {
+    customerCreationLocks.delete(lockKey);
+  }
 }
 
 function toYmd(dateIso: string) {
@@ -621,6 +651,15 @@ server.registerTool(
     try {
       // Input validation
       const input = BookInput.parse(raw);
+      if (!isValidPhone(input.phone)) {
+        throw createStructuredError(
+          ErrorType.VALIDATION,
+          "INVALID_PHONE_NUMBER",
+          `Phone number failed validation: ${input.phone}`,
+          "The phone number provided is invalid. Please enter a valid 10-digit US phone number.",
+          correlationId
+        );
+      }
       log.info({ input: redactBookingInput(input), correlationId }, "book_service_call: start");
 
       // Step 0.5: Service area validation - check if zip code is within our service area
@@ -641,6 +680,8 @@ server.registerTool(
           `\n\nAuto-created via AI on ${timestamp} - ZIP outside service area`,
           `\nCustomer should be contacted to discuss service options.`
         ].join("");
+
+        let leadCreated = false;
 
         // Try to create customer and log lead
         try {
@@ -682,10 +723,12 @@ server.registerTool(
               notes: leadNotes,
               tags: ["Out of Area", "Callback Requested"]
             }, correlationId);
+            leadCreated = true;
           } catch (leadErr: any) {
             // Fall back to adding a note to the customer
             try {
               await hcpPost(`/customers/${customerId}/notes`, { content: leadNotes }, correlationId);
+              leadCreated = true;
             } catch (noteErr: any) {
               log.warn({ correlationId, error: noteErr.message }, "Failed to add out-of-area note");
             }
@@ -703,7 +746,7 @@ server.registerTool(
               error_code: "OUT_OF_SERVICE_AREA",
               zip_provided: input.zip,
               message: `We're sorry, but ZIP code ${input.zip} is outside our service area. ${getServiceAreaMessage()}`,
-              lead_created: true,
+              lead_created: leadCreated,
               next_steps: "We've noted your request and our office will contact you to discuss options. For immediate assistance, please call (617) 479-9911.",
               service_area_info: {
                 counties: ["Norfolk", "Suffolk", "Plymouth"],
@@ -773,6 +816,14 @@ server.registerTool(
         };
       }
 
+      if (!chosen.matchedPreference) {
+        log.info({
+          correlationId,
+          preference: input.time_preference,
+          fallback_window: chosen.window.start_time
+        }, "No windows matched preference; falling back to first available.");
+      }
+
       // Step 3: find or create customer
       const customer = await findOrCreateCustomer(input, correlationId);
 
@@ -780,12 +831,12 @@ server.registerTool(
       const addressId = await getPrimaryAddressId(customer, input, correlationId);
 
       // Step 5: create job with day + arrival window
-      const { job, arrival_window } = await createJob(customer.id, addressId, chosen, input.description, input.lead_source, input.tags, correlationId);
+      const { job, arrival_window } = await createJob(customer.id, addressId, chosen.window, input.description, input.lead_source, input.tags, correlationId);
 
       // Step 6: add appointment with concrete start/end (time on the day)
       let appointmentCreated: any = null;
       try {
-        appointmentCreated = await createAppointment((job as any).id, chosen, arrival_window, correlationId);
+        appointmentCreated = await createAppointment((job as any).id, chosen.window, arrival_window, correlationId);
       } catch (err: any) {
         log.error({ err: err?.message, jobId: (job as any).id, correlationId }, "Failed to create appointment for job");
         // Continue execution - job is still created, just without specific appointment
@@ -798,12 +849,13 @@ server.registerTool(
         success: true,
         job_id: (job as any).id,
         appointment_id: appointmentCreated?.id || null,
-        scheduled_start: chosen.start_time,
-        scheduled_end: chosen.end_time,
+        scheduled_start: chosen.window.start_time,
+        scheduled_end: chosen.window.end_time,
         arrival_window_minutes: arrival_window,
-        summary: `Booked for ${toYmd(chosen.start_time)} (${input.time_preference})`,
+        summary: `Booked for ${toYmd(chosen.window.start_time)} (${input.time_preference})`,
         customer_id: customer.id,
-        correlation_id: correlationId
+        correlation_id: correlationId,
+        matched_preference: chosen.matchedPreference
       };
 
       log.info({ result, correlationId }, "book_service_call: success");

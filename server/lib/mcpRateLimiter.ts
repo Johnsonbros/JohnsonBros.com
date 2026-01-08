@@ -53,6 +53,7 @@ const CONFIG = {
     request_cancellation_callback: 5,
     request_review: 5
   } as Record<string, number>,
+  DEFAULT_TOOL_LIMIT: 20,
   
   // Abuse detection thresholds
   ABUSE_BURST_COUNT: 10,           // Requests in burst window triggers alert
@@ -222,27 +223,33 @@ export function checkRateLimit(
   }
   
   // Tool-specific limit
-  const toolLimit = CONFIG.TOOL_LIMITS[toolName];
-  if (toolLimit !== undefined) {
-    const toolCount = session.toolCounts[toolName] || 0;
-    if (toolCount >= toolLimit) {
-      return {
-        allowed: false,
-        reason: `Tool ${toolName} limit exceeded`,
-        requestCount: toolCount,
-        limit: toolLimit
-      };
-    }
-    session.toolCounts[toolName] = toolCount + 1;
+  const toolLimit = CONFIG.TOOL_LIMITS[toolName] ?? CONFIG.DEFAULT_TOOL_LIMIT;
+  const toolCount = session.toolCounts[toolName] || 0;
+  if (toolCount >= toolLimit) {
+    return {
+      allowed: false,
+      reason: `Tool ${toolName} limit exceeded`,
+      requestCount: toolCount,
+      limit: toolLimit
+    };
   }
+  session.toolCounts[toolName] = toolCount + 1;
   
   // Check for burst abuse
   const burstWindow = CONFIG.ABUSE_BURST_WINDOW_MS;
-  if (timeSinceLastRequest < burstWindow && session.count > CONFIG.ABUSE_BURST_COUNT) {
+  if (timeSinceLastRequest < burstWindow && session.count >= CONFIG.ABUSE_BURST_COUNT) {
     Logger.warn(`[RateLimiter] Burst detected for session ${sessionId}: ${session.count} requests in ${timeSinceLastRequest}ms`);
-    
+    session.blocked = true;
+
     // Send abuse alert (async, don't wait)
     sendAbuseAlert(sessionId, ipAddress, session.count, `Burst attack: ${session.count} requests in ${timeSinceLastRequest}ms`).catch(() => {});
+
+    return {
+      allowed: false,
+      reason: 'Burst rate limit exceeded',
+      requestCount: session.count,
+      limit: CONFIG.ABUSE_BURST_COUNT
+    };
   }
   
   // Update counters

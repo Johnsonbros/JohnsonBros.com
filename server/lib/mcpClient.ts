@@ -48,7 +48,7 @@ async function connectMcpClient(): Promise<Client> {
         Logger.warn(`[MCP] Connection attempt ${attempt}/${MAX_RETRIES} failed: ${lastError.message}`);
 
         if (attempt < MAX_RETRIES) {
-          await sleep(RETRY_DELAY_MS * attempt); // Exponential backoff
+          await sleep(RETRY_DELAY_MS * Math.pow(2, attempt - 1)); // Exponential backoff
         }
       }
     }
@@ -122,11 +122,19 @@ export async function callMcpTool<T = unknown>(name: string, args: Record<string
     const errorMessage = error instanceof Error ? error.message : String(error);
 
     // Check for connection-related errors and reset client
-    if (errorMessage.includes('ECONNREFUSED') ||
-        errorMessage.includes('ENOTFOUND') ||
-        errorMessage.includes('ETIMEDOUT') ||
-        errorMessage.includes('session') ||
-        errorMessage.includes('disconnected')) {
+    const connectionErrors = [
+      'ECONNREFUSED',
+      'ENOTFOUND',
+      'ETIMEDOUT',
+      'ECONNRESET',
+      'EPIPE',
+      'EAI_AGAIN',
+      'socket hang up',
+      'session',
+      'disconnected'
+    ];
+
+    if (connectionErrors.some(signature => errorMessage.includes(signature))) {
       Logger.warn(`[MCP] Connection error calling tool ${name}, resetting client: ${errorMessage}`);
       resetMcpClient();
     }
