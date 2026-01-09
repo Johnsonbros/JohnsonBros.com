@@ -92,7 +92,7 @@ export async function listMcpTools(): Promise<any[]> {
     Logger.info(`[MCP] Loaded ${cachedTools.length} tools`);
     return cachedTools;
   } catch (error) {
-    Logger.error('[MCP] Failed to list tools, resetting connection', { error });
+    Logger.error('[MCP] Failed to list tools, resetting connection', { error: error instanceof Error ? error.message : String(error) });
     resetMcpClient();
     throw error;
   }
