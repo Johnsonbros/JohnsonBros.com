@@ -107,6 +107,48 @@ export const serviceAreaMetadata: Record<string, SEOMetadata> = {
     keywords: ['plumber Hingham MA', 'Hingham plumbing', 'emergency plumber Hingham', 'Hingham water heater', 'drain service Hingham'],
     canonicalUrl: '/service-areas/hingham',
     type: 'website'
+  },
+  'abington': {
+    title: 'Plumber in Abington, MA | Trusted Plumbing Services | Johnson Bros.',
+    description: 'Local plumber serving Abington, MA with emergency repairs, drain cleaning, and water heater service. Family-owned, licensed & insured. Call 617-479-9911',
+    keywords: ['plumber Abington MA', 'Abington plumbing', 'emergency plumber Abington', 'drain cleaning Abington', 'water heater Abington'],
+    canonicalUrl: '/service-areas/abington',
+    type: 'website'
+  },
+  'rockland': {
+    title: 'Plumber in Rockland, MA | Reliable Plumbing Solutions | Johnson Bros.',
+    description: 'Professional plumber serving Rockland, MA. Emergency plumbing, pipe repair, drain service, and water heaters. Fast response: 617-479-9911',
+    keywords: ['plumber Rockland MA', 'Rockland plumbing', 'emergency plumber Rockland', 'drain cleaning Rockland', 'pipe repair Rockland'],
+    canonicalUrl: '/service-areas/rockland',
+    type: 'website'
+  },
+  'hanover': {
+    title: 'Plumber in Hanover, MA | Local Plumbing Experts | Johnson Bros.',
+    description: 'Trusted plumber serving Hanover, MA. 24/7 emergency service, drain cleaning, water heater repair, and gas heat. Call 617-479-9911',
+    keywords: ['plumber Hanover MA', 'Hanover plumbing', 'emergency plumber Hanover', 'drain service Hanover', 'water heater Hanover'],
+    canonicalUrl: '/service-areas/hanover',
+    type: 'website'
+  },
+  'scituate': {
+    title: 'Plumber in Scituate, MA | Coastal Plumbing Pros | Johnson Bros.',
+    description: 'Experienced plumber serving Scituate, MA. Emergency repairs, drain cleaning, water heaters, and coastal plumbing solutions. Call 617-479-9911',
+    keywords: ['plumber Scituate MA', 'Scituate plumbing', 'emergency plumber Scituate', 'drain cleaning Scituate', 'water heater Scituate'],
+    canonicalUrl: '/service-areas/scituate',
+    type: 'website'
+  },
+  'cohasset': {
+    title: 'Plumber in Cohasset, MA | Premium Plumbing Services | Johnson Bros.',
+    description: 'Local plumber serving Cohasset, MA. Emergency service, drain cleaning, pipe repair, and water heaters. Family-owned since 2008. Call 617-479-9911',
+    keywords: ['plumber Cohasset MA', 'Cohasset plumbing', 'emergency plumber Cohasset', 'drain cleaning Cohasset', 'pipe repair Cohasset'],
+    canonicalUrl: '/service-areas/cohasset',
+    type: 'website'
+  },
+  'hull': {
+    title: 'Plumber in Hull, MA | Trusted Coastal Plumbing | Johnson Bros.',
+    description: 'Reliable plumber serving Hull, MA. Emergency plumbing, drain cleaning, water heater service, and pipe repair. Call 617-479-9911',
+    keywords: ['plumber Hull MA', 'Hull plumbing', 'emergency plumber Hull', 'drain cleaning Hull', 'water heater Hull'],
+    canonicalUrl: '/service-areas/hull',
+    type: 'website'
   }
 };
 
