@@ -25,6 +25,7 @@ import experimentManagementRoutes from "./src/experimentManagement";
 import chatRoutes from "./src/chatRoutes";
 import chatkitRoutes from "./src/chatkitRoutes";
 import twilioWebhooks from "./lib/twilioWebhooks";
+import actionsRoutes from "./routes/actions";
 import { generateSitemap } from "./src/sitemap";
 import { healthChecker } from "./src/healthcheck";
 import { Logger, logError, getErrorMessage } from "./src/logger";
@@ -320,6 +321,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Twilio SMS and Voice webhook routes
   app.use('/api/v1/twilio', twilioWebhooks);
+  
+  // Card action dispatch routes
+  app.use('/api/actions', actionsRoutes);
 
   // Seed blog data on startup (only in development)
   if (process.env.NODE_ENV === 'development') {
