@@ -3,8 +3,9 @@ import twilio from 'twilio';
 
 interface TwilioCredentials {
   accountSid: string;
-  apiKey: string;
-  apiKeySecret: string;
+  authToken?: string;
+  apiKey?: string;
+  apiKeySecret?: string;
   phoneNumber: string;
 }
 
@@ -12,6 +13,15 @@ let cachedCredentials: TwilioCredentials | null = null;
 
 async function getCredentials(): Promise<TwilioCredentials> {
   if (cachedCredentials) {
+    return cachedCredentials;
+  }
+
+  if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
+    cachedCredentials = {
+      accountSid: process.env.TWILIO_ACCOUNT_SID,
+      authToken: process.env.TWILIO_AUTH_TOKEN,
+      phoneNumber: process.env.TWILIO_PHONE_NUMBER || ''
+    };
     return cachedCredentials;
   }
 
@@ -41,7 +51,7 @@ async function getCredentials(): Promise<TwilioCredentials> {
 
   if (!connectionSettings || !connectionSettings.settings.account_sid || 
       !connectionSettings.settings.api_key || !connectionSettings.settings.api_key_secret) {
-    throw new Error('Twilio not connected - please set up Twilio integration');
+    throw new Error('Twilio not connected - please set up Twilio integration or set env credentials');
   }
 
   cachedCredentials = {
@@ -55,7 +65,13 @@ async function getCredentials(): Promise<TwilioCredentials> {
 }
 
 export async function getTwilioClient(): Promise<twilio.Twilio> {
-  const { accountSid, apiKey, apiKeySecret } = await getCredentials();
+  const { accountSid, apiKey, apiKeySecret, authToken } = await getCredentials();
+  if (authToken) {
+    return twilio(accountSid, authToken);
+  }
+  if (!apiKey || !apiKeySecret) {
+    throw new Error('Twilio credentials are missing API key or secret');
+  }
   return twilio(apiKey, apiKeySecret, { accountSid });
 }
 

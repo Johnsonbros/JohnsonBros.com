@@ -81,7 +81,11 @@ router.post('/session', async (req: Request, res: Response) => {
 
     if (existingSecret) {
       const existingSession = activeSessions.get(existingSecret);
-      if (existingSession && existingSession.customerId === customerId) {
+      if (
+        existingSession &&
+        existingSession.customerId === customerId &&
+        existingSession.providerThreadId === thread.providerThreadId
+      ) {
         return res.json({
           client_secret: existingSecret,
           session_id: existingSession.sessionId,
