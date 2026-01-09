@@ -79,7 +79,7 @@ function RightSidePanel({ cards, onAction, onDismiss, isLoading, loadingCardId }
           <ScrollArea className="max-h-[calc(100vh-200px)]">
             <div className="p-4 space-y-4">
               {cards.map((card) => (
-                <motion.div
+                <MotionDiv
                   key={card.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -92,13 +92,13 @@ function RightSidePanel({ cards, onAction, onDismiss, isLoading, loadingCardId }
                     onDismiss={onDismiss}
                     isLoading={isLoading && loadingCardId === card.id}
                   />
-                </motion.div>
+                </MotionDiv>
               ))}
             </div>
           </ScrollArea>
         </div>
       )}
-    </motion.div>
+    </MotionDiv>
   );
 }
 
@@ -118,7 +118,7 @@ function BottomDrawer({ cards, onAction, onDismiss, isLoading, loadingCardId }: 
   const currentCard = cards[currentIndex];
 
   return (
-    <motion.div
+    <MotionDiv
       initial={{ y: 100 }}
       animate={{ y: 0 }}
       exit={{ y: 100 }}
@@ -139,7 +139,7 @@ function BottomDrawer({ cards, onAction, onDismiss, isLoading, loadingCardId }: 
 
         <AnimatePresence>
           {isExpanded && currentCard && (
-            <motion.div
+            <MotionDiv
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
@@ -167,11 +167,11 @@ function BottomDrawer({ cards, onAction, onDismiss, isLoading, loadingCardId }: 
                   isLoading={isLoading && loadingCardId === currentCard.id}
                 />
               </div>
-            </motion.div>
+            </MotionDiv>
           )}
         </AnimatePresence>
       </div>
-    </motion.div>
+    </MotionDiv>
   );
 }
 
