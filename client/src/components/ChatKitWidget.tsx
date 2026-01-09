@@ -158,8 +158,8 @@ export function ChatKitWidget({ className }: ChatKitWidgetProps) {
     onResponseStart: () => {
       console.log('Assistant is responding...');
     },
-    onResponseEnd: () => {
-      console.log('Response complete');
+    onResponseEnd: (event: any) => {
+      console.log('Response complete', event);
     }
   });
 
