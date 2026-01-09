@@ -62,6 +62,14 @@ The frontend is built with React and TypeScript, utilizing Radix UI primitives a
   - Uses OpenAI function calling to execute MCP tools (booking, quotes, availability, services, emergency help)
   - Maintains conversation history per session for context continuity
   - Emergency phone: (617) 479-9911
+- **Interactive Card System** (Replit Agent v3-style): AI assistant outputs structured card intents that render as rich, interactive UI forms:
+  - **Card Types**: lead_card, new_customer_info, returning_customer_lookup, date_picker, time_picker, booking_confirmation, service_recommendation, estimate_range
+  - **Responsive Layout**: Desktop shows side panel (≥1024px), mobile shows bottom drawer (<1024px)
+  - **Card Protocol**: Zod schemas at `client/src/lib/cardProtocol.ts` define card structure with UUID validation
+  - **Card Store**: React Context-based store (`client/src/stores/useCardStore.tsx`) manages cards per thread with form data persistence
+  - **Card Extraction**: `extractCardIntents.ts` parses card_intent code blocks from assistant responses (handles ChatKit's structured content array format)
+  - **Action Dispatch**: Card form submissions route through `/api/actions/dispatch` to call MCP tools (customer lookup, availability, booking)
+  - **Integration**: ChatKitWidget extracts cards from `onResponseEnd` events and pushes to CardStore for rendering in CardSurface
 - **Automated SMS Booking Agent**: AI-powered follow-up system for contact form submissions:
   - Triggers exactly 3 minutes and 57 seconds (237 seconds) after form submission (when customer opts in for marketing)
   - Uses OpenAI Agents SDK (gpt-4o) connected to HousecallPro MCP server via StreamableHTTPClientTransport
