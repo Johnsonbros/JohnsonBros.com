@@ -1,13 +1,12 @@
-import { useState, useEffect } from 'react';
-import { AnimatePresence } from 'framer-motion';
-import { motion } from 'framer-motion';
-import { X, ChevronUp, ChevronDown, Sparkles } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { ChevronDown, ChevronUp, Sparkles, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { CardRenderer } from './CardRenderer';
 import type { CardIntent } from '@/lib/cardProtocol';
 
-const MotionDiv = motion.div as any;
+const MotionDiv = motion.div as React.ElementType;
 
 interface CardSurfaceProps {
   cards: CardIntent[];
@@ -49,20 +48,20 @@ function RightSidePanel({ cards, onAction, onDismiss, isLoading, loadingCardId }
           variant="outline"
           size="icon"
           onClick={() => setIsCollapsed(false)}
-          className="w-12 h-12 rounded-full bg-white shadow-lg border-blue-200 relative"
+          className="h-12 w-12 rounded-full border-blue-200 bg-white shadow-lg relative"
         >
-          <Sparkles className="w-5 h-5 text-blue-600" />
-          <span className="absolute -top-1 -right-1 w-5 h-5 bg-blue-600 text-white text-xs rounded-full flex items-center justify-center">
+          <Sparkles className="h-5 w-5 text-blue-600" />
+          <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-xs text-white">
             {cards.length}
           </span>
         </Button>
       ) : (
-        <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden max-h-[calc(100vh-120px)]">
-          <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 flex items-center justify-between">
+        <div className="max-h-[calc(100vh-120px)] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl">
+          <div className="flex items-center justify-between bg-gradient-to-r from-blue-600 to-blue-700 p-4 text-white">
             <div className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5" />
+              <Sparkles className="h-5 w-5" />
               <span className="font-semibold">Recommendations</span>
-              <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">
+              <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs">
                 {cards.length}
               </span>
             </div>
@@ -70,14 +69,14 @@ function RightSidePanel({ cards, onAction, onDismiss, isLoading, loadingCardId }
               variant="ghost"
               size="icon"
               onClick={() => setIsCollapsed(true)}
-              className="text-white hover:bg-white/20 w-8 h-8"
+              className="h-8 w-8 text-white hover:bg-white/20"
             >
-              <X className="w-4 h-4" />
+              <X className="h-4 w-4" />
             </Button>
           </div>
 
           <ScrollArea className="max-h-[calc(100vh-200px)]">
-            <div className="p-4 space-y-4">
+            <div className="space-y-4 p-4">
               {cards.map((card) => (
                 <MotionDiv
                   key={card.id}
@@ -124,16 +123,16 @@ function BottomDrawer({ cards, onAction, onDismiss, isLoading, loadingCardId }: 
       exit={{ y: 100 }}
       className="fixed bottom-0 left-0 right-0 z-50"
     >
-      <div className="bg-white rounded-t-3xl shadow-2xl border-t border-gray-200">
+      <div className="rounded-t-3xl border-t border-gray-200 bg-white shadow-2xl">
         <button
           onClick={() => setIsExpanded(!isExpanded)}
-          className="w-full py-3 flex flex-col items-center gap-1"
+          className="flex w-full flex-col items-center gap-1 py-3"
         >
-          <div className="w-10 h-1 bg-gray-300 rounded-full" />
+          <div className="h-1 w-10 rounded-full bg-gray-300" />
           <div className="flex items-center gap-2 text-sm font-medium text-gray-600">
-            <Sparkles className="w-4 h-4 text-blue-600" />
+            <Sparkles className="h-4 w-4 text-blue-600" />
             {isExpanded ? 'Recommended' : `${cards.length} recommendation${cards.length > 1 ? 's' : ''}`}
-            {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+            {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
           </div>
         </button>
 
@@ -145,15 +144,15 @@ function BottomDrawer({ cards, onAction, onDismiss, isLoading, loadingCardId }: 
               exit={{ height: 0, opacity: 0 }}
               className="overflow-hidden"
             >
-              <div className="px-4 pb-6 pt-2 max-h-[60vh] overflow-y-auto">
+              <div className="max-h-[60vh] overflow-y-auto px-4 pb-6 pt-2">
                 {cards.length > 1 && (
-                  <div className="flex items-center justify-center gap-2 mb-4">
+                  <div className="mb-4 flex items-center justify-center gap-2">
                     {cards.map((_, idx) => (
                       <button
                         key={idx}
                         onClick={() => setCurrentIndex(idx)}
-                        className={`w-2 h-2 rounded-full transition-all ${
-                          idx === currentIndex ? 'bg-blue-600 w-6' : 'bg-gray-300'
+                        className={`h-2 w-2 rounded-full transition-all ${
+                          idx === currentIndex ? 'w-6 bg-blue-600' : 'bg-gray-300'
                         }`}
                       />
                     ))}
@@ -180,9 +179,7 @@ export function CardSurface(props: CardSurfaceProps) {
 
   return (
     <AnimatePresence>
-      {props.cards.length > 0 && (
-        isMobile ? <BottomDrawer {...props} /> : <RightSidePanel {...props} />
-      )}
+      {props.cards.length > 0 && (isMobile ? <BottomDrawer {...props} /> : <RightSidePanel {...props} />)}
     </AnimatePresence>
   );
 }
