@@ -47,11 +47,18 @@ const AboutUs = lazy(() => import("@/pages/about"));
 
 // Service Area Pages
 const ServiceAreasDirectory = lazy(() => import("@/pages/service-areas/index"));
+const QuincyPlumbing = lazy(() => import("@/pages/service-areas/quincy"));
 const BraintreePlumbing = lazy(() => import("@/pages/service-areas/braintree"));
 const WeymouthPlumbing = lazy(() => import("@/pages/service-areas/weymouth"));
 const PlymouthPlumbing = lazy(() => import("@/pages/service-areas/plymouth"));
 const MarshfieldPlumbing = lazy(() => import("@/pages/service-areas/marshfield"));
 const HinghamPlumbing = lazy(() => import("@/pages/service-areas/hingham"));
+const AbingtonPlumbing = lazy(() => import("@/pages/service-areas/abington"));
+const RocklandPlumbing = lazy(() => import("@/pages/service-areas/rockland"));
+const HanoverPlumbing = lazy(() => import("@/pages/service-areas/hanover"));
+const ScituatePlumbing = lazy(() => import("@/pages/service-areas/scituate"));
+const CohassetPlumbing = lazy(() => import("@/pages/service-areas/cohasset"));
+const HullPlumbing = lazy(() => import("@/pages/service-areas/hull"));
 
 // Landing Pages
 const EmergencyLandingPage = lazy(() => import("@/pages/landing/emergency"));
@@ -132,11 +139,18 @@ function Router() {
 
           {/* Service Area Pages */}
           <Route path="/service-areas" component={ServiceAreasDirectory} />
+          <Route path="/service-areas/quincy" component={QuincyPlumbing} />
           <Route path="/service-areas/braintree" component={BraintreePlumbing} />
           <Route path="/service-areas/weymouth" component={WeymouthPlumbing} />
           <Route path="/service-areas/plymouth" component={PlymouthPlumbing} />
           <Route path="/service-areas/marshfield" component={MarshfieldPlumbing} />
           <Route path="/service-areas/hingham" component={HinghamPlumbing} />
+          <Route path="/service-areas/abington" component={AbingtonPlumbing} />
+          <Route path="/service-areas/rockland" component={RocklandPlumbing} />
+          <Route path="/service-areas/hanover" component={HanoverPlumbing} />
+          <Route path="/service-areas/scituate" component={ScituatePlumbing} />
+          <Route path="/service-areas/cohasset" component={CohassetPlumbing} />
+          <Route path="/service-areas/hull" component={HullPlumbing} />
 
           {/* Landing Pages */}
           <Route path="/landing/emergency" component={EmergencyLandingPage} />
