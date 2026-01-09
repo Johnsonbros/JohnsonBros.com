@@ -44,9 +44,12 @@ const MobileDialogContent = React.forwardRef<
   const [isDragging, setIsDragging] = React.useState(false);
   const contentRef = React.useRef<HTMLDivElement>(null);
 
-  // Handle swipe gestures for mobile
+  // Handle swipe gestures for mobile - only on the header, not the content
   const handleTouchStart = (e: React.TouchEvent) => {
     if (!isMobile) return;
+    const target = e.target as HTMLElement;
+    const header = target.closest('[data-dialog-header]');
+    if (!header) return;
     setStartY(e.touches[0].clientY);
     setIsDragging(true);
   };
@@ -56,7 +59,6 @@ const MobileDialogContent = React.forwardRef<
     const touchY = e.touches[0].clientY;
     const deltaY = touchY - startY;
     
-    // Only allow dragging down
     if (deltaY > 0) {
       setCurrentY(deltaY);
       if (contentRef.current) {
@@ -69,12 +71,10 @@ const MobileDialogContent = React.forwardRef<
     if (!isMobile || !isDragging) return;
     setIsDragging(false);
     
-    // Close if dragged more than 150px
     if (currentY > 150) {
       const closeButton = document.querySelector('[data-dialog-close]') as HTMLButtonElement;
       closeButton?.click();
     } else {
-      // Reset position
       if (contentRef.current) {
         contentRef.current.style.transform = '';
       }
@@ -83,7 +83,7 @@ const MobileDialogContent = React.forwardRef<
   };
 
   const mobileStyles = isMobile && fullScreen 
-    ? "fixed inset-0 w-full h-full max-w-full rounded-none p-0" 
+    ? "fixed inset-0 w-full h-full max-w-full rounded-none p-0 flex flex-col" 
     : "fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] max-w-lg";
 
   return (
@@ -110,7 +110,7 @@ const MobileDialogContent = React.forwardRef<
         {isMobile && fullScreen ? (
           <>
             {/* Mobile Header */}
-            <div className="sticky top-0 z-10 flex items-center justify-between bg-background border-b px-4 py-3">
+            <div className="sticky top-0 z-10 flex items-center justify-between bg-background border-b px-4 py-3 flex-shrink-0" data-dialog-header>
               {showBackButton && onBack ? (
                 <button
                   onClick={onBack}
@@ -143,7 +143,7 @@ const MobileDialogContent = React.forwardRef<
             <div className="absolute top-1 left-1/2 transform -translate-x-1/2 w-12 h-1 bg-gray-300 rounded-full" />
 
             {/* Mobile Content */}
-            <div className="flex-1 overflow-y-auto overscroll-contain">
+            <div className="flex-1 overflow-y-auto overscroll-contain min-h-0 px-4 pb-6">
               {children}
             </div>
           </>
