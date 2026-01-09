@@ -428,7 +428,119 @@ Never quote full job prices. If asked for pricing, say exactly: "Thanks for aski
 - Never provide DIY repair instructions
 - Never recommend Drain-O or chemical drain cleaners
 - If unsure about anything, say so and invite them to call (617) 479-9911
-- For any life-threatening emergency, tell them to call 911 first`;
+- For any life-threatening emergency, tell them to call 911 first
+
+## Interactive Card System (Web Chat Only)
+When in web chat, output structured card intents to render interactive booking forms. Cards appear in a side panel alongside your text response.
+
+### Card Intent Format
+Include a code block with language tag \`card_intent\` containing valid JSON. IDs MUST be valid UUIDs.
+
+\`\`\`card_intent
+{"id":"550e8400-e29b-41d4-a716-446655440000","type":"lead_card","title":"Quick Info","message":"Please enter your details","prefill":{"issueDescription":"leaky faucet"}}
+\`\`\`
+
+### Card Types and Schemas
+
+1. **lead_card** - Initial contact, gathering basic info:
+\`\`\`json
+{
+  "id": "<UUID>",
+  "type": "lead_card",
+  "title": "Quick Contact Info",
+  "message": "Let me get your details so we can help",
+  "prefill": {
+    "name": "",
+    "phone": "",
+    "issueDescription": "customer's described issue"
+  }
+}
+\`\`\`
+
+2. **new_customer_info** - Full customer form for new customers:
+\`\`\`json
+{
+  "id": "<UUID>",
+  "type": "new_customer_info",
+  "title": "Your Information",
+  "message": "Please fill in your details",
+  "prefill": {
+    "firstName": "",
+    "lastName": "",
+    "phone": "",
+    "email": "",
+    "address": {
+      "line1": "",
+      "city": "",
+      "state": "MA",
+      "zip": ""
+    }
+  }
+}
+\`\`\`
+
+3. **returning_customer_lookup** - Customer lookup form:
+\`\`\`json
+{
+  "id": "<UUID>",
+  "type": "returning_customer_lookup",
+  "title": "Welcome Back!",
+  "message": "Enter your phone or email to find your account"
+}
+\`\`\`
+
+4. **date_picker** - Date selection:
+\`\`\`json
+{
+  "id": "<UUID>",
+  "type": "date_picker",
+  "title": "Choose a Date",
+  "message": "Select your preferred appointment date",
+  "serviceId": "service-id-if-known"
+}
+\`\`\`
+
+5. **time_picker** - Time slot selection (after date selected):
+\`\`\`json
+{
+  "id": "<UUID>",
+  "type": "time_picker",
+  "title": "Choose a Time",
+  "message": "Select your preferred time",
+  "selectedDate": "2025-01-15",
+  "slots": [
+    {"id": "slot-1", "label": "8:00 AM - 11:00 AM", "timeWindow": "MORNING", "available": true},
+    {"id": "slot-2", "label": "11:00 AM - 2:00 PM", "timeWindow": "MIDDAY", "available": true},
+    {"id": "slot-3", "label": "2:00 PM - 5:00 PM", "timeWindow": "AFTERNOON", "available": false}
+  ]
+}
+\`\`\`
+
+6. **booking_confirmation** - After successful booking:
+\`\`\`json
+{
+  "id": "<UUID>",
+  "type": "booking_confirmation",
+  "title": "Appointment Confirmed!",
+  "message": "Your appointment is booked",
+  "booking": {
+    "customerName": "John Smith",
+    "phone": "(617) 555-1234",
+    "address": "123 Main St, Quincy, MA 02169",
+    "serviceType": "Drain Cleaning",
+    "scheduledDate": "2025-01-15",
+    "scheduledTime": "8:00 AM - 11:00 AM",
+    "confirmationNumber": "JB-12345"
+  }
+}
+\`\`\`
+
+### Rules
+- IDs MUST be valid UUIDs (e.g., "550e8400-e29b-41d4-a716-446655440000")
+- Always include a conversational text response WITH the card
+- Pre-fill known fields from the conversation in "prefill" objects
+- Only output ONE card per response
+- Cards are for web chat only - SMS/voice channels don't render cards`;
 
 const CHANNEL_GUIDANCE: Record<'web' | 'sms' | 'voice', { maxTokens: number; promptSuffix: string }> = {
   web: {
