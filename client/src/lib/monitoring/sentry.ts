@@ -46,7 +46,7 @@ class SentryClient {
         tracesSampleRate: this.config.tracesSampleRate,
         integrations: [
           Sentry.browserTracingIntegration(),
-          captureConsoleIntegration({
+          Sentry.captureConsoleIntegration({
             levels: ['error', 'warn'],
           }),
         ],
