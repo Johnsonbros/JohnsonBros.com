@@ -3,6 +3,8 @@ import { ChatKit, useChatKit } from '@openai/chatkit-react';
 import { MessageCircle, X, Wrench } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import logoIcon from '@assets/JBros_Wrench_Logo_WP.png';
+import { useCardStore } from '@/stores/useCardStore';
+import { extractCardIntents } from '@/lib/extractCardIntents';
 
 interface ChatKitWidgetProps {
   className?: string;
@@ -13,6 +15,9 @@ export function ChatKitWidget({ className }: ChatKitWidgetProps) {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [threadId, setThreadId] = useState<string | null>(null);
+  
+  const { setActiveThread, addCards } = useCardStore();
 
   const getClientSecret = useCallback(async (existingSecret?: string | null) => {
     try {
@@ -83,6 +88,9 @@ export function ChatKitWidget({ className }: ChatKitWidgetProps) {
     onReady: () => {
       setIsReady(true);
       setError(null);
+      const newThreadId = `thread_${Date.now()}`;
+      setThreadId(newThreadId);
+      setActiveThread(newThreadId);
     },
     onError: (event) => {
       console.error('ChatKit error:', event);
@@ -93,6 +101,32 @@ export function ChatKitWidget({ className }: ChatKitWidgetProps) {
     },
     onResponseEnd: (event: any) => {
       console.log('Response complete', event);
+      
+      try {
+        let messageText = '';
+        
+        const content = event?.message?.content;
+        if (Array.isArray(content)) {
+          messageText = content
+            .filter((part: any) => part?.type === 'output_text' || part?.type === 'text')
+            .map((part: any) => part?.text || part?.content || '')
+            .join('\n');
+        } else if (typeof content === 'string') {
+          messageText = content;
+        } else if (typeof event?.content === 'string') {
+          messageText = event.content;
+        }
+        
+        if (messageText.includes('```card_intent')) {
+          const cards = extractCardIntents(messageText);
+          if (cards.length > 0 && threadId) {
+            console.log('[ChatKit] Extracted cards:', cards);
+            addCards(threadId, cards);
+          }
+        }
+      } catch (e) {
+        console.error('[ChatKit] Failed to extract card intents:', e);
+      }
     }
   });
 

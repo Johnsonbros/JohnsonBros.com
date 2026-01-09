@@ -6,7 +6,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { HelmetProvider } from "react-helmet-async";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ABTestingProvider } from "@/contexts/ABTestingContext";
-import { lazy, Suspense, useState, useEffect } from "react";
+import { CardStoreProvider, useCardStore } from "@/stores/useCardStore";
+import { CardSurface } from "@/components/cards/CardSurface";
+import { dispatchCardAction } from "@/lib/dispatchCardAction";
+import { lazy, Suspense, useState, useEffect, useCallback } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import MobileMoreMenu from "@/components/MobileMoreMenu";
@@ -172,6 +175,50 @@ function Router() {
   );
 }
 
+function CardSurfaceLayer() {
+  const { activeThreadId, getCardsForThread, dismissCard, updateCard } = useCardStore();
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadingCardId, setLoadingCardId] = useState<string | null>(null);
+  
+  const cards = activeThreadId ? getCardsForThread(activeThreadId) : [];
+  
+  const handleAction = useCallback(async (action: string, payload?: Record<string, unknown>) => {
+    if (!activeThreadId) return;
+    
+    setIsLoading(true);
+    setLoadingCardId(payload?.cardId as string || null);
+    
+    try {
+      const result = await dispatchCardAction(action, payload || {}, { threadId: activeThreadId });
+      
+      if (result.ok && result.result?.card) {
+        updateCard(activeThreadId, result.result.card as any);
+      }
+    } catch (error) {
+      console.error('[CardSurfaceLayer] Action failed:', error);
+    } finally {
+      setIsLoading(false);
+      setLoadingCardId(null);
+    }
+  }, [activeThreadId, updateCard]);
+  
+  const handleDismiss = useCallback((cardId: string) => {
+    if (activeThreadId) {
+      dismissCard(activeThreadId, cardId);
+    }
+  }, [activeThreadId, dismissCard]);
+  
+  return (
+    <CardSurface
+      cards={cards}
+      onAction={handleAction}
+      onDismiss={handleDismiss}
+      isLoading={isLoading}
+      loadingCardId={loadingCardId}
+    />
+  );
+}
+
 function App() {
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
@@ -185,6 +232,7 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <HelmetProvider>
           <ABTestingProvider>
+            <CardStoreProvider>
             <TooltipProvider>
         <Toaster />
         <Router />
@@ -281,7 +329,10 @@ function App() {
             
             <p><strong>Note:</strong> This MCP integration allows AI assistants to handle complete plumbing service booking, customer management, and scheduling without human intervention. All bookings are automatically synced with Housecall Pro dispatch system.</p>
           </div>
+          
+          <CardSurfaceLayer />
             </TooltipProvider>
+            </CardStoreProvider>
           </ABTestingProvider>
         </HelmetProvider>
       </QueryClientProvider>
