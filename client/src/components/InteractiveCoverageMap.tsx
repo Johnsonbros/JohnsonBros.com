@@ -278,7 +278,6 @@ export function InteractiveCoverageMap({ onBookService, compact = false }: Inter
               flex-direction: column;
               align-items: center;
               cursor: pointer;
-              transform: translate(-50%, -100%);
             ">
               <div class="marker-pin" style="
                 width: ${isHQ ? "48px" : "36px"};
