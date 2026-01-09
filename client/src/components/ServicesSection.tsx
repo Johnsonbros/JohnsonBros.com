@@ -173,7 +173,9 @@ export default function ServicesSection({ onBookService }: ServicesSectionProps)
                   <div className="flex flex-col sm:flex-row gap-3">
                     <Button 
                       onClick={() => onBookService(service.id)}
-                      className="bg-gradient-to-r from-johnson-blue to-johnson-teal text-white px-6 py-3 rounded-lg font-semibold hover:from-johnson-teal hover:to-johnson-blue transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl flex-1 touch-target"
+                      variant="brand-primary"
+                      size="xl"
+                      className="flex-1 touch-target"
                       data-testid={`book-service-${service.id}`}
                     >
                       Book Service
@@ -181,8 +183,9 @@ export default function ServicesSection({ onBookService }: ServicesSectionProps)
                     {pageLink && (
                       <Link href={pageLink}>
                         <Button 
-                          variant="outline"
-                          className="border-johnson-orange text-johnson-orange hover:bg-johnson-orange hover:text-white px-4 py-3 rounded-lg font-semibold transition-all duration-300 w-full sm:w-auto touch-target"
+                          variant="brand-outline-accent"
+                          size="xl"
+                          className="w-full sm:w-auto touch-target"
                           data-testid={`learn-more-${service.id}`}
                         >
                           Learn More
