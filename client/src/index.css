@@ -1,27 +1,85 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@import "@openai/apps-sdk-ui/css";
+
+/* Tailwind 4 Theme Configuration */
+@theme {
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+  
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar-background);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-johnson-blue: var(--johnson-blue);
+  --color-johnson-teal: var(--johnson-teal);
+  --color-johnson-orange: var(--johnson-orange);
+  --color-emergency-red: var(--emergency-red);
+  --color-service-green: var(--service-green);
+
+  --font-sans: 'Inter', sans-serif;
+  --font-serif: Georgia, serif;
+  --font-mono: Menlo, monospace;
+  --font-inter: 'Inter', sans-serif;
+
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+}
+
+@keyframes accordion-down {
+  from { height: 0; }
+  to { height: var(--radix-accordion-content-height); }
+}
+
+@keyframes accordion-up {
+  from { height: var(--radix-accordion-content-height); }
+  to { height: 0; }
+}
 
 /* Mobile Performance Optimizations */
 @media (max-width: 768px) {
-  /* Reduce animation complexity on mobile */
   * {
     animation-duration: 0.3s !important;
     transition-duration: 0.2s !important;
   }
   
-  /* Optimize touch targets - minimum 44x44 pixels */
   button, a, input, textarea, select {
     min-height: 44px;
     padding: 12px 16px;
   }
 
-  /* Better tap highlight for mobile */
   button, a {
     -webkit-tap-highlight-color: rgba(32, 128, 205, 0.2);
   }
 
-  /* Ensure clickable areas are large enough */
   .touch-target {
     position: relative;
   }
@@ -35,54 +93,47 @@
     left: -8px;
   }
   
-  /* Improve scrolling performance */
   body {
     -webkit-overflow-scrolling: touch;
   }
   
-  /* Reduce shadows for performance */
   .shadow-lg {
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   }
   
-  /* Optimize font loading */
   body {
     font-display: swap;
   }
 }
 
-/* Prevent horizontal scroll on mobile */
 body {
   overflow-x: hidden;
   width: 100%;
   position: relative;
 }
 
-/* Mobile viewport optimization */
 html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
 }
 
-/* Optimize images for mobile */
 img {
   max-width: 100%;
   height: auto;
 }
 
-/* Lighter placeholder text */
 ::placeholder {
-  color: rgb(156 163 175 / 0.5) !important;  /* Very light gray with 50% opacity */
+  color: rgb(156 163 175 / 0.5) !important;
   opacity: 1 !important;
 }
 
 input::placeholder {
-  color: rgb(156 163 175 / 0.5) !important;  /* Very light gray with 50% opacity */
+  color: rgb(156 163 175 / 0.5) !important;
   opacity: 1 !important;
 }
 
 textarea::placeholder {
-  color: rgb(156 163 175 / 0.5) !important;  /* Very light gray with 50% opacity */
+  color: rgb(156 163 175 / 0.5) !important;
   opacity: 1 !important;
 }
 
@@ -108,30 +159,18 @@ textarea::placeholder {
 }
 
 @keyframes shrink-width {
-  from { 
-    width: 100%; 
-  }
-  to { 
-    width: 0%; 
-  }
+  from { width: 100%; }
+  to { width: 0%; }
 }
 
 @keyframes shimmer {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(100%);
-  }
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }
 
 @keyframes attention {
-  0%, 100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.05);
-  }
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
 }
 
 @keyframes pulse-slow {
@@ -211,7 +250,6 @@ textarea::placeholder {
   z-index: 0;
 }
 
-/* Ensure content is above the background pattern */
 .bg-pipes-orange > *,
 .bg-pipes-blue > * {
   position: relative;
@@ -302,7 +340,7 @@ textarea::placeholder {
   --chart-3: hsl(42.0290, 92.8251%, 56.2745%);
   --chart-4: hsl(147.1429, 78.5047%, 41.9608%);
   --chart-5: hsl(341.4894, 75.2000%, 50.9804%);
-  --sidebar: hsl(180, 6.6667%, 97.0588%);
+  --sidebar-background: hsl(180, 6.6667%, 97.0588%);
   --sidebar-foreground: hsl(210, 25%, 7.8431%);
   --sidebar-primary: hsl(203.8863, 88.2845%, 53.1373%);
   --sidebar-primary-foreground: hsl(0, 0%, 100%);
@@ -350,12 +388,15 @@ textarea::placeholder {
 
 @layer base {
   * {
-    @apply border-border;
+    border-color: var(--border);
   }
 
   body {
-    @apply font-sans antialiased bg-background text-foreground;
     font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: var(--background);
+    color: var(--foreground);
   }
 }
 

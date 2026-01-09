@@ -1,0 +1,139 @@
+{
+  "colorScheme": "light",
+  "fonts": [
+    {
+      "family": "ui-sans-serif",
+      "count": 62
+    },
+    {
+      "family": "-apple-system",
+      "count": 62
+    },
+    {
+      "family": "system-ui",
+      "count": 62
+    },
+    {
+      "family": "Segoe UI",
+      "count": 62
+    },
+    {
+      "family": "Noto Sans",
+      "count": 62
+    },
+    {
+      "family": "Helvetica",
+      "count": 62
+    },
+    {
+      "family": "Arial",
+      "count": 62
+    },
+    {
+      "family": "Apple Color Emoji",
+      "count": 62
+    },
+    {
+      "family": "Segoe UI Emoji",
+      "count": 62
+    },
+    {
+      "family": "Segoe UI Symbol",
+      "count": 62
+    }
+  ],
+  "colors": {
+    "primary": "#73828C",
+    "accent": "#585C6D",
+    "background": "#FFFFFF",
+    "textPrimary": "#292929",
+    "link": "#585C6D"
+  },
+  "typography": {
+    "fontFamilies": {
+      "primary": "ui-sans-serif",
+      "heading": "ui-sans-serif"
+    },
+    "fontStacks": {
+      "body": [
+        "ui-sans-serif",
+        "-apple-system",
+        "system-ui",
+        "Segoe UI",
+        "Noto Sans",
+        "Helvetica",
+        "Arial",
+        "Apple Color Emoji",
+        "Segoe UI Emoji",
+        "Segoe UI Symbol",
+        "sans-serif"
+      ],
+      "heading": [
+        "ui-sans-serif",
+        "-apple-system",
+        "system-ui",
+        "Segoe UI",
+        "Noto Sans",
+        "Helvetica",
+        "Arial",
+        "Apple Color Emoji",
+        "Segoe UI Emoji",
+        "Segoe UI Symbol",
+        "sans-serif"
+      ],
+      "paragraph": [
+        "ui-sans-serif",
+        "-apple-system",
+        "system-ui",
+        "Segoe UI",
+        "Noto Sans",
+        "Helvetica",
+        "Arial",
+        "Apple Color Emoji",
+        "Segoe UI Emoji",
+        "Segoe UI Symbol",
+        "sans-serif"
+      ]
+    },
+    "fontSizes": {
+      "h1": "16px",
+      "h2": "16px",
+      "body": "16px"
+    }
+  },
+  "spacing": {
+    "baseUnit": 6,
+    "borderRadius": "4px"
+  },
+  "components": {
+    "input": {
+      "background": "transparent",
+      "textColor": "#2E3438",
+      "borderColor": null,
+      "borderRadius": "0px",
+      "borderRadiusCorners": {
+        "topLeft": "0px",
+        "topRight": "0px",
+        "bottomRight": "0px",
+        "bottomLeft": "0px"
+      },
+      "shadow": "none"
+    }
+  },
+  "images": {
+    "logo": "File saved at: attached_assets/logo.svg",
+    "favicon": "File saved at: attached_assets/favicon.svg",
+    "ogImage": null
+  },
+  "__framework_hints": [],
+  "__llm_logo_reasoning": {
+    "selectedIndex": 1,
+    "reasoning": "Heuristic fallback: Moderate indicators: in header, header location, top-left position, highest logo on page, too small (likely icon, penalty), small square icon (likely UI icon, heavy penalty), SVG format, not visible (penalty). Score: 40. May benefit from LLM validation.",
+    "confidence": 0.5
+  },
+  "confidence": {
+    "buttons": 0,
+    "colors": 0,
+    "overall": 0
+  }
+}
