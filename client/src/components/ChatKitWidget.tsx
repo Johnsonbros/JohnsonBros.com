@@ -46,6 +46,73 @@ export function ChatKitWidget({ className }: ChatKitWidgetProps) {
     api: {
       getClientSecret
     },
+    ui: {
+      cards: {
+        appointment: {
+          component: ({ data }) => (
+            <div className="w-full max-w-sm rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg p-4 mt-3">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-slate-500 dark:text-slate-400 text-sm">Appointment</p>
+                  <h2 className="mt-1 text-lg font-semibold text-slate-900 dark:text-white">Johnson Bros. Plumbing</h2>
+                </div>
+                <div className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 px-2 py-0.5 rounded text-xs font-medium">Confirmed</div>
+              </div>
+              <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-3 gap-y-2 text-sm">
+                <dt className="flex items-center gap-1.5 font-medium text-slate-500 dark:text-slate-400">
+                  <Wrench className="size-4" />
+                  Service
+                </dt>
+                <dd className="text-right text-slate-900 dark:text-white">{data?.service || 'General Plumbing'}</dd>
+                <dt className="flex items-center gap-1.5 font-medium text-slate-500 dark:text-slate-400">
+                  <MessageCircle className="size-4" />
+                  Details
+                </dt>
+                <dd className="text-right truncate text-slate-900 dark:text-white">{data?.date || 'Scheduled'}</dd>
+              </dl>
+              <div className="mt-4 grid gap-3 border-t border-slate-200 dark:border-slate-700 pt-4 sm:grid-cols-2">
+                <a href="tel:6174799911" className="w-full">
+                  <button className="w-full border border-gray-300 rounded-md py-2 text-sm font-medium hover:bg-gray-50 flex items-center justify-center gap-2">
+                    <Wrench className="w-4 h-4" />
+                    Call
+                  </button>
+                </a>
+                <button className="w-full bg-blue-600 text-white rounded-md py-2 text-sm font-medium hover:bg-blue-700 flex items-center justify-center gap-2">
+                  <Wrench className="w-4 h-4" />
+                  Details
+                </button>
+              </div>
+            </div>
+          )
+        },
+        quote: {
+          component: ({ data }) => (
+            <div className="w-full max-w-sm rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg p-4 mt-3">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-slate-500 dark:text-slate-400 text-sm">Service Quote</p>
+                  <h2 className="mt-1 text-lg font-semibold text-slate-900 dark:text-white">{data?.service || 'Plumbing Service'}</h2>
+                </div>
+                <div className="bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300 px-2 py-0.5 rounded text-xs font-medium">Estimate</div>
+              </div>
+              <div className="mt-4 text-center py-4 bg-slate-50 dark:bg-slate-700/50 rounded-xl">
+                <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">${data?.price || '99'}</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">Service Call Fee</p>
+              </div>
+              <p className="mt-3 text-xs text-slate-500 dark:text-slate-400 text-center">
+                Final price determined after on-site diagnosis. No hidden fees.
+              </p>
+              <div className="mt-4 grid gap-3 border-t border-slate-200 dark:border-slate-700 pt-4">
+                <button className="w-full bg-blue-600 text-white rounded-md py-2 text-sm font-medium hover:bg-blue-700 flex items-center justify-center gap-2">
+                  <Wrench className="w-4 h-4" />
+                  Book Now
+                </button>
+              </div>
+            </div>
+          )
+        }
+      }
+    },
     header: {
       enabled: true,
       title: {
