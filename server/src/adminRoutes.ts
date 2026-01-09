@@ -1541,6 +1541,43 @@ router.get('/agent-tracing/stats', authenticate, requirePermission('ai.view_chat
   }
 });
 
+// Agent eval gate status for release checks
+router.get('/agent-tracing/eval-gate', authenticate, requirePermission('ai.view_chats'), async (req, res) => {
+  try {
+    const { runId, promptVersion, modelUsed, categories, minPassRate } = req.query;
+    const parsedCategories = typeof categories === 'string'
+      ? categories.split(',').map((value) => value.trim()).filter(Boolean)
+      : [];
+    const gateStatus = await agentTracing.getEvalGateStatus({
+      runId: runId as string | undefined,
+      promptVersion: promptVersion as string | undefined,
+      modelUsed: modelUsed as string | undefined,
+      categories: parsedCategories.length > 0 ? parsedCategories : undefined,
+      minPassRate: minPassRate ? parseFloat(minPassRate as string) : undefined,
+    });
+
+    res.json(gateStatus);
+  } catch (error) {
+    console.error('Get eval gate error:', error);
+    res.status(500).json({ error: 'Failed to fetch eval gate status' });
+  }
+});
+
+// Weekly tool correctness report and retraining queue
+router.get('/agent-tracing/tool-correctness', authenticate, requirePermission('ai.view_chats'), async (req, res) => {
+  try {
+    const { windowDays } = req.query;
+    const report = await agentTracing.getToolCorrectnessReport({
+      windowDays: windowDays ? parseInt(windowDays as string, 10) : undefined,
+    });
+
+    res.json(report);
+  } catch (error) {
+    console.error('Get tool correctness error:', error);
+    res.status(500).json({ error: 'Failed to fetch tool correctness report' });
+  }
+});
+
 // Get tool calls for a conversation
 router.get('/agent-tracing/conversations/:id/tool-calls', authenticate, requirePermission('ai.view_chats'), async (req, res) => {
   try {
