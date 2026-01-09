@@ -474,11 +474,16 @@ export interface ChatResponse {
 export async function processChat(
   sessionId: string, 
   userMessage: string,
-  channel: 'web' | 'sms' | 'voice' = 'web'
+  channel: 'web' | 'sms' | 'voice' = 'web',
+  context?: {
+    summary?: string | null;
+    currentIssueSummary?: string | null;
+    recentMessages?: ChatMessage[];
+  }
 ): Promise<ChatResponse> {
   const channelMap = { web: 'web_chat', sms: 'sms', voice: 'voice' } as const;
   const channelConfig = CHANNEL_GUIDANCE[channel];
-  const systemPrompt = getChannelPrompt(channel);
+  const systemPrompt = buildSystemPrompt(channel, context);
   
   try {
     // Ensure conversation is tracked
@@ -494,6 +499,16 @@ export async function processChat(
     // Add system prompt if new conversation
     if (history.length === 0) {
       history.push({ role: 'system', content: systemPrompt });
+      if (context?.recentMessages?.length) {
+        history.push(
+          ...context.recentMessages.map((message) => ({
+            role: message.role,
+            content: message.content,
+          }))
+        );
+      }
+    } else {
+      history[0] = { role: 'system', content: systemPrompt };
     }
     
     // Add user message
@@ -647,6 +662,25 @@ export async function processChat(
       message: "I'm having trouble right now. Please call us at (617) 479-9911 for immediate assistance."
     };
   }
+}
+
+function buildSystemPrompt(
+  channel: 'web' | 'sms' | 'voice',
+  context?: { summary?: string | null; currentIssueSummary?: string | null },
+): string {
+  let prompt = getChannelPrompt(channel);
+
+  if (context?.summary || context?.currentIssueSummary) {
+    prompt += `\n\n## Customer Memory\n`;
+    if (context.summary) {
+      prompt += `Customer summary: ${context.summary}\n`;
+    }
+    if (context.currentIssueSummary) {
+      prompt += `Current issue summary: ${context.currentIssueSummary}\n`;
+    }
+  }
+
+  return prompt;
 }
 
 export function clearSession(sessionId: string): void {
