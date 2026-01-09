@@ -40,7 +40,7 @@ Define the customer portal scope, the Housecall Pro API integration plan, and a 
 ### 3) Appointments & Scheduling
 **Capabilities**
 - View upcoming appointment(s) tied to a job.
-- Self-service reschedule/cancel (if enabled).
+- Self-service reschedule/cancel.
 - Book new service windows.
 
 **Housecall Pro API**
@@ -66,10 +66,11 @@ Define the customer portal scope, the Housecall Pro API integration plan, and a 
 
 ---
 
-### 5) Invoices & Payments
+### 5) Invoices (View-Only)
 **Capabilities**
 - Show open, paid, and historical invoices.
 - Provide invoice detail per job.
+- No in-portal payment processing.
 
 **Housecall Pro API**
 - `GET /jobs/{job_id}/invoices` to display job invoice records.【F:housecall.v1.yaml†L1415-L1441】
@@ -128,7 +129,7 @@ Use `customer_id` from the authenticated customer profile to filter:
 - Jobs, estimates, and leads lists (filter by `customer_id`).【F:housecall.v1.yaml†L459-L656】【F:housecall.v1.yaml†L1656-L1852】【F:housecall.v1.yaml†L2684-L2775】
 
 ### Scheduling Inputs
-Use Housecall booking window availability in the scheduling UI so the customer only sees valid timeslots.【F:housecall.v1.yaml†L2288-L2326】
+Use Housecall booking window availability in the scheduling UI so the customer only sees valid timeslots. Customers can book, reschedule, or cancel appointments directly in the portal.【F:housecall.v1.yaml†L2288-L2326】
 
 ### Invoice Availability
 Invoice data depends on progressive invoicing configuration (as indicated in API descriptions).【F:housecall.v1.yaml†L1415-L1441】【F:housecall.v1.yaml†L3007-L3044】
@@ -157,7 +158,4 @@ Invoice data depends on progressive invoicing configuration (as indicated in API
 
 ## Open Questions / Decisions Needed
 1. **Authentication**: How will customer identity map to Housecall Pro customer records?
-2. **Scheduling Rules**: Will customers be allowed to reschedule or only request changes?
-3. **Payments**: Are invoice payments handled inside the portal or via Housecall Pro hosted links?
-4. **Data Access**: Are we using Company API Key or OAuth token flow for portal sessions?
-
+2. **Data Access**: Are we using Company API Key or OAuth token flow for portal sessions?
