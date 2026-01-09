@@ -1,5 +1,4 @@
 import * as Sentry from '@sentry/react';
-import { captureConsoleIntegration } from '@sentry/integrations';
 
 interface SentryConfig {
   dsn: string;

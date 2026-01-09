@@ -1,16 +1,6 @@
 import { onCLS, onFCP, onINP, onLCP, onTTFB, Metric } from 'web-vitals';
 import { sentryClient } from './sentry';
 
-// Declare gtag for Google Analytics
-declare global {
-  interface Window {
-    gtag?: (
-      type: string,
-      event: string,
-      options: Record<string, any>
-    ) => void;
-  }
-}
 
 export interface VitalMetric {
   name: string;
