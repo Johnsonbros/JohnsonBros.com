@@ -69,6 +69,9 @@ const SewerLineServiceLanding = lazy(() => import("@/pages/service/sewer-line-la
 // AI Booking Page
 const AIBooking = lazy(() => import("@/pages/ai-booking"));
 
+// OpenAI App Page
+const OpenAIAppPage = lazy(() => import("@/pages/openai-app"));
+
 // The Family Discount & Member Portal Pages
 const FamilyDiscount = lazy(() => import("@/pages/family-discount"));
 const MyPlan = lazy(() => import("@/pages/my-plan"));
@@ -101,6 +104,7 @@ function Router() {
           <Route path="/blog" component={Blog} />
           <Route path="/blog/:slug" component={BlogPost} />
           <Route path="/ai-booking" component={AIBooking} />
+          <Route path="/openai-app" component={OpenAIAppPage} />
           <Route path="/contact" component={Contact} />
           <Route path="/referral" component={Referral} />
           <Route path="/family-discount" component={FamilyDiscount} />
