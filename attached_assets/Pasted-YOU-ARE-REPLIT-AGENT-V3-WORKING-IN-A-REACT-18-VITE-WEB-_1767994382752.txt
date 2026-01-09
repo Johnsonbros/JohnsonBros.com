@@ -1,0 +1,70 @@
+YOU ARE REPLIT AGENT V3 WORKING IN A REACT 18 + VITE WEB APP.
+
+GOAL
+Update our Sentry browser initialization so it supports:
+1) Current environments: Vite dev on localhost, Replit dev URL, Replit production URL
+2) Future production domain: https://www.thejohnsonbros.com (and optionally https://thejohnsonbros.com)
+3) Correct distributed tracing: tracePropagationTargets must include all of the above so tracing headers propagate to our API calls
+4) Safety: do NOT widen targets too much (no “match anything” regex). Keep it scoped to our known hosts.
+
+CONTEXT
+We currently have a Sentry.init wrapper with:
+- guard: if initialized or !config.enabled return
+- integrations: browserTracingIntegration() + captureConsoleIntegration({ levels: ['error','warn'] })
+- beforeSend scrubs sensitive headers/cookies
+- dev mode drops events unless VITE_SENTRY_DEBUG is true
+Right now tracePropagationTargets includes localhost, a regex for *.johnsonbrosplumbing.com (WRONG DOMAIN), and /^\// for relative paths.
+
+REQUIREMENTS
+A) Replace the johnsonbrosplumbing.com regex with the correct domain(s) for TheJohnsonBros:
+   - Allow https://www.thejohnsonbros.com
+   - Allow https://thejohnsonbros.com
+   - Allow any subdomain under thejohnsonbros.com (e.g. api.thejohnsonbros.com, mcp.thejohnsonbros.com) BUT ONLY under that domain
+
+B) Add support for Replit hosts (dev + prod):
+   - Detect current runtime origin via window.location.hostname
+   - Allow tracing to same-host requests automatically
+   - Optionally allow additional API host via env var (recommended)
+
+C) Make tracePropagationTargets environment-driven:
+   - Add VITE_PUBLIC_APP_DOMAIN (e.g. thejohnsonbros.com)
+   - Add VITE_API_ORIGIN (optional full origin like https://api.thejohnsonbros.com or Replit URL)
+   - Implement a function buildTracePropagationTargets() that returns an array of:
+     - 'localhost'
+     - window.location.hostname (as string)
+     - /^\// (for relative)
+     - regex for *.thejohnsonbros.com (and root domain)
+     - if VITE_API_ORIGIN exists, include it (string or regex matching it)
+
+D) Keep security tight:
+   - Do NOT include broad patterns like /^https:\/\//
+   - Do NOT include “.*” catch-alls
+   - Keep beforeSend scrubbing as-is or improve it (but do not remove it)
+
+E) Output:
+   1) Make the code change in the Sentry initialization file (where initialize() lives)
+   2) Add/update .env.example to document:
+      - VITE_SENTRY_DSN
+      - VITE_SENTRY_DEBUG
+      - VITE_PUBLIC_APP_DOMAIN=thejohnsonbros.com
+      - VITE_API_ORIGIN= (optional)
+   3) Add a tiny dev note in README or a comment explaining how to set these on Replit
+
+VALIDATION / TESTS (DO THESE)
+- Console.log the computed tracePropagationTargets in dev ONLY when VITE_SENTRY_DEBUG is enabled
+- Verify the app builds
+- Ensure tracing headers propagate to fetch/XHR requests to:
+  - relative /api routes
+  - same-origin calls
+  - configured VITE_API_ORIGIN calls
+- Ensure events are dropped in development unless VITE_SENTRY_DEBUG is set
+
+IMPLEMENTATION NOTES
+- Use import.meta.env for Vite env vars
+- When building regex for thejohnsonbros.com:
+  - include both root and subdomains
+  - constrain to https and the domain
+- Prefer small, readable helpers over clever one-liners.
+
+DELIVERABLE
+Commit-ready code changes with clear diffs and no broken imports.
