@@ -130,28 +130,27 @@ export default function CapacityHero({ onBookService }: HeroSectionProps) {
             <div className="flex flex-col space-y-3 sm:space-y-4">
               <Button 
                 onClick={handleBookNow}
-                className={`
-                  px-6 py-4 sm:px-8 rounded-lg font-bold text-lg 
-                  transition-all duration-300 transform hover:scale-105 shadow-xl 
-                  w-full sm:w-auto touch-target
-                  ${isUrgent 
-                    ? 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 animate-pulse' 
-                    : 'bg-gradient-to-r from-johnson-orange to-orange-500 hover:from-orange-500 hover:to-johnson-orange'}
-                `}
+                variant={isUrgent ? "brand-urgent" : "brand-accent"}
+                size="xl"
+                className="w-full sm:w-auto touch-target"
                 data-testid="hero-book-online-button"
                 disabled={isLoading}
               >
                 <Calendar className="mr-2 h-5 w-5" />
                 {isLoading ? 'Checking Availability...' : uiCopy.cta}
               </Button>
-              <a 
-                href="tel:6174799911" 
-                className="bg-white text-johnson-blue px-6 py-4 sm:px-8 rounded-lg font-bold text-lg hover:bg-gray-50 transition-all duration-300 transform hover:scale-105 shadow-lg text-center inline-flex items-center justify-center w-full sm:w-auto touch-target border-2 border-johnson-blue hover:border-johnson-teal"
+              <Button
+                asChild
+                variant="brand-outline"
+                size="xl"
+                className="w-full sm:w-auto touch-target"
                 data-testid="hero-call-button"
               >
-                <Phone className="mr-2 h-5 w-5" />
-                Call (617) 479-9911
-              </a>
+                <a href="tel:6174799911">
+                  <Phone className="mr-2 h-5 w-5" />
+                  Call (617) 479-9911
+                </a>
+              </Button>
             </div>
 
             {/* Availability Indicator */}
