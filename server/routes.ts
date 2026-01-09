@@ -3076,7 +3076,7 @@ Sitemap: ${siteUrl}/sitemap.xml
         return res.end();
       }
 
-      const stream = Readable.fromWeb(response.body as unknown as ReadableStream);
+      const stream = Readable.fromWeb(response.body as import('stream/web').ReadableStream);
       stream.pipe(res);
     } catch (error) {
       logError('Error proxying MCP request:', error);
