@@ -13,13 +13,18 @@ import {
   type InsertAgentFeedback,
   type FineTuningExample
 } from "@shared/schema";
-import { eq, desc, and, gte, lte, sql, isNull, isNotNull } from "drizzle-orm";
+import { eq, desc, and, gte, lte, sql, isNull, isNotNull, inArray } from "drizzle-orm";
 import { Logger } from "../src/logger";
 
 export class AgentTracingService {
   private static instance: AgentTracingService;
   private static readonly CACHE_TTL_MS = 6 * 60 * 60 * 1000;
   private static readonly CACHE_CLEANUP_INTERVAL_MS = 30 * 60 * 1000;
+  private static readonly DEFAULT_EVAL_GATE_CATEGORIES = [
+    'emergency_detection',
+    'booking_flow',
+    'tool_selection',
+  ];
   private conversationCache: Map<string, { id: number; lastAccessed: number }> = new Map();
   private cleanupInterval: NodeJS.Timeout;
 
@@ -468,6 +473,394 @@ export class AgentTracingService {
     }
 
     return results;
+  }
+
+  async getEvalGateStatus(options: {
+    runId?: string;
+    promptVersion?: string;
+    modelUsed?: string;
+    categories?: string[];
+    minPassRate?: number;
+  } = {}): Promise<{
+    gatePassed: boolean;
+    runId?: string;
+    promptVersion?: string;
+    modelUsed?: string;
+    minPassRate: number;
+    categories: Record<string, {
+      totalRuns: number;
+      passedRuns: number;
+      passRate: number;
+    }>;
+    summary: {
+      totalRuns: number;
+      passedRuns: number;
+      overallPassRate: number;
+    };
+    missingCategories: string[];
+    failureReasons: string[];
+  }> {
+    const categories = (options.categories && options.categories.length > 0)
+      ? options.categories
+      : AgentTracingService.DEFAULT_EVAL_GATE_CATEGORIES;
+
+    const normalizePassRate = (value?: number): number => {
+      const raw = value ?? (process.env.AGENT_EVAL_GATE_MIN_PASS_RATE
+        ? parseFloat(process.env.AGENT_EVAL_GATE_MIN_PASS_RATE)
+        : 90);
+      if (Number.isNaN(raw)) return 90;
+      return raw <= 1 ? raw * 100 : raw;
+    };
+
+    const minPassRate = normalizePassRate(options.minPassRate);
+
+    let runId = options.runId;
+    if (!runId) {
+      const [latestRun] = await db.select({ runId: agentEvalRuns.runId })
+        .from(agentEvalRuns)
+        .orderBy(desc(agentEvalRuns.createdAt))
+        .limit(1);
+      runId = latestRun?.runId;
+    }
+
+    if (!runId) {
+      return {
+        gatePassed: false,
+        minPassRate,
+        categories: {},
+        summary: {
+          totalRuns: 0,
+          passedRuns: 0,
+          overallPassRate: 0,
+        },
+        missingCategories: categories,
+        failureReasons: ['No eval runs found for release gate.'],
+      };
+    }
+
+    const conditions = [
+      eq(agentEvalRuns.runId, runId),
+      eq(agentEvals.isActive, true),
+      inArray(agentEvals.category, categories),
+    ];
+
+    if (options.promptVersion) {
+      conditions.push(eq(agentEvalRuns.promptVersion, options.promptVersion));
+    }
+
+    if (options.modelUsed) {
+      conditions.push(eq(agentEvalRuns.modelUsed, options.modelUsed));
+    }
+
+    const runs = await db.select({
+      category: agentEvals.category,
+      passed: agentEvalRuns.passed,
+    })
+      .from(agentEvalRuns)
+      .innerJoin(agentEvals, eq(agentEvalRuns.evalId, agentEvals.id))
+      .where(and(...conditions));
+
+    const categoryStats: Record<string, { totalRuns: number; passedRuns: number; passRate: number }> = {};
+    const missingCategories: string[] = [];
+    let totalRuns = 0;
+    let passedRuns = 0;
+
+    for (const category of categories) {
+      categoryStats[category] = { totalRuns: 0, passedRuns: 0, passRate: 0 };
+    }
+
+    for (const run of runs) {
+      if (!categoryStats[run.category]) {
+        categoryStats[run.category] = { totalRuns: 0, passedRuns: 0, passRate: 0 };
+      }
+      categoryStats[run.category].totalRuns += 1;
+      totalRuns += 1;
+      if (run.passed) {
+        categoryStats[run.category].passedRuns += 1;
+        passedRuns += 1;
+      }
+    }
+
+    for (const category of categories) {
+      const stats = categoryStats[category];
+      if (!stats || stats.totalRuns === 0) {
+        missingCategories.push(category);
+        categoryStats[category] = { totalRuns: 0, passedRuns: 0, passRate: 0 };
+      } else {
+        stats.passRate = (stats.passedRuns / stats.totalRuns) * 100;
+      }
+    }
+
+    const overallPassRate = totalRuns > 0 ? (passedRuns / totalRuns) * 100 : 0;
+    const failureReasons: string[] = [];
+    if (missingCategories.length > 0) {
+      failureReasons.push(`Missing eval coverage for: ${missingCategories.join(', ')}`);
+    }
+
+    for (const [category, stats] of Object.entries(categoryStats)) {
+      if (stats.totalRuns > 0 && stats.passRate < minPassRate) {
+        failureReasons.push(
+          `Category ${category} below gate (${stats.passRate.toFixed(1)}% < ${minPassRate}%).`
+        );
+      }
+    }
+
+    const gatePassed = failureReasons.length === 0;
+
+    return {
+      gatePassed,
+      runId,
+      promptVersion: options.promptVersion,
+      modelUsed: options.modelUsed,
+      minPassRate,
+      categories: categoryStats,
+      summary: {
+        totalRuns,
+        passedRuns,
+        overallPassRate,
+      },
+      missingCategories,
+      failureReasons,
+    };
+  }
+
+  async getToolCorrectnessReport(options: {
+    windowDays?: number;
+    endDate?: Date;
+  } = {}): Promise<{
+    windowDays: number;
+    startDate: Date;
+    endDate: Date;
+    summary: {
+      totalCalls: number;
+      successRate: number;
+      errorRate: number;
+      avgLatencyMs: number;
+    };
+    tools: Array<{
+      toolName: string;
+      totalCalls: number;
+      successRate: number;
+      avgLatencyMs: number;
+      reviewCoverage: number;
+      correctnessRate: number | null;
+      wrongToolFlags: number;
+      errorRate: number;
+      errorRateDelta: number | null;
+    }>;
+    retrainingQueue: Array<{
+      toolName: string;
+      reasons: string[];
+      errorRate: number;
+      wrongToolFlags: number;
+      errorRateDelta: number | null;
+    }>;
+    thresholds: {
+      wrongToolFlagThreshold: number;
+      errorRateDeltaThreshold: number;
+      minErrorRate: number;
+    };
+  }> {
+    const windowDays = options.windowDays
+      ?? (process.env.TOOL_CORRECTNESS_WINDOW_DAYS
+        ? parseInt(process.env.TOOL_CORRECTNESS_WINDOW_DAYS, 10)
+        : 7);
+    const endDate = options.endDate ?? new Date();
+    const startDate = new Date(endDate.getTime() - windowDays * 24 * 60 * 60 * 1000);
+    const prevEndDate = startDate;
+    const prevStartDate = new Date(startDate.getTime() - windowDays * 24 * 60 * 60 * 1000);
+
+    const wrongToolFlagThreshold = process.env.TOOL_CORRECTNESS_WRONG_TOOL_THRESHOLD
+      ? parseInt(process.env.TOOL_CORRECTNESS_WRONG_TOOL_THRESHOLD, 10)
+      : 3;
+    const errorRateDeltaThreshold = process.env.TOOL_CORRECTNESS_ERROR_RATE_DELTA
+      ? parseFloat(process.env.TOOL_CORRECTNESS_ERROR_RATE_DELTA)
+      : 10;
+    const minErrorRate = process.env.TOOL_CORRECTNESS_MIN_ERROR_RATE
+      ? parseFloat(process.env.TOOL_CORRECTNESS_MIN_ERROR_RATE)
+      : 20;
+
+    const toolCallFields = {
+      id: agentToolCalls.id,
+      toolName: agentToolCalls.toolName,
+      success: agentToolCalls.success,
+      wasCorrectTool: agentToolCalls.wasCorrectTool,
+      latencyMs: agentToolCalls.latencyMs,
+      createdAt: agentToolCalls.createdAt,
+    };
+
+    const [currentCalls, previousCalls] = await Promise.all([
+      db.select(toolCallFields)
+        .from(agentToolCalls)
+        .where(and(
+          gte(agentToolCalls.createdAt, startDate),
+          lte(agentToolCalls.createdAt, endDate)
+        )),
+      db.select(toolCallFields)
+        .from(agentToolCalls)
+        .where(and(
+          gte(agentToolCalls.createdAt, prevStartDate),
+          lte(agentToolCalls.createdAt, prevEndDate)
+        )),
+    ]);
+
+    const feedbackRows = await db.select({
+      toolCallId: agentFeedback.toolCallId,
+      flagReason: agentFeedback.flagReason,
+    })
+      .from(agentFeedback)
+      .where(and(
+        eq(agentFeedback.flagReason, 'wrong_tool'),
+        isNotNull(agentFeedback.toolCallId),
+        gte(agentFeedback.createdAt, startDate),
+        lte(agentFeedback.createdAt, endDate)
+      ));
+
+    const toolCallIdToName = new Map<number, string>();
+    for (const call of currentCalls) {
+      toolCallIdToName.set(call.id, call.toolName);
+    }
+
+    const wrongToolFlagsByTool: Record<string, number> = {};
+    for (const feedback of feedbackRows) {
+      if (!feedback.toolCallId) continue;
+      const toolName = toolCallIdToName.get(feedback.toolCallId);
+      if (!toolName) continue;
+      wrongToolFlagsByTool[toolName] = (wrongToolFlagsByTool[toolName] || 0) + 1;
+    }
+
+    const buildToolStats = (calls: typeof currentCalls, wrongToolFlags: Record<string, number>) => {
+      const byTool: Record<string, {
+        toolName: string;
+        totalCalls: number;
+        successCount: number;
+        latencyTotal: number;
+        reviewedCalls: number;
+        correctCount: number;
+        incorrectCount: number;
+        failureCount: number;
+      }> = {};
+
+      for (const call of calls) {
+        if (!byTool[call.toolName]) {
+          byTool[call.toolName] = {
+            toolName: call.toolName,
+            totalCalls: 0,
+            successCount: 0,
+            latencyTotal: 0,
+            reviewedCalls: 0,
+            correctCount: 0,
+            incorrectCount: 0,
+            failureCount: 0,
+          };
+        }
+        const stats = byTool[call.toolName];
+        stats.totalCalls += 1;
+        if (call.success) stats.successCount += 1;
+        if (!call.success) stats.failureCount += 1;
+        stats.latencyTotal += call.latencyMs || 0;
+        if (call.wasCorrectTool !== null) {
+          stats.reviewedCalls += 1;
+          if (call.wasCorrectTool) {
+            stats.correctCount += 1;
+          } else {
+            stats.incorrectCount += 1;
+          }
+        }
+      }
+
+      return Object.values(byTool).map((stats) => {
+        const successRate = stats.totalCalls > 0 ? (stats.successCount / stats.totalCalls) * 100 : 0;
+        const avgLatencyMs = stats.totalCalls > 0 ? stats.latencyTotal / stats.totalCalls : 0;
+        const reviewCoverage = stats.totalCalls > 0 ? (stats.reviewedCalls / stats.totalCalls) * 100 : 0;
+        const correctnessRate = stats.reviewedCalls > 0 ? (stats.correctCount / stats.reviewedCalls) * 100 : null;
+        const errorRate = stats.totalCalls > 0
+          ? ((stats.failureCount + stats.incorrectCount) / stats.totalCalls) * 100
+          : 0;
+        return {
+          toolName: stats.toolName,
+          totalCalls: stats.totalCalls,
+          successRate,
+          avgLatencyMs,
+          reviewCoverage,
+          correctnessRate,
+          wrongToolFlags: wrongToolFlags[stats.toolName] || 0,
+          errorRate,
+        };
+      });
+    };
+
+    const currentStats = buildToolStats(currentCalls, wrongToolFlagsByTool);
+    const previousStats = buildToolStats(previousCalls, {});
+    const previousStatsByTool = new Map(previousStats.map(stat => [stat.toolName, stat]));
+
+    const tools = currentStats
+      .map(stat => {
+        const previous = previousStatsByTool.get(stat.toolName);
+        const errorRateDelta = previous
+          ? stat.errorRate - previous.errorRate
+          : null;
+        return {
+          ...stat,
+          errorRateDelta,
+        };
+      })
+      .sort((a, b) => b.totalCalls - a.totalCalls);
+
+    const retrainingQueue = tools
+      .map((stat) => {
+        const reasons: string[] = [];
+        if (stat.wrongToolFlags >= wrongToolFlagThreshold) {
+          reasons.push(`Wrong tool feedback flagged ${stat.wrongToolFlags}x`);
+        }
+        if (stat.errorRateDelta !== null
+          && stat.errorRateDelta >= errorRateDeltaThreshold
+          && stat.errorRate >= minErrorRate) {
+          reasons.push(
+            `Error rate increased by ${stat.errorRateDelta.toFixed(1)}pp to ${stat.errorRate.toFixed(1)}%`
+          );
+        }
+        return {
+          toolName: stat.toolName,
+          reasons,
+          errorRate: stat.errorRate,
+          wrongToolFlags: stat.wrongToolFlags,
+          errorRateDelta: stat.errorRateDelta,
+        };
+      })
+      .filter(entry => entry.reasons.length > 0)
+      .sort((a, b) => b.wrongToolFlags - a.wrongToolFlags);
+
+    const totalCalls = currentCalls.length;
+    const successRate = totalCalls > 0
+      ? (currentCalls.filter(call => call.success).length / totalCalls) * 100
+      : 0;
+    const avgLatencyMs = totalCalls > 0
+      ? currentCalls.reduce((sum, call) => sum + (call.latencyMs || 0), 0) / totalCalls
+      : 0;
+    const totalErrorRate = totalCalls > 0
+      ? ((currentCalls.filter(call => !call.success).length
+        + currentCalls.filter(call => call.wasCorrectTool === false).length) / totalCalls) * 100
+      : 0;
+
+    return {
+      windowDays,
+      startDate,
+      endDate,
+      summary: {
+        totalCalls,
+        successRate,
+        errorRate: totalErrorRate,
+        avgLatencyMs,
+      },
+      tools,
+      retrainingQueue,
+      thresholds: {
+        wrongToolFlagThreshold,
+        errorRateDeltaThreshold,
+        minErrorRate,
+      },
+    };
   }
 }
 

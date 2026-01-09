@@ -25,6 +25,9 @@ import experimentManagementRoutes from "./src/experimentManagement";
 import chatRoutes from "./src/chatRoutes";
 import chatkitRoutes from "./src/chatkitRoutes";
 import twilioWebhooks from "./lib/twilioWebhooks";
+import sharedThreadWebhooks from "./src/sharedThreadWebhooks";
+import identityRoutes from "./src/identityRoutes";
+import debugSharedThreadRoutes from "./src/debugSharedThreadRoutes";
 import { generateSitemap } from "./src/sitemap";
 import { healthChecker } from "./src/healthcheck";
 import { Logger, logError, getErrorMessage } from "./src/logger";
@@ -317,9 +320,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // ChatKit routes for OpenAI ChatKit integration
   app.use('/api/v1/chatkit', chatkitRoutes);
+
+  // Identity linking for shared thread persistence
+  app.use('/api/identity', identityRoutes);
   
   // Twilio SMS and Voice webhook routes
   app.use('/api/v1/twilio', twilioWebhooks);
+  app.use('/api/webhooks/twilio', sharedThreadWebhooks);
+
+  // Shared thread debug endpoints (protected)
+  app.use('/api/debug', debugLimiter, debugSharedThreadRoutes);
 
   // Seed blog data on startup (only in development)
   if (process.env.NODE_ENV === 'development') {

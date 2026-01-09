@@ -2,14 +2,8 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { 
   Send, 
   Loader2, 
-  Phone, 
+  Phone,
   Wrench, 
-  Calendar, 
-  DollarSign, 
-  AlertTriangle,
-  Droplets,
-  Flame,
-  Clock,
   ChevronRight,
   Sparkles,
   ThumbsUp,
@@ -17,11 +11,13 @@ import {
   Copy,
   Check,
   RotateCcw,
-  Settings,
-  X,
-  MessageSquare
+  MessageSquare,
+  Calendar,
+  MapPin,
+  AlertTriangle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
@@ -35,6 +31,8 @@ interface Message {
   toolsUsed?: string[];
   isStreaming?: boolean;
   feedback?: 'positive' | 'negative' | null;
+  card?: 'appointment' | 'quote' | 'emergency' | null;
+  cardData?: any;
 }
 
 interface QuickAction {
@@ -58,7 +56,7 @@ const QUICK_ACTIONS: QuickAction[] = [
     color: "from-blue-500 to-blue-600" 
   },
   { 
-    icon: DollarSign, 
+    icon: Wrench, 
     label: "Get Quote", 
     prompt: "Can I get a price estimate for plumbing service?", 
     color: "from-green-500 to-green-600" 
@@ -72,11 +70,109 @@ const QUICK_ACTIONS: QuickAction[] = [
 ];
 
 const SERVICE_CARDS = [
-  { icon: Droplets, title: "Drain Cleaning", desc: "Clogged drains & pipes" },
-  { icon: Flame, title: "Water Heaters", desc: "Repair & installation" },
-  { icon: Wrench, title: "Pipe Repair", desc: "Leaks & replacements" },
-  { icon: Clock, title: "24/7 Emergency", desc: "Always available" },
+  { title: "Drain Cleaning", desc: "Clogged drains & pipes" },
+  { title: "Water Heaters", desc: "Repair & installation" },
+  { title: "Pipe Repair", desc: "Leaks & replacements" },
+  { title: "24/7 Emergency", desc: "Always available" },
 ];
+
+function AppointmentCard({ data }: { data: any }) {
+  return (
+    <div className="w-full max-w-sm rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg p-4 mt-3">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-slate-500 dark:text-slate-400 text-sm">Appointment</p>
+          <h2 className="mt-1 text-lg font-semibold text-slate-900 dark:text-white">Johnson Bros. Plumbing</h2>
+        </div>
+        <Badge className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">Confirmed</Badge>
+      </div>
+      <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-3 gap-y-2 text-sm">
+        <dt className="flex items-center gap-1.5 font-medium text-slate-500 dark:text-slate-400">
+          <Calendar className="size-4" />
+          Date
+        </dt>
+        <dd className="text-right text-slate-900 dark:text-white">{data?.date || 'Tomorrow · 9:00 AM'}</dd>
+        <dt className="flex items-center gap-1.5 font-medium text-slate-500 dark:text-slate-400">
+          <Wrench className="size-4" />
+          Service
+        </dt>
+        <dd className="text-right text-slate-900 dark:text-white">{data?.service || 'General Plumbing'}</dd>
+        <dt className="flex items-center gap-1.5 font-medium text-slate-500 dark:text-slate-400">
+          <MapPin className="size-4" />
+          Address
+        </dt>
+        <dd className="text-right truncate text-slate-900 dark:text-white">{data?.address || 'Your address'}</dd>
+      </dl>
+      <div className="mt-4 grid gap-3 border-t border-slate-200 dark:border-slate-700 pt-4 sm:grid-cols-2">
+        <Button variant="outline" className="w-full">
+          <Phone className="w-4 h-4 mr-2" />
+          Call
+        </Button>
+        <Button className="w-full bg-blue-600 hover:bg-blue-700">
+          <MapPin className="w-4 h-4 mr-2" />
+          Directions
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function QuoteCard({ data }: { data: any }) {
+  return (
+    <div className="w-full max-w-sm rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg p-4 mt-3">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-slate-500 dark:text-slate-400 text-sm">Service Quote</p>
+          <h2 className="mt-1 text-lg font-semibold text-slate-900 dark:text-white">{data?.service || 'Plumbing Service'}</h2>
+        </div>
+        <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300">Estimate</Badge>
+      </div>
+      <div className="mt-4 text-center py-4 bg-slate-50 dark:bg-slate-700/50 rounded-xl">
+        <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">${data?.price || '99'}</p>
+        <p className="text-sm text-slate-500 dark:text-slate-400">Service Call Fee</p>
+      </div>
+      <p className="mt-3 text-xs text-slate-500 dark:text-slate-400 text-center">
+        Final price determined after on-site diagnosis. No hidden fees.
+      </p>
+      <div className="mt-4 grid gap-3 border-t border-slate-200 dark:border-slate-700 pt-4">
+        <Button className="w-full bg-blue-600 hover:bg-blue-700">
+          <Calendar className="w-4 h-4 mr-2" />
+          Book Now
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function EmergencyCard() {
+  return (
+    <div className="w-full max-w-sm rounded-2xl border-2 border-red-500 bg-red-50 dark:bg-red-950/30 shadow-lg p-4 mt-3">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-red-600 dark:text-red-400 text-sm font-medium">Emergency Service</p>
+          <h2 className="mt-1 text-lg font-semibold text-red-700 dark:text-red-300">24/7 Available</h2>
+        </div>
+        <Badge className="bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300">Urgent</Badge>
+      </div>
+      <div className="mt-4 space-y-2 text-sm">
+        <p className="text-red-700 dark:text-red-300 font-medium">Immediate Steps:</p>
+        <ul className="list-disc list-inside text-red-600 dark:text-red-400 space-y-1">
+          <li>Turn off water supply if possible</li>
+          <li>Move valuables away from water</li>
+          <li>Call us immediately</li>
+        </ul>
+      </div>
+      <div className="mt-4 grid gap-3 border-t border-red-300 dark:border-red-800 pt-4">
+        <a href="tel:6174799911" className="block">
+          <Button className="w-full bg-red-600 hover:bg-red-700">
+            <Phone className="w-4 h-4 mr-2" />
+            Call (617) 479-9911
+          </Button>
+        </a>
+      </div>
+    </div>
+  );
+}
 
 export function PlumbingAssistantApp() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -103,6 +199,41 @@ export function PlumbingAssistantApp() {
       inputRef.current.style.height = Math.min(inputRef.current.scrollHeight, 120) + 'px';
     }
   }, [input]);
+
+  const detectCardType = (content: string, toolsUsed?: string[]): Message['card'] => {
+    if (toolsUsed?.includes('book_service_call')) return 'appointment';
+    if (toolsUsed?.includes('get_quote')) return 'quote';
+    if (toolsUsed?.includes('emergency_help')) return 'emergency';
+    if (content.toLowerCase().includes('emergency') && content.toLowerCase().includes('call')) return 'emergency';
+    return null;
+  };
+
+  const extractCardData = (content: string, cardType: Message['card'], toolResults?: any[]): any => {
+    if (!cardType) return null;
+    
+    if (cardType === 'appointment' && toolResults) {
+      const bookingResult = toolResults.find((r: any) => r.tool === 'book_service_call');
+      if (bookingResult?.result) {
+        return {
+          date: bookingResult.result.scheduledDate || 'Tomorrow · 9:00 AM',
+          service: bookingResult.result.serviceName || 'General Plumbing',
+          address: bookingResult.result.address || 'Your address',
+          confirmationNumber: bookingResult.result.jobId,
+        };
+      }
+    }
+    
+    if (cardType === 'quote') {
+      const priceMatch = content.match(/\$(\d+)/);
+      const serviceMatch = content.match(/(drain cleaning|water heater|pipe repair|emergency|plumbing)/i);
+      return {
+        price: priceMatch ? priceMatch[1] : '99',
+        service: serviceMatch ? serviceMatch[0] : 'Plumbing Service',
+      };
+    }
+    
+    return null;
+  };
 
   const sendMessage = useCallback(async (messageText: string) => {
     if (!messageText.trim() || isLoading) return;
@@ -150,6 +281,8 @@ export function PlumbingAssistantApp() {
 
       if (data.success) {
         setSessionId(data.sessionId);
+        const cardType = detectCardType(data.message, data.toolsUsed);
+        const cardData = extractCardData(data.message, cardType, data.toolResults);
         
         setMessages(prev => prev.map(msg => 
           msg.id === streamingMessage.id 
@@ -158,6 +291,8 @@ export function PlumbingAssistantApp() {
                 content: data.message,
                 toolsUsed: data.toolsUsed,
                 isStreaming: false,
+                card: cardType,
+                cardData,
               }
             : msg
         ));
@@ -258,22 +393,21 @@ export function PlumbingAssistantApp() {
           <div className="flex items-center gap-2">
             <a 
               href="tel:6174799911" 
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/50 rounded-lg transition-colors"
               data-testid="app-call-button"
             >
-              <Phone className="w-4 h-4" />
-              <span className="hidden sm:inline">(617) 479-9911</span>
+              <Button variant="outline" size="sm">
+                <Phone className="w-4 h-4 mr-1" />
+                <span className="hidden sm:inline">(617) 479-9911</span>
+              </Button>
             </a>
             {messages.length > 0 && (
-              <Button
-                variant="ghost"
-                size="icon"
+              <button
                 onClick={clearConversation}
-                className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                className="p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                 data-testid="app-clear-button"
               >
                 <RotateCcw className="w-4 h-4" />
-              </Button>
+              </button>
             )}
           </div>
         </div>
@@ -307,7 +441,7 @@ export function PlumbingAssistantApp() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.1 }}
                     onClick={() => sendMessage(action.prompt)}
-                    className="group relative overflow-hidden rounded-xl p-4 text-left transition-all hover:scale-[1.02] active:scale-[0.98]"
+                    className="group relative overflow-hidden rounded-xl p-4 text-left transition-all hover:scale-[1.02] active:scale-[0.98] border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
                     data-testid={`quick-action-${index}`}
                   >
                     <div className={`absolute inset-0 bg-gradient-to-br ${action.color} opacity-10 group-hover:opacity-20 transition-opacity`} />
@@ -333,7 +467,7 @@ export function PlumbingAssistantApp() {
                       transition={{ delay: 0.3 + index * 0.1 }}
                       className="bg-white dark:bg-slate-800/50 rounded-xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm"
                     >
-                      <service.icon className="w-6 h-6 text-blue-600 dark:text-blue-400 mb-2" />
+                      <Wrench className="w-6 h-6 text-blue-600 dark:text-blue-400 mb-2" />
                       <h4 className="font-medium text-slate-900 dark:text-white text-sm">{service.title}</h4>
                       <p className="text-xs text-slate-500 dark:text-slate-400">{service.desc}</p>
                     </motion.div>
@@ -362,13 +496,10 @@ export function PlumbingAssistantApp() {
                     {message.toolsUsed && message.toolsUsed.length > 0 && (
                       <div className="flex flex-wrap gap-1.5 mb-2">
                         {message.toolsUsed.map((tool, i) => (
-                          <span 
-                            key={i}
-                            className="inline-flex items-center gap-1 text-[10px] font-medium bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full"
-                          >
-                            <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                          <Badge key={i} variant="secondary" className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+                            <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse mr-1.5" />
                             {formatToolName(tool)}
-                          </span>
+                          </Badge>
                         ))}
                       </div>
                     )}
@@ -397,8 +528,12 @@ export function PlumbingAssistantApp() {
                       )}
                     </div>
 
+                    {message.card === 'appointment' && <AppointmentCard data={message.cardData} />}
+                    {message.card === 'quote' && <QuoteCard data={message.cardData} />}
+                    {message.card === 'emergency' && <EmergencyCard />}
+
                     {message.role === 'assistant' && !message.isStreaming && (
-                      <div className="flex items-center gap-1 mt-2 opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-1 mt-2">
                         <button
                           onClick={() => copyToClipboard(message.content, message.id)}
                           className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"

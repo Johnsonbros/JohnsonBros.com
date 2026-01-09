@@ -1,4 +1,4 @@
-import { pgTable, serial, text, timestamp, real, integer, boolean, index, uniqueIndex, json } from 'drizzle-orm/pg-core';
+import { pgTable, serial, text, timestamp, real, integer, boolean, index, uniqueIndex, json, uuid } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
@@ -218,6 +218,67 @@ export type CustomerAddress = typeof customerAddresses.$inferSelect;
 export type InsertCustomerAddress = z.infer<typeof insertCustomerAddressSchema>;
 
 export type ServiceArea = typeof serviceAreas.$inferSelect;
+
+// Shared Thread Persistence Tables
+export const sharedThreadCustomers = pgTable('shared_thread_customers', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  lastSeenAt: timestamp('last_seen_at'),
+  summary: text('summary'),
+  currentIssueSummary: text('current_issue_summary'),
+  optedOutSms: boolean('opted_out_sms').default(false).notNull(),
+});
+
+export const sharedThreadIdentities = pgTable('shared_thread_identities', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  type: text('type').notNull(),
+  value: text('value').notNull(),
+  customerId: uuid('customer_id')
+    .notNull()
+    .references(() => sharedThreadCustomers.id),
+  verified: boolean('verified').default(false).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  typeValueIdx: uniqueIndex('shared_thread_identity_type_value_idx').on(table.type, table.value),
+}));
+
+export const sharedThreadThreads = pgTable('shared_thread_threads', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  customerId: uuid('customer_id')
+    .notNull()
+    .references(() => sharedThreadCustomers.id),
+  threadKey: text('thread_key').default('default').notNull(),
+  providerThreadId: text('provider_thread_id').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  lastMessageAt: timestamp('last_message_at'),
+}, (table) => ({
+  customerThreadKeyIdx: uniqueIndex('shared_thread_customer_thread_key_idx').on(table.customerId, table.threadKey),
+}));
+
+export const sharedThreadMessages = pgTable('shared_thread_messages', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  threadId: uuid('thread_id')
+    .notNull()
+    .references(() => sharedThreadThreads.id),
+  channel: text('channel').notNull(),
+  direction: text('direction').notNull(),
+  text: text('text').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  metadata: json('metadata'),
+});
+
+export const sharedThreadPendingLinks = pgTable('shared_thread_pending_links', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  webUserId: text('web_user_id').notNull(),
+  phoneE164: text('phone_e164').notNull(),
+  codeHash: text('code_hash').notNull(),
+  expiresAt: timestamp('expires_at').notNull(),
+  attemptCount: integer('attempt_count').default(0).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  phoneIdx: index('shared_thread_pending_phone_idx').on(table.phoneE164),
+  webUserIdx: index('shared_thread_pending_web_user_idx').on(table.webUserId),
+}));
 export type InsertServiceArea = z.infer<typeof insertServiceAreaSchema>;
 
 export type HeatMapCache = typeof heatMapCache.$inferSelect;
