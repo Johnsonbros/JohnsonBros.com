@@ -1,10 +1,15 @@
 // ChatKit Routes - Session-based chat endpoint for OpenAI ChatKit
 import { Router, Request, Response } from 'express';
-import { processChat, clearSession, getSessionHistory } from '../lib/aiChat';
+import { processChat, clearSession } from '../lib/aiChat';
 import { Logger } from './logger';
 import { z } from 'zod';
 import { randomUUID } from 'crypto';
-import OpenAI from 'openai';
+import {
+  buildThreadContext,
+  getOrCreateDefaultThread,
+  logMessage,
+  resolveCustomerIdFromIdentity,
+} from '../lib/sharedThread';
 
 const router = Router();
 
@@ -13,12 +18,10 @@ const activeSessions: Map<string, {
   sessionId: string;
   createdAt: Date;
   userId?: string;
+  customerId?: string;
+  threadId?: string;
+  providerThreadId?: string;
 }> = new Map();
-
-// OpenAI client for ChatKit sessions
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
 
 // Store interval reference for cleanup
 let sessionCleanupInterval: NodeJS.Timeout | null = null;
@@ -56,25 +59,63 @@ startSessionCleanup();
 // This endpoint is called by the ChatKit React component to get a client secret
 router.post('/session', async (req: Request, res: Response) => {
   try {
-    const { userId } = req.body;
-    
-    // Generate a unique session ID and client secret
-    const sessionId = randomUUID();
+    const parsed = z
+      .object({
+        userId: z.string().min(1),
+        existingSecret: z.string().optional(),
+      })
+      .safeParse(req.body);
+
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'Invalid request body' });
+    }
+
+    const { userId, existingSecret } = parsed.data;
+
+    const customerId = await resolveCustomerIdFromIdentity({
+      type: 'web_user_id',
+      value: userId,
+      verified: true,
+    });
+    const thread = await getOrCreateDefaultThread(customerId);
+
+    if (existingSecret) {
+      const existingSession = activeSessions.get(existingSecret);
+      if (
+        existingSession &&
+        existingSession.customerId === customerId &&
+        existingSession.providerThreadId === thread.providerThreadId
+      ) {
+        return res.json({
+          client_secret: existingSecret,
+          session_id: existingSession.sessionId,
+          customer_id: customerId,
+          thread_id: thread.id,
+          expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        });
+      }
+    }
+
+    const sessionId = thread.providerThreadId;
     const clientSecret = `ck_${randomUUID().replace(/-/g, '')}`;
-    
-    // Store the session
+
     activeSessions.set(clientSecret, {
       sessionId,
       createdAt: new Date(),
-      userId
+      userId,
+      customerId,
+      threadId: thread.id,
+      providerThreadId: thread.providerThreadId,
     });
-    
-    Logger.info('ChatKit session created', { sessionId, userId });
-    
+
+    Logger.info('ChatKit session created', { sessionId, userId, customerId, threadId: thread.id });
+
     res.json({
       client_secret: clientSecret,
       session_id: sessionId,
-      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+      customer_id: customerId,
+      thread_id: thread.id,
+      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
     });
   } catch (error: any) {
     Logger.error('ChatKit session creation error:', error);
@@ -100,13 +141,20 @@ router.post('/message', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Invalid or expired session' });
     }
     
-    Logger.info('ChatKit message received', { 
-      sessionId: session.sessionId, 
-      messageLength: message.length 
+    Logger.info('ChatKit message received', {
+      sessionId: session.sessionId,
+      messageLength: message.length,
     });
-    
-    // Process through the existing AI chat system
-    const response = await processChat(session.sessionId, message, 'web');
+
+    if (!session.customerId || !session.threadId) {
+      return res.status(400).json({ error: 'Session missing customer mapping' });
+    }
+
+    const context = await buildThreadContext(session.customerId, session.threadId);
+    await logMessage(session.threadId, 'web', 'in', message);
+
+    const response = await processChat(session.sessionId, message, 'web', context);
+    await logMessage(session.threadId, 'web', 'out', response.message);
     
     // Return in ChatKit-compatible format
     res.json({
@@ -159,8 +207,17 @@ router.post('/message/stream', async (req: Request, res: Response) => {
       messageLength: message.length 
     });
     
-    // Process through the existing AI chat system
-    const response = await processChat(session.sessionId, message, 'web');
+    if (!session.customerId || !session.threadId) {
+      res.write(`data: ${JSON.stringify({ error: 'Session missing customer mapping' })}\n\n`);
+      res.end();
+      return;
+    }
+
+    const context = await buildThreadContext(session.customerId, session.threadId);
+    await logMessage(session.threadId, 'web', 'in', message);
+
+    const response = await processChat(session.sessionId, message, 'web', context);
+    await logMessage(session.threadId, 'web', 'out', response.message);
     
     // Simulate streaming by sending the response in chunks
     const chunks = response.message.split(/(?<=\. )|(?<=\! )|(?<=\? )/);
@@ -209,17 +266,10 @@ router.get('/history/:clientSecret', (req: Request, res: Response) => {
     if (!session) {
       return res.status(401).json({ error: 'Invalid or expired session' });
     }
-    
-    const history = getSessionHistory(session.sessionId);
-    
+
     res.json({
       session_id: session.sessionId,
-      messages: history.map((msg, index) => ({
-        id: `msg_${index}`,
-        role: msg.role,
-        content: msg.content,
-        created_at: session.createdAt.toISOString()
-      }))
+      message: 'Use /api/debug/messages/:threadId for persistent history.',
     });
   } catch (error: any) {
     Logger.error('ChatKit history error:', error);

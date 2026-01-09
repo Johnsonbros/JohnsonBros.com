@@ -119,6 +119,37 @@ This is a comprehensive full-stack web application for Johnson Bros. Plumbing & 
 
 **Business Value**: Long-term customer acquisition through organic search traffic
 
+## Shared Thread Persistence (Web Chat, SMS, Voice)
+The assistant now uses a single, persistent conversation thread per customer across web chat, SMS, and voice. Web users are identified by a stable `userId` (stored in localStorage), and phone identities are linked via OTP verification. Once linked, all channels map to the same customer record and default thread.
+
+### Key Endpoints
+- `POST /api/v1/chatkit/session` — Creates/reuses the persistent thread for a web user.
+- `POST /api/identity/start-link` — Sends OTP to link web user to phone.
+- `POST /api/identity/confirm-link` — Confirms OTP and merges customer records if needed.
+- `POST /api/webhooks/twilio/sms` — Inbound SMS webhook (Twilio).
+- `POST /api/webhooks/twilio/voice/incoming` — Voice entrypoint (Twilio).
+- `POST /api/webhooks/twilio/voice/handle-speech` — Voice turn handler (Twilio).
+- `GET /api/debug/customer-by-identity` — Debug identity lookup (protected).
+- `GET /api/debug/thread/:customerId` — Debug thread lookup (protected).
+- `GET /api/debug/messages/:threadId` — Debug message history (protected).
+
+### Environment Variables (Add to `.env`)
+- `DATABASE_URL`
+- `TWILIO_ACCOUNT_SID`
+- `TWILIO_AUTH_TOKEN`
+- `TWILIO_PHONE_NUMBER`
+- `OTP_SENDER_NAME` (optional)
+- `INTERNAL_ADMIN_TOKEN`
+- `OPENAI_API_KEY`
+- `DEFAULT_REGION` (default `US`)
+
+### End-to-End Flow (Web → OTP → SMS → Voice)
+1. Web chat requests `/api/v1/chatkit/session` with a stable `userId`.
+2. User submits phone number to `/api/identity/start-link` to receive OTP via SMS.
+3. User confirms OTP via `/api/identity/confirm-link`, which merges identities and threads.
+4. Inbound SMS via Twilio uses `/api/webhooks/twilio/sms` and continues the same thread.
+5. Caller ID on voice calls hits `/api/webhooks/twilio/voice/incoming`, then `/voice/handle-speech`, continuing the same thread with rolling summaries for concise responses.
+
 ### 9. Webhook Monitoring
 **Purpose**: Process and analyze HousecallPro events for business intelligence
 

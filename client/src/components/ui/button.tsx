@@ -18,11 +18,22 @@ const buttonVariants = cva(
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
+        "brand-primary":
+          "bg-gradient-to-r from-johnson-blue to-johnson-teal text-white font-semibold shadow-lg hover:from-johnson-teal hover:to-johnson-blue transition-all duration-300 transform hover:scale-105",
+        "brand-accent":
+          "bg-gradient-to-r from-johnson-orange to-orange-500 text-white font-bold shadow-lg hover:from-orange-500 hover:to-johnson-orange transition-all duration-300 transform hover:scale-105",
+        "brand-outline":
+          "border-2 border-johnson-blue text-johnson-blue bg-white font-bold shadow-lg hover:bg-gray-50 hover:border-johnson-teal transition-all duration-300 transform hover:scale-105",
+        "brand-outline-accent":
+          "border-2 border-johnson-orange text-johnson-orange bg-white font-semibold hover:bg-johnson-orange hover:text-white transition-all duration-300",
+        "brand-urgent":
+          "bg-gradient-to-r from-red-500 to-red-600 text-white font-bold shadow-xl hover:from-red-600 hover:to-red-700 transition-all duration-300 transform hover:scale-105 animate-pulse",
       },
       size: {
         default: "h-10 px-4 py-2",
         sm: "h-9 rounded-md px-3",
         lg: "h-11 rounded-md px-8",
+        xl: "h-12 rounded-lg px-6 py-3 text-base",
         icon: "h-10 w-10",
       },
     },

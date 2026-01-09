@@ -439,7 +439,9 @@ export default function Header({ onBookService }: HeaderProps) {
                 {onBookService ? (
                   <Button 
                     onClick={onBookService}
-                    className="bg-gradient-to-r from-johnson-orange to-orange-500 text-white px-4 xl:px-6 py-2 xl:py-3 rounded-lg font-bold hover:from-orange-500 hover:to-johnson-orange transition-all duration-300 transform hover:scale-105 shadow-lg text-sm xl:text-base whitespace-nowrap"
+                    variant="brand-accent"
+                    size="lg"
+                    className="px-4 xl:px-6 py-2 xl:py-3 text-sm xl:text-base whitespace-nowrap"
                     data-testid="header-book-service-button-desktop"
                   >
                     Book Service
@@ -447,7 +449,9 @@ export default function Header({ onBookService }: HeaderProps) {
                 ) : (
                   <Link href="/#booking">
                     <Button 
-                      className="bg-gradient-to-r from-johnson-orange to-orange-500 text-white px-4 xl:px-6 py-2 xl:py-3 rounded-lg font-bold hover:from-orange-500 hover:to-johnson-orange transition-all duration-300 transform hover:scale-105 shadow-lg text-sm xl:text-base whitespace-nowrap"
+                      variant="brand-accent"
+                      size="lg"
+                      className="px-4 xl:px-6 py-2 xl:py-3 text-sm xl:text-base whitespace-nowrap"
                       data-testid="header-book-service-link-desktop"
                     >
                       Book Service
