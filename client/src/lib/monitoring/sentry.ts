@@ -9,6 +9,56 @@ interface SentryConfig {
   debug: boolean;
 }
 
+/**
+ * Builds the tracePropagationTargets array for Sentry distributed tracing.
+ * Supports: localhost, current host (Replit dev/prod), thejohnsonbros.com domain,
+ * relative paths, and optional API origin.
+ */
+function buildTracePropagationTargets(): (string | RegExp)[] {
+  const targets: (string | RegExp)[] = [];
+  const isDebug = import.meta.env.VITE_SENTRY_DEBUG === 'true';
+
+  // 1. Always include localhost for local development
+  targets.push('localhost');
+
+  // 2. Include current hostname (covers Replit dev/prod URLs automatically)
+  if (typeof window !== 'undefined' && window.location?.hostname) {
+    const currentHost = window.location.hostname;
+    if (currentHost !== 'localhost') {
+      targets.push(currentHost);
+    }
+  }
+
+  // 3. Include relative paths (same-origin API calls like /api/...)
+  targets.push(/^\//);
+
+  // 4. Include thejohnsonbros.com domain and all subdomains (HTTPS only)
+  // Matches: https://thejohnsonbros.com, https://www.thejohnsonbros.com,
+  //          https://api.thejohnsonbros.com, etc.
+  const appDomain = import.meta.env.VITE_PUBLIC_APP_DOMAIN || 'thejohnsonbros.com';
+  // Escape dots for regex and create pattern for root domain + subdomains
+  const escapedDomain = appDomain.replace(/\./g, '\\.');
+  const domainRegex = new RegExp(`^https:\\/\\/([a-zA-Z0-9-]+\\.)?${escapedDomain}(\\/|$)`);
+  targets.push(domainRegex);
+
+  // 5. Include optional API origin if configured
+  const apiOrigin = import.meta.env.VITE_API_ORIGIN;
+  if (apiOrigin) {
+    // If it's a full URL, escape it for regex matching
+    const escapedOrigin = apiOrigin.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    targets.push(new RegExp(`^${escapedOrigin}`));
+  }
+
+  // Debug logging in development when VITE_SENTRY_DEBUG is enabled
+  if (isDebug && import.meta.env.MODE === 'development') {
+    console.log('[Sentry] Computed tracePropagationTargets:', targets.map(t => 
+      t instanceof RegExp ? t.toString() : t
+    ));
+  }
+
+  return targets;
+}
+
 class SentryClient {
   private static instance: SentryClient;
   private config: SentryConfig;
@@ -50,12 +100,8 @@ class SentryClient {
             levels: ['error', 'warn'],
           }),
         ],
-        // Set tracePropagationTargets at the root level
-        tracePropagationTargets: [
-          'localhost',
-          /^https:\/\/[^/]*\.johnsonbrosplumbing\.com/,
-          /^\//,
-        ],
+        // Set tracePropagationTargets dynamically based on environment
+        tracePropagationTargets: buildTracePropagationTargets(),
         beforeSend(event, hint) {
           // Filter out sensitive data
           if (event.request) {
