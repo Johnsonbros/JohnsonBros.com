@@ -1,5 +1,5 @@
 import { X, Gift, Clock, Phone, Calendar, AlertCircle } from "lucide-react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -142,7 +142,8 @@ export function ExitIntentPopup({
     <AnimatePresence>
       {isOpen && (
         <Dialog open={isOpen} onOpenChange={handleClose}>
-          <DialogContent className="max-w-md p-0 overflow-hidden border-0" hideCloseButton>
+          <DialogContent className="max-w-md p-0 overflow-hidden border-0" hideCloseButton aria-describedby={undefined}>
+            <DialogTitle className="sr-only">Special Offer</DialogTitle>
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
