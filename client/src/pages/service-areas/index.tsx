@@ -72,33 +72,6 @@ export default function ServiceAreasDirectory() {
             </div>
           </section>
 
-          {/* Directory Grid */}
-          <section className="py-16">
-            <div className="container mx-auto px-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-                {areas.map((area) => (
-                  <Link key={area.name} href={`/service-areas/${area.name.toLowerCase()}`}>
-                    <Card className="hover:shadow-xl transition-all duration-300 cursor-pointer border-2 border-transparent hover:border-johnson-blue group h-full">
-                      <CardContent className="p-6">
-                        <div className="flex items-start justify-between">
-                          <div className="bg-blue-50 p-3 rounded-xl group-hover:bg-johnson-blue transition-colors">
-                            <MapPin className="h-6 w-6 text-johnson-blue group-hover:text-white" />
-                          </div>
-                          <ChevronRight className="h-5 w-5 text-gray-300 group-hover:text-johnson-blue group-hover:translate-x-1 transition-all" />
-                        </div>
-                        <h3 className="text-2xl font-bold mt-4 mb-2">{area.name}, MA</h3>
-                        <p className="text-gray-600 mb-4">{area.desc}</p>
-                        <span className="text-johnson-blue font-semibold inline-flex items-center text-sm uppercase tracking-wider">
-                          View Local Services
-                        </span>
-                      </CardContent>
-                    </Card>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </section>
-
           {/* CTA Section */}
           <section className="py-16 bg-white border-t border-gray-100">
             <div className="container mx-auto px-4 text-center">
