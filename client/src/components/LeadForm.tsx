@@ -287,7 +287,7 @@ export default function LeadForm({ onSuccess, leadSource = "Website Contact Form
         </form>
 
         <div className="mt-4 text-center">
-          <p className="text-xs text-gray-500" data-testid="text-powered-by">
+          <p className="text-[10px] text-gray-400 font-medium tracking-tight uppercase" data-testid="text-powered-by">
             Powered by Johnson Bros. Plumbing & Drain Cleaning
           </p>
         </div>
