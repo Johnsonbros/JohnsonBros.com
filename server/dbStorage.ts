@@ -376,7 +376,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createMaintenancePlan(plan: InsertMaintenancePlan): Promise<MaintenancePlan> {
-    const [newPlan] = await db.insert(maintenancePlans).values(plan).returning();
+    const [newPlan] = await db.insert(maintenancePlans).values([plan]).returning();
     return newPlan;
   }
 
@@ -440,7 +440,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createEmailTemplate(template: InsertEmailTemplate): Promise<EmailTemplate> {
-    const [newTemplate] = await db.insert(emailTemplates).values(template).returning();
+    const [newTemplate] = await db.insert(emailTemplates).values([template]).returning();
     return newTemplate;
   }
 
