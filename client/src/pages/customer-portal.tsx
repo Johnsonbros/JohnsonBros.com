@@ -143,7 +143,6 @@ export default function CustomerPortal() {
   const handleLogout = () => {
     localStorage.removeItem(TOKEN_KEY);
     setToken(null);
-    portalQuery.remove();
   };
 
   const formatCurrency = (amount = 0) =>
@@ -276,35 +275,39 @@ export default function CustomerPortal() {
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
-                      <Label htmlFor="portal-email">Email</Label>
-                      <div className="relative">
-                        <Mail className="h-4 w-4 text-gray-400 absolute left-3 top-3" />
+                      <Label htmlFor="portal-email" className="text-sm font-medium text-gray-700">Email</Label>
+                      <div className="relative flex items-center group">
+                        <Mail className="h-5 w-5 text-gray-400 absolute left-3 z-10 pointer-events-none group-focus-within:text-johnson-blue transition-colors" />
                         <Input
                           id="portal-email"
                           type="email"
                           placeholder="you@email.com"
                           value={loginEmail}
                           onChange={(event) => setLoginEmail(event.target.value)}
-                          className="pl-10"
+                          className="pl-10 h-14 md:h-12 text-base bg-white border-gray-200 focus:border-johnson-blue focus:ring-johnson-blue transition-all rounded-xl shadow-sm"
                         />
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="portal-phone">Phone</Label>
-                      <div className="relative">
-                        <Phone className="h-4 w-4 text-gray-400 absolute left-3 top-3" />
+                      <Label htmlFor="portal-phone" className="text-sm font-medium text-gray-700">Phone</Label>
+                      <div className="relative flex items-center group">
+                        <Phone className="h-5 w-5 text-gray-400 absolute left-3 z-10 pointer-events-none group-focus-within:text-johnson-blue transition-colors" />
                         <Input
                           id="portal-phone"
                           type="tel"
                           placeholder="(617) 479-9911"
                           value={loginPhone}
                           onChange={(event) => setLoginPhone(event.target.value)}
-                          className="pl-10"
+                          className="pl-10 h-14 md:h-12 text-base bg-white border-gray-200 focus:border-johnson-blue focus:ring-johnson-blue transition-all rounded-xl shadow-sm"
                         />
                       </div>
                     </div>
                   </div>
-                  <Button type="submit" disabled={isLoggingIn} className="w-full md:w-auto">
+                  <Button 
+                    type="submit" 
+                    disabled={isLoggingIn} 
+                    className="w-full h-14 md:h-12 bg-johnson-blue hover:bg-johnson-blue/90 text-white font-bold text-lg rounded-xl transition-all shadow-md hover:shadow-lg active:scale-[0.98] mt-2"
+                  >
                     {isLoggingIn ? "Signing in..." : "Access my portal"}
                   </Button>
                 </form>
