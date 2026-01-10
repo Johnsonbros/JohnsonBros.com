@@ -1536,6 +1536,8 @@ export const insertMaintenancePlanSchema = createInsertSchema(maintenancePlans).
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  features: z.array(z.string()),
 });
 
 export const insertMemberSubscriptionSchema = createInsertSchema(memberSubscriptions).omit({
@@ -1553,6 +1555,8 @@ export const insertEmailTemplateSchema = createInsertSchema(emailTemplates).omit
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  variables: z.array(z.string()).optional(),
 });
 
 export const insertUpsellOfferSchema = createInsertSchema(upsellOffers).omit({

@@ -466,7 +466,7 @@ router.post('/dispatch', async (req: Request, res: Response) => {
 
     return res.json(result);
   } catch (error) {
-    logger.error('Action dispatch error', error instanceof Error ? error.message : String(error));
+    logger.error({ err: error }, 'Action dispatch error');
     return res.status(500).json({
       ok: false,
       action: req.body?.action || 'UNKNOWN',
