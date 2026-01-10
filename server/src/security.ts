@@ -11,22 +11,10 @@ export function configureSecurityMiddleware(app: Express) {
   // Disable X-Powered-By header
   app.disable('x-powered-by');
   
-  // Security headers with helmet - relaxed CSP for development, strict for production
+  // Security headers with helmet - disable CSP temporarily to diagnose production issue
   if (isProduction) {
     app.use(helmet({
-      contentSecurityPolicy: {
-        directives: {
-          defaultSrc: ["'self'"],
-          scriptSrc: ["'self'", "'unsafe-inline'", "https://maps.googleapis.com", "https://replit.com", "https://www.googletagmanager.com", "https://www.google-analytics.com"],
-          styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-          fontSrc: ["'self'", "https://fonts.gstatic.com"],
-          imgSrc: ["'self'", "data:", "https:", "blob:"],
-          connectSrc: ["'self'", "https://api.housecallpro.com", "https://maps.googleapis.com", "https://www.google-analytics.com", "https://*.sentry.io"],
-          frameSrc: ["'self'", "https://maps.googleapis.com"],
-          objectSrc: ["'none'"],
-          upgradeInsecureRequests: [],
-        },
-      },
+      contentSecurityPolicy: false, // Temporarily disabled to diagnose white screen
       hsts: {
         maxAge: 31536000,
         includeSubDomains: true,
