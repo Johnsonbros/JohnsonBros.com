@@ -286,9 +286,9 @@ export default function LeadForm({ onSuccess, leadSource = "Website Contact Form
           </Button>
         </form>
 
-        <div className="mt-4 text-center">
-          <p className="text-[10px] text-gray-400 font-medium tracking-tight uppercase" data-testid="text-powered-by">
-            Powered by Johnson Bros. Plumbing & Drain Cleaning
+        <div className="mt-4 text-center border-t border-gray-100 pt-4">
+          <p className="text-[10px] text-gray-400 font-semibold tracking-widest uppercase" data-testid="text-powered-by">
+            Johnson Bros. Plumbing & Drain Cleaning
           </p>
         </div>
       </CardContent>
