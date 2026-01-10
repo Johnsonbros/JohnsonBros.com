@@ -17,11 +17,11 @@ export function configureSecurityMiddleware(app: Express) {
       contentSecurityPolicy: {
         directives: {
           defaultSrc: ["'self'"],
-          scriptSrc: ["'self'", "https://maps.googleapis.com"],
-          styleSrc: ["'self'", "https://fonts.googleapis.com"],
+          scriptSrc: ["'self'", "'unsafe-inline'", "https://maps.googleapis.com", "https://replit.com", "https://www.googletagmanager.com", "https://www.google-analytics.com"],
+          styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
           fontSrc: ["'self'", "https://fonts.gstatic.com"],
           imgSrc: ["'self'", "data:", "https:", "blob:"],
-          connectSrc: ["'self'", "https://api.housecallpro.com", "https://maps.googleapis.com"],
+          connectSrc: ["'self'", "https://api.housecallpro.com", "https://maps.googleapis.com", "https://www.google-analytics.com", "https://*.sentry.io"],
           frameSrc: ["'self'", "https://maps.googleapis.com"],
           objectSrc: ["'none'"],
           upgradeInsecureRequests: [],
