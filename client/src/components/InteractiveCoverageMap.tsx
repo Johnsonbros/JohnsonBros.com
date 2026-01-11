@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Loader } from "@googlemaps/js-api-loader";
-import { MarkerClusterer, SuperClusterAlgorithm } from "@googlemaps/markerclusterer";
 import { MapPin, Phone, ChevronRight, Navigation, CheckCircle2, AlertCircle, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -166,7 +165,6 @@ export function InteractiveCoverageMap({ onBookService, compact = false }: Inter
   const [isLocating, setIsLocating] = useState(false);
   const [userInServiceArea, setUserInServiceArea] = useState<boolean | null>(null);
   const markersRef = useRef<google.maps.marker.AdvancedMarkerElement[]>([]);
-  const clustererRef = useRef<MarkerClusterer | null>(null);
   const { toast } = useToast();
 
   const handleLocationClick = useCallback((location: ServiceLocation) => {
@@ -387,15 +385,13 @@ export function InteractiveCoverageMap({ onBookService, compact = false }: Inter
           return container;
         };
 
-        const serviceMarkers: google.maps.marker.AdvancedMarkerElement[] = [];
-
         serviceLocations.forEach((location) => {
           const isOffice = location.isOffice === true;
           const markerContent = isOffice ? createOfficeMarker(location) : createServiceMarker(location);
 
           const marker = new google.maps.marker.AdvancedMarkerElement({
             position: { lat: location.lat, lng: location.lng },
-            map: isOffice ? map : null,
+            map,
             content: markerContent,
             title: location.name,
             zIndex: isOffice ? 1000 : 100
@@ -448,45 +444,8 @@ export function InteractiveCoverageMap({ onBookService, compact = false }: Inter
           });
 
           markersRef.current.push(marker);
-          
-          if (!isOffice) {
-            serviceMarkers.push(marker);
-          }
         });
 
-        const clusterRenderer = {
-          render: ({ count, position }: { count: number; position: google.maps.LatLng }) => {
-            const clusterContent = document.createElement("div");
-            clusterContent.style.cssText = `
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              width: 44px;
-              height: 44px;
-              background: linear-gradient(135deg, #0b2a6f 0%, #1e40af 100%);
-              border: 3px solid white;
-              border-radius: 50%;
-              box-shadow: 0 4px 15px rgba(11, 42, 111, 0.4);
-              cursor: pointer;
-              transform: translate(-50%, -50%);
-            `;
-            clusterContent.innerHTML = `
-              <span style="color: white; font-weight: 700; font-size: 14px;">${count}</span>
-            `;
-            return new google.maps.marker.AdvancedMarkerElement({
-              position,
-              content: clusterContent,
-              zIndex: 500
-            });
-          }
-        };
-
-        clustererRef.current = new MarkerClusterer({
-          map,
-          markers: serviceMarkers,
-          algorithm: new SuperClusterAlgorithm({ radius: 80, maxZoom: 13 }),
-          renderer: clusterRenderer
-        });
 
         setIsMapLoaded(true);
       } catch (error) {
@@ -499,10 +458,6 @@ export function InteractiveCoverageMap({ onBookService, compact = false }: Inter
     initMap();
 
     return () => {
-      if (clustererRef.current) {
-        clustererRef.current.clearMarkers();
-        clustererRef.current = null;
-      }
       markersRef.current.forEach(marker => {
         marker.map = null;
       });
