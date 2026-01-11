@@ -547,57 +547,6 @@ export function InteractiveCoverageMap({ onBookService, compact = false }: Inter
             </div>
           )}
 
-          {!mapError && (
-            <>
-              <div className="absolute top-4 left-4 flex flex-col gap-2">
-                <Button
-                  size="sm"
-                  onClick={checkUserLocation}
-                  disabled={isLocating}
-                  className="bg-white text-johnson-blue border border-gray-200 hover:bg-gray-50 shadow-lg"
-                  data-testid="check-location-btn"
-                >
-                  <Navigation className={`h-4 w-4 mr-2 ${isLocating ? "animate-spin" : ""}`} />
-                  {isLocating ? "Locating..." : "Check My Area"}
-                </Button>
-              </div>
-
-              {userInServiceArea !== null && (
-                <div className={`absolute top-4 right-4 px-4 py-2 rounded-lg shadow-lg ${
-                  userInServiceArea ? "bg-green-500 text-white" : "bg-yellow-500 text-white"
-                }`}>
-                  {userInServiceArea ? (
-                    <span className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4" />
-                      We service your area!
-                    </span>
-                  ) : (
-                    <span>Call us to confirm coverage</span>
-                  )}
-                </div>
-              )}
-
-              <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-sm p-4 rounded-xl shadow-lg border border-gray-200">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6 text-xs font-medium">
-                  <div className="flex items-center gap-2">
-                    <div className="relative">
-                      <div className="w-5 h-5 bg-gradient-to-r from-amber-500 to-amber-600 rounded-full border-2 border-white shadow-md" />
-                      <div className="absolute -inset-1 bg-amber-400/30 rounded-full animate-ping" style={{ animationDuration: '2s' }} />
-                    </div>
-                    <span className="text-gray-700 font-semibold">Office Location</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 bg-gradient-to-r from-johnson-blue to-blue-600 rounded-full border-2 border-white shadow" />
-                    <span className="text-gray-700">Service Area</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-3 bg-blue-500/20 border-2 border-johnson-blue/50 rounded" />
-                    <span className="text-gray-700">Coverage Zone</span>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
         </div>
 
         {!compact && (
