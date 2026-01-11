@@ -55,8 +55,14 @@ class ABTestingManager {
   private visitorId: string;
 
   private constructor() {
-    this.visitorId = this.getOrCreateVisitorId();
-    this.loadAssignments();
+    try {
+      this.visitorId = this.getOrCreateVisitorId();
+      this.loadAssignments();
+    } catch (e) {
+      // Gracefully handle environments where localStorage/cookies are restricted
+      console.warn('[ABTesting] Failed to initialize:', e);
+      this.visitorId = `anon_${Date.now()}`;
+    }
   }
 
   static getInstance(): ABTestingManager {
@@ -67,28 +73,38 @@ class ABTestingManager {
   }
 
   private getOrCreateVisitorId(): string {
-    let visitorId = localStorage.getItem(VISITOR_ID_KEY);
-    if (!visitorId) {
-      visitorId = `visitor_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      localStorage.setItem(VISITOR_ID_KEY, visitorId);
+    try {
+      let visitorId = localStorage.getItem(VISITOR_ID_KEY);
+      if (!visitorId) {
+        visitorId = `visitor_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        localStorage.setItem(VISITOR_ID_KEY, visitorId);
+      }
+      return visitorId;
+    } catch (e) {
+      // localStorage may be blocked in private browsing
+      return `anon_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     }
-    return visitorId;
   }
 
   private loadAssignments(): void {
-    const cookies = document.cookie.split(';');
-    cookies.forEach(cookie => {
-      const [name, value] = cookie.trim().split('=');
-      if (name.startsWith(COOKIE_PREFIX)) {
-        const testId = name.replace(COOKIE_PREFIX, '');
-        try {
-          const assignment = JSON.parse(decodeURIComponent(value));
-          this.assignments.set(testId, assignment);
-        } catch (e) {
-          console.error(`Failed to parse A/B test assignment for ${testId}`, e);
+    try {
+      const cookies = document.cookie.split(';');
+      cookies.forEach(cookie => {
+        const [name, value] = cookie.trim().split('=');
+        if (name && name.startsWith(COOKIE_PREFIX)) {
+          const testId = name.replace(COOKIE_PREFIX, '');
+          try {
+            const assignment = JSON.parse(decodeURIComponent(value));
+            this.assignments.set(testId, assignment);
+          } catch (e) {
+            // Ignore invalid cookies
+          }
         }
-      }
-    });
+      });
+    } catch (e) {
+      // Cookie access may be restricted
+      console.warn('[ABTesting] Failed to load assignments:', e);
+    }
   }
 
   private saveAssignment(testId: string, assignment: ABTestAssignment): void {
