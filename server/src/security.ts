@@ -44,9 +44,10 @@ export function configureSecurityMiddleware(app: Express) {
           ? process.env.CORS_ORIGIN.split(',') 
           : [];
         
-        // Also allow .replit.app and thejohnsonbros.com domains
+        // Also allow .replit.app and production domains
         const isReplitDomain = origin.endsWith('.replit.app');
-        const isProductionDomain = origin.includes('thejohnsonbros.com');
+        const isProductionDomain = origin.includes('thejohnsonbros.com') || 
+                                    origin.toLowerCase().includes('theabingtonplumber.com');
         
         if (allowedOrigins.includes(origin) || isReplitDomain || isProductionDomain) {
           callback(null, true);
