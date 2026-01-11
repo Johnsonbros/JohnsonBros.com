@@ -268,75 +268,6 @@ export function InteractiveCoverageMap({ onBookService, compact = false }: Inter
           geodesic: true
         });
 
-        const createOfficeMarker = (location: ServiceLocation) => {
-          const container = document.createElement("div");
-          container.className = "office-marker";
-          container.style.cssText = `
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            cursor: pointer;
-            transform: translate(-50%, -100%);
-          `;
-          
-          container.innerHTML = `
-            <div class="pulse-ring" style="
-              position: absolute;
-              top: 8px;
-              left: 50%;
-              transform: translateX(-50%);
-              width: 60px;
-              height: 60px;
-              border-radius: 50%;
-              background: rgba(234, 179, 8, 0.3);
-              animation: pulse-office 2s ease-out infinite;
-            "></div>
-            <div class="marker-icon" style="
-              position: relative;
-              z-index: 10;
-              width: 52px;
-              height: 52px;
-              background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
-              border: 4px solid white;
-              border-radius: 50%;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              box-shadow: 0 6px 20px rgba(217, 119, 6, 0.5);
-              transition: transform 0.2s ease, box-shadow 0.2s ease;
-            ">
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="0.5">
-                <path d="M3 21h18v-2H3v2zm0-4h18v-2H3v2zm0-4h18v-2H3v2zm0-4h18V7H3v2zm0-6v2h18V3H3z"/>
-              </svg>
-            </div>
-            <div class="marker-label" style="
-              position: relative;
-              z-index: 10;
-              background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
-              padding: 6px 12px;
-              border-radius: 6px;
-              margin-top: 6px;
-              font-size: 12px;
-              font-weight: 700;
-              color: white;
-              box-shadow: 0 4px 12px rgba(217, 119, 6, 0.4);
-              white-space: nowrap;
-              text-transform: uppercase;
-              letter-spacing: 0.5px;
-            ">
-              ${location.name} OFFICE
-            </div>
-            <style>
-              @keyframes pulse-office {
-                0% { transform: translateX(-50%) scale(0.8); opacity: 1; }
-                100% { transform: translateX(-50%) scale(2); opacity: 0; }
-              }
-            </style>
-          `;
-          return container;
-        };
-
         const createServiceMarker = (location: ServiceLocation) => {
           const container = document.createElement("div");
           container.className = "service-marker";
@@ -385,16 +316,16 @@ export function InteractiveCoverageMap({ onBookService, compact = false }: Inter
           return container;
         };
 
-        serviceLocations.forEach((location) => {
-          const isOffice = location.isOffice === true;
-          const markerContent = isOffice ? createOfficeMarker(location) : createServiceMarker(location);
+        // Filter out office locations - only show service area markers
+        serviceLocations.filter(location => !location.isOffice).forEach((location) => {
+          const markerContent = createServiceMarker(location);
 
           const marker = new google.maps.marker.AdvancedMarkerElement({
             position: { lat: location.lat, lng: location.lng },
             map,
             content: markerContent,
             title: location.name,
-            zIndex: isOffice ? 1000 : 100
+            zIndex: 100
           });
 
           markerContent.addEventListener("click", () => {
@@ -402,44 +333,28 @@ export function InteractiveCoverageMap({ onBookService, compact = false }: Inter
           });
 
           markerContent.addEventListener("mouseenter", () => {
-            if (isOffice) {
-              const icon = markerContent.querySelector(".marker-icon") as HTMLElement;
-              if (icon) {
-                icon.style.transform = "scale(1.1)";
-                icon.style.boxShadow = "0 8px 25px rgba(217, 119, 6, 0.6)";
-              }
-            } else {
-              const pin = markerContent.querySelector(".marker-pin") as HTMLElement;
-              const label = markerContent.querySelector(".marker-label") as HTMLElement;
-              if (pin) {
-                pin.style.transform = "scale(1.2)";
-                pin.style.boxShadow = "0 6px 16px rgba(11, 42, 111, 0.5)";
-              }
-              if (label) {
-                label.style.opacity = "1";
-                label.style.transform = "translateY(0)";
-              }
+            const pin = markerContent.querySelector(".marker-pin") as HTMLElement;
+            const label = markerContent.querySelector(".marker-label") as HTMLElement;
+            if (pin) {
+              pin.style.transform = "scale(1.2)";
+              pin.style.boxShadow = "0 6px 16px rgba(11, 42, 111, 0.5)";
+            }
+            if (label) {
+              label.style.opacity = "1";
+              label.style.transform = "translateY(0)";
             }
           });
 
           markerContent.addEventListener("mouseleave", () => {
-            if (isOffice) {
-              const icon = markerContent.querySelector(".marker-icon") as HTMLElement;
-              if (icon) {
-                icon.style.transform = "scale(1)";
-                icon.style.boxShadow = "0 6px 20px rgba(217, 119, 6, 0.5)";
-              }
-            } else {
-              const pin = markerContent.querySelector(".marker-pin") as HTMLElement;
-              const label = markerContent.querySelector(".marker-label") as HTMLElement;
-              if (pin) {
-                pin.style.transform = "scale(1)";
-                pin.style.boxShadow = "0 4px 12px rgba(11, 42, 111, 0.4)";
-              }
-              if (label) {
-                label.style.opacity = "0";
-                label.style.transform = "translateY(-4px)";
-              }
+            const pin = markerContent.querySelector(".marker-pin") as HTMLElement;
+            const label = markerContent.querySelector(".marker-label") as HTMLElement;
+            if (pin) {
+              pin.style.transform = "scale(1)";
+              pin.style.boxShadow = "0 4px 12px rgba(11, 42, 111, 0.4)";
+            }
+            if (label) {
+              label.style.opacity = "0";
+              label.style.transform = "translateY(-4px)";
             }
           });
 
