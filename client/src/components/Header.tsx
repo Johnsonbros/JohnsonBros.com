@@ -341,14 +341,14 @@ export default function Header({ onBookService }: HeaderProps) {
 
         {/* Desktop Layout */}
         <div className="hidden lg:block">
-          <div className="container mx-auto px-4 py-3">
-            <div className="flex justify-between items-center gap-8">
+          <div className="container mx-auto px-4 py-2">
+            <div className="flex justify-between items-center gap-6">
               {/* Logo */}
               <div className="flex items-center flex-shrink-0">
                 <img 
                   src="/JB_logo_New_1756136293648.png" 
                   alt="Johnson Bros. Plumbing & Drain Cleaning" 
-                  className="h-16 w-auto"
+                  className="h-10 w-auto"
                   data-testid="company-logo-desktop"
                 />
               </div>
@@ -418,20 +418,20 @@ export default function Header({ onBookService }: HeaderProps) {
               </nav>
 
               {/* Desktop CTA Buttons */}
-              <div className="flex items-center space-x-3 xl:space-x-4 flex-shrink-0">
-                <div className="flex items-center space-x-2 xl:space-x-3 bg-gradient-to-r from-white/20 to-white/10 backdrop-blur-sm px-3 xl:px-4 py-2 xl:py-3 rounded-xl border border-white/20 shadow-lg hover:from-white/25 hover:to-white/15 transition-all duration-300">
+              <div className="flex items-center space-x-3 flex-shrink-0">
+                <div className="flex items-center space-x-2 bg-gradient-to-r from-white/20 to-white/10 backdrop-blur-sm px-2.5 py-1.5 rounded-lg border border-white/20 shadow-md hover:from-white/25 hover:to-white/15 transition-all duration-300">
                   <div className="flex text-yellow-400 space-x-0.5">
-                    <Star className="h-4 w-4 xl:h-5 xl:w-5 fill-current drop-shadow-sm" />
-                    <Star className="h-4 w-4 xl:h-5 xl:w-5 fill-current drop-shadow-sm" />
-                    <Star className="h-4 w-4 xl:h-5 xl:w-5 fill-current drop-shadow-sm" />
-                    <Star className="h-4 w-4 xl:h-5 xl:w-5 fill-current drop-shadow-sm" />
-                    <Star className="h-4 w-4 xl:h-5 xl:w-5 fill-current drop-shadow-sm" />
+                    <Star className="h-3.5 w-3.5 fill-current drop-shadow-sm" />
+                    <Star className="h-3.5 w-3.5 fill-current drop-shadow-sm" />
+                    <Star className="h-3.5 w-3.5 fill-current drop-shadow-sm" />
+                    <Star className="h-3.5 w-3.5 fill-current drop-shadow-sm" />
+                    <Star className="h-3.5 w-3.5 fill-current drop-shadow-sm" />
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-white text-base xl:text-lg font-bold leading-none" data-testid="rating-display">
+                    <span className="text-white text-sm font-bold leading-none" data-testid="rating-display">
                       {reviewsData?.averageRating?.toFixed(1) || "4.8"}/5
                     </span>
-                    <span className="text-blue-100 text-xs font-medium opacity-90">
+                    <span className="text-blue-100 text-[10px] font-medium opacity-90">
                       {reviewsData?.totalReviews || "281"} reviews
                     </span>
                   </div>
@@ -440,8 +440,8 @@ export default function Header({ onBookService }: HeaderProps) {
                   <Button 
                     onClick={onBookService}
                     variant="brand-accent"
-                    size="lg"
-                    className="px-4 xl:px-6 py-2 xl:py-3 text-sm xl:text-base whitespace-nowrap"
+                    size="sm"
+                    className="px-4 py-1.5 text-sm whitespace-nowrap"
                     data-testid="header-book-service-button-desktop"
                   >
                     Book Service
@@ -450,8 +450,8 @@ export default function Header({ onBookService }: HeaderProps) {
                   <Link href="/#booking">
                     <Button 
                       variant="brand-accent"
-                      size="lg"
-                      className="px-4 xl:px-6 py-2 xl:py-3 text-sm xl:text-base whitespace-nowrap"
+                      size="sm"
+                      className="px-4 py-1.5 text-sm whitespace-nowrap"
                       data-testid="header-book-service-link-desktop"
                     >
                       Book Service
