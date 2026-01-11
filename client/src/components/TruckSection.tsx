@@ -20,6 +20,8 @@ export default function TruckSection() {
               src="/truck_1756136293648.png" 
               alt="Johnson Bros. Service Truck" 
               className="w-full h-auto rounded-xl shadow-2xl"
+              loading="lazy"
+              decoding="async"
               data-testid="service-truck-image"
             />
             <div className="absolute -bottom-6 -right-6 bg-johnson-blue text-white p-4 rounded-lg shadow-lg hidden lg:block">

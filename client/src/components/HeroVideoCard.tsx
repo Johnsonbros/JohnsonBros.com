@@ -57,7 +57,7 @@ export function HeroVideoCard() {
                 loop
                 muted
                 playsInline
-                preload="auto"
+                preload="metadata"
                 onLoadedData={() => setVideoLoaded(true)}
                 onCanPlay={() => setVideoLoaded(true)}
                 className={`w-full h-full object-cover transition-opacity duration-1000 ${videoLoaded ? 'opacity-100' : 'opacity-0'}`}
