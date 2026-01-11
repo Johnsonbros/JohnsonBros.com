@@ -34,11 +34,21 @@ export function configureSecurityMiddleware(app: Express) {
     origin: (origin, callback) => {
       // In production, restrict to specific domains
       if (isProduction) {
+        // Allow requests with no origin (same-origin requests, server-to-server)
+        if (!origin) {
+          return callback(null, true);
+        }
+        
+        // Get allowed origins from environment or allow same-site requests
         const allowedOrigins = process.env.CORS_ORIGIN 
           ? process.env.CORS_ORIGIN.split(',') 
           : [];
         
-        if (!origin || allowedOrigins.includes(origin)) {
+        // Also allow .replit.app and thejohnsonbros.com domains
+        const isReplitDomain = origin.endsWith('.replit.app');
+        const isProductionDomain = origin.includes('thejohnsonbros.com');
+        
+        if (allowedOrigins.includes(origin) || isReplitDomain || isProductionDomain) {
           callback(null, true);
         } else {
           callback(new Error('Not allowed by CORS'));
