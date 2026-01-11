@@ -164,7 +164,6 @@ export function InteractiveCoverageMap({ onBookService, compact = false }: Inter
   const [mapError, setMapError] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
   const [userInServiceArea, setUserInServiceArea] = useState<boolean | null>(null);
-  const markersRef = useRef<google.maps.marker.AdvancedMarkerElement[]>([]);
   const { toast } = useToast();
 
   const handleLocationClick = useCallback((location: ServiceLocation) => {
@@ -260,107 +259,13 @@ export function InteractiveCoverageMap({ onBookService, compact = false }: Inter
         new google.maps.Polygon({
           paths: serviceAreaPath,
           strokeColor: "#0b2a6f",
-          strokeOpacity: 0.7,
-          strokeWeight: 2,
+          strokeOpacity: 0.8,
+          strokeWeight: 3,
           fillColor: "#3B82F6",
-          fillOpacity: 0.08,
+          fillOpacity: 0.12,
           map: map,
-          geodesic: true
+          geodesic: false
         });
-
-        const createServiceMarker = (location: ServiceLocation) => {
-          const container = document.createElement("div");
-          container.className = "service-marker";
-          container.style.cssText = `
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            cursor: pointer;
-            transform: translate(-50%, -100%);
-          `;
-          
-          container.innerHTML = `
-            <div class="marker-pin" style="
-              width: 32px;
-              height: 32px;
-              background: linear-gradient(135deg, #0b2a6f 0%, #1e40af 100%);
-              border: 3px solid white;
-              border-radius: 50%;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              box-shadow: 0 4px 12px rgba(11, 42, 111, 0.4);
-              transition: transform 0.2s ease, box-shadow 0.2s ease;
-            ">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
-                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-              </svg>
-            </div>
-            <div class="marker-label" style="
-              background: white;
-              padding: 4px 8px;
-              border-radius: 4px;
-              margin-top: 4px;
-              font-size: 10px;
-              font-weight: 600;
-              color: #0b2a6f;
-              box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-              white-space: nowrap;
-              opacity: 0;
-              transform: translateY(-4px);
-              transition: opacity 0.2s ease, transform 0.2s ease;
-            ">
-              ${location.name}
-            </div>
-          `;
-          return container;
-        };
-
-        // Filter out office locations - only show service area markers
-        serviceLocations.filter(location => !location.isOffice).forEach((location) => {
-          const markerContent = createServiceMarker(location);
-
-          const marker = new google.maps.marker.AdvancedMarkerElement({
-            position: { lat: location.lat, lng: location.lng },
-            map,
-            content: markerContent,
-            title: location.name,
-            zIndex: 100
-          });
-
-          markerContent.addEventListener("click", () => {
-            handleLocationClick(location);
-          });
-
-          markerContent.addEventListener("mouseenter", () => {
-            const pin = markerContent.querySelector(".marker-pin") as HTMLElement;
-            const label = markerContent.querySelector(".marker-label") as HTMLElement;
-            if (pin) {
-              pin.style.transform = "scale(1.2)";
-              pin.style.boxShadow = "0 6px 16px rgba(11, 42, 111, 0.5)";
-            }
-            if (label) {
-              label.style.opacity = "1";
-              label.style.transform = "translateY(0)";
-            }
-          });
-
-          markerContent.addEventListener("mouseleave", () => {
-            const pin = markerContent.querySelector(".marker-pin") as HTMLElement;
-            const label = markerContent.querySelector(".marker-label") as HTMLElement;
-            if (pin) {
-              pin.style.transform = "scale(1)";
-              pin.style.boxShadow = "0 4px 12px rgba(11, 42, 111, 0.4)";
-            }
-            if (label) {
-              label.style.opacity = "0";
-              label.style.transform = "translateY(-4px)";
-            }
-          });
-
-          markersRef.current.push(marker);
-        });
-
 
         setIsMapLoaded(true);
       } catch (error) {
@@ -373,12 +278,9 @@ export function InteractiveCoverageMap({ onBookService, compact = false }: Inter
     initMap();
 
     return () => {
-      markersRef.current.forEach(marker => {
-        marker.map = null;
-      });
-      markersRef.current = [];
+      // Cleanup handled by Google Maps
     };
-  }, [handleLocationClick, compact, toast]);
+  }, [compact, toast]);
 
   return (
     <div className="w-full" data-testid="interactive-coverage-map">
