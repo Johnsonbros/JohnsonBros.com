@@ -5,6 +5,13 @@ import { fetch } from "undici";
 import pino from "pino";
 import { randomUUID } from "crypto";
 import { CapacityCalculator } from "../server/src/capacity.js";
+import { 
+  BOOKING_CONFIRMATION_WIDGET, 
+  AVAILABILITY_WIDGET, 
+  SERVICES_WIDGET, 
+  QUOTE_WIDGET, 
+  EMERGENCY_WIDGET 
+} from "./widgets/booking-widget.js";
 
 const log = pino({ name: "jb-booker", level: process.env.LOG_LEVEL || "info" });
 
@@ -634,6 +641,97 @@ const server = new McpServer({
   version: "1.0.0"
 });
 
+// Register ChatGPT UI widget templates as MCP resources
+// These render interactive UI inside ChatGPT when tools are called
+const WIDGET_DOMAIN = process.env.SITE_URL || "https://chatgpt.com";
+
+server.resource(
+  "booking-confirmation-widget",
+  "ui://widget/booking-confirmation.html",
+  {},
+  async () => ({
+    contents: [{
+      uri: "ui://widget/booking-confirmation.html",
+      mimeType: "text/html+skybridge",
+      text: BOOKING_CONFIRMATION_WIDGET,
+      _meta: {
+        "openai/widgetPrefersBorder": true,
+        "openai/widgetDomain": WIDGET_DOMAIN
+      }
+    }]
+  })
+);
+
+server.resource(
+  "availability-widget",
+  "ui://widget/availability.html",
+  {},
+  async () => ({
+    contents: [{
+      uri: "ui://widget/availability.html",
+      mimeType: "text/html+skybridge",
+      text: AVAILABILITY_WIDGET,
+      _meta: {
+        "openai/widgetPrefersBorder": true,
+        "openai/widgetDomain": WIDGET_DOMAIN
+      }
+    }]
+  })
+);
+
+server.resource(
+  "services-widget",
+  "ui://widget/services.html",
+  {},
+  async () => ({
+    contents: [{
+      uri: "ui://widget/services.html",
+      mimeType: "text/html+skybridge",
+      text: SERVICES_WIDGET,
+      _meta: {
+        "openai/widgetPrefersBorder": true,
+        "openai/widgetDomain": WIDGET_DOMAIN
+      }
+    }]
+  })
+);
+
+server.resource(
+  "quote-widget",
+  "ui://widget/quote.html",
+  {},
+  async () => ({
+    contents: [{
+      uri: "ui://widget/quote.html",
+      mimeType: "text/html+skybridge",
+      text: QUOTE_WIDGET,
+      _meta: {
+        "openai/widgetPrefersBorder": true,
+        "openai/widgetDomain": WIDGET_DOMAIN
+      }
+    }]
+  })
+);
+
+server.resource(
+  "emergency-widget",
+  "ui://widget/emergency.html",
+  {},
+  async () => ({
+    contents: [{
+      uri: "ui://widget/emergency.html",
+      mimeType: "text/html+skybridge",
+      text: EMERGENCY_WIDGET,
+      _meta: {
+        "openai/widgetPrefersBorder": true,
+        "openai/widgetDomain": WIDGET_DOMAIN
+      }
+    }]
+  })
+);
+
+log.info("Registered 5 ChatGPT widget templates for interactive UI");
+
 type ToolMetrics = {
   totalCalls: number;
   successCalls: number;
@@ -755,6 +853,11 @@ registerToolWithDiagnostics(
         tags: { type: "array", items: { type: "string" } }
       },
       required: ["first_name", "last_name", "phone", "street", "city", "state", "zip", "description"]
+    },
+    _meta: {
+      "openai/outputTemplate": "ui://widget/booking-confirmation.html",
+      "openai/toolInvocation/invoking": "Scheduling your appointment...",
+      "openai/toolInvocation/invoked": "Appointment confirmed!"
     }
   } as any,
   async (raw) => {
@@ -1044,6 +1147,11 @@ registerToolWithDiagnostics(
         show_for_days: { type: "number", minimum: 1, maximum: 30, description: "Number of days to show availability for" }
       },
       required: ["date", "serviceType"]
+    },
+    _meta: {
+      "openai/outputTemplate": "ui://widget/availability.html",
+      "openai/toolInvocation/invoking": "Checking available appointments...",
+      "openai/toolInvocation/invoked": "Here are the available times"
     }
   } as any,
   async (raw) => {
@@ -1489,6 +1597,11 @@ registerToolWithDiagnostics(
         urgency: { type: "string", enum: ["routine", "soon", "urgent", "emergency"], description: "How urgent is the repair" }
       },
       required: ["service_type", "issue_description"]
+    },
+    _meta: {
+      "openai/outputTemplate": "ui://widget/quote.html",
+      "openai/toolInvocation/invoking": "Calculating your estimate...",
+      "openai/toolInvocation/invoked": "Here's your instant estimate"
     }
   } as any,
   async (raw) => {
@@ -1635,6 +1748,11 @@ registerToolWithDiagnostics(
         additional_details: { type: "string", description: "Additional details about the emergency" }
       },
       required: ["emergency_type"]
+    },
+    _meta: {
+      "openai/outputTemplate": "ui://widget/emergency.html",
+      "openai/toolInvocation/invoking": "Getting emergency guidance...",
+      "openai/toolInvocation/invoked": "Here's what to do right now"
     }
   } as any,
   async (raw) => {
@@ -1762,6 +1880,11 @@ registerToolWithDiagnostics(
         category: { type: "string", description: "Filter by category (emergency, maintenance, repair, installation, specialty)" },
         search: { type: "string", description: "Search term to filter services" }
       }
+    },
+    _meta: {
+      "openai/outputTemplate": "ui://widget/services.html",
+      "openai/toolInvocation/invoking": "Loading services...",
+      "openai/toolInvocation/invoked": "Here are our services"
     }
   } as any,
   async (raw) => {
