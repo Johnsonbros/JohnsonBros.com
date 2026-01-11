@@ -125,11 +125,11 @@ export default function Header({ onBookService }: HeaderProps) {
       <header className="bg-johnson-blue shadow-lg sticky top-0 z-50 border-t-2 border-johnson-blue">
         {/* Mobile Layout - Simplified */}
         <div className="lg:hidden px-2 py-1 flex justify-between items-center gap-1 relative z-50">
-          {/* Logo - Larger image that extends towards hamburger */}
+          {/* Logo */}
           <img 
             src="/JB_logo_New_1756136293648.png" 
             alt="Johnson Bros. Plumbing & Drain Cleaning" 
-            className="h-20 w-auto object-contain"
+            className="h-12 w-auto object-contain"
             style={{ maxWidth: 'calc(100% - 50px)' }}
             data-testid="company-logo"
           />
@@ -153,7 +153,7 @@ export default function Header({ onBookService }: HeaderProps) {
               <img 
                 src="/JB_logo_New_1756136293648.png" 
                 alt="Johnson Bros. Plumbing & Drain Cleaning" 
-                className="h-20 w-auto object-contain"
+                className="h-12 w-auto object-contain"
                 style={{ maxWidth: 'calc(100% - 50px)' }}
               />
               <button
