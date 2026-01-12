@@ -14,6 +14,7 @@ import {
 } from '../actionSchemas';
 import { getServiceById, mapToHcpServiceId } from '../serviceMapping';
 import { callMcpTool } from '../lib/mcpClient';
+import { CapacityCalculator } from '../src/capacity';
 import pino from 'pino';
 
 const mcpClient = {
@@ -243,6 +244,11 @@ router.post('/dispatch', async (req: Request, res: Response) => {
           break;
         }
 
+        // Get customer's ZIP if available for capacity calculation
+        const customerZip = selectResult.data.customer.address?.includes(',')
+          ? selectResult.data.customer.address.split(',').pop()?.trim().match(/\d{5}/)?.[0]
+          : undefined;
+
         result = {
           ok: true,
           action,
@@ -255,7 +261,7 @@ router.post('/dispatch', async (req: Request, res: Response) => {
               type: 'date_picker',
               title: 'Choose a Date',
               message: 'Select an available date for your appointment.',
-              availableDates: generateAvailableDates(),
+              availableDates: await generateAvailableDates(customerZip),
               priority: 'high',
             },
           },
@@ -290,7 +296,7 @@ router.post('/dispatch', async (req: Request, res: Response) => {
               type: 'date_picker',
               title: 'Choose a Date',
               message: 'Select an available date for your appointment.',
-              availableDates: generateAvailableDates(),
+              availableDates: await generateAvailableDates(infoResult.data.address?.zip),
               priority: 'high',
             },
           },
@@ -310,6 +316,9 @@ router.post('/dispatch', async (req: Request, res: Response) => {
           break;
         }
 
+        // Extract user ZIP from payload if available
+        const userZip = typeof payload.zip === 'string' ? payload.zip : undefined;
+
         result = {
           ok: true,
           action,
@@ -322,12 +331,7 @@ router.post('/dispatch', async (req: Request, res: Response) => {
               type: 'time_picker',
               title: 'Choose a Time',
               selectedDate: dateResult.data.date,
-              slots: [
-                { id: 'morning', label: 'Morning', timeWindow: 'MORNING', available: true, technicianCount: 2 },
-                { id: 'midday', label: 'Midday', timeWindow: 'MIDDAY', available: true, technicianCount: 1 },
-                { id: 'afternoon', label: 'Afternoon', timeWindow: 'AFTERNOON', available: true, technicianCount: 3 },
-                { id: 'evening', label: 'Evening', timeWindow: 'EVENING', available: false, technicianCount: 0 },
-              ],
+              slots: await getTimeSlotsForDate(dateResult.data.date, userZip),
               priority: 'high',
             },
           },
@@ -479,26 +483,103 @@ router.post('/dispatch', async (req: Request, res: Response) => {
   }
 });
 
-function generateAvailableDates(): Array<{ date: string; slotsAvailable: number; capacityState: string }> {
+async function generateAvailableDates(userZip?: string): Promise<Array<{ date: string; slotsAvailable: number; capacityState: string }>> {
   const dates = [];
+  const calculator = CapacityCalculator.getInstance();
   const today = new Date();
 
+  // Calculate availability for the next 14 days
   for (let i = 0; i < 14; i++) {
     const date = new Date(today);
     date.setDate(date.getDate() + i);
     const dateStr = date.toISOString().split('T')[0];
 
-    const dayOfWeek = date.getDay();
-    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+    try {
+      // Get real capacity data for this date
+      const capacity = await calculator.calculateCapacity(date, userZip);
 
-    dates.push({
-      date: dateStr,
-      slotsAvailable: isWeekend ? Math.floor(Math.random() * 2) : Math.floor(Math.random() * 4) + 1,
-      capacityState: i === 0 ? 'SAME_DAY_FEE_WAIVED' : i < 3 ? 'LIMITED_SAME_DAY' : 'AVAILABLE',
-    });
+      // Count available time windows
+      const availableWindows = capacity.unique_express_windows?.length || 0;
+
+      dates.push({
+        date: dateStr,
+        slotsAvailable: availableWindows,
+        capacityState: capacity.overall.state,
+      });
+    } catch (error) {
+      logger.error({ error, date: dateStr }, 'Failed to calculate capacity for date');
+      // Fallback to showing as unavailable if capacity calculation fails
+      dates.push({
+        date: dateStr,
+        slotsAvailable: 0,
+        capacityState: 'NEXT_DAY',
+      });
+    }
   }
 
   return dates;
+}
+
+async function getTimeSlotsForDate(date: string, userZip?: string): Promise<Array<{
+  id: string;
+  label: string;
+  timeWindow: 'MORNING' | 'MIDDAY' | 'AFTERNOON' | 'EVENING';
+  startTime?: string;
+  endTime?: string;
+  available: boolean;
+  technicianCount?: number;
+}>> {
+  try {
+    const calculator = CapacityCalculator.getInstance();
+    const targetDate = new Date(date);
+    const capacity = await calculator.calculateCapacity(targetDate, userZip);
+
+    // Map express windows to time slots
+    const slots = capacity.unique_express_windows?.map(window => {
+      // Determine the time window based on the time slot
+      let timeWindow: 'MORNING' | 'MIDDAY' | 'AFTERNOON' | 'EVENING' = 'MORNING';
+      if (window.time_slot.includes('11:00')) {
+        timeWindow = 'MIDDAY';
+      } else if (window.time_slot.includes('14:00') || window.time_slot.includes('2:00 PM')) {
+        timeWindow = 'AFTERNOON';
+      } else if (window.time_slot.includes('17:00') || window.time_slot.includes('5:00 PM')) {
+        timeWindow = 'EVENING';
+      }
+
+      const [startTime, endTime] = window.time_slot.split(' - ');
+
+      return {
+        id: `slot-${window.start_time}`,
+        label: timeWindow.charAt(0) + timeWindow.slice(1).toLowerCase(),
+        timeWindow,
+        startTime,
+        endTime,
+        available: window.available_techs.length > 0,
+        technicianCount: window.available_techs.length,
+      };
+    }) || [];
+
+    // If no slots available, return standard slots marked as unavailable
+    if (slots.length === 0) {
+      return [
+        { id: 'morning', label: 'Morning', timeWindow: 'MORNING', available: false, technicianCount: 0 },
+        { id: 'midday', label: 'Midday', timeWindow: 'MIDDAY', available: false, technicianCount: 0 },
+        { id: 'afternoon', label: 'Afternoon', timeWindow: 'AFTERNOON', available: false, technicianCount: 0 },
+        { id: 'evening', label: 'Evening', timeWindow: 'EVENING', available: false, technicianCount: 0 },
+      ];
+    }
+
+    return slots;
+  } catch (error) {
+    logger.error({ error, date }, 'Failed to get time slots for date');
+    // Return all slots as unavailable on error
+    return [
+      { id: 'morning', label: 'Morning', timeWindow: 'MORNING', available: false, technicianCount: 0 },
+      { id: 'midday', label: 'Midday', timeWindow: 'MIDDAY', available: false, technicianCount: 0 },
+      { id: 'afternoon', label: 'Afternoon', timeWindow: 'AFTERNOON', available: false, technicianCount: 0 },
+      { id: 'evening', label: 'Evening', timeWindow: 'EVENING', available: false, technicianCount: 0 },
+    ];
+  }
 }
 
 export default router;

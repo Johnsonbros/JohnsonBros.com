@@ -6,6 +6,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { motion, AnimatePresence } from 'framer-motion';
 import logoIcon from '@assets/JBros_Wrench_Logo_WP.png';
 import ReactMarkdown from 'react-markdown';
+import { extractCardIntents, type CardIntent } from '@/lib/cardProtocol';
+import { CardRenderer } from '@/components/cards/CardRenderer';
+import { dispatchCardAction } from '@/lib/dispatchCardAction';
 
 interface Message {
   id: string;
@@ -14,6 +17,7 @@ interface Message {
   timestamp: Date;
   toolsUsed?: string[];
   isStreaming?: boolean;
+  cards?: CardIntent[];
 }
 
 interface StarterPrompt {
@@ -36,6 +40,7 @@ export function BookingAgentChat() {
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [cardActionLoading, setCardActionLoading] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -111,14 +116,18 @@ export function BookingAgentChat() {
 
       if (data.success) {
         setSessionId(data.sessionId);
-        
-        setMessages(prev => prev.map(msg => 
-          msg.id === streamingMessage.id 
+
+        // Extract card intents from the message
+        const { cleanText, cards } = extractCardIntents(data.message);
+
+        setMessages(prev => prev.map(msg =>
+          msg.id === streamingMessage.id
             ? {
                 ...msg,
-                content: data.message,
+                content: cleanText,
                 toolsUsed: data.toolsUsed,
                 isStreaming: false,
+                cards: cards.length > 0 ? cards : undefined,
               }
             : msg
         ));
@@ -173,6 +182,66 @@ export function BookingAgentChat() {
       'emergency_help': 'Getting emergency info...',
     };
     return toolNames[tool] || tool;
+  };
+
+  const handleCardAction = async (action: string, payload?: Record<string, unknown>) => {
+    if (!sessionId) {
+      console.error('No session ID available for card action');
+      return;
+    }
+
+    const cardId = payload?.cardId as string;
+    setCardActionLoading(cardId || 'unknown');
+
+    try {
+      const result = await dispatchCardAction(action, payload || {}, {
+        threadId: sessionId,
+        sessionId,
+      });
+
+      if (result.ok && result.result?.message) {
+        // Add the action result as a new assistant message
+        const { cleanText, cards } = extractCardIntents(result.result.message);
+
+        const newMessage: Message = {
+          id: `assistant-${Date.now()}`,
+          role: 'assistant',
+          content: cleanText,
+          timestamp: new Date(),
+          cards: cards.length > 0 ? cards : undefined,
+        };
+
+        setMessages(prev => [...prev, newMessage]);
+      } else if (!result.ok) {
+        // Show error message
+        const errorMessage: Message = {
+          id: `assistant-${Date.now()}`,
+          role: 'assistant',
+          content: `Sorry, there was an issue: ${result.error?.details || 'Unknown error'}. Please try again or call us at (617) 479-9911.`,
+          timestamp: new Date(),
+        };
+        setMessages(prev => [...prev, errorMessage]);
+      }
+    } catch (error) {
+      console.error('Card action error:', error);
+      const errorMessage: Message = {
+        id: `assistant-${Date.now()}`,
+        role: 'assistant',
+        content: "I'm having trouble processing that. Please call us at **(617) 479-9911** for immediate assistance.",
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setCardActionLoading(null);
+    }
+  };
+
+  const handleCardDismiss = (cardId: string) => {
+    // Remove the card from the message
+    setMessages(prev => prev.map(msg => ({
+      ...msg,
+      cards: msg.cards?.filter(card => card.id !== cardId),
+    })));
   };
 
   return (
@@ -297,6 +366,27 @@ export function BookingAgentChat() {
                           )}
                         </div>
                       </div>
+                      {/* Render cards below the message */}
+                      {message.cards && message.cards.length > 0 && (
+                        <div className="mt-3 space-y-3">
+                          {message.cards.map((card) => (
+                            <motion.div
+                              key={card.id}
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.3 }}
+                            >
+                              <CardRenderer
+                                card={card}
+                                onAction={handleCardAction}
+                                onDismiss={handleCardDismiss}
+                                isLoading={cardActionLoading === card.id}
+                              />
+                            </motion.div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                     ))}
                   </div>
                 )}

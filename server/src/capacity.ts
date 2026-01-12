@@ -535,26 +535,69 @@ export class CapacityCalculator {
       // Find the matching service window definition
       const serviceDef = serviceWindowDefs.find(def => def.key === window);
       
-      // Convert EST time strings to ISO timestamps
+      // Convert EST/EDT time strings to ISO timestamps
+      // Use proper America/New_York timezone which handles DST automatically
       const [startHour, startMin] = startTime.split(':').map(Number);
       const [endHour, endMin] = endTime.split(':').map(Number);
-      
-      // Create dates in EST and convert to ISO (EST = UTC-5)
-      const startDate = new Date(Date.UTC(
-        targetDate.getFullYear(),
-        targetDate.getMonth(),
-        targetDate.getDate(),
-        startHour + 5,
-        startMin || 0
-      ));
-      
-      const endDate = new Date(Date.UTC(
-        targetDate.getFullYear(),
-        targetDate.getMonth(),
-        targetDate.getDate(),
-        endHour + 5,
-        endMin || 0
-      ));
+
+      // Create a date string in local format (America/New_York timezone)
+      const dateStr = targetDate.toISOString().split('T')[0]; // YYYY-MM-DD
+      const startTimeStr = `${dateStr}T${String(startHour).padStart(2, '0')}:${String(startMin || 0).padStart(2, '0')}:00`;
+      const endTimeStr = `${dateStr}T${String(endHour).padStart(2, '0')}:${String(endMin || 0).padStart(2, '0')}:00`;
+
+      // Convert from America/New_York local time to UTC
+      // This uses Intl.DateTimeFormat which properly handles DST transitions
+      const startDateFinal = new Date(
+        new Date(startTimeStr).toLocaleString('en-US', { timeZone: 'America/New_York' })
+      );
+      const endDateFinal = new Date(
+        new Date(endTimeStr).toLocaleString('en-US', { timeZone: 'America/New_York' })
+      );
+
+      // Adjust: the above creates dates in local system timezone
+      // We need to convert America/New_York time to UTC properly
+      // Use this approach: format the date/time parts in EST/EDT, then create UTC date with offset
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/New_York',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+      });
+
+      // Create reference dates to get timezone offset for this specific date
+      const refDate = new Date(`${dateStr}T${String(startHour).padStart(2, '0')}:00:00Z`);
+      const estTimeStr = formatter.format(refDate);
+
+      // Calculate offset: parse EST time and compare to UTC
+      const match = estTimeStr.match(/(\d+)\/(\d+)\/(\d+),\s+(\d+):(\d+):(\d+)/);
+      if (match) {
+        const estHours = parseInt(match[4]);
+        const utcHours = refDate.getUTCHours();
+        // This gives us the offset in hours (accounting for DST)
+        const offsetHours = utcHours - estHours;
+
+        // Create proper UTC dates with the calculated offset
+        const startDateFinalFixed = new Date(Date.UTC(
+          targetDate.getFullYear(),
+          targetDate.getMonth(),
+          targetDate.getDate(),
+          startHour + offsetHours,
+          startMin || 0,
+          0
+        ));
+
+        const endDateFinalFixed = new Date(Date.UTC(
+          targetDate.getFullYear(),
+          targetDate.getMonth(),
+          targetDate.getDate(),
+          endHour + offsetHours,
+          endMin || 0,
+          0
+        ));
       
       // Find techs who have ANY 30-min slot within this 3-hour window
       const availableTechs: string[] = [];
@@ -582,14 +625,43 @@ export class CapacityCalculator {
         }
       }
       
-      // If at least one tech is available, add this window
-      if (availableTechs.length > 0) {
-        results.push({
-          time_slot: window,
-          available_techs: availableTechs,
-          start_time: startDate.toISOString(),
-          end_time: endDate.toISOString(),
-        });
+        // If at least one tech is available, add this window
+        if (availableTechs.length > 0) {
+          results.push({
+            time_slot: window,
+            available_techs: availableTechs,
+            start_time: startDateFinalFixed.toISOString(),
+            end_time: endDateFinalFixed.toISOString(),
+          });
+        }
+      } else {
+        // Fallback if parsing fails - use standard EST offset
+        const startDateFallback = new Date(Date.UTC(
+          targetDate.getFullYear(),
+          targetDate.getMonth(),
+          targetDate.getDate(),
+          startHour + 5,
+          startMin || 0,
+          0
+        ));
+
+        const endDateFallback = new Date(Date.UTC(
+          targetDate.getFullYear(),
+          targetDate.getMonth(),
+          targetDate.getDate(),
+          endHour + 5,
+          endMin || 0,
+          0
+        ));
+
+        if (availableTechs.length > 0) {
+          results.push({
+            time_slot: window,
+            available_techs: availableTechs,
+            start_time: startDateFallback.toISOString(),
+            end_time: endDateFallback.toISOString(),
+          });
+        }
       }
     }
     

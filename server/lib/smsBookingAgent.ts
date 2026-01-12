@@ -55,14 +55,64 @@ function mcpToolsToOpenAIFunctions(tools: any[]): any[] {
   }));
 }
 
-// Execute an MCP tool call
+// Track MCP health status
+let mcpHealthy = false;
+let lastMcpCheck = 0;
+const MCP_HEALTH_CHECK_INTERVAL = 60000; // Check every minute
+
+// Check MCP server health
+async function checkMcpHealth(): Promise<boolean> {
+  const now = Date.now();
+
+  // Don't check too frequently
+  if (now - lastMcpCheck < MCP_HEALTH_CHECK_INTERVAL) {
+    return mcpHealthy;
+  }
+
+  lastMcpCheck = now;
+
+  try {
+    // Try to list tools as a health check
+    await listMcpTools();
+    mcpHealthy = true;
+    return true;
+  } catch (error: any) {
+    mcpHealthy = false;
+    Logger.error('[SMS Agent] MCP health check failed:', { error: error.message });
+    return false;
+  }
+}
+
+// Execute an MCP tool call with health check
 async function executeMcpTool(name: string, args: any): Promise<string> {
   try {
+    // Check MCP health before executing
+    const healthy = await checkMcpHealth();
+    if (!healthy) {
+      Logger.warn(`[SMS Agent] MCP unhealthy, attempting to execute ${name} anyway`);
+      // Try to reconnect
+      await resetMcpClient();
+      await listMcpTools(); // This will throw if still failing
+      mcpHealthy = true; // Mark as healthy if we got here
+    }
+
     Logger.info(`[SMS Agent] Executing MCP tool: ${name}`, { args });
     const result = await callMcpTool(name, args);
+    mcpHealthy = true; // Mark as healthy after successful call
     return result.raw;
   } catch (error: any) {
+    mcpHealthy = false;
     Logger.error(`[SMS Agent] MCP tool ${name} failed:`, { error: error.message });
+
+    // Alert on critical booking tool failure
+    if (name === 'book_service_call') {
+      Logger.error('[SMS Agent] CRITICAL: Booking tool failed - customer booking will fail!', {
+        tool: name,
+        error: error.message,
+        mcpHealthy,
+      });
+    }
+
     throw error;
   }
 }
@@ -392,14 +442,32 @@ export async function handleIncomingSms(
 // Process agent response with MCP tool execution loop
 async function processAgentResponse(session: AgentSession): Promise<{ message: string; bookingMade: boolean; summary?: string }> {
   const agent = await createSmsAgent();
-  
+
+  // Check MCP health before processing
+  const healthy = await checkMcpHealth();
+  if (!healthy) {
+    Logger.warn('[SMS Agent] MCP unhealthy at start of conversation, attempting recovery');
+    try {
+      await resetMcpClient();
+      await listMcpTools();
+      mcpHealthy = true;
+    } catch (error: any) {
+      Logger.error('[SMS Agent] MCP recovery failed, proceeding without tools', { error: error.message });
+      // Return fallback message
+      return {
+        message: "I apologize, but I'm having technical difficulties with our booking system right now. Please call us at (617) 479-9911 to schedule your appointment, and we'll get you taken care of right away!",
+        bookingMade: false,
+      };
+    }
+  }
+
   const tools = mcpToolsToOpenAIFunctions(await listMcpTools());
-  
+
   let bookingMade = false;
   let summary: string | undefined;
   let iterations = 0;
   const maxIterations = 5;
-  
+
   while (iterations < maxIterations) {
     iterations++;
     
@@ -523,6 +591,14 @@ export async function getConversationHistory(phoneNumber: string): Promise<{
 // Store interval reference for cleanup
 let smsProcessorInterval: NodeJS.Timeout | null = null;
 
+// Get MCP health status for monitoring
+export function getMcpHealthStatus(): { healthy: boolean; lastCheck: Date } {
+  return {
+    healthy: mcpHealthy,
+    lastCheck: new Date(lastMcpCheck),
+  };
+}
+
 // Start the pending SMS processor on server startup
 export function startScheduledSmsProcessor(): void {
   // Initialize MCP connection on startup with retry logic
@@ -530,22 +606,30 @@ export function startScheduledSmsProcessor(): void {
     for (let i = 0; i < retries; i++) {
       try {
         await listMcpTools();
+        mcpHealthy = true;
+        lastMcpCheck = Date.now();
         Logger.info('[SMS Agent] MCP tools loaded successfully');
         return;
       } catch (err: any) {
+        mcpHealthy = false;
         if (i < retries - 1) {
           Logger.warn(`[SMS Agent] MCP connection attempt ${i + 1} failed, retrying in ${delay}ms:`, { error: err.message });
           await new Promise(resolve => setTimeout(resolve, delay));
           delay *= 2; // Exponential backoff
         } else {
-          Logger.warn('[SMS Agent] MCP connection failed after retries, will retry on first use:', { error: err.message });
+          Logger.error('[SMS Agent] CRITICAL: MCP connection failed after all retries!', {
+            error: err.message,
+            retries: retries,
+          });
+          // Continue anyway - will retry on first use
         }
       }
     }
   };
-  
+
   initMcpWithRetry().catch((err: any) => {
-    Logger.error('[SMS Agent] MCP initialization failed:', { error: err?.message || err });
+    mcpHealthy = false;
+    Logger.error('[SMS Agent] CRITICAL: MCP initialization completely failed:', { error: err?.message || err });
   });
   
   // Process any missed messages immediately
