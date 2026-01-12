@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Calendar, ChevronLeft, ChevronRight, Sparkles, Clock, Loader2 } from 'lucide-react';
@@ -15,6 +15,11 @@ interface DatePickerCardProps {
 export function DatePickerCard({ card, onSelectDate, onDismiss, isLoading }: DatePickerCardProps) {
   const [selectedDate, setSelectedDate] = useState<string | null>(card.selectedDate || null);
   const [weekOffset, setWeekOffset] = useState(0);
+
+  // Sync selected date with card prop when it changes
+  useEffect(() => {
+    setSelectedDate(card.selectedDate || null);
+  }, [card.selectedDate]);
 
   const today = new Date();
   const weekStart = startOfWeek(addWeeks(today, weekOffset), { weekStartsOn: 0 });

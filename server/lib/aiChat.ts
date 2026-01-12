@@ -229,7 +229,17 @@ function cleanupExpiredMcpSessions(): void {
 }
 
 // Run cleanup every 15 minutes
-setInterval(cleanupExpiredMcpSessions, 15 * 60 * 1000);
+let mcpSessionCleanupInterval: NodeJS.Timeout | null = null;
+mcpSessionCleanupInterval = setInterval(cleanupExpiredMcpSessions, 15 * 60 * 1000);
+
+// Cleanup function for graceful shutdown
+export function stopMcpSessionCleanup(): void {
+  if (mcpSessionCleanupInterval) {
+    clearInterval(mcpSessionCleanupInterval);
+    mcpSessionCleanupInterval = null;
+    Logger.info('MCP session cleanup interval stopped');
+  }
+}
 
 // Call MCP server tool with automatic session recovery
 async function callMCPTool(toolName: string, args: any, chatSessionId: string, retryOnExpired: boolean = true): Promise<any> {
@@ -252,83 +262,94 @@ async function callMCPTool(toolName: string, args: any, chatSessionId: string, r
       headers['Mcp-Session-Id'] = mcpSessionId;
     }
 
-    // Call MCP server with tools/call method
-    const response = await fetch(`${MCP_SERVER_URL}/mcp`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        jsonrpc: '2.0',
-        id: Date.now(),
-        method: 'tools/call',
-        params: {
-          name: toolName,
-          arguments: args
-        }
-      })
-    });
+    // Call MCP server with tools/call method with timeout
+    const abortController = new AbortController();
+    const timeoutId = setTimeout(() => abortController.abort(), 30000); // 30 second timeout
 
-    // Store session ID if returned
-    const sessionIdHeader = response.headers.get('Mcp-Session-Id');
-    if (sessionIdHeader) {
-      mcpSessions.set(chatSessionId, {
-        sessionId: sessionIdHeader,
-        lastUsed: Date.now(),
-      });
-    }
-
-    if (!response.ok) {
-      const errorText = await response.text();
-
-      // Check if it's a session expiration error (400 with -32001 code)
-      if (response.status === 400) {
-        try {
-          const errorJson = JSON.parse(errorText);
-          if (errorJson.error?.code === -32001 && retryOnExpired) {
-            Logger.warn(`MCP session expired for chat session ${chatSessionId}, reinitializing...`);
-            // Clear the expired session
-            mcpSessions.delete(chatSessionId);
-            // Reinitialize the session
-            const initialized = await initMCPSession(chatSessionId);
-            if (initialized) {
-              Logger.info(`MCP session reinitialized, retrying tool call: ${toolName}`);
-              // Retry the tool call once (retryOnExpired = false prevents infinite loop)
-              return await callMCPTool(toolName, args, chatSessionId, false);
-            }
+    try {
+      const response = await fetch(`${MCP_SERVER_URL}/mcp`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: Date.now(),
+          method: 'tools/call',
+          params: {
+            name: toolName,
+            arguments: args
           }
-        } catch (parseError) {
-          // If we can't parse the error, continue with generic error handling
-        }
+        }),
+        signal: abortController.signal
+      });
+
+      // Store session ID if returned
+      const sessionIdHeader = response.headers.get('Mcp-Session-Id');
+      if (sessionIdHeader) {
+        mcpSessions.set(chatSessionId, {
+          sessionId: sessionIdHeader,
+          lastUsed: Date.now(),
+        });
       }
 
-      Logger.error(`MCP server error: ${response.status} ${errorText}`);
-      throw new Error(`MCP server error: ${response.status}`);
-    }
+      if (!response.ok) {
+        const errorText = await response.text();
 
-    const result = await response.json() as any;
-
-    if (result.error) {
-      // Check for session expiration in the result
-      if (result.error.code === -32001 && retryOnExpired) {
-        Logger.warn(`MCP session expired (error code), reinitializing...`);
-        mcpSessions.delete(chatSessionId);
-        const initialized = await initMCPSession(chatSessionId);
-        if (initialized) {
-          Logger.info(`MCP session reinitialized, retrying tool call: ${toolName}`);
-          return await callMCPTool(toolName, args, chatSessionId, false);
+        // Check if it's a session expiration error (400 with -32001 code)
+        if (response.status === 400) {
+          try {
+            const errorJson = JSON.parse(errorText);
+            if (errorJson.error?.code === -32001 && retryOnExpired) {
+              Logger.warn(`MCP session expired for chat session ${chatSessionId}, reinitializing...`);
+              // Clear the expired session
+              mcpSessions.delete(chatSessionId);
+              // Reinitialize the session
+              const initialized = await initMCPSession(chatSessionId);
+              if (initialized) {
+                Logger.info(`MCP session reinitialized, retrying tool call: ${toolName}`);
+                // Retry the tool call once (retryOnExpired = false prevents infinite loop)
+                return await callMCPTool(toolName, args, chatSessionId, false);
+              }
+            }
+          } catch (parseError) {
+            // If we can't parse the error, continue with generic error handling
+          }
         }
+
+        Logger.error(`MCP server error: ${response.status} ${errorText}`);
+        throw new Error(`MCP server error: ${response.status}`);
       }
 
-      Logger.error('MCP tool error:', result.error);
-      throw new Error(result.error.message || 'MCP tool error');
+      const result = await response.json() as any;
+
+      if (result.error) {
+        // Check for session expiration in the result
+        if (result.error.code === -32001 && retryOnExpired) {
+          Logger.warn(`MCP session expired (error code), reinitializing...`);
+          mcpSessions.delete(chatSessionId);
+          const initialized = await initMCPSession(chatSessionId);
+          if (initialized) {
+            Logger.info(`MCP session reinitialized, retrying tool call: ${toolName}`);
+            return await callMCPTool(toolName, args, chatSessionId, false);
+          }
+        }
+
+        Logger.error('MCP tool error:', result.error);
+        throw new Error(result.error.message || 'MCP tool error');
+      }
+
+      // Extract text content from MCP response
+      if (result.result?.content?.[0]?.text) {
+        return result.result.content[0].text;
+      }
+
+      return JSON.stringify(result.result || result);
+
+    } catch (error: any) {
+      Logger.error(`MCP tool call failed for ${toolName}:`, error);
+      throw error;
+    } finally {
+      clearTimeout(timeoutId);
     }
-
-    // Extract text content from MCP response
-    if (result.result?.content?.[0]?.text) {
-      return result.result.content[0].text;
-    }
-
-    return JSON.stringify(result.result || result);
-
   } catch (error: any) {
     Logger.error(`MCP tool call failed for ${toolName}:`, error);
     throw error;
@@ -337,6 +358,9 @@ async function callMCPTool(toolName: string, args: any, chatSessionId: string, r
 
 // Initialize MCP session
 async function initMCPSession(chatSessionId: string): Promise<boolean> {
+  const abortController = new AbortController();
+  const timeoutId = setTimeout(() => abortController.abort(), 10000); // 10 second timeout
+
   try {
     const response = await fetch(`${MCP_SERVER_URL}/mcp`, {
       method: 'POST',
@@ -356,7 +380,8 @@ async function initMCPSession(chatSessionId: string): Promise<boolean> {
             version: '1.0.0'
           }
         }
-      })
+      }),
+      signal: abortController.signal
     });
 
     const sessionIdHeader = response.headers.get('Mcp-Session-Id');
@@ -368,11 +393,13 @@ async function initMCPSession(chatSessionId: string): Promise<boolean> {
       Logger.info(`MCP session initialized: ${sessionIdHeader}`);
       return true;
     }
-    
+
     return response.ok;
   } catch (error: any) {
     Logger.error('Failed to initialize MCP session:', error);
     return false;
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 

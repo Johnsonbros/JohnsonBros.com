@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Clock, Sun, Sunrise, Sunset, Moon, Check, Loader2, Users } from 'lucide-react';
@@ -64,7 +64,12 @@ const TIME_WINDOW_CONFIG = {
 export function TimePickerCard({ card, onSelectSlot, onDismiss, isLoading }: TimePickerCardProps) {
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(card.selectedSlot || null);
 
-  const formattedDate = card.selectedDate 
+  // Sync selected slot with card prop when it changes
+  useEffect(() => {
+    setSelectedSlotId(card.selectedSlot || null);
+  }, [card.selectedSlot]);
+
+  const formattedDate = card.selectedDate
     ? format(parseISO(card.selectedDate), 'EEEE, MMMM d')
     : 'Selected Date';
 

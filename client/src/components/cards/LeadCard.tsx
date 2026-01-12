@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -18,6 +18,25 @@ export function LeadCard({ card, onSubmit, onDismiss, isLoading }: LeadCardProps
   const [name, setName] = useState(card.prefill?.name || '');
   const [phone, setPhone] = useState(card.prefill?.phone || '');
   const [issueDescription, setIssueDescription] = useState(card.prefill?.issueDescription || '');
+
+  // Sync state with prefill props when they change
+  useEffect(() => {
+    if (card.prefill?.name !== undefined) {
+      setName(card.prefill.name);
+    }
+  }, [card.prefill?.name]);
+
+  useEffect(() => {
+    if (card.prefill?.phone !== undefined) {
+      setPhone(card.prefill.phone);
+    }
+  }, [card.prefill?.phone]);
+
+  useEffect(() => {
+    if (card.prefill?.issueDescription !== undefined) {
+      setIssueDescription(card.prefill.issueDescription);
+    }
+  }, [card.prefill?.issueDescription]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

@@ -89,7 +89,8 @@ function checkMcpRateLimit(sessionId: string, ipAddress: string): { allowed: boo
 }
 
 // Cleanup old entries every 5 minutes
-setInterval(() => {
+let rateLimitCleanupInterval: NodeJS.Timeout | null = null;
+rateLimitCleanupInterval = setInterval(() => {
   const now = Date.now();
   for (const [sessionId, entry] of sessionRequestCounts) {
     if (now - entry.lastRequest > RATE_LIMIT_CONFIG.SESSION_WINDOW_MS) {
@@ -102,6 +103,15 @@ setInterval(() => {
     }
   }
 }, 5 * 60 * 1000);
+
+// Cleanup function for graceful shutdown
+export function stopMcpHttpServer(): void {
+  if (rateLimitCleanupInterval) {
+    clearInterval(rateLimitCleanupInterval);
+    rateLimitCleanupInterval = null;
+    log.info('Rate limit cleanup interval stopped');
+  }
+}
 
 // Create Express application
 const app = express();
@@ -209,11 +219,25 @@ app.all('/mcp', async (req, res) => {
     let transport: StreamableHTTPServerTransport;
 
     if (sessionId && transports[sessionId]) {
-      // Reuse existing transport
-      transport = transports[sessionId].transport;
-      transports[sessionId].lastActive = Date.now();
-      if (transports[sessionId].timeout) clearTimeout(transports[sessionId].timeout);
-      transports[sessionId].timeout = setTimeout(() => clearSession(sessionId), SESSION_TTL_MS);
+      // Reuse existing transport - store reference to prevent race condition
+      const sessionData = transports[sessionId];
+      if (!sessionData) {
+        // Session was cleared by another request, treat as expired
+        log.warn({ sessionId }, 'Session cleared during request, treating as expired');
+        return res.status(400).json({
+          jsonrpc: '2.0',
+          error: {
+            code: -32001,
+            message: 'Session expired or invalid. Please reinitialize the connection.'
+          },
+          id: null
+        });
+      }
+
+      transport = sessionData.transport;
+      sessionData.lastActive = Date.now();
+      if (sessionData.timeout) clearTimeout(sessionData.timeout);
+      sessionData.timeout = setTimeout(() => clearSession(sessionId), SESSION_TTL_MS);
       log.info({ sessionId }, 'Reusing existing transport');
     } else if (sessionId && !transports[sessionId]) {
       // Client sent a session ID that we don't recognize (expired or invalid)

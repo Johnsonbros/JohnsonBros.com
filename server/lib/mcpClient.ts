@@ -9,6 +9,8 @@ const MCP_SERVER_URL = (() => {
 })();
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 1000;
+const CONNECTION_TIMEOUT_MS = 10000; // 10 seconds
+const TOOL_CALL_TIMEOUT_MS = 30000; // 30 seconds
 
 let mcpClient: Client | null = null;
 let cachedTools: any[] | null = null;
@@ -17,6 +19,17 @@ let connectionPromise: Promise<Client> | null = null;
 
 function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, operation: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => {
+      setTimeout(() => {
+        reject(new Error(`${operation} timed out after ${timeoutMs}ms`));
+      }, timeoutMs);
+    })
+  ]);
 }
 
 async function connectMcpClient(): Promise<Client> {
@@ -42,7 +55,11 @@ async function connectMcpClient(): Promise<Client> {
           { capabilities: {} }
         );
 
-        await client.connect(transport);
+        await withTimeout(
+          client.connect(transport),
+          CONNECTION_TIMEOUT_MS,
+          'MCP connection'
+        );
         mcpClient = client;
         cachedTools = null; // Clear cached tools on reconnect
         Logger.info(`[MCP] Connected to MCP server at ${MCP_SERVER_URL} (attempt ${attempt})`);
@@ -87,7 +104,11 @@ export async function listMcpTools(): Promise<any[]> {
 
   try {
     const client = await connectMcpClient();
-    const { tools } = await client.listTools();
+    const { tools } = await withTimeout(
+      client.listTools(),
+      TOOL_CALL_TIMEOUT_MS,
+      'MCP listTools'
+    );
     cachedTools = tools || [];
     Logger.info(`[MCP] Loaded ${cachedTools.length} tools`);
     return cachedTools;
@@ -106,7 +127,11 @@ export async function callMcpTool<T = unknown>(name: string, args: Record<string
     const client = await connectMcpClient();
 
     Logger.info(`[MCP] Executing tool: ${name}`, { args });
-    const result = await client.callTool({ name, arguments: args });
+    const result = await withTimeout(
+      client.callTool({ name, arguments: args }),
+      TOOL_CALL_TIMEOUT_MS,
+      `MCP tool call: ${name}`
+    );
 
     const content = Array.isArray(result.content)
       ? result.content.map((c: any) => c.text || JSON.stringify(c)).join('\n')

@@ -113,13 +113,21 @@
     useEffect(() => {
       if (cards.length > 0) {
         setIsExpanded(true);
-        setCurrentIndex(cards.length - 1);
+        // If currentIndex is out of bounds, adjust it
+        setCurrentIndex(prev => {
+          if (prev >= cards.length) {
+            return cards.length - 1;
+          }
+          return prev;
+        });
       }
-    }, [cards.length]);
+    }, [cards, cards.length]);
 
     if (cards.length === 0) return null;
 
-    const currentCard = cards[currentIndex];
+    // Ensure currentIndex is within bounds as a safety check
+    const safeIndex = Math.min(Math.max(0, currentIndex), cards.length - 1);
+    const currentCard = cards[safeIndex];
 
     return (
 
@@ -158,12 +166,12 @@
                 <div className="max-h-[60vh] overflow-y-auto px-4 pb-6 pt-2">
                   {cards.length > 1 && (
                     <div className="mb-4 flex items-center justify-center gap-2">
-                      {cards.map((_, idx) => (
+                      {cards.map((card, idx) => (
                         <button
-                          key={idx}
+                          key={card.id}
                           onClick={() => setCurrentIndex(idx)}
                           className={`h-2 w-2 rounded-full transition-all ${
-                            idx === currentIndex ? 'w-6 bg-blue-600' : 'bg-gray-300'
+                            idx === safeIndex ? 'w-6 bg-blue-600' : 'bg-gray-300'
                           }`}
                         />
                       ))}

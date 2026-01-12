@@ -38,7 +38,7 @@ function cleanupExpiredSessions(): void {
   }
 }
 
-const sessionCleanupInterval = setInterval(cleanupExpiredSessions, SESSION_CLEANUP_INTERVAL_MS);
+let sessionCleanupInterval: NodeJS.Timeout | null = setInterval(cleanupExpiredSessions, SESSION_CLEANUP_INTERVAL_MS);
 if (typeof sessionCleanupInterval.unref === 'function') {
   sessionCleanupInterval.unref();
 }
@@ -239,15 +239,25 @@ function getDefaultOpeningMessage(customerName: string): string {
 // Send a scheduled SMS
 async function sendScheduledSms(scheduledId: number): Promise<void> {
   try {
-    const [scheduled] = await db
-      .select()
-      .from(scheduledSms)
-      .where(eq(scheduledSms.id, scheduledId));
-    
-    if (!scheduled || scheduled.status !== 'pending') {
-      Logger.info(`[SMS Agent] Scheduled SMS ${scheduledId} already processed or not found`);
+    // Atomically claim the message by updating status to 'sending'
+    // This prevents duplicate sends from setTimeout and setInterval
+    const claimed = await db
+      .update(scheduledSms)
+      .set({ status: 'sending' })
+      .where(
+        and(
+          eq(scheduledSms.id, scheduledId),
+          eq(scheduledSms.status, 'pending')
+        )
+      )
+      .returning();
+
+    if (!claimed || claimed.length === 0) {
+      Logger.info(`[SMS Agent] Scheduled SMS ${scheduledId} already claimed or not found`);
       return;
     }
+
+    const scheduled = claimed[0];
     
     // Generate personalized message
     const message = await generateOpeningMessage(
@@ -654,7 +664,13 @@ export function stopScheduledSmsProcessor(): void {
     smsProcessorInterval = null;
     Logger.info('[SMS Agent] Scheduled SMS processor stopped');
   }
-  
+
+  if (sessionCleanupInterval) {
+    clearInterval(sessionCleanupInterval);
+    sessionCleanupInterval = null;
+    Logger.info('[SMS Agent] Session cleanup interval stopped');
+  }
+
   resetMcpClient();
   Logger.info('[SMS Agent] MCP client connection reset');
 }
