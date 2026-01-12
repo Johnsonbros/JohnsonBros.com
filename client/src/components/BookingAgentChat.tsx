@@ -327,66 +327,65 @@ export function BookingAgentChat() {
                 ) : (
                   <div className="space-y-4">
                     {messages.map((message) => (
-                      <div
-                        key={message.id}
-                        className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                      >
+                      <div key={message.id} className="space-y-3">
                         <div
-                          className={`max-w-[85%] rounded-2xl px-4 py-3 ${
-                            message.role === 'user'
-                              ? 'bg-blue-600 text-white rounded-br-md'
-                              : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-bl-md'
-                          }`}
-                          data-testid={`message-${message.role}-${message.id}`}
+                          className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                         >
-                          {message.isStreaming ? (
-                            <div className="flex items-center gap-2">
-                              <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
-                              <span className="text-sm text-gray-500">Thinking...</span>
-                            </div>
-                          ) : (
-                            <>
-                              {message.toolsUsed && message.toolsUsed.length > 0 && (
-                                <div className="flex flex-wrap gap-1.5 mb-2">
-                                  {message.toolsUsed.map((tool, i) => (
-                                    <span 
-                                      key={i}
-                                      className="inline-flex items-center gap-1 text-[10px] font-medium bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full"
-                                    >
-                                      <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />
-                                      {formatToolName(tool)}
-                                    </span>
-                                  ))}
-                                </div>
-                              )}
-                              <div className="text-sm prose prose-sm dark:prose-invert max-w-none [&>p]:mb-2 [&>p:last-child]:mb-0">
-                                <ReactMarkdown>{message.content}</ReactMarkdown>
+                          <div
+                            className={`max-w-[85%] rounded-2xl px-4 py-3 ${
+                              message.role === 'user'
+                                ? 'bg-blue-600 text-white rounded-br-md'
+                                : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-bl-md'
+                            }`}
+                            data-testid={`message-${message.role}-${message.id}`}
+                          >
+                            {message.isStreaming ? (
+                              <div className="flex items-center gap-2">
+                                <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                                <span className="text-sm text-gray-500">Thinking...</span>
                               </div>
-                            </>
-                          )}
+                            ) : (
+                              <>
+                                {message.toolsUsed && message.toolsUsed.length > 0 && (
+                                  <div className="flex flex-wrap gap-1.5 mb-2">
+                                    {message.toolsUsed.map((tool, i) => (
+                                      <span 
+                                        key={i}
+                                        className="inline-flex items-center gap-1 text-[10px] font-medium bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full"
+                                      >
+                                        <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />
+                                        {formatToolName(tool)}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                                <div className="text-sm prose prose-sm dark:prose-invert max-w-none [&>p]:mb-2 [&>p:last-child]:mb-0">
+                                  <ReactMarkdown>{message.content}</ReactMarkdown>
+                                </div>
+                              </>
+                            )}
+                          </div>
                         </div>
+                        {message.cards && message.cards.length > 0 && (
+                          <div className="space-y-3">
+                            {message.cards.map((card) => (
+                              <motion.div
+                                key={card.id}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.3 }}
+                              >
+                                <CardRenderer
+                                  card={card}
+                                  onAction={handleCardAction}
+                                  onDismiss={handleCardDismiss}
+                                  isLoading={cardActionLoading === card.id}
+                                />
+                              </motion.div>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                      {/* Render cards below the message */}
-                      {message.cards && message.cards.length > 0 && (
-                        <div className="mt-3 space-y-3">
-                          {message.cards.map((card) => (
-                            <motion.div
-                              key={card.id}
-                              initial={{ opacity: 0, y: 10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ duration: 0.3 }}
-                            >
-                              <CardRenderer
-                                card={card}
-                                onAction={handleCardAction}
-                                onDismiss={handleCardDismiss}
-                                isLoading={cardActionLoading === card.id}
-                              />
-                            </motion.div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
                     ))}
                   </div>
                 )}
