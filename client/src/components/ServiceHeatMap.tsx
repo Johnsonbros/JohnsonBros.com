@@ -1,7 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { MapPin, Activity, Users, TrendingUp, Navigation } from "lucide-react";
+import { MapPin, Activity, Users, TrendingUp, Navigation, Phone, CheckCircle2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Loader } from "@googlemaps/js-api-loader";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Link } from "wouter";
 
 /// <reference types="@types/google.maps" />
 
@@ -444,18 +447,76 @@ export function ServiceHeatMap({ onBookService }: ServiceHeatMapProps) {
     );
   }
 
+  const fallbackServiceAreas = [
+    "Quincy",
+    "Braintree",
+    "Weymouth",
+    "Plymouth",
+    "Marshfield",
+    "Hingham",
+    "Cohasset",
+    "Duxbury"
+  ];
+
   if (!heatMapData || heatMapData.length === 0) {
     return (
-      <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center">
-            <MapPin className="h-6 w-6 text-blue-600 mr-3" />
-            <h3 className="text-xl font-semibold text-gray-900">Service Coverage Map</h3>
-          </div>
-        </div>
-        <div className="text-center py-12">
-          <p className="text-gray-500">Service coverage data coming soon...</p>
-        </div>
+      <div className="bg-gradient-to-br from-blue-50 via-white to-green-50 w-full">
+        <Card className="max-w-5xl mx-auto border border-blue-100/70 shadow-lg">
+          <CardContent className="p-8 md:p-10">
+            <div className="flex flex-col gap-6">
+              <div className="flex items-center gap-3">
+                <MapPin className="h-7 w-7 text-blue-600" />
+                <div>
+                  <h3 className="text-2xl font-semibold text-gray-900">Service Coverage Snapshot</h3>
+                  <p className="text-sm text-gray-500">
+                    Live map data is loading. In the meantime, here are our core service areas.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    South Shore Coverage
+                  </div>
+                  <p className="mt-2 text-sm text-gray-600">
+                    Emergency and scheduled service across Greater Boston and the South Shore.
+                  </p>
+                  <ul className="mt-4 grid grid-cols-2 gap-2 text-sm text-gray-700">
+                    {fallbackServiceAreas.map((area) => (
+                      <li key={area} className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-blue-600" />
+                        {area}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                    <Phone className="h-4 w-4 text-blue-600" />
+                    Need service today?
+                  </div>
+                  <p className="mt-2 text-sm text-gray-600">
+                    Our dispatch team can confirm availability and schedule an ETA fast.
+                  </p>
+                  <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+                    <Button onClick={onBookService} className="w-full sm:w-auto">
+                      Book Service
+                    </Button>
+                    <Button asChild variant="outline" className="w-full sm:w-auto">
+                      <Link href="/service-areas">View service areas</Link>
+                    </Button>
+                  </div>
+                  <div className="mt-4 text-xs text-gray-500">
+                    Prefer to call? (617) 555-1234
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
