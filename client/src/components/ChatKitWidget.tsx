@@ -4,7 +4,7 @@ import { MessageCircle, X, Wrench } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import logoIcon from '@assets/JBros_Wrench_Logo_WP.png';
 import { useCardStore } from '@/stores/useCardStore';
-import { extractCardIntents } from '@/lib/extractCardIntents';
+import { extractCardIntents } from '@/lib/cardProtocol';
 
 interface ChatKitWidgetProps {
   className?: string;
@@ -117,12 +117,10 @@ export function ChatKitWidget({ className }: ChatKitWidgetProps) {
           messageText = event.content;
         }
         
-        if (messageText.includes('```card_intent')) {
-          const cards = extractCardIntents(messageText);
-          if (cards.length > 0 && threadId) {
-            console.log('[ChatKit] Extracted cards:', cards);
-            addCards(threadId, cards);
-          }
+        const { cards } = extractCardIntents(messageText);
+        if (cards.length > 0 && threadId) {
+          console.log('[ChatKit] Extracted cards:', cards);
+          addCards(threadId, cards);
         }
       } catch (e) {
         console.error('[ChatKit] Failed to extract card intents:', e);
