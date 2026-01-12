@@ -198,14 +198,50 @@ const PLUMBING_TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
   }
 ];
 
-// Session storage for MCP sessions
-const mcpSessions: Map<string, string> = new Map();
+// Session storage for MCP sessions with TTL
+interface McpSessionData {
+  sessionId: string;
+  lastUsed: number;
+}
+
+const mcpSessions: Map<string, McpSessionData> = new Map();
+const MCP_SESSION_TTL = 60 * 60 * 1000; // 1 hour TTL
+
+// Clean up expired MCP sessions
+function cleanupExpiredMcpSessions(): void {
+  const now = Date.now();
+  const expired: string[] = [];
+
+  for (const [chatSessionId, data] of mcpSessions.entries()) {
+    if (now - data.lastUsed > MCP_SESSION_TTL) {
+      expired.push(chatSessionId);
+    }
+  }
+
+  for (const chatSessionId of expired) {
+    mcpSessions.delete(chatSessionId);
+    Logger.debug(`Cleaned up expired MCP session for chat: ${chatSessionId}`);
+  }
+
+  if (expired.length > 0) {
+    Logger.info(`Cleaned up ${expired.length} expired MCP sessions`);
+  }
+}
+
+// Run cleanup every 15 minutes
+setInterval(cleanupExpiredMcpSessions, 15 * 60 * 1000);
 
 // Call MCP server tool with automatic session recovery
 async function callMCPTool(toolName: string, args: any, chatSessionId: string, retryOnExpired: boolean = true): Promise<any> {
   try {
     // Get or create MCP session
-    let mcpSessionId = mcpSessions.get(chatSessionId);
+    const sessionData = mcpSessions.get(chatSessionId);
+    let mcpSessionId = sessionData?.sessionId;
+
+    // Update last used timestamp
+    if (sessionData) {
+      sessionData.lastUsed = Date.now();
+    }
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -234,7 +270,10 @@ async function callMCPTool(toolName: string, args: any, chatSessionId: string, r
     // Store session ID if returned
     const sessionIdHeader = response.headers.get('Mcp-Session-Id');
     if (sessionIdHeader) {
-      mcpSessions.set(chatSessionId, sessionIdHeader);
+      mcpSessions.set(chatSessionId, {
+        sessionId: sessionIdHeader,
+        lastUsed: Date.now(),
+      });
     }
 
     if (!response.ok) {
@@ -322,7 +361,10 @@ async function initMCPSession(chatSessionId: string): Promise<boolean> {
 
     const sessionIdHeader = response.headers.get('Mcp-Session-Id');
     if (sessionIdHeader) {
-      mcpSessions.set(chatSessionId, sessionIdHeader);
+      mcpSessions.set(chatSessionId, {
+        sessionId: sessionIdHeader,
+        lastUsed: Date.now(),
+      });
       Logger.info(`MCP session initialized: ${sessionIdHeader}`);
       return true;
     }

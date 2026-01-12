@@ -213,13 +213,28 @@ export function extractCardIntents(text: string): ExtractResult {
 }
 
 export function isCardIntentComplete(text: string): boolean {
-  const backtickMatches = text.match(/```card_intent/g) || [];
-  const backtickCloses = text.match(/```(?!card_intent)/g) || [];
-  
+  // Check for complete code blocks with card_intent
+  const codeBlockStarts = text.match(/```card_intent/g) || [];
+
+  // Count closing backticks that appear after a card_intent block start
+  // by checking if there's a card_intent before each closing ```
+  let codeBlockEnds = 0;
+  const parts = text.split('```');
+  let inCardBlock = false;
+  for (let i = 0; i < parts.length; i++) {
+    if (parts[i].startsWith('card_intent')) {
+      inCardBlock = true;
+    } else if (inCardBlock && i > 0) {
+      // This is a closing ``` after a card_intent block
+      codeBlockEnds++;
+      inCardBlock = false;
+    }
+  }
+
   const tagOpens = text.match(/<CARD_INTENT>/g) || [];
   const tagCloses = text.match(/<\/CARD_INTENT>/g) || [];
-  
-  return backtickMatches.length === backtickCloses.length && 
+
+  return codeBlockStarts.length === codeBlockEnds &&
          tagOpens.length === tagCloses.length;
 }
 

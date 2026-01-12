@@ -38,12 +38,18 @@ export function DatePickerCard({ card, onSelectDate, onDismiss, isLoading }: Dat
   };
 
   const handleSelect = (date: Date) => {
-    const dateStr = format(date, 'yyyy-MM-dd');
-    const status = getDateStatus(date);
-    if (!status.available) return;
-    
-    setSelectedDate(dateStr);
-    onSelectDate(dateStr);
+    try {
+      const dateStr = format(date, 'yyyy-MM-dd');
+      const status = getDateStatus(date);
+      if (!status.available) return;
+
+      setSelectedDate(dateStr);
+      onSelectDate(dateStr);
+    } catch (error) {
+      console.error('Error selecting date:', error);
+      // Optionally show error message to user
+      alert('Sorry, there was an error selecting that date. Please try again or call us at (617) 479-9911.');
+    }
   };
 
   const getDateLabel = (date: Date) => {
