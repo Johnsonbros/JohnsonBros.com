@@ -60,7 +60,7 @@ The following Pull Requests were created and successfully merged by Codex, demon
 ### Current PR
 
 **PR #41** - This PR itself (asking about Codex permissions)
-- Status: Open/Draft
+- Status: Draft
 - Created by: Copilot bot
 - Assignees: Johnsonbros, Copilot
 
@@ -68,8 +68,8 @@ The following Pull Requests were created and successfully merged by Codex, demon
 
 - **Repository**: Johnsonbros/JohnsonBros.com
 - **Visibility**: Public
-- **Codex Label**: The repository has a dedicated `codex` label (#9938200714) used to track Codex-generated PRs
-- **Owner**: Johnsonbros (id: 138185067)
+- **Codex Label**: The repository has a dedicated `codex` label used to track Codex-generated PRs
+- **Owner**: Johnsonbros
 
 ## GitHub Actions/Workflows
 

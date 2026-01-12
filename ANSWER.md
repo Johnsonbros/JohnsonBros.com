@@ -4,7 +4,7 @@
 **YES** ✅
 
 ## Proof
-Codex has successfully created and merged at least 8 pull requests in this repository between January 9-12, 2026, including:
+Codex has successfully created and merged at least 8 pull requests in this repository on January 9, 2026, including:
 - PR #32: Shared thread persistence
 - PR #33: Eval gating and tool correctness reporting  
 - PR #34: Card intent parsing validation
