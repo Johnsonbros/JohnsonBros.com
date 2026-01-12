@@ -62,12 +62,16 @@ app.get('/api/csrf-token', getCsrfToken());
 
 // Global CSRF protection with targeted exemptions
 app.use((req, res, next) => {
-  // Exempt paths that don't require CSRF (pre-auth, webhooks with signature validation, health check)
+  // Exempt paths that don't require CSRF (pre-auth, webhooks with signature validation, health check, MCP)
   const exemptPaths = [
     '/api/admin/auth/login',  // Pre-authentication
     '/api/webhooks',          // Webhooks use HMAC signature validation
     '/api/v1/twilio',         // Twilio webhooks use signature validation
     '/api/v1/chat',           // AI chat endpoints (session-based)
+    '/api/v1/chatkit',        // ChatKit session endpoints
+    '/mcp',                   // MCP endpoint for AI assistants (external clients)
+    '/.well-known',           // Discovery endpoints
+    '/api/mcp',               // MCP API endpoints
     '/health'                 // Health check
   ];
   
