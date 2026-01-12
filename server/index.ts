@@ -204,60 +204,77 @@ app.use((req, res, next) => {
     log(`serving on port ${port}`);
   });
 
-  // Start MCP Server automatically
+  // Start MCP Server automatically (only if not already running)
   const startMcpServer = async () => {
-    const { spawn, exec } = await import('child_process');
-    const { promisify } = await import('util');
+    const { spawn } = await import('child_process');
     const path = await import('path');
-    const execAsync = promisify(exec);
-    const mcpPort = process.env.MCP_PORT || '3001';
+    const net = await import('net');
+    const mcpPort = parseInt(process.env.MCP_PORT || '3001', 10);
     
-    // Check if port is already in use
-    try {
-      await execAsync(`lsof -i :${mcpPort}`);
+    // Check if port is already in use with a TCP connection test
+    const isPortInUse = await new Promise<boolean>((resolve) => {
+      const socket = new net.Socket();
+      socket.setTimeout(1000);
+      socket.once('connect', () => {
+        socket.destroy();
+        resolve(true);
+      });
+      socket.once('error', () => {
+        socket.destroy();
+        resolve(false);
+      });
+      socket.once('timeout', () => {
+        socket.destroy();
+        resolve(false);
+      });
+      socket.connect(mcpPort, '127.0.0.1');
+    });
+
+    if (isPortInUse) {
       log(`MCP server already running on port ${mcpPort}`);
-    } catch (error) {
-      // Port is not in use, start the MCP server
-      const mcpServerPath = path.resolve(process.cwd(), 'src/mcp-http-server.ts');
-      log(`Starting MCP server from: ${mcpServerPath}`);
-      
-      const mcpServer = spawn('npx', ['tsx', mcpServerPath], {
-        env: { ...process.env, MCP_PORT: mcpPort },
-        stdio: ['ignore', 'pipe', 'pipe'],
-        detached: false,
-        cwd: process.cwd()
-      });
-
-      mcpServer.stdout?.on('data', (data) => {
-        log(`[MCP] ${data.toString().trim()}`);
-      });
-
-      mcpServer.stderr?.on('data', (data) => {
-        console.error(`[MCP Error] ${data.toString().trim()}`);
-      });
-
-      mcpServer.on('error', (error) => {
-        console.error('Failed to start MCP server:', error);
-      });
-
-      mcpServer.on('exit', (code) => {
-        if (code !== 0 && code !== null) {
-          console.error(`MCP server exited with code ${code}`);
-        }
-      });
-
-      // Cleanup on exit
-      const cleanup = () => {
-        if (mcpServer && !mcpServer.killed) {
-          mcpServer.kill();
-        }
-      };
-      
-      process.on('SIGTERM', cleanup);
-      process.on('SIGINT', cleanup);
-
-      log(`MCP server starting on port ${mcpPort}`);
+      return;
     }
+
+    // Port is not in use, start the MCP server
+    const mcpServerPath = path.resolve(process.cwd(), 'src/mcp-http-server.ts');
+    log(`Starting MCP server from: ${mcpServerPath}`);
+    
+    const mcpServer = spawn('npx', ['tsx', mcpServerPath], {
+      env: { ...process.env, MCP_PORT: String(mcpPort) },
+      stdio: ['ignore', 'pipe', 'pipe'],
+      detached: false,
+      cwd: process.cwd()
+    });
+
+    mcpServer.stdout?.on('data', (data) => {
+      log(`[MCP] ${data.toString().trim()}`);
+    });
+
+    mcpServer.stderr?.on('data', (data) => {
+      console.error(`[MCP Error] ${data.toString().trim()}`);
+    });
+
+    mcpServer.on('error', (error) => {
+      console.error('Failed to start MCP server:', error);
+    });
+
+    mcpServer.on('exit', (code) => {
+      if (code !== 0 && code !== null) {
+        console.error(`MCP server exited with code ${code}`);
+      }
+    });
+
+    // Cleanup on exit
+    const cleanup = () => {
+      if (mcpServer && !mcpServer.killed) {
+        mcpServer.kill();
+      }
+    };
+    
+    process.on('SIGTERM', cleanup);
+    process.on('SIGINT', cleanup);
+
+    log(`MCP server starting on port ${mcpPort}`);
   };
   
   // Start MCP server with a small delay to ensure main server is ready
