@@ -49,4 +49,3 @@ integrations = ["javascript_openai:1.0.0"]
 [userenv]
 
 [userenv.shared]
-MCP_PUBLIC_URL = "https://3ec42dda-f828-4549-b01d-41b65d59396e-00-1c1hvq46ow3oo.picard.replit.dev/mcp"
