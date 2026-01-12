@@ -334,84 +334,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   }
 
-  // ========== MAINTENANCE PLANS ROUTES ==========
-
-  // Get all maintenance plans
-  app.get("/api/v1/maintenance-plans", publicReadLimiter, async (req, res) => {
-    try {
-      const plans = await storage.getMaintenancePlans();
-      res.json(plans);
-    } catch (error) {
-      logError("Error fetching maintenance plans:", error);
-      res.status(500).json({ error: "Failed to fetch maintenance plans" });
-    }
-  });
-
-  // Get maintenance plan by tier
-  app.get("/api/v1/maintenance-plans/:tier", publicReadLimiter, async (req, res) => {
-    try {
-      const { tier } = req.params;
-      const plan = await storage.getMaintenancePlanByTier(tier);
-      
-      if (!plan) {
-        return res.status(404).json({ error: "Plan not found" });
-      }
-      
-      res.json(plan);
-    } catch (error) {
-      logError("Error fetching maintenance plan:", error);
-      res.status(500).json({ error: "Failed to fetch maintenance plan" });
-    }
-  });
-
-  // Subscribe to maintenance plan
-  app.post("/api/v1/maintenance-plans/subscribe", publicWriteLimiter, async (req, res) => {
-    try {
-      const { planTier, email, phone, name } = req.body;
-      
-      // Find or create customer
-      let customer = await storage.getCustomerByEmail(email);
-      if (!customer) {
-        const [firstName, ...lastNameParts] = name.split(' ');
-        customer = await storage.createCustomer({
-          firstName,
-          lastName: lastNameParts.join(' ') || '',
-          email,
-          phone
-        });
-      }
-      
-      // Get the plan
-      const plan = await storage.getMaintenancePlanByTier(planTier);
-      if (!plan) {
-        return res.status(404).json({ error: "Plan not found" });
-      }
-      
-      // Check for existing active subscription
-      const existingSubscription = await storage.getMemberSubscription(customer.id);
-      if (existingSubscription) {
-        return res.status(400).json({ error: "Customer already has an active subscription" });
-      }
-      
-      // Create subscription
-      const subscription = await storage.createMemberSubscription({
-        customerId: customer.id,
-        planId: plan.id,
-        status: 'active',
-        startDate: new Date(),
-        inspectionsUsed: 0,
-        totalSavings: 0,
-        freeMonthsEarned: 0,
-        referralCode: `REF-${customer.id}-${Date.now().toString(36).toUpperCase()}`,
-      });
-      
-      res.status(201).json({ subscription, customer });
-    } catch (error) {
-      logError("Error subscribing to maintenance plan:", error);
-      res.status(500).json({ error: "Failed to subscribe to maintenance plan" });
-    }
-  });
-
   // Simple customer authentication for member portal
   app.post("/api/v1/customer/auth", publicWriteLimiter, async (req, res) => {
     try {
@@ -607,41 +529,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       logError("Error fetching customer portal data:", error);
       res.status(500).json({ error: "Failed to fetch customer portal data" });
-    }
-  });
-  
-  // Get member subscription (simplified authentication)
-  app.get("/api/v1/maintenance-plans/subscription", publicReadLimiter, async (req, res) => {
-    try {
-      // Simple authentication check - in production, use proper session/JWT validation
-      const authHeader = req.headers.authorization;
-      if (!authHeader || !authHeader.startsWith('Bearer customer-')) {
-        return res.status(401).json({ error: "Authentication required" });
-      }
-      
-      // Extract customer ID from token (simple implementation)
-      const tokenParts = authHeader.replace('Bearer customer-', '').split('-');
-      const customerId = parseInt(tokenParts[0]);
-      
-      if (!customerId) {
-        return res.status(400).json({ error: "Invalid authentication token" });
-      }
-      
-      const subscription = await storage.getMemberSubscription(customerId);
-      if (!subscription) {
-        return res.status(404).json({ error: "No active subscription found" });
-      }
-      
-      // Get plan details
-      const plan = await storage.getMaintenancePlanById(subscription.planId);
-      
-      // Get benefits usage
-      const benefits = await storage.getMemberBenefits(subscription.id);
-      
-      res.json({ subscription, plan, benefits });
-    } catch (error) {
-      logError("Error fetching member subscription:", error);
-      res.status(500).json({ error: "Failed to fetch subscription" });
     }
   });
 

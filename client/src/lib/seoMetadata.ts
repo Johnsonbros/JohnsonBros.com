@@ -200,13 +200,6 @@ export const staticPageMetadata: Record<string, SEOMetadata> = {
     canonicalUrl: '/blog',
     type: 'website'
   },
-  'maintenance-plans': {
-    title: 'Plumbing Maintenance Plans | Save Money | Johnson Bros.',
-    description: 'Save up to 20% with our plumbing maintenance plans. Regular inspections, priority service, discounted repairs. Plans from $19/month. Call 617-479-9911',
-    keywords: ['plumbing maintenance plan', 'plumbing membership', 'preventive maintenance', 'plumbing subscription', 'maintenance agreement'],
-    canonicalUrl: '/maintenance-plans',
-    type: 'website'
-  },
   'referral': {
     title: 'Referral Program | Earn $50 Per Referral | Johnson Bros. Plumbing',
     description: 'Refer friends to Johnson Bros. Plumbing and earn $50 per referral. Easy referral program with instant rewards. Start earning today!',
