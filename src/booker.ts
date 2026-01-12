@@ -830,29 +830,102 @@ registerToolWithDiagnostics(
   "book_service_call",
   {
     title: "Book a Johnson Bros. Plumbing service visit",
-    description: "Creates/updates a customer, finds an available window, creates a job and appointment in Housecall Pro.",
+    description: `Book a plumbing service appointment with Johnson Bros. Plumbing. This tool creates or updates a customer record, finds an available time slot, and schedules the job in HousecallPro.
+
+WHEN TO USE: After you have collected all required customer information (name, phone, address, and issue description). For returning customers, use 'lookup_customer' first to verify their details.
+
+WORKFLOW: 
+1. First use 'get_services' or 'get_quote' if the customer needs service/pricing information
+2. Then use 'search_availability' to show available time slots
+3. Finally use this tool to complete the booking once all details are confirmed
+
+SERVICE AREA: Norfolk, Suffolk, and Plymouth Counties in Massachusetts (South Shore area including Quincy, Braintree, Weymouth, Abington, Rockland). If ZIP code is outside service area, a callback lead will be created instead.
+
+IMPORTANT: All required fields must be provided. Phone must be a valid 10-digit US number.`,
     inputSchema: {
       type: "object",
       properties: {
-        first_name: { type: "string" },
-        last_name: { type: "string" },
-        phone: { type: "string" },
-        email: { type: "string" },
-        street: { type: "string" },
-        street_line_2: { type: "string" },
-        city: { type: "string" },
-        state: { type: "string" },
-        zip: { type: "string" },
-        country: { type: "string" },
-        description: { type: "string" },
-        lead_source: { type: "string" },
-        time_preference: { type: "string", enum: ["any", "morning", "afternoon", "evening"] },
-        earliest_date: { type: "string" },
-        latest_date: { type: "string" },
-        show_for_days: { type: "number", minimum: 1, maximum: 30 },
-        tags: { type: "array", items: { type: "string" } }
+        first_name: { 
+          type: "string", 
+          description: "Customer's first name (required). Example: 'John'" 
+        },
+        last_name: { 
+          type: "string", 
+          description: "Customer's last name (required). Example: 'Smith'" 
+        },
+        phone: { 
+          type: "string", 
+          description: "Customer's phone number (required). Must be a valid 10-digit US phone number. Examples: '6175551234', '(617) 555-1234', '617-555-1234'" 
+        },
+        email: { 
+          type: "string", 
+          description: "Customer's email address (optional). Used for appointment confirmations and receipts." 
+        },
+        street: { 
+          type: "string", 
+          description: "Street address where service is needed (required). Example: '123 Main Street'" 
+        },
+        street_line_2: { 
+          type: "string", 
+          description: "Apartment, unit, or suite number (optional). Example: 'Apt 2B'" 
+        },
+        city: { 
+          type: "string", 
+          description: "City name (required). Must be within our service area. Example: 'Quincy'" 
+        },
+        state: { 
+          type: "string", 
+          description: "Two-letter state code (required). Example: 'MA'" 
+        },
+        zip: { 
+          type: "string", 
+          description: "5-digit ZIP code (required). Used to verify service area eligibility. Example: '02169'" 
+        },
+        country: { 
+          type: "string", 
+          description: "Country code (optional, defaults to 'USA')" 
+        },
+        description: { 
+          type: "string", 
+          description: "Detailed description of the plumbing issue (required). Include symptoms, location, and any relevant details. Example: 'Kitchen sink is clogged and draining slowly. Tried plunger but no improvement.'" 
+        },
+        lead_source: { 
+          type: "string", 
+          description: "How the customer found us (optional). Examples: 'Google', 'Referral', 'Website Chat'" 
+        },
+        time_preference: { 
+          type: "string", 
+          enum: ["any", "morning", "afternoon", "evening"], 
+          description: "Preferred time of day for the appointment. 'morning' = 7am-12pm, 'afternoon' = 12pm-5pm, 'evening' = 5pm-9pm, 'any' = first available" 
+        },
+        earliest_date: { 
+          type: "string", 
+          description: "Earliest acceptable date for the appointment in YYYY-MM-DD format. Example: '2025-01-15'" 
+        },
+        latest_date: { 
+          type: "string", 
+          description: "Latest acceptable date for the appointment in YYYY-MM-DD format. Example: '2025-01-20'" 
+        },
+        show_for_days: { 
+          type: "number", 
+          minimum: 1, 
+          maximum: 30, 
+          description: "Number of days to search for availability (default: 7, max: 30)" 
+        },
+        tags: { 
+          type: "array", 
+          items: { type: "string" }, 
+          description: "Optional tags for the job. Example: ['Urgent', 'Repeat Customer']" 
+        }
       },
       required: ["first_name", "last_name", "phone", "street", "city", "state", "zip", "description"]
+    },
+    annotations: {
+      title: "Book Service Appointment",
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: true
     },
     _meta: {
       "openai/outputTemplate": "ui://widget/booking-confirmation.html",
@@ -1137,16 +1210,50 @@ registerToolWithDiagnostics(
   "search_availability",
   {
     title: "Search Johnson Bros. Plumbing service availability",
-    description: "Check available time slots for service appointments without booking. Returns available windows for the specified date and service type.",
+    description: `Check available appointment time slots without making a booking. Returns a list of available windows for the specified date and service type.
+
+WHEN TO USE: Before booking an appointment, use this tool to show the customer what times are available. This helps them choose a convenient slot before committing.
+
+WORKFLOW:
+1. Use this tool to show available times
+2. Let the customer choose their preferred slot
+3. Then use 'book_service_call' to complete the booking
+
+RETURNS: List of available time slots with formatted times in Eastern timezone. If no slots match the time preference, suggests trying 'any' for more options.
+
+TIP: Use 'get_capacity' first to understand overall scheduling availability before showing specific slots.`,
     inputSchema: {
       type: "object",
       properties: {
-        date: { type: "string", format: "date", description: "Preferred date (YYYY-MM-DD)" },
-        serviceType: { type: "string", description: "Type of service needed (e.g., 'emergency plumbing', 'routine maintenance', 'drain cleaning')" },
-        time_preference: { type: "string", enum: ["any", "morning", "afternoon", "evening"], description: "Preferred time of day" },
-        show_for_days: { type: "number", minimum: 1, maximum: 30, description: "Number of days to show availability for" }
+        date: { 
+          type: "string", 
+          format: "date", 
+          description: "Date to check availability for in YYYY-MM-DD format (required). Example: '2025-01-15'" 
+        },
+        serviceType: { 
+          type: "string", 
+          description: "Type of plumbing service needed (required). Examples: 'drain cleaning', 'water heater repair', 'toilet repair', 'emergency plumbing', 'routine maintenance'" 
+        },
+        time_preference: { 
+          type: "string", 
+          enum: ["any", "morning", "afternoon", "evening"], 
+          description: "Preferred time of day. 'morning' = 7am-12pm, 'afternoon' = 12pm-5pm, 'evening' = 5pm-9pm, 'any' = show all available slots (default: 'any')" 
+        },
+        show_for_days: { 
+          type: "number", 
+          minimum: 1, 
+          maximum: 30, 
+          description: "Number of days to search starting from the specified date (default: 7). Increase this if the customer has flexible scheduling." 
+        }
       },
       required: ["date", "serviceType"]
+    },
+    annotations: {
+      title: "Check Availability",
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false
     },
     _meta: {
       "openai/outputTemplate": "ui://widget/availability.html",
@@ -1306,14 +1413,46 @@ server.registerTool(
   "get_capacity",
   {
     title: "Get Real-Time Service Capacity",
-    description: "Returns real-time capacity state, score, and express windows to guide optimal scheduling decisions.",
+    description: `Check current scheduling capacity and availability state. Returns real-time information about how busy the schedule is and whether same-day service is available.
+
+WHEN TO USE: At the start of a booking conversation to understand current availability, or when a customer asks "Can you come today?" or "How soon can you get here?"
+
+CAPACITY STATES:
+- SAME_DAY_FEE_WAIVED: Plenty of availability, same-day service available with no extra fee
+- LIMITED_SAME_DAY: Some same-day slots remain, encourage quick booking
+- NEXT_DAY: Fully booked today, suggest next-day scheduling
+- EMERGENCY_ONLY: Very limited capacity, only emergency bookings accepted
+
+WORKFLOW:
+1. Use this tool first to understand current capacity
+2. Use 'search_availability' to show specific time slots
+3. Adjust your recommendations based on capacity state
+
+RETURNS: Capacity state, score (0-100), express window availability, and recommended messaging for the customer.`,
     inputSchema: {
       type: "object",
       properties: {
-        date: { type: "string", format: "date", description: "Preferred date (YYYY-MM-DD). Defaults to today." },
-        zip: { type: "string", description: "Customer zip code for localized capacity messaging" },
-        service_area: { type: "string", description: "City or service area label if zip is not available" }
+        date: { 
+          type: "string", 
+          format: "date", 
+          description: "Date to check capacity for in YYYY-MM-DD format (optional, defaults to today). Example: '2025-01-15'" 
+        },
+        zip: { 
+          type: "string", 
+          description: "Customer's ZIP code for localized capacity information (optional). Example: '02169'" 
+        },
+        service_area: { 
+          type: "string", 
+          description: "City or area name if ZIP is not available (optional). Examples: 'Quincy', 'South Shore'" 
+        }
       }
+    },
+    annotations: {
+      title: "Check Capacity",
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false
     }
   } as any,
   async (raw) => {
@@ -1587,16 +1726,52 @@ registerToolWithDiagnostics(
   "get_quote",
   {
     title: "Get Plumbing Service Quote",
-    description: "Provides an instant estimate for plumbing services based on the type of work needed. Returns price range, estimated duration, and recommendations.",
+    description: `Provide an instant price estimate for plumbing services. Returns estimated price range, duration, and recommendations based on the service type and urgency.
+
+WHEN TO USE: When a customer asks "How much does it cost?", "What's the price?", or wants to know pricing before booking. Use this early in the conversation to set expectations.
+
+PRICING NOTES:
+- Estimates are ranges; final price depends on on-site assessment
+- Emergency and urgent services include premium pricing
+- Commercial properties have a 20% premium
+- We offer a $99 diagnostic fee that's waived if customer proceeds with repair
+
+WORKFLOW:
+1. Use this tool when customer asks about pricing
+2. Share the estimate with appropriate caveats
+3. If they want to proceed, use 'search_availability' then 'book_service_call'
+
+RETURNS: Service name, price range (min/max in USD), estimated duration, urgency notes, and suggested next steps.`,
     inputSchema: {
       type: "object",
       properties: {
-        service_type: { type: "string", description: "Type of service (e.g., 'drain cleaning', 'water heater repair', 'toilet repair')" },
-        issue_description: { type: "string", description: "Description of the plumbing problem" },
-        property_type: { type: "string", enum: ["residential", "commercial"], description: "Type of property" },
-        urgency: { type: "string", enum: ["routine", "soon", "urgent", "emergency"], description: "How urgent is the repair" }
+        service_type: { 
+          type: "string", 
+          description: "Type of plumbing service (required). Examples: 'drain cleaning', 'water heater repair', 'toilet repair', 'faucet installation', 'pipe repair', 'sewer line', 'emergency plumbing'" 
+        },
+        issue_description: { 
+          type: "string", 
+          description: "Description of the plumbing problem (required). Be specific about symptoms and location. Example: 'Kitchen sink drains slowly and makes gurgling sounds'" 
+        },
+        property_type: { 
+          type: "string", 
+          enum: ["residential", "commercial"], 
+          description: "Type of property (default: 'residential'). Commercial properties have different pricing." 
+        },
+        urgency: { 
+          type: "string", 
+          enum: ["routine", "soon", "urgent", "emergency"], 
+          description: "How urgent is the repair? 'routine' = can wait a week, 'soon' = within a few days, 'urgent' = within 24 hours, 'emergency' = immediate dispatch needed (default: 'routine')" 
+        }
       },
       required: ["service_type", "issue_description"]
+    },
+    annotations: {
+      title: "Get Price Estimate",
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false
     },
     _meta: {
       "openai/outputTemplate": "ui://widget/quote.html",
@@ -1740,14 +1915,43 @@ registerToolWithDiagnostics(
   "emergency_help",
   {
     title: "Emergency Plumbing Help",
-    description: "Provides immediate guidance for plumbing emergencies. Gives step-by-step instructions while waiting for a plumber, safety warnings, and determines if emergency dispatch is needed.",
+    description: `Provide immediate safety guidance and step-by-step instructions for plumbing emergencies. This tool helps customers mitigate damage while waiting for a plumber.
+
+WHEN TO USE: Immediately when a customer mentions an emergency situation like:
+- Burst pipe, flooding, or water damage
+- Gas smell or suspected gas leak (CRITICAL - may need to call 911)
+- Sewage backup or overflow
+- No water or sudden loss of water
+- Water heater leaking or not working
+
+PRIORITY ORDER:
+1. First ensure customer safety (especially for gas leaks)
+2. Provide immediate mitigation steps (how to shut off water, etc.)
+3. Then offer to book emergency service
+
+RETURNS: Step-by-step immediate actions, safety warnings, things NOT to do, urgency level, and whether emergency dispatch is recommended.
+
+IMPORTANT: For gas leaks, always advise leaving the house and calling 911 first.`,
     inputSchema: {
       type: "object",
       properties: {
-        emergency_type: { type: "string", description: "Type of emergency (e.g., 'burst pipe', 'gas leak', 'sewage backup', 'no hot water')" },
-        additional_details: { type: "string", description: "Additional details about the emergency" }
+        emergency_type: { 
+          type: "string", 
+          description: "Type of plumbing emergency (required). Examples: 'burst pipe', 'flooding', 'gas leak', 'gas smell', 'sewage backup', 'no hot water', 'water heater leaking', 'clogged toilet overflowing', 'no water'" 
+        },
+        additional_details: { 
+          type: "string", 
+          description: "Additional context about the emergency (optional). Include: location in home, how long it's been happening, any actions already taken. Example: 'Pipe burst in basement, water is actively spraying, I can't find the shutoff valve'" 
+        }
       },
       required: ["emergency_type"]
+    },
+    annotations: {
+      title: "Emergency Guidance",
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false
     },
     _meta: {
       "openai/outputTemplate": "ui://widget/emergency.html",
@@ -1873,13 +2077,42 @@ registerToolWithDiagnostics(
   "get_services",
   {
     title: "Get Available Plumbing Services",
-    description: "Lists all plumbing services offered by Johnson Bros. Plumbing with descriptions, price ranges, and estimated durations.",
+    description: `List all plumbing services offered by Johnson Bros. Plumbing. Returns service names, descriptions, price ranges, and estimated durations.
+
+WHEN TO USE: When a customer asks "What services do you offer?", "What can you help with?", or wants to browse available services before describing their issue.
+
+SERVICE CATEGORIES:
+- emergency: 24/7 urgent repairs (burst pipes, major leaks, sewage backup)
+- maintenance: Preventive services (drain cleaning, inspections)
+- repair: Fix existing issues (toilet repair, faucet leaks, pipe repair)
+- installation: New fixtures and equipment (water heaters, faucets, toilets)
+- specialty: Specialized services (sewer lines, gas lines, water filtration)
+
+WORKFLOW:
+1. Use this tool to show available services
+2. Once customer identifies their need, use 'get_quote' for pricing
+3. Then use 'search_availability' and 'book_service_call' to complete booking
+
+RETURNS: List of services with price ranges and durations, plus business contact info.`,
     inputSchema: {
       type: "object",
       properties: {
-        category: { type: "string", description: "Filter by category (emergency, maintenance, repair, installation, specialty)" },
-        search: { type: "string", description: "Search term to filter services" }
+        category: { 
+          type: "string", 
+          description: "Filter services by category (optional). Options: 'emergency', 'maintenance', 'repair', 'installation', 'specialty'" 
+        },
+        search: { 
+          type: "string", 
+          description: "Search term to find specific services (optional). Examples: 'water heater', 'drain', 'toilet'" 
+        }
       }
+    },
+    annotations: {
+      title: "Browse Services",
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false
     },
     _meta: {
       "openai/outputTemplate": "ui://widget/services.html",
@@ -1991,15 +2224,43 @@ registerToolWithDiagnostics(
   "lookup_customer",
   {
     title: "Look Up Existing Customer",
-    description: "Strictly identify an existing customer in HousecallPro by first name, last name, and phone number.",
+    description: `Verify and retrieve an existing customer's information from HousecallPro using their name and phone number.
+
+WHEN TO USE: When a customer says they are a returning customer, or when they want to check on an existing appointment, or before booking if you want to see if they're already in the system.
+
+STRICT MATCHING: This tool requires an exact match on first name, last name, AND phone number. All three must match a customer record.
+
+WORKFLOW:
+1. Ask the customer for their first name, last name, and phone number
+2. Use this tool to verify their identity
+3. If found, you can proceed with booking or checking their job status
+4. If not found, treat them as a new customer for booking
+
+RETURNS: Customer ID, masked phone number, and primary address on file if found. Suggests next steps based on the result.`,
     inputSchema: {
       type: "object",
       properties: {
-        first_name: { type: "string", description: "Customer's first name" },
-        last_name: { type: "string", description: "Customer's last name" },
-        phone: { type: "string", description: "Customer's phone number" }
+        first_name: { 
+          type: "string", 
+          description: "Customer's first name exactly as it appears in our records (required). Example: 'John'" 
+        },
+        last_name: { 
+          type: "string", 
+          description: "Customer's last name exactly as it appears in our records (required). Example: 'Smith'" 
+        },
+        phone: { 
+          type: "string", 
+          description: "Customer's phone number (required). Must match the number on file. Examples: '6175551234', '(617) 555-1234'" 
+        }
       },
       required: ["first_name", "last_name", "phone"]
+    },
+    annotations: {
+      title: "Verify Customer",
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false
     }
   } as any,
   async (raw) => {
@@ -2088,18 +2349,57 @@ registerToolWithDiagnostics(
   "request_reschedule_callback",
   {
     title: "Request Reschedule Callback",
-    description: "Logs a reschedule callback request for an existing job without modifying the schedule. Office confirmation is required; completed or unclear appointments must be handled by phone.",
+    description: `Log a reschedule request for an existing appointment. This creates a callback request for the office to process - it does NOT directly modify the schedule.
+
+WHEN TO USE: When a customer says they need to reschedule their existing appointment to a different time or date.
+
+IMPORTANT LIMITATIONS:
+- This tool REQUESTS a reschedule, it doesn't perform one directly
+- Office staff must confirm and process the reschedule
+- Completed or ambiguous appointments require a phone call to the office
+
+WORKFLOW:
+1. Use 'lookup_customer' first to verify the customer
+2. Use this tool to log the reschedule request
+3. Inform customer that the office will call to confirm the new time
+
+REQUIRES: Customer verification with name and phone. If no job_id provided, the system will attempt to find their upcoming appointment.`,
     inputSchema: {
       type: "object",
       properties: {
-        first_name: { type: "string", description: "Customer's first name" },
-        last_name: { type: "string", description: "Customer's last name" },
-        phone: { type: "string", description: "Customer's phone number" },
-        job_id: { type: "string", description: "Housecall Pro job ID" },
-        requested_times: { type: "string", description: "Preferred reschedule times or window" },
-        reason: { type: "string", description: "Reason for reschedule request" }
+        first_name: { 
+          type: "string", 
+          description: "Customer's first name for verification (required). Example: 'John'" 
+        },
+        last_name: { 
+          type: "string", 
+          description: "Customer's last name for verification (required). Example: 'Smith'" 
+        },
+        phone: { 
+          type: "string", 
+          description: "Customer's phone number for verification (required). Example: '6175551234'" 
+        },
+        job_id: { 
+          type: "string", 
+          description: "HousecallPro job ID if known (optional). If not provided, the system will look for upcoming appointments." 
+        },
+        requested_times: { 
+          type: "string", 
+          description: "Customer's preferred new times or date range (optional). Example: 'Next Tuesday morning' or 'Any afternoon this week'" 
+        },
+        reason: { 
+          type: "string", 
+          description: "Reason for the reschedule request (optional). Example: 'Work conflict' or 'Family emergency'" 
+        }
       },
       required: ["first_name", "last_name", "phone"]
+    },
+    annotations: {
+      title: "Request Reschedule",
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: true
     }
   } as any,
   async (raw) => {
@@ -2384,17 +2684,55 @@ registerToolWithDiagnostics(
   "get_job_status",
   {
     title: "Get Job Status",
-    description: "Retrieve the status of a customer's job without modifying schedules or appointments.",
+    description: `Check the status of a customer's scheduled or past job. Returns current status, schedule information, and work details.
+
+WHEN TO USE: When a customer asks "When is my appointment?", "What's the status of my job?", "Is my plumber on the way?", or wants to check on an existing booking.
+
+REQUIRES VERIFICATION: Customer must be verified with first name, last name, and phone number before their job status can be retrieved.
+
+JOB SELECTION:
+- 'upcoming': Find the next scheduled appointment (default)
+- 'most_recent': Find the most recently scheduled job
+
+WORKFLOW:
+1. Use 'lookup_customer' first if you haven't already verified the customer
+2. Use this tool to check their job status
+3. If they need to reschedule, use 'request_reschedule_callback'
+
+RETURNS: Job ID, current status (scheduled, in-progress, completed, etc.), and schedule summary.`,
     inputSchema: {
       type: "object",
       properties: {
-        first_name: { type: "string", description: "Customer's first name" },
-        last_name: { type: "string", description: "Customer's last name" },
-        phone: { type: "string", description: "Customer's phone number" },
-        job_id: { type: "string", description: "Housecall Pro job ID" },
-        job_selection: { type: "string", enum: ["most_recent", "upcoming"], description: "Which job to retrieve if job_id is not provided" }
+        first_name: { 
+          type: "string", 
+          description: "Customer's first name for verification (required). Example: 'John'" 
+        },
+        last_name: { 
+          type: "string", 
+          description: "Customer's last name for verification (required). Example: 'Smith'" 
+        },
+        phone: { 
+          type: "string", 
+          description: "Customer's phone number for verification (required). Example: '6175551234'" 
+        },
+        job_id: { 
+          type: "string", 
+          description: "Specific HousecallPro job ID to check (optional). If not provided, uses job_selection to find the job." 
+        },
+        job_selection: { 
+          type: "string", 
+          enum: ["most_recent", "upcoming"], 
+          description: "Which job to retrieve when job_id is not provided. 'upcoming' = next scheduled appointment, 'most_recent' = last job (default: 'upcoming')" 
+        }
       },
       required: ["first_name", "last_name", "phone"]
+    },
+    annotations: {
+      title: "Check Job Status",
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false
     }
   } as any,
   async (raw) => {
@@ -2525,25 +2863,85 @@ registerToolWithDiagnostics(
   "create_lead",
   {
     title: "Create Lead for Callback",
-    description: "Creates a lead in HousecallPro for customers who want a callback instead of booking immediately. Includes conversation notes and issue description.",
+    description: `Create a callback request for customers who prefer to speak with the office before booking. The lead is saved in HousecallPro for office follow-up.
+
+WHEN TO USE: When a customer:
+- Wants to speak with someone before booking
+- Has a complex issue that needs discussion
+- Prefers a phone callback over online booking
+- Is unsure about what service they need
+- Wants to discuss pricing in more detail
+
+NOT FOR: Customers ready to book - use 'book_service_call' instead.
+
+INCLUDES: All conversation context and notes are attached to the lead so the office knows the full situation when calling back.
+
+RESPONSE TIME: Office typically responds within 1-2 business hours. Emergency requests are prioritized.`,
     inputSchema: {
       type: "object",
       properties: {
-        first_name: { type: "string", description: "Customer's first name" },
-        last_name: { type: "string", description: "Customer's last name" },
-        phone: { type: "string", description: "Customer's phone number" },
-        email: { type: "string", description: "Customer's email (optional)" },
-        street: { type: "string", description: "Street address (optional)" },
-        city: { type: "string", description: "City (optional)" },
-        state: { type: "string", description: "State (optional)" },
-        zip: { type: "string", description: "ZIP code (optional)" },
-        issue_description: { type: "string", description: "Description of the plumbing issue" },
-        preferred_callback_time: { type: "string", description: "When the customer prefers to be called back" },
-        urgency: { type: "string", enum: ["low", "medium", "high", "emergency"], description: "Urgency level" },
-        conversation_notes: { type: "string", description: "Notes from the AI conversation to include" },
-        lead_source: { type: "string", description: "Source of the lead" }
+        first_name: { 
+          type: "string", 
+          description: "Customer's first name (required). Example: 'John'" 
+        },
+        last_name: { 
+          type: "string", 
+          description: "Customer's last name (required). Example: 'Smith'" 
+        },
+        phone: { 
+          type: "string", 
+          description: "Customer's phone number for callback (required). Example: '6175551234'" 
+        },
+        email: { 
+          type: "string", 
+          description: "Customer's email address (optional). Used for follow-up communications." 
+        },
+        street: { 
+          type: "string", 
+          description: "Street address if known (optional). Example: '123 Main St'" 
+        },
+        city: { 
+          type: "string", 
+          description: "City if known (optional). Example: 'Quincy'" 
+        },
+        state: { 
+          type: "string", 
+          description: "State if known (optional). Example: 'MA'" 
+        },
+        zip: { 
+          type: "string", 
+          description: "ZIP code if known (optional). Example: '02169'" 
+        },
+        issue_description: { 
+          type: "string", 
+          description: "Description of the plumbing issue or question (required). Be as detailed as possible from the conversation." 
+        },
+        preferred_callback_time: { 
+          type: "string", 
+          description: "When the customer prefers to receive the callback (optional). Examples: 'morning', 'after 5pm', 'anytime tomorrow'" 
+        },
+        urgency: { 
+          type: "string", 
+          enum: ["low", "medium", "high", "emergency"], 
+          description: "How urgent is this request? 'low' = no rush, 'medium' = within a day or two, 'high' = today, 'emergency' = ASAP (default: 'medium')" 
+        },
+        conversation_notes: { 
+          type: "string", 
+          description: "Summary of the AI conversation to include (optional). Helps office understand the context." 
+        },
+        lead_source: { 
+          type: "string", 
+          description: "How the customer found us (optional, defaults to 'AI Assistant')" 
+        }
       },
       required: ["first_name", "last_name", "phone", "issue_description"]
+    },
+    annotations: {
+      title: "Request Callback",
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: true
     }
   } as any,
   async (raw) => {
@@ -2673,16 +3071,45 @@ registerToolWithDiagnostics(
   "get_service_history",
   {
     title: "Get Service History",
-    description: "Retrieves past service history for a verified customer. Shows previous jobs, dates, and work performed.",
+    description: `Retrieve a customer's past service history. Shows previous jobs, dates, work performed, and service details.
+
+WHEN TO USE: When a customer:
+- Asks "Have you been to my house before?"
+- Wants to see their past work history
+- Needs information about a previous repair
+- Is a returning customer and wants context on past services
+
+REQUIRES VERIFICATION: Customer must provide first name, last name, and phone number to access their history.
+
+RETURNS: List of past jobs with dates, descriptions, and status. Most recent jobs are shown first.`,
     inputSchema: {
       type: "object",
       properties: {
-        first_name: { type: "string", description: "Customer's first name" },
-        last_name: { type: "string", description: "Customer's last name" },
-        phone: { type: "string", description: "Customer's phone number" },
-        limit: { type: "number", description: "Maximum number of past jobs to return (default 5, max 20)" }
+        first_name: { 
+          type: "string", 
+          description: "Customer's first name for verification (required). Example: 'John'" 
+        },
+        last_name: { 
+          type: "string", 
+          description: "Customer's last name for verification (required). Example: 'Smith'" 
+        },
+        phone: { 
+          type: "string", 
+          description: "Customer's phone number for verification (required). Example: '6175551234'" 
+        },
+        limit: { 
+          type: "number", 
+          description: "Maximum number of past jobs to return (optional). Default: 5, Maximum: 20" 
+        }
       },
       required: ["first_name", "last_name", "phone"]
+    },
+    annotations: {
+      title: "View Service History",
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false
     }
   } as any,
   async (raw) => {
@@ -2851,14 +3278,47 @@ registerToolWithDiagnostics(
   "search_faq",
   {
     title: "Search Business FAQs",
-    description: "Search frequently asked questions about Johnson Bros. Plumbing. Can search by keyword, category, or return all FAQs.",
+    description: `Search frequently asked questions about Johnson Bros. Plumbing. Returns answers to common questions about pricing, hours, service area, and policies.
+
+WHEN TO USE: For general questions about the business that don't require customer verification:
+- "What are your hours?"
+- "Do you serve my area?"
+- "How much is the service fee?"
+- "Are you licensed?"
+- "What payment methods do you accept?"
+- "What is the Family Discount program?"
+
+FAQ CATEGORIES:
+- pricing: Service fees, estimates, payment, Family Discount
+- hours: Hours of operation, availability
+- service_area: Towns and areas we serve
+- services: Types of services offered, emergency availability
+- policies: Licensing, insurance, warranties
+
+USE return_all=true to load all FAQs for context at the start of a conversation.`,
     inputSchema: {
       type: "object",
       properties: {
-        query: { type: "string", description: "Search query or question" },
-        category: { type: "string", description: "Filter by category: pricing, hours, service_area, services, policies" },
-        return_all: { type: "boolean", description: "Return all FAQs as raw data (for context loading)" }
+        query: { 
+          type: "string", 
+          description: "Search query or question to find relevant FAQs (optional). Example: 'service fee', 'hours', 'payment'" 
+        },
+        category: { 
+          type: "string", 
+          description: "Filter FAQs by category (optional). Options: 'pricing', 'hours', 'service_area', 'services', 'policies'" 
+        },
+        return_all: { 
+          type: "boolean", 
+          description: "Set to true to return all FAQs without filtering (optional). Useful for loading full context at conversation start." 
+        }
       }
+    },
+    annotations: {
+      title: "Search FAQs",
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false
     }
   } as any,
   async (raw) => {
