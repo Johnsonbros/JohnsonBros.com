@@ -201,17 +201,17 @@ const PLUMBING_TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
 // Session storage for MCP sessions
 const mcpSessions: Map<string, string> = new Map();
 
-// Call MCP server tool
-async function callMCPTool(toolName: string, args: any, chatSessionId: string): Promise<any> {
+// Call MCP server tool with automatic session recovery
+async function callMCPTool(toolName: string, args: any, chatSessionId: string, retryOnExpired: boolean = true): Promise<any> {
   try {
     // Get or create MCP session
     let mcpSessionId = mcpSessions.get(chatSessionId);
-    
+
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       'Accept': 'application/json, text/event-stream'
     };
-    
+
     if (mcpSessionId) {
       headers['Mcp-Session-Id'] = mcpSessionId;
     }
@@ -239,13 +239,46 @@ async function callMCPTool(toolName: string, args: any, chatSessionId: string): 
 
     if (!response.ok) {
       const errorText = await response.text();
+
+      // Check if it's a session expiration error (400 with -32001 code)
+      if (response.status === 400) {
+        try {
+          const errorJson = JSON.parse(errorText);
+          if (errorJson.error?.code === -32001 && retryOnExpired) {
+            Logger.warn(`MCP session expired for chat session ${chatSessionId}, reinitializing...`);
+            // Clear the expired session
+            mcpSessions.delete(chatSessionId);
+            // Reinitialize the session
+            const initialized = await initMCPSession(chatSessionId);
+            if (initialized) {
+              Logger.info(`MCP session reinitialized, retrying tool call: ${toolName}`);
+              // Retry the tool call once (retryOnExpired = false prevents infinite loop)
+              return await callMCPTool(toolName, args, chatSessionId, false);
+            }
+          }
+        } catch (parseError) {
+          // If we can't parse the error, continue with generic error handling
+        }
+      }
+
       Logger.error(`MCP server error: ${response.status} ${errorText}`);
       throw new Error(`MCP server error: ${response.status}`);
     }
 
     const result = await response.json() as any;
-    
+
     if (result.error) {
+      // Check for session expiration in the result
+      if (result.error.code === -32001 && retryOnExpired) {
+        Logger.warn(`MCP session expired (error code), reinitializing...`);
+        mcpSessions.delete(chatSessionId);
+        const initialized = await initMCPSession(chatSessionId);
+        if (initialized) {
+          Logger.info(`MCP session reinitialized, retrying tool call: ${toolName}`);
+          return await callMCPTool(toolName, args, chatSessionId, false);
+        }
+      }
+
       Logger.error('MCP tool error:', result.error);
       throw new Error(result.error.message || 'MCP tool error');
     }
@@ -254,9 +287,9 @@ async function callMCPTool(toolName: string, args: any, chatSessionId: string): 
     if (result.result?.content?.[0]?.text) {
       return result.result.content[0].text;
     }
-    
+
     return JSON.stringify(result.result || result);
-    
+
   } catch (error: any) {
     Logger.error(`MCP tool call failed for ${toolName}:`, error);
     throw error;
