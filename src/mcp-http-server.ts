@@ -14,12 +14,12 @@ const sessionRequestCounts = new Map<string, { count: number; firstRequest: numb
 const ipRequestCounts = new Map<string, { count: number; firstRequest: number; lastRequest: number; sessions: Set<string> }>();
 
 const RATE_LIMIT_CONFIG = {
-  SESSION_MAX_REQUESTS: 100,
+  SESSION_MAX_REQUESTS: 500,
   SESSION_WINDOW_MS: 15 * 60 * 1000,
-  SESSION_COOLDOWN_MS: 100,
-  SESSION_INIT_BURST: 10,
-  IP_MAX_REQUESTS: 200,
-  IP_MAX_SESSIONS: 20,
+  SESSION_COOLDOWN_MS: 50,
+  SESSION_INIT_BURST: 50,
+  IP_MAX_REQUESTS: 1000,
+  IP_MAX_SESSIONS: 100,
   IP_WINDOW_MS: 60 * 60 * 1000,
 };
 
