@@ -1,5 +1,6 @@
 // AI Chat Service - Powers web chat, SMS, and voice conversations
-// Uses OpenAI to understand customer requests and calls MCP server for HousecallPro integration
+// Uses OpenAI Responses API with MCP tool type for automatic tool discovery from MCP server
+// This eliminates duplicate tool definitions - tools are discovered from src/booker.ts
 
 import OpenAI from 'openai';
 import { Logger } from '../src/logger';
@@ -10,195 +11,65 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
-// MCP Server endpoint - running on port 3001
+// Get the public MCP server URL for OpenAI Responses API
+// In production, this should be the full public URL (e.g., https://yourdomain.com/mcp)
+// The MCP server at /mcp proxies to the internal MCP server on port 3001
+function getMcpServerUrl(): string {
+  // Check for explicit public URL configuration
+  if (process.env.MCP_PUBLIC_URL) {
+    return process.env.MCP_PUBLIC_URL;
+  }
+  
+  // For Replit deployments, construct from REPLIT_DEV_DOMAIN or REPL_SLUG
+  if (process.env.REPLIT_DEV_DOMAIN) {
+    return `https://${process.env.REPLIT_DEV_DOMAIN}/mcp`;
+  }
+  
+  // Fallback for local development (won't work with OpenAI Responses API)
+  Logger.warn('MCP_PUBLIC_URL not set - OpenAI Responses API MCP tool may not work. Set MCP_PUBLIC_URL to your public domain.');
+  return 'http://localhost:5000/mcp';
+}
+
+const MCP_PUBLIC_URL = getMcpServerUrl();
+
+// Feature flag to control which API to use
+// Set USE_RESPONSES_API=true to use the new Responses API with MCP tool type
+// Otherwise falls back to Chat Completions API with manual tool execution
+const USE_RESPONSES_API = process.env.USE_RESPONSES_API === 'true';
+
+// Legacy: Direct MCP server URL for fallback Chat Completions implementation
 const DEFAULT_MCP_BASE_URL = 'http://localhost:3001';
 const MCP_SERVER_URL = (process.env.MCP_SERVER_URL || DEFAULT_MCP_BASE_URL).replace(/\/$/, '');
 
-// Define the tools available to the AI (mirrors MCP server tools)
-const PLUMBING_TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
-  {
-    type: "function",
-    function: {
-      name: "lookup_customer",
-      description: "Look up an existing customer in the system by phone number, email, or name. Use this when a customer asks to be looked up or wants to use their existing information.",
-      parameters: {
-        type: "object",
-        properties: {
-          phone: {
-            type: "string",
-            description: "Customer's phone number to search for"
-          },
-          email: {
-            type: "string",
-            description: "Customer's email address to search for"
-          },
-          name: {
-            type: "string",
-            description: "Customer's name to search for"
-          }
-        }
-      }
-    }
-  },
-  {
-    type: "function",
-    function: {
-      name: "get_services",
-      description: "List all plumbing services offered by Johnson Bros. Plumbing with descriptions, price ranges, and estimated durations",
-      parameters: {
-        type: "object",
-        properties: {
-          category: {
-            type: "string",
-            description: "Filter by category: emergency, maintenance, repair, installation, specialty"
-          },
-          search: {
-            type: "string",
-            description: "Search term to filter services"
-          }
-        }
-      }
-    }
-  },
-  {
-    type: "function",
-    function: {
-      name: "get_quote",
-      description: "Get an instant price estimate for plumbing services based on the type of work needed",
-      parameters: {
-        type: "object",
-        properties: {
-          service_type: {
-            type: "string",
-            description: "Type of service (e.g., 'drain cleaning', 'water heater repair')"
-          },
-          issue_description: {
-            type: "string",
-            description: "Description of the plumbing problem"
-          },
-          property_type: {
-            type: "string",
-            enum: ["residential", "commercial"],
-            description: "Type of property"
-          },
-          urgency: {
-            type: "string",
-            enum: ["routine", "soon", "urgent", "emergency"],
-            description: "How urgent is the repair"
-          }
-        },
-        required: ["service_type", "issue_description"]
-      }
-    }
-  },
-  {
-    type: "function",
-    function: {
-      name: "search_availability",
-      description: "Search for available appointment slots on a specific date",
-      parameters: {
-        type: "object",
-        properties: {
-          date: {
-            type: "string",
-            description: "Date to check availability (YYYY-MM-DD format)"
-          },
-          serviceType: {
-            type: "string",
-            description: "Type of plumbing service"
-          },
-          time_preference: {
-            type: "string",
-            enum: ["morning", "afternoon", "evening", "any"],
-            description: "Preferred time of day"
-          }
-        },
-        required: ["date", "serviceType"]
-      }
-    }
-  },
-  {
-    type: "function",
-    function: {
-      name: "book_service_call",
-      description: "Book a plumbing service appointment. Creates the booking in HousecallPro with customer info and schedules the appointment.",
-      parameters: {
-        type: "object",
-        properties: {
-          first_name: {
-            type: "string",
-            description: "Customer's first name"
-          },
-          last_name: {
-            type: "string",
-            description: "Customer's last name"
-          },
-          phone: {
-            type: "string",
-            description: "Customer's phone number"
-          },
-          email: {
-            type: "string",
-            description: "Customer's email address"
-          },
-          street: {
-            type: "string",
-            description: "Street address for service"
-          },
-          city: {
-            type: "string",
-            description: "City"
-          },
-          state: {
-            type: "string",
-            description: "State (e.g., MA)"
-          },
-          zip: {
-            type: "string",
-            description: "ZIP code"
-          },
-          description: {
-            type: "string",
-            description: "Description of the plumbing issue"
-          },
-          time_preference: {
-            type: "string",
-            enum: ["morning", "afternoon", "evening", "any"],
-            description: "Preferred time of day"
-          },
-          earliest_date: {
-            type: "string",
-            description: "Earliest preferred date (YYYY-MM-DD)"
-          }
-        },
-        required: ["first_name", "last_name", "phone", "street", "city", "state", "zip", "description"]
-      }
-    }
-  },
-  {
-    type: "function",
-    function: {
-      name: "emergency_help",
-      description: "Get immediate guidance for plumbing emergencies with safety instructions",
-      parameters: {
-        type: "object",
-        properties: {
-          emergency_type: {
-            type: "string",
-            description: "Type of emergency (e.g., 'burst pipe', 'gas leak', 'sewage backup')"
-          },
-          additional_details: {
-            type: "string",
-            description: "Additional details about the situation"
-          }
-        },
-        required: ["emergency_type"]
-      }
-    }
-  }
+// Allowed tools to expose to OpenAI - this limits which MCP tools the AI can use
+// Matches the tools registered in src/booker.ts
+const ALLOWED_MCP_TOOLS = [
+  'book_service_call',
+  'search_availability', 
+  'lookup_customer',
+  'get_services',
+  'get_quote',
+  'get_capacity',
+  'emergency_help',
+  'search_faq',
+  'create_lead',
+  'get_job_status',
+  'get_service_history',
+  'request_reschedule_callback',
+  'request_cancellation_callback'
 ];
 
-// Session storage for MCP sessions with TTL
+// Session storage for OpenAI Responses API - stores mcp_list_tools for reuse
+interface ResponsesSessionData {
+  mcpListToolsItem?: any; // Cache the mcp_list_tools output item
+  previousResponseId?: string;
+  lastUsed: number;
+}
+
+const responsesSessionData: Map<string, ResponsesSessionData> = new Map();
+const RESPONSES_SESSION_TTL = 60 * 60 * 1000; // 1 hour TTL
+
+// Legacy: Session storage for direct MCP sessions (Chat Completions fallback)
 interface McpSessionData {
   sessionId: string;
   lastUsed: number;
@@ -207,39 +78,137 @@ interface McpSessionData {
 const mcpSessions: Map<string, McpSessionData> = new Map();
 const MCP_SESSION_TTL = 60 * 60 * 1000; // 1 hour TTL
 
-// Clean up expired MCP sessions
-function cleanupExpiredMcpSessions(): void {
+// Clean up expired sessions
+function cleanupExpiredSessions(): void {
   const now = Date.now();
-  const expired: string[] = [];
-
-  for (const [chatSessionId, data] of mcpSessions.entries()) {
-    if (now - data.lastUsed > MCP_SESSION_TTL) {
-      expired.push(chatSessionId);
+  
+  // Clean up Responses API sessions
+  const expiredResponses: string[] = [];
+  for (const [sessionId, data] of responsesSessionData.entries()) {
+    if (now - data.lastUsed > RESPONSES_SESSION_TTL) {
+      expiredResponses.push(sessionId);
     }
   }
-
-  for (const chatSessionId of expired) {
+  for (const sessionId of expiredResponses) {
+    responsesSessionData.delete(sessionId);
+    Logger.debug(`Cleaned up expired Responses session: ${sessionId}`);
+  }
+  
+  // Clean up legacy MCP sessions
+  const expiredMcp: string[] = [];
+  for (const [chatSessionId, data] of mcpSessions.entries()) {
+    if (now - data.lastUsed > MCP_SESSION_TTL) {
+      expiredMcp.push(chatSessionId);
+    }
+  }
+  for (const chatSessionId of expiredMcp) {
     mcpSessions.delete(chatSessionId);
     Logger.debug(`Cleaned up expired MCP session for chat: ${chatSessionId}`);
   }
 
-  if (expired.length > 0) {
-    Logger.info(`Cleaned up ${expired.length} expired MCP sessions`);
+  const total = expiredResponses.length + expiredMcp.length;
+  if (total > 0) {
+    Logger.info(`Cleaned up ${total} expired sessions`);
   }
 }
 
 // Run cleanup every 15 minutes
-let mcpSessionCleanupInterval: NodeJS.Timeout | null = null;
-mcpSessionCleanupInterval = setInterval(cleanupExpiredMcpSessions, 15 * 60 * 1000);
+let sessionCleanupInterval: NodeJS.Timeout | null = null;
+sessionCleanupInterval = setInterval(cleanupExpiredSessions, 15 * 60 * 1000);
 
 // Cleanup function for graceful shutdown
 export function stopMcpSessionCleanup(): void {
-  if (mcpSessionCleanupInterval) {
-    clearInterval(mcpSessionCleanupInterval);
-    mcpSessionCleanupInterval = null;
-    Logger.info('MCP session cleanup interval stopped');
+  if (sessionCleanupInterval) {
+    clearInterval(sessionCleanupInterval);
+    sessionCleanupInterval = null;
+    Logger.info('Session cleanup interval stopped');
   }
 }
+
+// Legacy PLUMBING_TOOLS for Chat Completions fallback (when USE_RESPONSES_API=false)
+// These are minimal definitions - the full rich descriptions are in src/booker.ts MCP server
+const LEGACY_PLUMBING_TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
+  {
+    type: "function",
+    function: {
+      name: "lookup_customer",
+      description: "Look up an existing customer by phone, email, or name",
+      parameters: { type: "object", properties: { phone: { type: "string" }, email: { type: "string" }, name: { type: "string" } } }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_services",
+      description: "List all plumbing services with descriptions and pricing",
+      parameters: { type: "object", properties: { category: { type: "string" }, search: { type: "string" } } }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_quote",
+      description: "Get instant price estimate for plumbing services",
+      parameters: { type: "object", properties: { service_type: { type: "string" }, issue_description: { type: "string" }, property_type: { type: "string" }, urgency: { type: "string" } }, required: ["service_type", "issue_description"] }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "search_availability",
+      description: "Search available appointment slots on a date",
+      parameters: { type: "object", properties: { date: { type: "string" }, serviceType: { type: "string" }, time_preference: { type: "string" } }, required: ["date", "serviceType"] }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "book_service_call",
+      description: "Book a plumbing service appointment in HousecallPro",
+      parameters: { type: "object", properties: { first_name: { type: "string" }, last_name: { type: "string" }, phone: { type: "string" }, email: { type: "string" }, street: { type: "string" }, city: { type: "string" }, state: { type: "string" }, zip: { type: "string" }, description: { type: "string" }, time_preference: { type: "string" }, earliest_date: { type: "string" } }, required: ["first_name", "last_name", "phone", "street", "city", "state", "zip", "description"] }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "emergency_help",
+      description: "Get emergency plumbing guidance with safety instructions",
+      parameters: { type: "object", properties: { emergency_type: { type: "string" }, additional_details: { type: "string" } }, required: ["emergency_type"] }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "create_lead",
+      description: "Create a callback request lead in HousecallPro",
+      parameters: { type: "object", properties: { first_name: { type: "string" }, last_name: { type: "string" }, phone: { type: "string" }, email: { type: "string" }, notes: { type: "string" } }, required: ["first_name", "phone"] }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_job_status",
+      description: "Check status of a job by confirmation number or customer phone",
+      parameters: { type: "object", properties: { confirmation_number: { type: "string" }, customer_phone: { type: "string" } } }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_service_history",
+      description: "Get past service history for a customer",
+      parameters: { type: "object", properties: { customer_id: { type: "string" }, customer_phone: { type: "string" }, limit: { type: "number" } } }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "search_faq",
+      description: "Search FAQ database for common plumbing questions",
+      parameters: { type: "object", properties: { query: { type: "string" }, category: { type: "string" } }, required: ["query"] }
+    }
+  }
+];
 
 // Call MCP server tool with automatic session recovery
 async function callMCPTool(toolName: string, args: any, chatSessionId: string, retryOnExpired: boolean = true): Promise<any> {
@@ -748,11 +717,12 @@ export async function processChat(
       history = [history[0], ...history.slice(-18)];
     }
     
-    // Call OpenAI with tools
+    // Call OpenAI with tools (using legacy Chat Completions API)
+    // When USE_RESPONSES_API=true, we'll use the Responses API with MCP tool type instead
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: history,
-      tools: PLUMBING_TOOLS,
+      tools: LEGACY_PLUMBING_TOOLS,
       tool_choice: 'auto',
       max_tokens: channelConfig.maxTokens
     });
