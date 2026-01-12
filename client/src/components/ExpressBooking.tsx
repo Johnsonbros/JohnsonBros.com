@@ -323,32 +323,81 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
               </div>
             )}
             
-            {/* Key Benefits + Call Option */}
-            <div className="flex flex-wrap items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
-              <div className="flex items-center space-x-2 bg-white/10 rounded-lg p-2 sm:p-0 sm:bg-transparent">
-                <Clock className={`h-5 w-5 flex-shrink-0 ${hasToday ? 'text-green-400 animate-pulse' : isEmergency ? 'text-red-400 animate-pulse' : 'text-johnson-orange'}`} />
-                <span className="font-medium text-sm sm:text-base">
-                  {hasToday ? 'Express Same-Day' : hasTomorrow ? 'Next Day Guarantee' : isEmergency ? '24/7 Emergency' : 'Same Day Service'}
-                </span>
-              </div>
-              <div className="flex items-center space-x-2 bg-white/10 rounded-lg p-2 sm:p-0 sm:bg-transparent">
-                <Shield className="h-5 w-5 text-johnson-orange flex-shrink-0" />
-                <span className="font-medium text-sm sm:text-base">Licensed & Insured</span>
-              </div>
-              <div className="flex items-center space-x-2 bg-white/10 rounded-lg p-2 sm:p-0 sm:bg-transparent">
-                <DollarSign className="h-5 w-5 text-johnson-orange flex-shrink-0" />
-                <span className="font-medium text-sm sm:text-base">{isEmergency ? 'Emergency Rates Apply' : '1-Year Parts Warranty'}</span>
-              </div>
-              {/* Call Option inline on desktop */}
-              {uniqueSlots.length > 0 && !isEmergency && (
+            {/* Key Benefits + Service Badge Card (Mobile: side-by-side layout) */}
+            <div className="flex gap-4 mb-6 sm:mb-8">
+              {/* Trust Badges Column */}
+              <div className="flex flex-col gap-2 flex-1">
+                <div className="flex items-center space-x-2 bg-white/10 rounded-lg p-2 sm:p-0 sm:bg-transparent">
+                  <Clock className={`h-5 w-5 flex-shrink-0 ${hasToday ? 'text-green-400 animate-pulse' : isEmergency ? 'text-red-400 animate-pulse' : 'text-johnson-orange'}`} />
+                  <span className="font-medium text-sm sm:text-base">
+                    {hasToday ? 'Express Same-Day' : hasTomorrow ? 'Next Day Guarantee' : isEmergency ? '24/7 Emergency' : 'Same Day Service'}
+                  </span>
+                </div>
+                <div className="flex items-center space-x-2 bg-white/10 rounded-lg p-2 sm:p-0 sm:bg-transparent">
+                  <Shield className="h-5 w-5 text-johnson-orange flex-shrink-0" />
+                  <span className="font-medium text-sm sm:text-base">Licensed & Insured</span>
+                </div>
+                <div className="flex items-center space-x-2 bg-white/10 rounded-lg p-2 sm:p-0 sm:bg-transparent">
+                  <DollarSign className="h-5 w-5 text-johnson-orange flex-shrink-0" />
+                  <span className="font-medium text-sm sm:text-base">{isEmergency ? 'Emergency Rates Apply' : '1-Year Parts Warranty'}</span>
+                </div>
+                {/* Mobile Call Option */}
+                <div className="text-xs text-blue-200 mt-1 lg:hidden">Prefer to book by phone?</div>
                 <a 
                   href="tel:6174799911" 
-                  className="hidden lg:inline-flex items-center bg-white/20 text-white px-4 py-2 rounded-lg font-bold hover:bg-white/30 transition-all duration-300 border border-white/30"
+                  className="flex items-center space-x-2 bg-white/10 rounded-lg p-2 font-medium text-sm sm:text-base hover:bg-white/20 transition-colors lg:hidden"
                 >
-                  <Phone className="mr-2 h-4 w-4" />
-                  Call (617) 479-9911
+                  <Phone className="h-5 w-5 text-johnson-orange flex-shrink-0" />
+                  <span>Call (617) 479-9911</span>
                 </a>
-              )}
+                {/* Call Option inline on desktop */}
+                {uniqueSlots.length > 0 && !isEmergency && (
+                  <a 
+                    href="tel:6174799911" 
+                    className="hidden lg:inline-flex items-center bg-white/20 text-white px-4 py-2 rounded-lg font-bold hover:bg-white/30 transition-all duration-300 border border-white/30 w-fit"
+                  >
+                    <Phone className="mr-2 h-4 w-4" />
+                    Call (617) 479-9911
+                  </a>
+                )}
+              </div>
+
+              {/* Mobile Service Badge Card - Compact version next to badges */}
+              <div className={`lg:hidden bg-white p-3 rounded-xl shadow-lg flex-shrink-0 self-start ${hasToday || hasTomorrow ? 'ring-2 ring-green-400 ring-opacity-50' : ''}`}>
+                <div className="text-center min-w-[90px]">
+                  {hasToday ? (
+                    <>
+                      <Zap className="h-6 w-6 text-green-500 mx-auto mb-1 animate-bounce" />
+                      <div className="text-base font-bold text-green-600">EXPRESS</div>
+                      <div className="text-[10px] text-gray-600">Same-Day</div>
+                      <div className="mt-1 bg-green-50 rounded p-1">
+                        <div className="text-xs font-bold text-gray-400 line-through">$99</div>
+                        <div className="text-sm font-bold text-green-600">FREE</div>
+                        <div className="text-[10px] text-green-700">Fee Waived!</div>
+                      </div>
+                    </>
+                  ) : hasTomorrow ? (
+                    <>
+                      <Calendar className="h-6 w-6 text-blue-500 mx-auto mb-1" />
+                      <div className="text-base font-bold text-blue-600">NEXT DAY</div>
+                      <div className="text-[10px] text-gray-600">Guaranteed</div>
+                      <div className="mt-1 bg-green-50 rounded p-1">
+                        <div className="text-xs font-bold text-gray-400 line-through">$99</div>
+                        <div className="text-sm font-bold text-green-600">FREE</div>
+                        <div className="text-[10px] text-green-700">Fee Waived!</div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="text-xl font-bold text-johnson-blue" data-testid="service-fee-mobile">
+                        $99
+                      </div>
+                      <div className="text-[10px] text-gray-600">Service Fee</div>
+                      <div className="text-[10px] text-green-600 font-medium">Applied to repair</div>
+                    </>
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* CTA Buttons - Emergency call prompt or booking */}
@@ -397,56 +446,6 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
               </div>
             )}
 
-            {/* Call Option - Mobile only (desktop version is inline above) */}
-            {uniqueSlots.length > 0 && !isEmergency && (
-              <div className="mt-4 lg:hidden">
-                <div className="text-sm text-blue-200 mb-2">Prefer to book by phone?</div>
-                <a 
-                  href="tel:6174799911" 
-                  className="bg-white/20 text-white px-4 py-2 rounded-lg font-bold hover:bg-white/30 transition-all duration-300 inline-flex items-center border border-white/30"
-                >
-                  <Phone className="mr-2 h-4 w-4" />
-                  Call (617) 479-9911
-                </a>
-              </div>
-            )}
-
-            {/* Mobile-only Service Badge */}
-            <div className={`lg:hidden bg-white p-6 rounded-xl shadow-lg w-full sm:w-auto mt-6 ${hasToday || hasTomorrow ? 'ring-4 ring-green-400 ring-opacity-50' : ''}`}>
-              <div className="text-center">
-                {hasToday ? (
-                  <>
-                    <Zap className="h-8 w-8 text-green-500 mx-auto mb-2 animate-bounce" />
-                    <div className="text-xl sm:text-2xl font-bold text-green-600">EXPRESS</div>
-                    <div className="text-xs sm:text-sm text-gray-600">Same-Day Service</div>
-                    <div className="mt-2 bg-green-50 rounded-lg p-2">
-                      <div className="text-base sm:text-lg font-bold text-gray-400 line-through">$99</div>
-                      <div className="text-lg sm:text-xl font-bold text-green-600">FREE</div>
-                      <div className="text-xs text-green-700">Service Fee Waived!</div>
-                    </div>
-                  </>
-                ) : hasTomorrow ? (
-                  <>
-                    <Calendar className="h-8 w-8 text-blue-500 mx-auto mb-2" />
-                    <div className="text-xl sm:text-2xl font-bold text-blue-600">NEXT DAY</div>
-                    <div className="text-xs sm:text-sm text-gray-600">Guaranteed</div>
-                    <div className="mt-2 bg-green-50 rounded-lg p-2">
-                      <div className="text-base sm:text-lg font-bold text-gray-400 line-through">$99</div>
-                      <div className="text-lg sm:text-xl font-bold text-green-600">FREE</div>
-                      <div className="text-xs text-green-700">Service Fee Waived!</div>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="text-2xl sm:text-3xl font-bold text-johnson-blue" data-testid="service-fee">
-                      $99
-                    </div>
-                    <div className="text-xs sm:text-sm text-gray-600">Service Fee</div>
-                    <div className="text-xs text-green-600 font-medium">Applied to repair</div>
-                  </>
-                )}
-              </div>
-            </div>
           </div>
         </div>
       </div>
