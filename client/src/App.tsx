@@ -16,7 +16,7 @@ import MobileMoreMenu from "@/components/MobileMoreMenu";
 import BookingModalEnhanced from "@/components/BookingModalEnhanced";
 import Home from "@/pages/home";
 import { JobCompletionNotifications } from "@/components/JobCompletionNotifications";
-import { BookingAgentChat } from "@/components/BookingAgentChat";
+import { ChatKitWidget } from "@/components/ChatKitWidget";
 
 // Lazy load VideoCallPopup - not critical for initial render
 const VideoCallPopup = lazy(() => import("@/components/VideoCallPopup").then(module => ({ default: module.VideoCallPopup })));
@@ -237,7 +237,7 @@ function App() {
         <Toaster />
         <Router />
           <JobCompletionNotifications />
-          <BookingAgentChat />
+          <ChatKitWidget />
           <Suspense fallback={null}>
             <VideoCallPopup />
           </Suspense>
