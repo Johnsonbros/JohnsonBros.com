@@ -154,7 +154,7 @@ export async function buildThreadContext(customerId: string, threadId: string) {
       .slice()
       .reverse()
       .map((message) => ({
-        role: message.direction === 'in' ? 'user' : 'assistant',
+        role: message.direction === 'in' ? 'user' as const : 'assistant' as const,
         content: message.text,
       })),
   };

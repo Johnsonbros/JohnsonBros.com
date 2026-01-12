@@ -1,10 +1,9 @@
 // AI Chat Service - Powers web chat, SMS, and voice conversations
-// Uses OpenAI Responses API with MCP tool type for automatic tool discovery from MCP server
-// This eliminates duplicate tool definitions - tools are discovered from src/booker.ts
+// Uses OpenAI Responses API with MCP tool type for automatic tool discovery
+// Tools are defined in src/booker.ts MCP server - no duplicate definitions needed
 
 import OpenAI from 'openai';
 import { Logger } from '../src/logger';
-import { fetch } from 'undici';
 import { agentTracing } from './agentTracing';
 
 const openai = new OpenAI({
@@ -12,37 +11,23 @@ const openai = new OpenAI({
 });
 
 // Get the public MCP server URL for OpenAI Responses API
-// In production, this should be the full public URL (e.g., https://yourdomain.com/mcp)
 // The MCP server at /mcp proxies to the internal MCP server on port 3001
 function getMcpServerUrl(): string {
-  // Check for explicit public URL configuration
   if (process.env.MCP_PUBLIC_URL) {
     return process.env.MCP_PUBLIC_URL;
   }
   
-  // For Replit deployments, construct from REPLIT_DEV_DOMAIN or REPL_SLUG
   if (process.env.REPLIT_DEV_DOMAIN) {
     return `https://${process.env.REPLIT_DEV_DOMAIN}/mcp`;
   }
   
-  // Fallback for local development (won't work with OpenAI Responses API)
-  Logger.warn('MCP_PUBLIC_URL not set - OpenAI Responses API MCP tool may not work. Set MCP_PUBLIC_URL to your public domain.');
+  Logger.warn('MCP_PUBLIC_URL not set - using default. Set MCP_PUBLIC_URL for production.');
   return 'http://localhost:5000/mcp';
 }
 
 const MCP_PUBLIC_URL = getMcpServerUrl();
 
-// Feature flag to control which API to use
-// Set USE_RESPONSES_API=true to use the new Responses API with MCP tool type
-// Otherwise falls back to Chat Completions API with manual tool execution
-const USE_RESPONSES_API = process.env.USE_RESPONSES_API === 'true';
-
-// Legacy: Direct MCP server URL for fallback Chat Completions implementation
-const DEFAULT_MCP_BASE_URL = 'http://localhost:3001';
-const MCP_SERVER_URL = (process.env.MCP_SERVER_URL || DEFAULT_MCP_BASE_URL).replace(/\/$/, '');
-
-// Allowed tools to expose to OpenAI - this limits which MCP tools the AI can use
-// Matches the tools registered in src/booker.ts
+// Allowed tools to expose to OpenAI - matches tools in src/booker.ts
 const ALLOWED_MCP_TOOLS = [
   'book_service_call',
   'search_availability', 
@@ -59,366 +44,44 @@ const ALLOWED_MCP_TOOLS = [
   'request_cancellation_callback'
 ];
 
-// Session storage for OpenAI Responses API - stores mcp_list_tools for reuse
+// Session storage for Responses API
 interface ResponsesSessionData {
-  mcpListToolsItem?: any; // Cache the mcp_list_tools output item
   previousResponseId?: string;
   lastUsed: number;
 }
 
 const responsesSessionData: Map<string, ResponsesSessionData> = new Map();
-const RESPONSES_SESSION_TTL = 60 * 60 * 1000; // 1 hour TTL
-
-// Legacy: Session storage for direct MCP sessions (Chat Completions fallback)
-interface McpSessionData {
-  sessionId: string;
-  lastUsed: number;
-}
-
-const mcpSessions: Map<string, McpSessionData> = new Map();
-const MCP_SESSION_TTL = 60 * 60 * 1000; // 1 hour TTL
+const SESSION_TTL = 60 * 60 * 1000; // 1 hour
 
 // Clean up expired sessions
 function cleanupExpiredSessions(): void {
   const now = Date.now();
+  const expired: string[] = [];
   
-  // Clean up Responses API sessions
-  const expiredResponses: string[] = [];
   for (const [sessionId, data] of responsesSessionData.entries()) {
-    if (now - data.lastUsed > RESPONSES_SESSION_TTL) {
-      expiredResponses.push(sessionId);
+    if (now - data.lastUsed > SESSION_TTL) {
+      expired.push(sessionId);
     }
-  }
-  for (const sessionId of expiredResponses) {
-    responsesSessionData.delete(sessionId);
-    Logger.debug(`Cleaned up expired Responses session: ${sessionId}`);
   }
   
-  // Clean up legacy MCP sessions
-  const expiredMcp: string[] = [];
-  for (const [chatSessionId, data] of mcpSessions.entries()) {
-    if (now - data.lastUsed > MCP_SESSION_TTL) {
-      expiredMcp.push(chatSessionId);
-    }
+  for (const sessionId of expired) {
+    responsesSessionData.delete(sessionId);
+    Logger.debug(`Cleaned up expired session: ${sessionId}`);
   }
-  for (const chatSessionId of expiredMcp) {
-    mcpSessions.delete(chatSessionId);
-    Logger.debug(`Cleaned up expired MCP session for chat: ${chatSessionId}`);
-  }
-
-  const total = expiredResponses.length + expiredMcp.length;
-  if (total > 0) {
-    Logger.info(`Cleaned up ${total} expired sessions`);
+  
+  if (expired.length > 0) {
+    Logger.info(`Cleaned up ${expired.length} expired sessions`);
   }
 }
 
-// Run cleanup every 15 minutes
 let sessionCleanupInterval: NodeJS.Timeout | null = null;
 sessionCleanupInterval = setInterval(cleanupExpiredSessions, 15 * 60 * 1000);
 
-// Cleanup function for graceful shutdown
 export function stopMcpSessionCleanup(): void {
   if (sessionCleanupInterval) {
     clearInterval(sessionCleanupInterval);
     sessionCleanupInterval = null;
-    Logger.info('Session cleanup interval stopped');
-  }
-}
-
-// Legacy PLUMBING_TOOLS for Chat Completions fallback (when USE_RESPONSES_API=false)
-// These are minimal definitions - the full rich descriptions are in src/booker.ts MCP server
-const LEGACY_PLUMBING_TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
-  {
-    type: "function",
-    function: {
-      name: "lookup_customer",
-      description: "Look up an existing customer by phone, email, or name",
-      parameters: { type: "object", properties: { phone: { type: "string" }, email: { type: "string" }, name: { type: "string" } } }
-    }
-  },
-  {
-    type: "function",
-    function: {
-      name: "get_services",
-      description: "List all plumbing services with descriptions and pricing",
-      parameters: { type: "object", properties: { category: { type: "string" }, search: { type: "string" } } }
-    }
-  },
-  {
-    type: "function",
-    function: {
-      name: "get_quote",
-      description: "Get instant price estimate for plumbing services",
-      parameters: { type: "object", properties: { service_type: { type: "string" }, issue_description: { type: "string" }, property_type: { type: "string" }, urgency: { type: "string" } }, required: ["service_type", "issue_description"] }
-    }
-  },
-  {
-    type: "function",
-    function: {
-      name: "search_availability",
-      description: "Search available appointment slots on a date",
-      parameters: { type: "object", properties: { date: { type: "string" }, serviceType: { type: "string" }, time_preference: { type: "string" } }, required: ["date", "serviceType"] }
-    }
-  },
-  {
-    type: "function",
-    function: {
-      name: "book_service_call",
-      description: "Book a plumbing service appointment in HousecallPro",
-      parameters: { type: "object", properties: { first_name: { type: "string" }, last_name: { type: "string" }, phone: { type: "string" }, email: { type: "string" }, street: { type: "string" }, city: { type: "string" }, state: { type: "string" }, zip: { type: "string" }, description: { type: "string" }, time_preference: { type: "string" }, earliest_date: { type: "string" } }, required: ["first_name", "last_name", "phone", "street", "city", "state", "zip", "description"] }
-    }
-  },
-  {
-    type: "function",
-    function: {
-      name: "emergency_help",
-      description: "Get emergency plumbing guidance with safety instructions",
-      parameters: { type: "object", properties: { emergency_type: { type: "string" }, additional_details: { type: "string" } }, required: ["emergency_type"] }
-    }
-  },
-  {
-    type: "function",
-    function: {
-      name: "create_lead",
-      description: "Create a callback request lead in HousecallPro",
-      parameters: { type: "object", properties: { first_name: { type: "string" }, last_name: { type: "string" }, phone: { type: "string" }, email: { type: "string" }, notes: { type: "string" } }, required: ["first_name", "phone"] }
-    }
-  },
-  {
-    type: "function",
-    function: {
-      name: "get_job_status",
-      description: "Check status of a job by confirmation number or customer phone",
-      parameters: { type: "object", properties: { confirmation_number: { type: "string" }, customer_phone: { type: "string" } } }
-    }
-  },
-  {
-    type: "function",
-    function: {
-      name: "get_service_history",
-      description: "Get past service history for a customer",
-      parameters: { type: "object", properties: { customer_id: { type: "string" }, customer_phone: { type: "string" }, limit: { type: "number" } } }
-    }
-  },
-  {
-    type: "function",
-    function: {
-      name: "search_faq",
-      description: "Search FAQ database for common plumbing questions",
-      parameters: { type: "object", properties: { query: { type: "string" }, category: { type: "string" } }, required: ["query"] }
-    }
-  }
-];
-
-// Call MCP server tool with automatic session recovery
-async function callMCPTool(toolName: string, args: any, chatSessionId: string, retryOnExpired: boolean = true): Promise<any> {
-  try {
-    // Get or create MCP session
-    const sessionData = mcpSessions.get(chatSessionId);
-    let mcpSessionId = sessionData?.sessionId;
-
-    // Update last used timestamp
-    if (sessionData) {
-      sessionData.lastUsed = Date.now();
-    }
-
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json, text/event-stream'
-    };
-
-    if (mcpSessionId) {
-      headers['Mcp-Session-Id'] = mcpSessionId;
-    }
-
-    // Call MCP server with tools/call method with timeout
-    const abortController = new AbortController();
-    const timeoutId = setTimeout(() => abortController.abort(), 30000); // 30 second timeout
-
-    try {
-      const response = await fetch(`${MCP_SERVER_URL}/mcp`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          jsonrpc: '2.0',
-          id: Date.now(),
-          method: 'tools/call',
-          params: {
-            name: toolName,
-            arguments: args
-          }
-        }),
-        signal: abortController.signal
-      });
-
-      // Store session ID if returned
-      const sessionIdHeader = response.headers.get('Mcp-Session-Id');
-      if (sessionIdHeader) {
-        mcpSessions.set(chatSessionId, {
-          sessionId: sessionIdHeader,
-          lastUsed: Date.now(),
-        });
-      }
-
-      if (!response.ok) {
-        const errorText = await response.text();
-
-        // Check if it's a session expiration error (400 with -32001 code)
-        if (response.status === 400) {
-          try {
-            const errorJson = JSON.parse(errorText);
-            if (errorJson.error?.code === -32001 && retryOnExpired) {
-              Logger.warn(`MCP session expired for chat session ${chatSessionId}, reinitializing...`);
-              // Clear the expired session
-              mcpSessions.delete(chatSessionId);
-              // Reinitialize the session
-              const initialized = await initMCPSession(chatSessionId);
-              if (initialized) {
-                Logger.info(`MCP session reinitialized, retrying tool call: ${toolName}`);
-                // Retry the tool call once (retryOnExpired = false prevents infinite loop)
-                return await callMCPTool(toolName, args, chatSessionId, false);
-              }
-            }
-          } catch (parseError) {
-            // If we can't parse the error, continue with generic error handling
-          }
-        }
-
-        Logger.error(`MCP server error: ${response.status} ${errorText}`);
-        throw new Error(`MCP server error: ${response.status}`);
-      }
-
-      const result = await response.json() as any;
-
-      if (result.error) {
-        // Check for session expiration in the result
-        if (result.error.code === -32001 && retryOnExpired) {
-          Logger.warn(`MCP session expired (error code), reinitializing...`);
-          mcpSessions.delete(chatSessionId);
-          const initialized = await initMCPSession(chatSessionId);
-          if (initialized) {
-            Logger.info(`MCP session reinitialized, retrying tool call: ${toolName}`);
-            return await callMCPTool(toolName, args, chatSessionId, false);
-          }
-        }
-
-        Logger.error('MCP tool error:', result.error);
-        throw new Error(result.error.message || 'MCP tool error');
-      }
-
-      // Extract text content from MCP response
-      if (result.result?.content?.[0]?.text) {
-        return result.result.content[0].text;
-      }
-
-      return JSON.stringify(result.result || result);
-
-    } catch (error: any) {
-      Logger.error(`MCP tool call failed for ${toolName}:`, error);
-      throw error;
-    } finally {
-      clearTimeout(timeoutId);
-    }
-  } catch (error: any) {
-    Logger.error(`MCP tool call failed for ${toolName}:`, error);
-    throw error;
-  }
-}
-
-// Initialize MCP session
-async function initMCPSession(chatSessionId: string): Promise<boolean> {
-  const abortController = new AbortController();
-  const timeoutId = setTimeout(() => abortController.abort(), 10000); // 10 second timeout
-
-  try {
-    const response = await fetch(`${MCP_SERVER_URL}/mcp`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json, text/event-stream'
-      },
-      body: JSON.stringify({
-        jsonrpc: '2.0',
-        id: Date.now(),
-        method: 'initialize',
-        params: {
-          protocolVersion: '2024-11-05',
-          capabilities: {},
-          clientInfo: {
-            name: 'jb-chat',
-            version: '1.0.0'
-          }
-        }
-      }),
-      signal: abortController.signal
-    });
-
-    const sessionIdHeader = response.headers.get('Mcp-Session-Id');
-    if (sessionIdHeader) {
-      mcpSessions.set(chatSessionId, {
-        sessionId: sessionIdHeader,
-        lastUsed: Date.now(),
-      });
-      Logger.info(`MCP session initialized: ${sessionIdHeader}`);
-      return true;
-    }
-
-    return response.ok;
-  } catch (error: any) {
-    Logger.error('Failed to initialize MCP session:', error);
-    return false;
-  } finally {
-    clearTimeout(timeoutId);
-  }
-}
-
-// Execute tool calls - routes to MCP server for real HousecallPro integration
-async function executeTool(name: string, args: any, chatSessionId: string): Promise<string> {
-  Logger.info(`Executing tool via MCP: ${name}`, args);
-  
-  try {
-    // Ensure MCP session is initialized
-    if (!mcpSessions.has(chatSessionId)) {
-      await initMCPSession(chatSessionId);
-    }
-    
-    // Call the MCP server
-    const result = await callMCPTool(name, args, chatSessionId);
-    return typeof result === 'string' ? result : JSON.stringify(result);
-    
-  } catch (error: any) {
-    Logger.error(`Tool ${name} failed, returning error response:`, error);
-    
-    // Return helpful error messages based on tool type
-    switch (name) {
-      case 'lookup_customer':
-        return JSON.stringify({
-          success: false,
-          error: "I'm having trouble accessing customer records right now. Could you please provide your details so I can help you book an appointment?",
-          fallback: true
-        });
-        
-      case 'book_service_call':
-        return JSON.stringify({
-          success: false,
-          error: "I'm having trouble completing the booking. Please call us directly at (617) 479-9911 to schedule your appointment.",
-          fallback: true
-        });
-        
-      case 'search_availability':
-        return JSON.stringify({
-          success: false,
-          error: "I couldn't check availability right now. Please call (617) 479-9911 to check available times.",
-          fallback: true
-        });
-        
-      default:
-        return JSON.stringify({
-          success: false,
-          error: "I'm experiencing a technical issue. Please try again or call (617) 479-9911.",
-          fallback: true
-        });
-    }
+    Logger.info('Session cleanup stopped');
   }
 }
 
@@ -650,8 +313,24 @@ function getChannelPrompt(channel: 'web' | 'sms' | 'voice'): string {
   return `${SYSTEM_PROMPT}${CHANNEL_GUIDANCE[channel].promptSuffix}`;
 }
 
-// Store conversation history per session
-const conversationHistory: Map<string, OpenAI.Chat.Completions.ChatCompletionMessageParam[]> = new Map();
+function buildSystemPrompt(
+  channel: 'web' | 'sms' | 'voice',
+  context?: { summary?: string | null; currentIssueSummary?: string | null },
+): string {
+  let prompt = getChannelPrompt(channel);
+
+  if (context?.summary || context?.currentIssueSummary) {
+    prompt += `\n\n## Customer Memory\n`;
+    if (context.summary) {
+      prompt += `Customer summary: ${context.summary}\n`;
+    }
+    if (context.currentIssueSummary) {
+      prompt += `Current issue summary: ${context.currentIssueSummary}\n`;
+    }
+  }
+
+  return prompt;
+}
 
 export interface ChatMessage {
   role: 'user' | 'assistant';
@@ -676,175 +355,134 @@ export async function processChat(
   const channelMap = { web: 'web_chat', sms: 'sms', voice: 'voice' } as const;
   const channelConfig = CHANNEL_GUIDANCE[channel];
   const systemPrompt = buildSystemPrompt(channel, context);
+  const toolsUsed: string[] = [];
   
   try {
-    // Ensure conversation is tracked
-    const conversationId = await agentTracing.getOrCreateConversation(
-      sessionId, 
-      channelMap[channel],
-      systemPrompt
-    );
+    // Track conversation in database
+    await agentTracing.getOrCreateConversation(sessionId, channelMap[channel], systemPrompt);
+    await agentTracing.addMessage(sessionId, { role: 'user', content: userMessage });
     
-    // Get or create conversation history
-    let history = conversationHistory.get(sessionId) || [];
+    // Get or initialize session data
+    let sessionData = responsesSessionData.get(sessionId);
+    if (!sessionData) {
+      sessionData = { lastUsed: Date.now() };
+      responsesSessionData.set(sessionId, sessionData);
+    }
+    sessionData.lastUsed = Date.now();
     
-    // Add system prompt if new conversation
-    if (history.length === 0) {
-      history.push({ role: 'system', content: systemPrompt });
-      if (context?.recentMessages?.length) {
-        history.push(
-          ...context.recentMessages.map((message) => ({
-            role: message.role,
-            content: message.content,
-          }))
-        );
+    // Build input for the Responses API
+    const input: any[] = [];
+    
+    // Add conversation context if available
+    if (context?.recentMessages?.length) {
+      for (const msg of context.recentMessages) {
+        input.push({
+          type: 'message',
+          role: msg.role,
+          content: msg.content
+        });
       }
-    } else {
-      history[0] = { role: 'system', content: systemPrompt };
     }
     
-    // Add user message
-    history.push({ role: 'user', content: userMessage });
-    
-    // Track user message
-    await agentTracing.addMessage(sessionId, {
+    // Add the current user message
+    input.push({
+      type: 'message',
       role: 'user',
-      content: userMessage,
+      content: userMessage
     });
     
-    // Limit history to prevent token overflow
-    if (history.length > 20) {
-      history = [history[0], ...history.slice(-18)];
-    }
+    Logger.info(`[Responses API] Calling with MCP server: ${MCP_PUBLIC_URL}`, { sessionId });
     
-    // Call OpenAI with tools (using legacy Chat Completions API)
-    // When USE_RESPONSES_API=true, we'll use the Responses API with MCP tool type instead
-    const response = await openai.chat.completions.create({
+    // Create the response with MCP tool type
+    // OpenAI automatically discovers and calls tools from the MCP server
+    const response = await (openai as any).responses.create({
       model: 'gpt-4o-mini',
-      messages: history,
-      tools: LEGACY_PLUMBING_TOOLS,
-      tool_choice: 'auto',
-      max_tokens: channelConfig.maxTokens
+      instructions: systemPrompt,
+      input,
+      tools: [
+        {
+          type: 'mcp',
+          server_label: 'johnson_bros_plumbing',
+          server_url: MCP_PUBLIC_URL,
+          allowed_tools: ALLOWED_MCP_TOOLS,
+          require_approval: 'never'
+        }
+      ],
+      ...(sessionData.previousResponseId ? { previous_response_id: sessionData.previousResponseId } : {})
     });
     
-    const assistantMessage = response.choices[0].message;
-    const toolsUsed: string[] = [];
+    // Store response ID for conversation continuity
+    sessionData.previousResponseId = response.id;
     
-    // Handle tool calls
-    if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
-      history.push(assistantMessage);
+    // Process output items to extract the assistant message and track tool calls
+    let assistantMessage = '';
+    
+    for (const item of response.output || []) {
+      // Handle mcp_list_tools - OpenAI discovered tools from MCP server
+      if (item.type === 'mcp_list_tools') {
+        Logger.debug('[Responses API] Tools discovered from MCP server', { 
+          toolCount: item.tools?.length 
+        });
+      }
       
-      // Track assistant message with tool calls
-      await agentTracing.addMessage(sessionId, {
-        role: 'assistant',
-        content: assistantMessage.content || '',
-        toolCalls: assistantMessage.tool_calls
-          .filter(tc => tc.type === 'function')
-          .map(tc => ({
-            id: tc.id,
-            name: (tc as any).function.name,
-            arguments: JSON.parse((tc as any).function.arguments),
-          })),
-      });
-      
-      for (const toolCall of assistantMessage.tool_calls) {
-        if (toolCall.type !== 'function') continue;
-        
-        const toolName = toolCall.function.name;
-        const toolArgs = JSON.parse(toolCall.function.arguments);
-        
+      // Handle mcp_call - OpenAI executed a tool via MCP
+      if (item.type === 'mcp_call') {
+        const toolName = item.name || 'unknown';
         toolsUsed.push(toolName);
         
-        // Log tool call start
-        const startTime = Date.now();
+        Logger.info(`[Responses API] MCP tool executed: ${toolName}`, { 
+          arguments: item.arguments,
+          output: typeof item.output === 'string' ? item.output.substring(0, 200) : item.output
+        });
+        
+        // Log tool call for tracing
         const toolCallDbId = await agentTracing.logToolCall({
           sessionId,
           toolName,
-          toolCallId: toolCall.id,
-          arguments: toolArgs,
+          toolCallId: item.id || `mcp-${Date.now()}`,
+          arguments: item.arguments,
           userMessageTrigger: userMessage,
         });
         
-        // Execute tool via MCP server
-        let toolResult: string;
-        let success = true;
-        let errorMessage: string | undefined;
-        
-        try {
-          toolResult = await executeTool(toolName, toolArgs, sessionId);
-        } catch (error: any) {
-          toolResult = JSON.stringify({ error: error.message });
-          success = false;
-          errorMessage = error.message;
-        }
-        
-        // Log tool call result
-        const latencyMs = Date.now() - startTime;
         if (toolCallDbId) {
           await agentTracing.updateToolCallResult(toolCallDbId, {
-            result: toolResult,
-            success,
-            errorMessage,
-            latencyMs,
+            result: typeof item.output === 'string' ? item.output : JSON.stringify(item.output),
+            success: !item.error,
+            errorMessage: item.error,
+            latencyMs: 0,
           });
         }
-        
-        // Track tool response
-        await agentTracing.addMessage(sessionId, {
-          role: 'tool',
-          content: toolResult,
-          toolCallId: toolCall.id,
-        });
-        
-        history.push({
-          role: 'tool',
-          tool_call_id: toolCall.id,
-          content: toolResult
-        });
       }
       
-      // Get final response after tool calls
-      const finalResponse = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: history,
-        max_tokens: channelConfig.maxTokens
-      });
-      
-      const finalMessage = finalResponse.choices[0].message;
-      history.push(finalMessage);
-      conversationHistory.set(sessionId, history);
-      
-      // Track final assistant message
-      await agentTracing.addMessage(sessionId, {
-        role: 'assistant',
-        content: finalMessage.content || '',
-      });
-      
-      return {
-        message: finalMessage.content || "I apologize, I couldn't generate a response. Please call us at (617) 479-9911.",
-        toolsUsed
-      };
+      // Handle message output - the assistant's response
+      if (item.type === 'message' && item.role === 'assistant') {
+        if (Array.isArray(item.content)) {
+          for (const contentPart of item.content) {
+            if (contentPart.type === 'output_text' || contentPart.type === 'text') {
+              assistantMessage += contentPart.text || '';
+            }
+          }
+        } else if (typeof item.content === 'string') {
+          assistantMessage = item.content;
+        }
+      }
     }
-    
-    // No tool calls - just return the response
-    history.push(assistantMessage);
-    conversationHistory.set(sessionId, history);
     
     // Track assistant message
     await agentTracing.addMessage(sessionId, {
       role: 'assistant',
-      content: assistantMessage.content || '',
+      content: assistantMessage,
     });
     
     return {
-      message: assistantMessage.content || "I apologize, I couldn't generate a response. Please call us at (617) 479-9911.",
+      message: assistantMessage || "I apologize, I couldn't generate a response. Please call us at (617) 479-9911.",
       toolsUsed
     };
     
   } catch (error: any) {
-    Logger.error('AI Chat error:', error);
+    Logger.error('[Responses API] Error:', error);
     
-    // Track error in conversation
+    // Track error
     try {
       await agentTracing.endConversation(sessionId, 'error');
     } catch (e) {
@@ -857,36 +495,12 @@ export async function processChat(
   }
 }
 
-function buildSystemPrompt(
-  channel: 'web' | 'sms' | 'voice',
-  context?: { summary?: string | null; currentIssueSummary?: string | null },
-): string {
-  let prompt = getChannelPrompt(channel);
-
-  if (context?.summary || context?.currentIssueSummary) {
-    prompt += `\n\n## Customer Memory\n`;
-    if (context.summary) {
-      prompt += `Customer summary: ${context.summary}\n`;
-    }
-    if (context.currentIssueSummary) {
-      prompt += `Current issue summary: ${context.currentIssueSummary}\n`;
-    }
-  }
-
-  return prompt;
-}
-
 export function clearSession(sessionId: string): void {
-  conversationHistory.delete(sessionId);
-  mcpSessions.delete(sessionId);
+  responsesSessionData.delete(sessionId);
 }
 
 export function getSessionHistory(sessionId: string): ChatMessage[] {
-  const history = conversationHistory.get(sessionId) || [];
-  return history
-    .filter(m => m.role === 'user' || m.role === 'assistant')
-    .map(m => ({
-      role: m.role as 'user' | 'assistant',
-      content: typeof m.content === 'string' ? m.content : ''
-    }));
+  // With Responses API, history is managed by OpenAI via previous_response_id
+  // Return empty array as we don't maintain local history anymore
+  return [];
 }
