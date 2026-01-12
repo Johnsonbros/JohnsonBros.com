@@ -19,9 +19,13 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, HTMLMotionProps } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import logoIcon from '@assets/JBros_Wrench_Logo_WP.png';
+
+const MotionDiv = motion.div as React.FC<HTMLMotionProps<'div'> & React.HTMLAttributes<HTMLDivElement>>;
+const MotionSpan = motion.span as React.FC<HTMLMotionProps<'span'> & React.HTMLAttributes<HTMLSpanElement>>;
+const MotionButton = motion.button as React.FC<HTMLMotionProps<'button'> & React.ButtonHTMLAttributes<HTMLButtonElement>>;
 
 interface Message {
   id: string;
@@ -416,7 +420,7 @@ export function PlumbingAssistantApp() {
       <ScrollArea className="flex-1" ref={scrollRef}>
         <div className="p-4 sm:p-6 max-w-3xl mx-auto">
           {messages.length === 0 ? (
-            <motion.div
+            <MotionDiv
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               className="space-y-6"
@@ -435,7 +439,7 @@ export function PlumbingAssistantApp() {
 
               <div className="grid grid-cols-2 gap-3">
                 {QUICK_ACTIONS.map((action, index) => (
-                  <motion.button
+                  <MotionButton
                     key={index}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -450,7 +454,7 @@ export function PlumbingAssistantApp() {
                       <span className="font-medium text-slate-900 dark:text-white block">{action.label}</span>
                       <ChevronRight className="w-4 h-4 text-slate-400 absolute top-1/2 right-0 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
                     </div>
-                  </motion.button>
+                  </MotionButton>
                 ))}
               </div>
 
@@ -460,7 +464,7 @@ export function PlumbingAssistantApp() {
                 </h3>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {SERVICE_CARDS.map((service, index) => (
-                    <motion.div
+                    <MotionDiv
                       key={index}
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
@@ -470,15 +474,15 @@ export function PlumbingAssistantApp() {
                       <Wrench className="w-6 h-6 text-blue-600 dark:text-blue-400 mb-2" />
                       <h4 className="font-medium text-slate-900 dark:text-white text-sm">{service.title}</h4>
                       <p className="text-xs text-slate-500 dark:text-slate-400">{service.desc}</p>
-                    </motion.div>
+                    </MotionDiv>
                   ))}
                 </div>
               </div>
-            </motion.div>
+            </MotionDiv>
           ) : (
             <div className="space-y-4">
               {messages.map((message, index) => (
-                <motion.div
+                <MotionDiv
                   key={message.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -573,7 +577,7 @@ export function PlumbingAssistantApp() {
                       </div>
                     </div>
                   )}
-                </motion.div>
+                </MotionDiv>
               ))}
             </div>
           )}

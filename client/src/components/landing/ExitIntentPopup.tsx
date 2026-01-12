@@ -4,7 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, HTMLMotionProps } from "framer-motion";
+
+const MotionDiv = motion.div as React.FC<HTMLMotionProps<'div'> & React.HTMLAttributes<HTMLDivElement>>;
 
 interface ExitIntentPopupProps {
   onBookService: () => void;
@@ -144,7 +146,7 @@ export function ExitIntentPopup({
         <Dialog open={isOpen} onOpenChange={handleClose}>
           <DialogContent className="max-w-md p-0 overflow-hidden border-0" hideCloseButton aria-describedby={undefined}>
             <DialogTitle className="sr-only">Special Offer</DialogTitle>
-            <motion.div
+            <MotionDiv
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
@@ -161,13 +163,13 @@ export function ExitIntentPopup({
                 </button>
 
                 <div className="text-center">
-                  <motion.div
+                  <MotionDiv
                     animate={{ rotate: [0, -10, 10, -10, 0] }}
                     transition={{ duration: 0.5, delay: 0.2 }}
                     className="inline-block mb-4"
                   >
                     {getOfferIcon()}
-                  </motion.div>
+                  </MotionDiv>
 
                   <h2 className="text-3xl font-black mb-2">
                     {offer.headline || "WAIT! Special Offer"}
@@ -290,7 +292,7 @@ export function ExitIntentPopup({
                   </div>
                 </div>
               </div>
-            </motion.div>
+            </MotionDiv>
           </DialogContent>
         </Dialog>
       )}

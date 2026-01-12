@@ -3,7 +3,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ChevronRight, MapPin, Clock, CheckCircle, Camera } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, HTMLMotionProps } from "framer-motion";
+
+const MotionDiv = motion.div as React.FC<HTMLMotionProps<'div'> & React.HTMLAttributes<HTMLDivElement>>;
+const MotionImg = motion.img as React.FC<HTMLMotionProps<'img'> & React.ImgHTMLAttributes<HTMLImageElement>>;
 
 interface Project {
   id: number;
@@ -133,7 +136,7 @@ export default function FeaturedProjects() {
               {/* Image Section */}
               <div className="relative h-[400px] bg-gray-100">
                 <AnimatePresence mode="wait">
-                  <motion.img
+                  <MotionImg
                     key={`${currentProject.id}-${showBefore ? 'before' : 'after'}`}
                     src={showBefore ? currentProject.beforeImage : currentProject.afterImage}
                     alt={`${currentProject.title} - ${showBefore ? 'Before' : 'After'}`}

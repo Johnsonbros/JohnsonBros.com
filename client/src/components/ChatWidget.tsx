@@ -3,8 +3,12 @@ import { MessageCircle, X, Send, Loader2, Phone, Wrench } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, HTMLMotionProps } from 'framer-motion';
 import logoIcon from '@assets/JBros_Wrench_Logo_WP.png';
+
+const MotionDiv = motion.div as React.FC<HTMLMotionProps<'div'> & React.HTMLAttributes<HTMLDivElement>>;
+const MotionSpan = motion.span as React.FC<HTMLMotionProps<'span'> & React.HTMLAttributes<HTMLSpanElement>>;
+const MotionButton = motion.button as React.FC<HTMLMotionProps<'button'> & React.ButtonHTMLAttributes<HTMLButtonElement>>;
 
 interface Message {
   id: string;
@@ -121,7 +125,7 @@ export function ChatWidget() {
     <>
       <AnimatePresence>
         {isOpen && (
-          <motion.div
+          <MotionDiv
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -241,13 +245,13 @@ export function ChatWidget() {
                 For emergencies, call <a href="tel:6174799911" className="text-blue-600 font-medium">(617) 479-9911</a>
               </p>
             </form>
-          </motion.div>
+          </MotionDiv>
         )}
       </AnimatePresence>
       <div className="fixed bottom-24 md:bottom-6 left-6 z-50 flex flex-col items-center gap-1">
         <AnimatePresence>
           {scrollProgress > 0.5 && !isOpen && (
-            <motion.span
+            <MotionSpan
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
@@ -255,10 +259,10 @@ export function ChatWidget() {
               className="text-xs font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 px-2 py-0.5 rounded-full shadow-sm border border-gray-200 dark:border-gray-600"
             >
               Chat with us
-            </motion.span>
+            </MotionSpan>
           )}
         </AnimatePresence>
-        <motion.button
+        <MotionButton
           onClick={() => setIsOpen(!isOpen)}
           className="rounded-full bg-white hover:bg-gray-50 shadow-xl border border-gray-200 flex items-center justify-center transition-colors"
           style={{
@@ -282,7 +286,7 @@ export function ChatWidget() {
         >
           <AnimatePresence mode="wait">
             {isOpen ? (
-              <motion.div
+              <MotionDiv
                 key="close"
                 initial={{ rotate: -90, opacity: 0 }}
                 animate={{ rotate: 0, opacity: 1 }}
@@ -290,9 +294,9 @@ export function ChatWidget() {
                 transition={{ duration: 0.15 }}
               >
                 <X className="w-8 h-8 text-gray-700" />
-              </motion.div>
+              </MotionDiv>
             ) : (
-              <motion.div
+              <MotionDiv
                 key="open"
                 initial={{ rotate: 90, opacity: 0 }}
                 animate={{ rotate: 0, opacity: 1 }}
@@ -308,10 +312,10 @@ export function ChatWidget() {
                   }}
                   className="object-contain" 
                 />
-              </motion.div>
+              </MotionDiv>
             )}
           </AnimatePresence>
-        </motion.button>
+        </MotionButton>
       </div>
     </>
   );

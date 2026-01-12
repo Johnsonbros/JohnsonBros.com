@@ -1,8 +1,12 @@
 import { useState, useEffect } from 'react';
 import { MessageSquare, X, Maximize2, Minimize2 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, HTMLMotionProps } from 'framer-motion';
 import { PlumbingAssistantApp } from './PlumbingAssistantApp';
 import logoIcon from '@assets/JBros_Wrench_Logo_WP.png';
+
+const MotionDiv = motion.div as React.FC<HTMLMotionProps<'div'> & React.HTMLAttributes<HTMLDivElement>>;
+const MotionSpan = motion.span as React.FC<HTMLMotionProps<'span'> & React.HTMLAttributes<HTMLSpanElement>>;
+const MotionButton = motion.button as React.FC<HTMLMotionProps<'button'> & React.ButtonHTMLAttributes<HTMLButtonElement>>;
 
 interface OpenAIAppWidgetProps {
   className?: string;
@@ -37,7 +41,7 @@ export function OpenAIAppWidget({ className }: OpenAIAppWidgetProps) {
     <>
       <AnimatePresence>
         {isOpen && (
-          <motion.div
+          <MotionDiv
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -66,14 +70,14 @@ export function OpenAIAppWidget({ className }: OpenAIAppWidgetProps) {
               </button>
             </div>
             <PlumbingAssistantApp />
-          </motion.div>
+          </MotionDiv>
         )}
       </AnimatePresence>
 
       <div className="fixed bottom-24 md:bottom-6 right-6 z-50 flex flex-col items-center gap-2">
         <AnimatePresence>
           {hasNewMessage && !isOpen && (
-            <motion.div
+            <MotionDiv
               initial={{ opacity: 0, scale: 0.8, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.8, y: 10 }}
@@ -89,24 +93,24 @@ export function OpenAIAppWidget({ className }: OpenAIAppWidgetProps) {
               >
                 Start chatting →
               </button>
-            </motion.div>
+            </MotionDiv>
           )}
         </AnimatePresence>
 
         <AnimatePresence>
           {scrollProgress > 0.3 && !isOpen && (
-            <motion.span
+            <MotionSpan
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
               className="text-xs font-medium text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 px-3 py-1 rounded-full shadow-sm border border-slate-200 dark:border-slate-700"
             >
               AI Assistant
-            </motion.span>
+            </MotionSpan>
           )}
         </AnimatePresence>
 
-        <motion.button
+        <MotionButton
           onClick={() => setIsOpen(!isOpen)}
           className="relative rounded-full bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-xl shadow-blue-500/25 flex items-center justify-center transition-all"
           style={{
@@ -133,7 +137,7 @@ export function OpenAIAppWidget({ className }: OpenAIAppWidgetProps) {
           )}
           <AnimatePresence mode="wait">
             {isOpen ? (
-              <motion.div
+              <MotionDiv
                 key="close"
                 initial={{ rotate: -90, opacity: 0 }}
                 animate={{ rotate: 0, opacity: 1 }}
@@ -141,9 +145,9 @@ export function OpenAIAppWidget({ className }: OpenAIAppWidgetProps) {
                 transition={{ duration: 0.15 }}
               >
                 <X className="w-7 h-7 text-white" />
-              </motion.div>
+              </MotionDiv>
             ) : (
-              <motion.div
+              <MotionDiv
                 key="open"
                 initial={{ rotate: 90, opacity: 0 }}
                 animate={{ rotate: 0, opacity: 1 }}
@@ -155,10 +159,10 @@ export function OpenAIAppWidget({ className }: OpenAIAppWidgetProps) {
                   alt="Chat" 
                   className="w-10 h-10 object-contain"
                 />
-              </motion.div>
+              </MotionDiv>
             )}
           </AnimatePresence>
-        </motion.button>
+        </MotionButton>
       </div>
     </>
   );

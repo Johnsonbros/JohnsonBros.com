@@ -2,7 +2,10 @@ import { Calendar, Phone, MessageCircle, ArrowUp, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, HTMLMotionProps } from "framer-motion";
+
+const MotionDiv = motion.div as React.FC<HTMLMotionProps<'div'> & React.HTMLAttributes<HTMLDivElement>>;
+const MotionButton = motion.button as React.FC<HTMLMotionProps<'button'> & React.ButtonHTMLAttributes<HTMLButtonElement>>;
 
 interface FloatingCTAProps {
   onBookService: () => void;
@@ -78,7 +81,7 @@ export function FloatingCTA({
     return (
       <AnimatePresence>
         {isVisible && (
-          <motion.div
+          <MotionDiv
             initial={{ y: 100 }}
             animate={{ y: 0 }}
             exit={{ y: 100 }}
@@ -108,7 +111,7 @@ export function FloatingCTA({
                 </Button>
               </div>
             </div>
-          </motion.div>
+          </MotionDiv>
         )}
       </AnimatePresence>
     );
@@ -119,7 +122,7 @@ export function FloatingCTA({
     return (
       <AnimatePresence>
         {isVisible && (
-          <motion.div
+          <MotionDiv
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             exit={{ scale: 0 }}
@@ -129,7 +132,7 @@ export function FloatingCTA({
             {!isMinimized ? (
               <div className="relative">
                 {showTooltip && (
-                  <motion.div
+                  <MotionDiv
                     initial={{ opacity: 0, x: 10 }}
                     animate={{ opacity: 1, x: 0 }}
                     className="absolute right-full mr-3 top-1/2 transform -translate-y-1/2 whitespace-nowrap"
@@ -138,7 +141,7 @@ export function FloatingCTA({
                       Need help? Book service now!
                       <div className="absolute right-[-8px] top-1/2 transform -translate-y-1/2 w-0 h-0 border-l-8 border-l-gray-900 border-y-4 border-y-transparent" />
                     </div>
-                  </motion.div>
+                  </MotionDiv>
                 )}
                 <Button
                   onClick={onBookService}
@@ -159,7 +162,7 @@ export function FloatingCTA({
                 <MessageCircle className="h-4 w-4" />
               </Button>
             )}
-          </motion.div>
+          </MotionDiv>
         )}
       </AnimatePresence>
     );
@@ -169,7 +172,7 @@ export function FloatingCTA({
   return (
     <AnimatePresence>
       {isVisible && (
-        <motion.div
+        <MotionDiv
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 20 }}
@@ -251,7 +254,7 @@ export function FloatingCTA({
             </div>
           ) : (
             // Minimized State
-            <motion.button
+            <MotionButton
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
               onClick={() => setIsMinimized(false)}
@@ -261,9 +264,9 @@ export function FloatingCTA({
               <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-xs font-bold">
                 !
               </span>
-            </motion.button>
+            </MotionButton>
           )}
-        </motion.div>
+        </MotionDiv>
       )}
     </AnimatePresence>
   );
