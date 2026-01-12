@@ -129,8 +129,7 @@ export default function Header({ onBookService }: HeaderProps) {
           <img 
             src="/JB_logo_New_1756136293648.png" 
             alt="Johnson Bros. Plumbing & Drain Cleaning" 
-            className="h-12 w-auto object-contain"
-            style={{ maxWidth: 'calc(100% - 50px)' }}
+            className="h-8 sm:h-10 w-auto max-w-[140px] sm:max-w-[160px] object-contain"
             data-testid="company-logo"
           />
           
@@ -153,8 +152,7 @@ export default function Header({ onBookService }: HeaderProps) {
               <img 
                 src="/JB_logo_New_1756136293648.png" 
                 alt="Johnson Bros. Plumbing & Drain Cleaning" 
-                className="h-12 w-auto object-contain"
-                style={{ maxWidth: 'calc(100% - 50px)' }}
+                className="h-8 sm:h-10 w-auto max-w-[140px] sm:max-w-[160px] object-contain"
               />
               <button
                 onClick={() => setIsMobileMenuOpen(false)}
@@ -348,7 +346,7 @@ export default function Header({ onBookService }: HeaderProps) {
                 <img 
                   src="/JB_logo_New_1756136293648.png" 
                   alt="Johnson Bros. Plumbing & Drain Cleaning" 
-                  className="h-10 w-auto"
+                  className="h-12 xl:h-14 w-auto max-w-[200px] xl:max-w-[240px] object-contain"
                   data-testid="company-logo-desktop"
                 />
               </div>
