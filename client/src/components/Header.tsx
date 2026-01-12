@@ -124,29 +124,60 @@ export default function Header({ onBookService }: HeaderProps) {
       {/* Main Header */}
       <header className="bg-johnson-blue shadow-lg sticky top-0 z-50 border-t-2 border-johnson-blue">
         {/* Mobile Layout - Simplified */}
-        <div className="lg:hidden px-2 py-1 flex justify-between items-center gap-1 relative z-50">
+        <div className="lg:hidden px-2 py-2 flex justify-between items-center gap-2 relative z-50">
           {/* Logo */}
           <img 
             src="/JB_logo_New_1756136293648.png" 
             alt="Johnson Bros. Plumbing & Drain Cleaning" 
-            className="h-8 sm:h-10 w-auto max-w-[140px] sm:max-w-[160px] object-contain"
+            className="h-8 w-auto max-w-[120px] object-contain flex-shrink-0"
             data-testid="company-logo"
           />
           
-          {/* Hamburger Menu Button */}
-          <button
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="text-white p-2 hover:bg-white/10 rounded-lg transition-colors flex-shrink-0"
-            aria-label="Toggle menu"
-            data-testid="mobile-menu-toggle"
-          >
-            {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </button>
+          {/* Quick Action Buttons */}
+          <div className="flex items-center gap-2 flex-1 justify-end">
+            {onBookService ? (
+              <button 
+                onClick={onBookService}
+                className="bg-johnson-orange hover:bg-orange-600 text-white px-3 py-1.5 rounded-lg font-bold text-xs transition-colors flex items-center gap-1"
+                data-testid="mobile-book-button"
+              >
+                <Calendar className="h-4 w-4" />
+                <span>Book</span>
+              </button>
+            ) : (
+              <Link 
+                href="/#booking"
+                className="bg-johnson-orange hover:bg-orange-600 text-white px-3 py-1.5 rounded-lg font-bold text-xs transition-colors flex items-center gap-1"
+                data-testid="mobile-book-link"
+              >
+                <Calendar className="h-4 w-4" />
+                <span>Book</span>
+              </Link>
+            )}
+            <a 
+              href="tel:6174799911" 
+              className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs transition-colors flex items-center gap-1"
+              data-testid="mobile-call-button"
+            >
+              <Phone className="h-4 w-4" />
+              <span>Call</span>
+            </a>
+            
+            {/* Hamburger Menu Button */}
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="text-white p-2 hover:bg-white/10 rounded-lg transition-colors flex-shrink-0"
+              aria-label="Toggle menu"
+              data-testid="mobile-menu-toggle"
+            >
+              {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </button>
+          </div>
         </div>
 
         {/* Mobile Menu Overlay */}
         {isMobileMenuOpen && (
-          <div className="lg:hidden fixed inset-x-0 bg-johnson-blue z-[60] shadow-2xl flex flex-col" style={{ top: '0px', bottom: '70px' }}>
+          <div className="lg:hidden fixed inset-0 bg-johnson-blue z-[60] shadow-2xl flex flex-col">
             {/* Solid header with logo in mobile menu - stays fixed */}
             <div className="bg-johnson-blue px-2 py-1 flex justify-between items-center gap-1 border-b border-white/10 flex-shrink-0">
               <img 
@@ -303,39 +334,6 @@ export default function Header({ onBookService }: HeaderProps) {
             </nav>
           </div>
         )}
-
-        {/* Mobile Sticky Bottom Action Bar */}
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-50 px-4 py-3">
-          <div className="flex gap-3">
-            {onBookService ? (
-              <button 
-                onClick={onBookService}
-                className="flex-1 bg-johnson-blue hover:bg-blue-700 text-white py-3 rounded-lg font-bold transition-all duration-300 shadow-md text-base touch-target flex items-center justify-center gap-2"
-                data-testid="bottom-book-service-button"
-              >
-                <Calendar className="h-5 w-5" />
-                <span>BOOK SERVICE</span>
-              </button>
-            ) : (
-              <Link 
-                href="/#booking"
-                className="flex-1 bg-johnson-blue hover:bg-blue-700 text-white py-3 rounded-lg font-bold transition-all duration-300 shadow-md text-base touch-target flex items-center justify-center gap-2"
-                data-testid="bottom-book-service-link"
-              >
-                <Calendar className="h-5 w-5" />
-                <span>BOOK SERVICE</span>
-              </Link>
-            )}
-            <a 
-              href="tel:6174799911" 
-              className="flex-1 bg-gradient-to-r from-johnson-orange to-orange-500 hover:from-orange-500 hover:to-johnson-orange text-white py-3 rounded-lg font-bold transition-all duration-300 shadow-md text-base touch-target flex items-center justify-center gap-2"
-              data-testid="bottom-call-button"
-            >
-              <Phone className="h-5 w-5" />
-              <span>CALL NOW</span>
-            </a>
-          </div>
-        </div>
 
         {/* Desktop Layout */}
         <div className="hidden lg:block">
