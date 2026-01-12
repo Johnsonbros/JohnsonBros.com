@@ -42,12 +42,6 @@ export async function generateSitemap(): Promise<string> {
   });
 
   urls.push({
-    loc: `${SITE_URL}/maintenance-plans`,
-    changefreq: 'weekly',
-    priority: 0.8
-  });
-
-  urls.push({
     loc: `${SITE_URL}/ai-booking`,
     changefreq: 'monthly',
     priority: 0.6
