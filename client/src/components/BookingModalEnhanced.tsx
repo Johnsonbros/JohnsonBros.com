@@ -1120,49 +1120,6 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
 
             <div className="space-y-3 mt-4">
               <Label className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-johnson-blue" />
-                Recurring maintenance
-              </Label>
-              <Select
-                value={bookingData.recurring.frequency}
-                onValueChange={(value) => setBookingData(prev => ({
-                  ...prev,
-                  recurring: {
-                    ...prev.recurring,
-                    frequency: value as BookingData["recurring"]["frequency"]
-                  }
-                }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="One-time visit" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="one_time">One-time visit</SelectItem>
-                  <SelectItem value="monthly">Monthly</SelectItem>
-                  <SelectItem value="quarterly">Quarterly</SelectItem>
-                  <SelectItem value="biannual">Twice a year</SelectItem>
-                  <SelectItem value="annual">Yearly</SelectItem>
-                </SelectContent>
-              </Select>
-              {bookingData.recurring.frequency !== "one_time" && (
-                <Textarea
-                  placeholder="Any notes about your recurring schedule?"
-                  value={bookingData.recurring.notes}
-                  onChange={(e) => setBookingData(prev => ({
-                    ...prev,
-                    recurring: {
-                      ...prev.recurring,
-                      notes: e.target.value
-                    }
-                  }))}
-                  rows={2}
-                  className="resize-none"
-                />
-              )}
-            </div>
-
-            <div className="space-y-3 mt-4">
-              <Label className="flex items-center gap-2">
                 <Camera className="h-4 w-4 text-johnson-blue" />
                 Add photos (optional)
               </Label>
@@ -1660,15 +1617,6 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
                   <span className="font-medium">Booking For:</span>
                   <span className="text-sm text-gray-600">
                     {bookingData.bookingFor.recipient.name || "Recipient"} {bookingData.bookingFor.recipient.relationship ? `(${bookingData.bookingFor.recipient.relationship})` : ""}
-                  </span>
-                </div>
-              )}
-
-              {bookingData.recurring.frequency !== "one_time" && (
-                <div className="flex flex-col gap-1">
-                  <span className="font-medium">Recurring:</span>
-                  <span className="text-sm text-gray-600">
-                    {bookingData.recurring.frequency.replace(/_/g, " ")}
                   </span>
                 </div>
               )}
