@@ -514,18 +514,36 @@ export class CapacityCalculator {
 
   private consolidateTimeSlots(expressWindows: string[], techCapacities: any, targetDate: Date): ExpressWindow[] {
     const results: ExpressWindow[] = [];
-    
+
     // Priority order for tech assignment (Jahz first)
     const techPriority = ['jahz', 'nate', 'nick'];
-    
-    // Service window definitions with UTC hour ranges for matching
-    // Morning: 8-11 AM EST = 13-16 UTC
-    // Midday: 11 AM-2 PM EST = 16-19 UTC
-    // Afternoon: 2-5 PM EST = 19-22 UTC
+
+    // Helper function to get timezone offset for a specific date in America/New_York
+    // Returns offset in hours (e.g., 5 for EST, 4 for EDT)
+    const getTimezoneOffset = (date: Date): number => {
+      const dateStr = date.toISOString().split('T')[0];
+      const testDate = new Date(`${dateStr}T12:00:00Z`);
+      const nyTime = testDate.toLocaleString('en-US', {
+        timeZone: 'America/New_York',
+        hour: '2-digit',
+        hour12: false
+      });
+      const utcHour = testDate.getUTCHours();
+      const nyHour = parseInt(nyTime);
+      return utcHour - nyHour;
+    };
+
+    // Calculate offset for the target date (accounts for DST)
+    const offset = getTimezoneOffset(targetDate);
+
+    // Service window definitions with dynamically calculated UTC hour ranges
+    // Morning: 8-11 AM ET
+    // Midday: 11 AM-2 PM ET
+    // Afternoon: 2-5 PM ET
     const serviceWindowDefs = [
-      { key: '08:00 - 11:00', startUTC: 13, endUTC: 16 },
-      { key: '11:00 - 14:00', startUTC: 16, endUTC: 19 },
-      { key: '14:00 - 17:00', startUTC: 19, endUTC: 22 }
+      { key: '08:00 - 11:00', startUTC: 8 + offset, endUTC: 11 + offset },
+      { key: '11:00 - 14:00', startUTC: 11 + offset, endUTC: 14 + offset },
+      { key: '14:00 - 17:00', startUTC: 14 + offset, endUTC: 17 + offset }
     ];
     
     // Process each consolidated express window
@@ -545,59 +563,24 @@ export class CapacityCalculator {
       const startTimeStr = `${dateStr}T${String(startHour).padStart(2, '0')}:${String(startMin || 0).padStart(2, '0')}:00`;
       const endTimeStr = `${dateStr}T${String(endHour).padStart(2, '0')}:${String(endMin || 0).padStart(2, '0')}:00`;
 
-      // Convert from America/New_York local time to UTC
-      // This uses Intl.DateTimeFormat which properly handles DST transitions
-      const startDateFinal = new Date(
-        new Date(startTimeStr).toLocaleString('en-US', { timeZone: 'America/New_York' })
-      );
-      const endDateFinal = new Date(
-        new Date(endTimeStr).toLocaleString('en-US', { timeZone: 'America/New_York' })
-      );
+      // Convert America/New_York local time to UTC using the calculated offset
+      const startDateFinalFixed = new Date(Date.UTC(
+        targetDate.getFullYear(),
+        targetDate.getMonth(),
+        targetDate.getDate(),
+        startHour + offset,
+        startMin || 0,
+        0
+      ));
 
-      // Adjust: the above creates dates in local system timezone
-      // We need to convert America/New_York time to UTC properly
-      // Use this approach: format the date/time parts in EST/EDT, then create UTC date with offset
-      const formatter = new Intl.DateTimeFormat('en-US', {
-        timeZone: 'America/New_York',
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false,
-      });
-
-      // Create reference dates to get timezone offset for this specific date
-      const refDate = new Date(`${dateStr}T${String(startHour).padStart(2, '0')}:00:00Z`);
-      const estTimeStr = formatter.format(refDate);
-
-      // Calculate offset: parse EST time and compare to UTC
-      const match = estTimeStr.match(/(\d+)\/(\d+)\/(\d+),\s+(\d+):(\d+):(\d+)/);
-      if (match) {
-        const estHours = parseInt(match[4]);
-        const utcHours = refDate.getUTCHours();
-        // This gives us the offset in hours (accounting for DST)
-        const offsetHours = utcHours - estHours;
-
-        // Create proper UTC dates with the calculated offset
-        const startDateFinalFixed = new Date(Date.UTC(
-          targetDate.getFullYear(),
-          targetDate.getMonth(),
-          targetDate.getDate(),
-          startHour + offsetHours,
-          startMin || 0,
-          0
-        ));
-
-        const endDateFinalFixed = new Date(Date.UTC(
-          targetDate.getFullYear(),
-          targetDate.getMonth(),
-          targetDate.getDate(),
-          endHour + offsetHours,
-          endMin || 0,
-          0
-        ));
+      const endDateFinalFixed = new Date(Date.UTC(
+        targetDate.getFullYear(),
+        targetDate.getMonth(),
+        targetDate.getDate(),
+        endHour + offset,
+        endMin || 0,
+        0
+      ));
       
       // Find techs who have ANY 30-min slot within this 3-hour window
       const availableTechs: string[] = [];
@@ -624,44 +607,16 @@ export class CapacityCalculator {
           availableTechs.push(tech);
         }
       }
-      
-        // If at least one tech is available, add this window
-        if (availableTechs.length > 0) {
-          results.push({
-            time_slot: window,
-            available_techs: availableTechs,
-            start_time: startDateFinalFixed.toISOString(),
-            end_time: endDateFinalFixed.toISOString(),
-          });
-        }
-      } else {
-        // Fallback if parsing fails - use standard EST offset
-        const startDateFallback = new Date(Date.UTC(
-          targetDate.getFullYear(),
-          targetDate.getMonth(),
-          targetDate.getDate(),
-          startHour + 5,
-          startMin || 0,
-          0
-        ));
 
-        const endDateFallback = new Date(Date.UTC(
-          targetDate.getFullYear(),
-          targetDate.getMonth(),
-          targetDate.getDate(),
-          endHour + 5,
-          endMin || 0,
-          0
-        ));
 
-        if (availableTechs.length > 0) {
-          results.push({
-            time_slot: window,
-            available_techs: availableTechs,
-            start_time: startDateFallback.toISOString(),
-            end_time: endDateFallback.toISOString(),
-          });
-        }
+      // If at least one tech is available, add this window
+      if (availableTechs.length > 0) {
+        results.push({
+          time_slot: window,
+          available_techs: availableTechs,
+          start_time: startDateFinalFixed.toISOString(),
+          end_time: endDateFinalFixed.toISOString(),
+        });
       }
     }
     
@@ -681,12 +636,29 @@ export class CapacityCalculator {
   ): any[] {
     const dateStr = date.toISOString().split('T')[0];
     Logger.debug(`[Capacity] Calculating real availability for ${dateStr}`);
-    
-    // Define our standard time slots (8-11 AM, 11-2 PM, 2-5 PM EST)
+
+    // Helper function to get timezone offset for America/New_York
+    const getTimezoneOffset = (checkDate: Date): number => {
+      const testDateStr = checkDate.toISOString().split('T')[0];
+      const testDate = new Date(`${testDateStr}T12:00:00Z`);
+      const nyTime = testDate.toLocaleString('en-US', {
+        timeZone: 'America/New_York',
+        hour: '2-digit',
+        hour12: false
+      });
+      const utcHour = testDate.getUTCHours();
+      const nyHour = parseInt(nyTime);
+      return utcHour - nyHour;
+    };
+
+    // Calculate offset for the target date (accounts for DST)
+    const offset = getTimezoneOffset(date);
+
+    // Define our standard time slots (8-11 AM, 11-2 PM, 2-5 PM ET) with dynamic UTC conversion
     const standardSlots = [
-      { start: '12:00:00', end: '15:00:00', label: '8-11 AM EST' },  // 8-11 AM EST = 12-15 UTC
-      { start: '15:00:00', end: '18:00:00', label: '11-2 PM EST' },  // 11-2 PM EST = 15-18 UTC
-      { start: '18:00:00', end: '21:00:00', label: '2-5 PM EST' }    // 2-5 PM EST = 18-21 UTC
+      { start: `${String(8 + offset).padStart(2, '0')}:00:00`, end: `${String(11 + offset).padStart(2, '0')}:00:00`, label: '8-11 AM ET' },
+      { start: `${String(11 + offset).padStart(2, '0')}:00:00`, end: `${String(14 + offset).padStart(2, '0')}:00:00`, label: '11-2 PM ET' },
+      { start: `${String(14 + offset).padStart(2, '0')}:00:00`, end: `${String(17 + offset).padStart(2, '0')}:00:00`, label: '2-5 PM ET' }
     ];
     
     // Map employees to check their availability
