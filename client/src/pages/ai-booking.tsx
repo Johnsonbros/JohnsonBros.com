@@ -75,68 +75,56 @@ const ChatSimulator = () => {
   
   const scenarios = [
     {
-      name: "Emergency Leak",
+      name: "Returning Customer",
       messages: [
-        { role: "user", content: "I have water leaking from under my kitchen sink! Can you help me book Johnson Bros Plumbing?" },
-        { role: "assistant", content: "I can help you book Johnson Bros Plumbing right away! Let me check their emergency availability..." },
+        { role: "user", content: "I'm a past customer. Can you book Johnson Bros for a leaky faucet again?" },
+        { role: "assistant", content: "Absolutely. I’ll look up your past service history and saved address." },
         { 
           role: "assistant", 
-          content: "To speed things up, tap a card to fill key details:",
+          content: "Found your profile. Tap a card to confirm:",
           cards: [
             {
-              title: "Service Type",
-              description: "Emergency leak repair",
-              action: "Add service",
-              icon: <Zap className="h-4 w-4" />,
-              badge: "Priority",
+              title: "Customer Match",
+              description: "Sarah Lopez (2 past jobs)",
+              action: "Confirm",
+              icon: <Users className="h-4 w-4" />,
+              badge: "Returning",
               meta: [
-                { label: "Estimated time", value: "90–120 min" },
-                { label: "Typical fix", value: "Valve + seal" }
+                { label: "Last visit", value: "Jan 12, 2024" },
+                { label: "Preferred tech", value: "Jake M." }
               ],
-              footnote: "Same-day response available."
+              footnote: "We’ll reuse your service notes."
             },
             {
               title: "Service Address",
-              description: "Enter location",
-              action: "Add address",
+              description: "1421 Maple Ave, Dallas",
+              action: "Use saved",
               icon: <Home className="h-4 w-4" />,
-              badge: "Coverage",
+              badge: "Saved",
               meta: [
-                { label: "Distance", value: "4.2 miles" },
+                { label: "Gate code", value: "On file" },
                 { label: "Dispatch zone", value: "North Dallas" }
               ],
-              footnote: "Technician arrival ETA updates by text."
+              footnote: "Edit anytime in chat."
             },
             {
               title: "Preferred Window",
-              description: "Today, 2–5 PM",
-              action: "Add time",
+              description: "Tomorrow, 9–12 AM",
+              action: "Select time",
               icon: <Calendar className="h-4 w-4" />,
-              badge: "Fast slot",
+              badge: "Soonest",
               meta: [
-                { label: "Arrival band", value: "2:30–4:30 PM" },
-                { label: "Technicians", value: "2 nearby" }
+                { label: "Arrival band", value: "9:30–11:30 AM" },
+                { label: "Technicians", value: "2 available" }
               ],
-              footnote: "We’ll lock the earliest slot."
-            },
-            {
-              title: "Contact Info",
-              description: "Phone + email",
-              action: "Add contact",
-              icon: <Phone className="h-4 w-4" />,
-              badge: "Secure",
-              meta: [
-                { label: "Verification", value: "SMS link" },
-                { label: "Updates", value: "Real-time" }
-              ],
-              footnote: "We never share your info."
+              footnote: "We’ll hold it while you confirm."
             }
           ]
         },
-        { role: "assistant", content: "✅ Good news! Johnson Bros has same-day availability. They can arrive between 2-5 PM today." },
-        { role: "assistant", content: "📅 I've booked your appointment:\n• Service: Emergency leak repair\n• Time: Today, 2-5 PM\n• Tech: Jake will be your plumber\n• Fee waived: $99 emergency fee waived!" },
-        { role: "user", content: "That's perfect! Thank you!" },
-        { role: "assistant", content: "You're welcome! Jake will text you 30 minutes before arrival. The plumber will bring all necessary tools for leak repair. Is there anything else you need?" }
+        { role: "assistant", content: "✅ Found you! Reusing your saved address and notes from the last visit." },
+        { role: "assistant", content: "📅 Booking summary:\n• Service: Leaky faucet repair\n• Time: Tomorrow, 9–12 AM\n• Technician: Jake M.\n• Notes: Previous faucet model on file" },
+        { role: "user", content: "That works—book it." },
+        { role: "assistant", content: "Booked! You’ll get a confirmation text with live updates. Want to add any new details?" }
       ]
     },
     {
@@ -300,7 +288,7 @@ const ChatSimulator = () => {
   }, [currentScenario]);
 
   return (
-    <div className="bg-gray-900 rounded-xl p-6 h-[500px] flex flex-col">
+    <div className="bg-gray-900 rounded-xl p-4 sm:p-6 h-[440px] sm:h-[500px] flex flex-col">
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center gap-2">
           <Bot className="h-5 w-5 text-blue-400" />
@@ -332,7 +320,7 @@ const ChatSimulator = () => {
               exit={{ opacity: 0 }}
               className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
             >
-              <div className="max-w-[80%] space-y-3">
+              <div className="max-w-[90%] sm:max-w-[80%] space-y-3">
                 <div
                   className={`rounded-lg px-4 py-2 ${
                     msg.role === "user"
@@ -427,7 +415,7 @@ const WorkflowDiagram = () => {
 
   return (
     <div className="relative">
-      <div className="grid md:grid-cols-4 gap-6">
+      <div className="grid gap-4 md:grid-cols-4 md:gap-6">
         {steps.map((step, index) => (
           <motion.div
             key={index}
@@ -543,7 +531,7 @@ export default function AIBooking() {
         <Header onBookService={() => setIsBookingModalOpen(true)} />
         
         {/* Hero Section */}
-        <section className="relative pt-24 pb-20 px-4 overflow-hidden">
+        <section className="relative pt-20 pb-16 px-4 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 to-purple-600/5" />
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
@@ -554,24 +542,24 @@ export default function AIBooking() {
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ type: "spring", duration: 0.5 }}
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-full mb-6"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-3 py-1.5 rounded-full mb-5"
             >
               <Sparkles className="h-4 w-4" />
-              <span className="text-sm font-medium">Industry First: AI-Native Plumbing Service</span>
+              <span className="text-xs sm:text-sm font-medium">Industry First: AI-Native Plumbing Service</span>
             </motion.div>
             
-            <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-5 bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
               Book Plumbing Services Through{" "}
               <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text">
                 Any AI Assistant
               </span>
             </h1>
             
-            <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-3xl mx-auto">
+            <p className="text-lg sm:text-xl md:text-2xl text-gray-600 mb-7 max-w-3xl mx-auto">
               First plumbing company with native AI integration - Use ChatGPT, Claude, or any AI to book our services instantly
             </p>
             
-            <div className="flex flex-wrap gap-4 justify-center mb-12">
+            <div className="flex flex-col sm:flex-row flex-wrap gap-3 justify-center mb-10">
               <Button
                 size="lg"
                 className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
@@ -591,7 +579,7 @@ export default function AIBooking() {
             </div>
             
             {/* Floating AI Icons */}
-            <div className="relative h-32">
+            <div className="relative h-24 sm:h-32">
               <motion.div
                 animate={{ 
                   y: [0, -10, 0],
@@ -633,16 +621,16 @@ export default function AIBooking() {
         </section>
 
         {/* How It Works Section */}
-        <section className="py-20 px-4 bg-gray-50">
+        <section className="py-12 md:py-16 px-4 bg-gray-50">
           <div className="max-w-6xl mx-auto">
             <motion.div
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
-              className="text-center mb-12"
+              className="text-center mb-8 md:mb-12"
             >
-              <h2 className="text-4xl font-bold mb-4">How It Works</h2>
-              <p className="text-xl text-gray-600">Four simple steps to book plumbing services with AI</p>
+              <h2 className="text-3xl md:text-4xl font-bold mb-3">How It Works</h2>
+              <p className="text-lg md:text-xl text-gray-600">Four simple steps to book plumbing services with AI</p>
             </motion.div>
             
             <WorkflowDiagram />
@@ -650,64 +638,77 @@ export default function AIBooking() {
         </section>
 
         {/* Live Demo Section */}
-        <section className="py-20 px-4">
+        <section className="py-12 md:py-16 px-4">
           <div className="max-w-6xl mx-auto">
             <motion.div
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
-              className="text-center mb-12"
+              className="text-center mb-8 md:mb-12"
             >
-              <h2 className="text-4xl font-bold mb-4">See It In Action</h2>
-              <p className="text-xl text-gray-600">Watch how AI assistants handle real booking scenarios</p>
+              <h2 className="text-3xl md:text-4xl font-bold mb-3">Demo Experience</h2>
+              <p className="text-lg md:text-xl text-gray-600">Watch AI look up past customers and book a job through chat</p>
             </motion.div>
             
-            <div className="grid md:grid-cols-2 gap-8">
+            <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
               <ChatSimulator />
               
-              <div className="space-y-6">
-                <Card className="p-6">
-                  <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                    <Zap className="h-5 w-5 text-yellow-500" />
-                    Real-Time Availability
-                  </h3>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                      <span className="text-sm">Today</span>
-                      <Badge className="bg-green-500">3 slots available</Badge>
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                      <span className="text-sm">Tomorrow</span>
-                      <Badge className="bg-blue-500">5 slots available</Badge>
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <span className="text-sm">This Week</span>
-                      <Badge variant="secondary">12 slots available</Badge>
-                    </div>
-                  </div>
-                </Card>
-                
-                <Card className="p-6">
-                  <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                    <Brain className="h-5 w-5 text-purple-500" />
-                    Natural Language Understanding
+              <div className="space-y-4">
+                <Card className="p-5">
+                  <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                    <Users className="h-5 w-5 text-blue-500" />
+                    Past Customer Lookup
                   </h3>
                   <div className="space-y-2 text-sm text-gray-600">
                     <div className="flex items-start gap-2">
                       <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
-                      <span>Understands urgency levels automatically</span>
+                      <span>Matches returning customers in seconds</span>
                     </div>
                     <div className="flex items-start gap-2">
                       <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
-                      <span>Identifies service type from description</span>
+                      <span>Pulls saved addresses and past service notes</span>
                     </div>
                     <div className="flex items-start gap-2">
                       <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
-                      <span>Handles scheduling preferences</span>
+                      <span>Suggests preferred technicians automatically</span>
+                    </div>
+                  </div>
+                </Card>
+
+                <Card className="p-5">
+                  <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                    <Zap className="h-5 w-5 text-yellow-500" />
+                    Booked in Chat
+                  </h3>
+                  <div className="space-y-2 text-sm text-gray-600">
+                    <div className="flex items-start gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
+                      <span>Shows real-time availability while you chat</span>
                     </div>
                     <div className="flex items-start gap-2">
                       <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
-                      <span>Provides accurate time estimates</span>
+                      <span>Confirms the appointment and shares live updates</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
+                      <span>Creates a job instantly in our system</span>
+                    </div>
+                  </div>
+                </Card>
+
+                <Card className="p-5">
+                  <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                    <Calendar className="h-5 w-5 text-purple-500" />
+                    Availability Snapshot
+                  </h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                      <span className="text-sm">Today</span>
+                      <Badge className="bg-green-500">3 slots</Badge>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                      <span className="text-sm">Tomorrow</span>
+                      <Badge className="bg-blue-500">5 slots</Badge>
                     </div>
                   </div>
                 </Card>
@@ -717,19 +718,19 @@ export default function AIBooking() {
         </section>
 
         {/* Benefits Section */}
-        <section className="py-20 px-4 bg-gradient-to-br from-blue-50 to-purple-50">
+        <section className="py-12 md:py-16 px-4 bg-gradient-to-br from-blue-50 to-purple-50">
           <div className="max-w-6xl mx-auto">
             <motion.div
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
-              className="text-center mb-12"
+              className="text-center mb-8 md:mb-12"
             >
-              <h2 className="text-4xl font-bold mb-4">Revolutionary Benefits</h2>
-              <p className="text-xl text-gray-600">Why AI booking is changing the game</p>
+              <h2 className="text-3xl md:text-4xl font-bold mb-3">Revolutionary Benefits</h2>
+              <p className="text-lg md:text-xl text-gray-600">Why AI booking is changing the game</p>
             </motion.div>
             
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {[
                 {
                   icon: <Clock className="h-6 w-6" />,
@@ -769,7 +770,7 @@ export default function AIBooking() {
                   transition={{ delay: index * 0.1 }}
                   viewport={{ once: true }}
                   whileHover={{ scale: 1.05 }}
-                  className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-all"
+                  className="bg-white rounded-xl p-5 shadow-lg hover:shadow-xl transition-all"
                 >
                   <div className="inline-flex p-3 rounded-lg bg-gradient-to-r from-blue-500 to-purple-500 text-white mb-4">
                     {benefit.icon}
@@ -783,20 +784,20 @@ export default function AIBooking() {
         </section>
 
         {/* Technical Innovation Section */}
-        <section className="py-20 px-4">
+        <section className="py-12 md:py-16 px-4">
           <div className="max-w-6xl mx-auto">
             <motion.div
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
-              className="text-center mb-12"
+              className="text-center mb-8 md:mb-12"
             >
-              <h2 className="text-4xl font-bold mb-4">Technical Excellence</h2>
-              <p className="text-xl text-gray-600">Built on cutting-edge Model Context Protocol (MCP)</p>
+              <h2 className="text-3xl md:text-4xl font-bold mb-3">Technical Excellence</h2>
+              <p className="text-lg md:text-xl text-gray-600">Built on cutting-edge Model Context Protocol (MCP)</p>
             </motion.div>
             
-            <div className="grid md:grid-cols-2 gap-8 mb-12">
-              <Card className="p-8">
+            <div className="grid gap-6 md:grid-cols-2 mb-10">
+              <Card className="p-6">
                 <h3 className="text-2xl font-semibold mb-6 flex items-center gap-2">
                   <Cpu className="h-6 w-6 text-blue-500" />
                   MCP Integration
@@ -821,12 +822,12 @@ export default function AIBooking() {
                 </div>
               </Card>
               
-              <Card className="p-8">
+              <Card className="p-6">
                 <h3 className="text-2xl font-semibold mb-6 flex items-center gap-2">
                   <Activity className="h-6 w-6 text-purple-500" />
                   Performance Stats
                 </h3>
-                <div className="grid grid-cols-3 gap-6 mb-6">
+                <div className="grid grid-cols-3 gap-4 mb-6">
                   <StatsCounter end={99.9} label="%" />
                   <StatsCounter end={250} label="ms" />
                   <StatsCounter end={1247} label="" />
@@ -848,9 +849,9 @@ export default function AIBooking() {
               </Card>
             </div>
             
-            <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-2xl p-8 text-white">
+            <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-2xl p-6 md:p-8 text-white">
               <h3 className="text-2xl font-semibold mb-6">Supported AI Platforms</h3>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 {[
                   { name: "ChatGPT", icon: "chatgpt" },
                   { name: "Claude", icon: "claude" },
@@ -876,28 +877,28 @@ export default function AIBooking() {
         </section>
 
         {/* Use Cases Section */}
-        <section className="py-20 px-4 bg-gray-50">
+        <section className="py-12 md:py-16 px-4 bg-gray-50">
           <div className="max-w-6xl mx-auto">
             <motion.div
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
-              className="text-center mb-12"
+              className="text-center mb-8 md:mb-12"
             >
-              <h2 className="text-4xl font-bold mb-4">Perfect For Every Situation</h2>
-              <p className="text-xl text-gray-600">See how different customers benefit from AI booking</p>
+              <h2 className="text-3xl md:text-4xl font-bold mb-3">Perfect For Every Situation</h2>
+              <p className="text-lg md:text-xl text-gray-600">See how different customers benefit from AI booking</p>
             </motion.div>
             
             <Tabs defaultValue="property" className="w-full">
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
                 <TabsTrigger value="property">Property Managers</TabsTrigger>
                 <TabsTrigger value="professional">Professionals</TabsTrigger>
                 <TabsTrigger value="elderly">Seniors</TabsTrigger>
                 <TabsTrigger value="smart">Smart Homes</TabsTrigger>
               </TabsList>
               
-              <TabsContent value="property" className="mt-8">
-                <Card className="p-8">
+              <TabsContent value="property" className="mt-6">
+                <Card className="p-6">
                   <div className="flex flex-col md:flex-row gap-8">
                     <div className="flex-1">
                       <Building className="h-12 w-12 text-blue-500 mb-4" />
@@ -921,7 +922,7 @@ export default function AIBooking() {
                         </li>
                       </ul>
                     </div>
-                    <div className="md:w-1/3 bg-gradient-to-br from-blue-100 to-blue-50 rounded-xl p-6">
+                    <div className="md:w-1/3 bg-gradient-to-br from-blue-100 to-blue-50 rounded-xl p-5">
                       <div className="text-3xl font-bold text-blue-600 mb-2">85%</div>
                       <div className="text-sm text-gray-600">Time saved on maintenance scheduling</div>
                     </div>
@@ -929,8 +930,8 @@ export default function AIBooking() {
                 </Card>
               </TabsContent>
               
-              <TabsContent value="professional" className="mt-8">
-                <Card className="p-8">
+              <TabsContent value="professional" className="mt-6">
+                <Card className="p-6">
                   <div className="flex flex-col md:flex-row gap-8">
                     <div className="flex-1">
                       <Headphones className="h-12 w-12 text-purple-500 mb-4" />
@@ -954,7 +955,7 @@ export default function AIBooking() {
                         </li>
                       </ul>
                     </div>
-                    <div className="md:w-1/3 bg-gradient-to-br from-purple-100 to-purple-50 rounded-xl p-6">
+                    <div className="md:w-1/3 bg-gradient-to-br from-purple-100 to-purple-50 rounded-xl p-5">
                       <div className="text-3xl font-bold text-purple-600 mb-2">3 min</div>
                       <div className="text-sm text-gray-600">Average booking time</div>
                     </div>
@@ -962,8 +963,8 @@ export default function AIBooking() {
                 </Card>
               </TabsContent>
               
-              <TabsContent value="elderly" className="mt-8">
-                <Card className="p-8">
+              <TabsContent value="elderly" className="mt-6">
+                <Card className="p-6">
                   <div className="flex flex-col md:flex-row gap-8">
                     <div className="flex-1">
                       <Users className="h-12 w-12 text-green-500 mb-4" />
@@ -987,7 +988,7 @@ export default function AIBooking() {
                         </li>
                       </ul>
                     </div>
-                    <div className="md:w-1/3 bg-gradient-to-br from-green-100 to-green-50 rounded-xl p-6">
+                    <div className="md:w-1/3 bg-gradient-to-br from-green-100 to-green-50 rounded-xl p-5">
                       <div className="text-3xl font-bold text-green-600 mb-2">98%</div>
                       <div className="text-sm text-gray-600">Customer satisfaction rate</div>
                     </div>
@@ -995,8 +996,8 @@ export default function AIBooking() {
                 </Card>
               </TabsContent>
               
-              <TabsContent value="smart" className="mt-8">
-                <Card className="p-8">
+              <TabsContent value="smart" className="mt-6">
+                <Card className="p-6">
                   <div className="flex flex-col md:flex-row gap-8">
                     <div className="flex-1">
                       <Home className="h-12 w-12 text-orange-500 mb-4" />
@@ -1020,7 +1021,7 @@ export default function AIBooking() {
                         </li>
                       </ul>
                     </div>
-                    <div className="md:w-1/3 bg-gradient-to-br from-orange-100 to-orange-50 rounded-xl p-6">
+                    <div className="md:w-1/3 bg-gradient-to-br from-orange-100 to-orange-50 rounded-xl p-5">
                       <div className="text-3xl font-bold text-orange-600 mb-2">24/7</div>
                       <div className="text-sm text-gray-600">Automated monitoring & booking</div>
                     </div>
@@ -1032,17 +1033,17 @@ export default function AIBooking() {
         </section>
 
         {/* Call to Action Section */}
-        <section className="py-20 px-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+        <section className="py-12 md:py-16 px-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
           <div className="max-w-4xl mx-auto text-center">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
             >
-              <h2 className="text-4xl md:text-5xl font-bold mb-6">
+              <h2 className="text-3xl md:text-5xl font-bold mb-5">
                 Experience the Future of Service Booking
               </h2>
-              <p className="text-xl mb-8 opacity-90">
+              <p className="text-lg md:text-xl mb-8 opacity-90">
                 Join thousands who've already discovered the easiest way to book plumbing services
               </p>
               
@@ -1071,8 +1072,8 @@ export default function AIBooking() {
                 </Button>
               </div>
               
-              <Card className="bg-white/10 backdrop-blur border-white/20 p-8">
-                <h3 className="text-2xl font-semibold mb-4">For Developers & Partners</h3>
+              <Card className="bg-white/10 backdrop-blur border-white/20 p-6 md:p-8">
+                <h3 className="text-2xl font-semibold mb-3">For Developers & Partners</h3>
                 <p className="mb-6 opacity-90">
                   Want to integrate our MCP API into your application or AI assistant?
                 </p>
