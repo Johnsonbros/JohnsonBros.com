@@ -451,6 +451,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const lastNameTrimmed = typeof lastName === 'string' ? lastName.trim() : '';
       const phoneTrimmed = typeof phone === 'string' ? phone.replace(/\D/g, '') : '';
       
+      logDebug("[CustomerSearch] Input received:", { firstName, lastName, phone });
+      logDebug("[CustomerSearch] After trimming:", { firstNameTrimmed, lastNameTrimmed, phoneTrimmed });
+      
       if (!firstNameTrimmed || firstNameTrimmed.length < 2) {
         return res.status(400).json({ 
           error: "firstName must be at least 2 characters", 
@@ -477,6 +480,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const searchLast = normalizeStr(lastNameTrimmed);
       const searchPhone = normalizePhone(phoneTrimmed);
       
+      logDebug("[CustomerSearch] Normalized search params:", { searchFirst, searchLast, searchPhone });
+      
       const customers: any[] = [];
       const seenIds = new Set<string>();
       
@@ -490,20 +495,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
             name: lastNameTrimmed,
           });
           
+          logDebug("[CustomerSearch] HCP returned customers:", hcpCustomers?.length || 0);
+          
           for (const c of hcpCustomers || []) {
             const custFirst = normalizeStr(c.first_name || '');
             const custLast = normalizeStr(c.last_name || '');
             
+            // Get ALL phone numbers from the customer record
+            const custMobile = normalizePhone(c.mobile_number || '');
+            const custHome = normalizePhone(c.home_number || '');
+            const custWork = normalizePhone(c.work_number || '');
+            
+            logDebug("[CustomerSearch] Checking customer:", {
+              id: c.id,
+              custFirst,
+              custLast,
+              custMobile,
+              custHome,
+              custWork,
+              raw: { first: c.first_name, last: c.last_name, mobile: c.mobile_number, home: c.home_number }
+            });
+            
             // Check if first and last name match exactly
             if (custFirst !== searchFirst || custLast !== searchLast) {
+              logDebug("[CustomerSearch] Name mismatch - skipping");
               continue;
             }
             
-            // Check if phone matches (normalize both to last 10 digits)
-            const custPhone = normalizePhone(c.mobile_number || c.home_number || '');
-            if (custPhone !== searchPhone) {
+            // Check if ANY phone matches (normalize all to last 10 digits)
+            const phoneMatches = searchPhone === custMobile || searchPhone === custHome || searchPhone === custWork;
+            if (!phoneMatches) {
+              logDebug("[CustomerSearch] Phone mismatch - none of the customer's phones match:", { searchPhone, custMobile, custHome, custWork });
               continue;
             }
+            
+            logDebug("[CustomerSearch] MATCH FOUND:", c.id);
             
             // Found a match - include all their addresses
             if (!seenIds.has(c.id)) {
