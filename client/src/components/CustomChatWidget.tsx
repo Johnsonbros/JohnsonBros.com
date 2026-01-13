@@ -396,7 +396,6 @@ export function CustomChatWidget({ className }: CustomChatWidgetProps) {
       setShowCustomerLookup(true);
       return { cardType: 'customer_lookup' };
     }
-    if (content.toLowerCase().includes('emergency') && content.toLowerCase().includes('call')) return { cardType: 'emergency' };
     
     const { cards } = extractCardIntents(content);
     const customerLookupIntent = cards.find(
