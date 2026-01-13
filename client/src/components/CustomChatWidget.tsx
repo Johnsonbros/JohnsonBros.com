@@ -40,7 +40,7 @@ interface Message {
   toolsUsed?: string[];
   isStreaming?: boolean;
   feedback?: 'positive' | 'negative' | null;
-  card?: 'appointment' | 'quote' | 'emergency' | 'customer_lookup' | 'lead' | null;
+  card?: 'appointment' | 'quote' | 'emergency' | 'customer_lookup' | 'lead' | 'new_customer' | null;
   cardData?: any;
   cardIntents?: CardIntent[];
 }
@@ -326,6 +326,182 @@ function LeadCard({ onSubmit, isLoading, prefill }: LeadCardProps) {
               <>
                 <Send className="w-4 h-4 mr-2" />
                 Get My Quote
+              </>
+            )}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
+
+interface NewCustomerFormData {
+  firstName: string;
+  lastName: string;
+  phone: string;
+  address: string;
+  city: string;
+  state: string;
+  zip: string;
+}
+
+interface NewCustomerCardProps {
+  onSubmit: (data: NewCustomerFormData) => void;
+  isLoading?: boolean;
+  prefill?: Partial<NewCustomerFormData>;
+}
+
+function NewCustomerCard({ onSubmit, isLoading, prefill }: NewCustomerCardProps) {
+  const [firstName, setFirstName] = useState(prefill?.firstName || '');
+  const [lastName, setLastName] = useState(prefill?.lastName || '');
+  const [phone, setPhone] = useState(prefill?.phone || '');
+  const [address, setAddress] = useState(prefill?.address || '');
+  const [city, setCity] = useState(prefill?.city || '');
+  const [state, setState] = useState(prefill?.state || 'MA');
+  const [zip, setZip] = useState(prefill?.zip || '');
+
+  const formatPhoneDisplay = (value: string) => {
+    const digits = value.replace(/\D/g, '').slice(0, 10);
+    if (digits.length >= 7) {
+      return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+    } else if (digits.length >= 4) {
+      return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+    } else if (digits.length > 0) {
+      return `(${digits}`;
+    }
+    return '';
+  };
+
+  const canSubmit = firstName.trim().length >= 2 && 
+                    lastName.trim().length >= 2 && 
+                    phone.replace(/\D/g, '').length >= 10 &&
+                    address.trim().length >= 5 &&
+                    city.trim().length >= 2 &&
+                    state.length === 2 &&
+                    zip.replace(/\D/g, '').length >= 5;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (canSubmit) {
+      onSubmit({
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        phone: phone.replace(/\D/g, ''),
+        address: address.trim(),
+        city: city.trim(),
+        state: state.toUpperCase(),
+        zip: zip.replace(/\D/g, '').slice(0, 5),
+      });
+    }
+  };
+
+  return (
+    <Card className="w-full border-green-200 bg-gradient-to-br from-white to-green-50/30 dark:from-slate-800 dark:to-slate-900 shadow-lg mt-2">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+          <div className="w-7 h-7 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
+            <User className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
+          </div>
+          New Customer Information
+        </CardTitle>
+        <CardDescription className="text-xs text-gray-600 dark:text-gray-400">
+          Please fill in your details to continue booking
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="pt-0">
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <label className="flex items-center gap-1 text-xs font-medium text-gray-700 dark:text-gray-300">
+                <User className="w-3 h-3" />
+                First Name
+              </label>
+              <Input
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                placeholder="John"
+                className="h-8 text-sm"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-gray-700 dark:text-gray-300">Last Name</label>
+              <Input
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                placeholder="Smith"
+                className="h-8 text-sm"
+              />
+            </div>
+          </div>
+          <div className="space-y-1">
+            <label className="flex items-center gap-1 text-xs font-medium text-gray-700 dark:text-gray-300">
+              <Phone className="w-3 h-3" />
+              Phone Number
+            </label>
+            <Input
+              value={phone}
+              onChange={(e) => setPhone(formatPhoneDisplay(e.target.value))}
+              placeholder="(617) 555-1234"
+              className="h-8 text-sm"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="flex items-center gap-1 text-xs font-medium text-gray-700 dark:text-gray-300">
+              <MapPin className="w-3 h-3" />
+              Service Address
+            </label>
+            <Input
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder="123 Main Street"
+              className="h-8 text-sm"
+            />
+          </div>
+          <div className="grid grid-cols-6 gap-2">
+            <div className="col-span-3 space-y-1">
+              <label className="text-xs font-medium text-gray-700 dark:text-gray-300">City</label>
+              <Input
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                placeholder="Quincy"
+                className="h-8 text-sm"
+              />
+            </div>
+            <div className="col-span-1 space-y-1">
+              <label className="text-xs font-medium text-gray-700 dark:text-gray-300">State</label>
+              <Input
+                value={state}
+                onChange={(e) => setState(e.target.value.toUpperCase().slice(0, 2))}
+                placeholder="MA"
+                className="h-8 text-sm"
+                maxLength={2}
+              />
+            </div>
+            <div className="col-span-2 space-y-1">
+              <label className="text-xs font-medium text-gray-700 dark:text-gray-300">ZIP</label>
+              <Input
+                value={zip}
+                onChange={(e) => setZip(e.target.value.replace(/\D/g, '').slice(0, 5))}
+                placeholder="02169"
+                className="h-8 text-sm"
+                maxLength={5}
+              />
+            </div>
+          </div>
+          <Button
+            type="submit"
+            disabled={!canSubmit || isLoading}
+            className="w-full bg-green-600 hover:bg-green-700 text-white h-9 text-sm"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Calendar className="w-4 h-4 mr-2" />
+                Continue to Booking
               </>
             )}
           </Button>
@@ -684,6 +860,9 @@ export function CustomChatWidget({ className }: CustomChatWidgetProps) {
   const [showLeadCard, setShowLeadCard] = useState(false);
   const [isSubmittingLead, setIsSubmittingLead] = useState(false);
   const [leadCardPrefill, setLeadCardPrefill] = useState<Partial<LeadFormData>>({});
+  const [showNewCustomerCard, setShowNewCustomerCard] = useState(false);
+  const [isSubmittingNewCustomer, setIsSubmittingNewCustomer] = useState(false);
+  const [newCustomerPrefill, setNewCustomerPrefill] = useState<Partial<NewCustomerFormData>>({});
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -749,6 +928,27 @@ export function CustomChatWidget({ className }: CustomChatWidgetProps) {
         setCustomerSearchResults(customerLookupIntent.results as CustomerResult[]);
       }
       return { cardType: 'customer_lookup', cardIntent: customerLookupIntent };
+    }
+    
+    // Check for new_customer_info card (AI may output as new_customer_info or new_customer_information)
+    const newCustomerIntent = cards.find(
+      intent => intent.type === 'new_customer_info'
+    );
+    if (newCustomerIntent) {
+      setShowNewCustomerCard(true);
+      if (newCustomerIntent.prefill) {
+        const prefill = newCustomerIntent.prefill as any;
+        setNewCustomerPrefill({
+          firstName: prefill?.firstName || '',
+          lastName: prefill?.lastName || '',
+          phone: prefill?.phone || '',
+          address: prefill?.line1 || prefill?.address || '',
+          city: prefill?.city || '',
+          state: prefill?.state || 'MA',
+          zip: prefill?.zip || '',
+        });
+      }
+      return { cardType: 'new_customer', cardIntent: newCustomerIntent };
     }
     
     const lowerContent = content.toLowerCase();
@@ -914,6 +1114,30 @@ export function CustomChatWidget({ className }: CustomChatWidgetProps) {
       sendMessageRef.current?.(`I tried to submit my info but there was an issue. My name is ${data.firstName} ${data.lastName}, phone: ${data.phone}, email: ${data.email}`);
     } finally {
       setIsSubmittingLead(false);
+    }
+  }, []);
+
+  const handleNewCustomerSubmit = useCallback(async (data: NewCustomerFormData) => {
+    setIsSubmittingNewCustomer(true);
+    
+    try {
+      // Hide the new customer card
+      setShowNewCustomerCard(false);
+      setNewCustomerPrefill({});
+      
+      // Format full address
+      const fullAddress = `${data.address}, ${data.city}, ${data.state} ${data.zip}`;
+      
+      // Send customer info to AI to continue booking flow
+      sendMessageRef.current?.(
+        `I'm a new customer. My name is ${data.firstName} ${data.lastName}, phone: ${data.phone}. My service address is ${fullAddress}. Please continue with booking my appointment.`
+      );
+    } catch (error) {
+      console.error('New customer submission error:', error);
+      setShowNewCustomerCard(false);
+      sendMessageRef.current?.(`I'm ${data.firstName} ${data.lastName}, phone: ${data.phone}. My address is ${data.address}, ${data.city}, ${data.state} ${data.zip}. Please help me book an appointment.`);
+    } finally {
+      setIsSubmittingNewCustomer(false);
     }
   }, []);
 
@@ -1173,6 +1397,13 @@ export function CustomChatWidget({ className }: CustomChatWidgetProps) {
                             onSubmit={handleLeadSubmit}
                             isLoading={isSubmittingLead}
                             prefill={leadCardPrefill}
+                          />
+                        )}
+                        {message.card === 'new_customer' && (
+                          <NewCustomerCard
+                            onSubmit={handleNewCustomerSubmit}
+                            isLoading={isSubmittingNewCustomer}
+                            prefill={newCustomerPrefill}
                           />
                         )}
                         {message.card === 'customer_lookup' && (

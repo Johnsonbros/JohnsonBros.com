@@ -192,6 +192,11 @@ export function extractCardIntents(text: string): ExtractResult {
           parsed.createdAt = new Date().toISOString();
         }
         
+        // Normalize type names (AI may output variants)
+        if (parsed.type === 'new_customer_information') {
+          parsed.type = 'new_customer_info';
+        }
+        
         const result = CardIntentSchema.safeParse(parsed);
         
         if (result.success) {
