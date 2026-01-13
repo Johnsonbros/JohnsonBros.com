@@ -413,20 +413,24 @@ export function CustomChatWidget({ className }: CustomChatWidgetProps) {
     const lowerContent = content.toLowerCase();
     // Trigger customer lookup card when AI asks for customer identification
     const askingForLookup = (
-      // Traditional phone/email lookup prompts
+      // Traditional phone/email lookup prompts - expanded patterns
       ((lowerContent.includes('phone') || lowerContent.includes('email')) &&
        (lowerContent.includes('look up') || lowerContent.includes('find your') || 
-        lowerContent.includes('enter your') || lowerContent.includes('provide your') ||
-        lowerContent.includes('what is your') || lowerContent.includes("what's your"))) ||
+        lowerContent.includes('enter your') || lowerContent.includes('provide') ||
+        lowerContent.includes('what is your') || lowerContent.includes("what's your") ||
+        lowerContent.includes('need your') || lowerContent.includes('retrieve your') ||
+        lowerContent.includes('i just need'))) ||
       // Name/address lookup prompts
       ((lowerContent.includes('name') || lowerContent.includes('address')) &&
        (lowerContent.includes('look up') || lowerContent.includes('find your') ||
-        lowerContent.includes('verify') || lowerContent.includes('confirm'))) ||
+        lowerContent.includes('verify') || lowerContent.includes('confirm') ||
+        lowerContent.includes('retrieve'))) ||
       // Direct account lookup prompts
       (lowerContent.includes('look up your account') || 
        lowerContent.includes('find your account') ||
        lowerContent.includes('used us before') || 
-       lowerContent.includes('returning customer'))
+       lowerContent.includes('returning customer') ||
+       lowerContent.includes('retrieve your details'))
     );
     if (askingForLookup) {
       setShowCustomerLookup(true);
@@ -765,12 +769,17 @@ export function CustomChatWidget({ className }: CustomChatWidgetProps) {
                         {message.card === 'appointment' && <AppointmentCard data={message.cardData} />}
                         {message.card === 'quote' && <QuoteCard data={message.cardData} />}
                         {message.card === 'emergency' && <EmergencyCard />}
-                        {message.card === 'customer_lookup' && showCustomerLookup && (
+                        {message.card === 'customer_lookup' && (
                           <CustomerLookupCard
                             onSearch={handleCustomerSearch}
                             onSelectCustomer={handleSelectCustomer}
                             onNewCustomer={handleNewCustomer}
-                            onDismiss={() => setShowCustomerLookup(false)}
+                            onDismiss={() => {
+                              setShowCustomerLookup(false);
+                              setMessages(prev => prev.map(m => 
+                                m.card === 'customer_lookup' ? { ...m, card: null } : m
+                              ));
+                            }}
                             isLoading={isSearchingCustomer}
                             results={customerSearchResults}
                           />
