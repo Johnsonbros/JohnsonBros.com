@@ -104,9 +104,7 @@ function Router() {
       <ScrollToTop />
       <Suspense
         fallback={(
-          <div className="flex items-center justify-center py-10 text-lg text-primary">
-            Loading page…
-          </div>
+          <div className="min-h-screen bg-white" />
         )}
       >
         <Switch>
