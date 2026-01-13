@@ -71,10 +71,10 @@ interface QuickAction {
 }
 
 const QUICK_ACTIONS: QuickAction[] = [
-  { icon: AlertTriangle, label: "Emergency", prompt: "I have a plumbing emergency!" },
-  { icon: Calendar, label: "Book Now", prompt: "I'd like to schedule an appointment" },
-  { icon: Wrench, label: "Get Quote", prompt: "Can I get a price quote?" },
-  { icon: MessageSquare, label: "Services", prompt: "What services do you offer?" },
+  { icon: AlertTriangle, label: "I have an emergency issue, can you help?", prompt: "I have an emergency issue, can you help?" },
+  { icon: Wrench, label: "I'm looking to get a quote for some work.", prompt: "I'm looking to get a quote for some work." },
+  { icon: Calendar, label: "Can I book an appointment?", prompt: "Can I book an appointment?" },
+  { icon: MessageSquare, label: "What types of services do you offer?", prompt: "What types of services do you offer?" },
 ];
 
 function AppointmentCard({ data }: { data: any }) {
@@ -850,7 +850,7 @@ export function CustomChatWidget({ className }: CustomChatWidgetProps) {
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="flex flex-col gap-2">
                     {QUICK_ACTIONS.map((action, index) => (
                       <button
                         key={index}
@@ -858,10 +858,7 @@ export function CustomChatWidget({ className }: CustomChatWidgetProps) {
                         className="group relative overflow-hidden rounded-lg p-3 text-left transition-all hover:scale-[1.02] active:scale-[0.98] border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
                         data-testid={`quick-action-${index}`}
                       >
-                        <div className="flex items-center gap-2">
-                          <action.icon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                          <span className="font-medium text-sm text-slate-900 dark:text-white">{action.label}</span>
-                        </div>
+                        <span className="font-medium text-sm text-slate-900 dark:text-white">{action.label}</span>
                       </button>
                     ))}
                   </div>
