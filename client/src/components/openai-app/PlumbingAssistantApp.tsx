@@ -44,6 +44,7 @@ interface QuickAction {
   label: string;
   prompt: string;
   color: string;
+  iconColor: string;
 }
 
 const QUICK_ACTIONS: QuickAction[] = [
@@ -51,25 +52,29 @@ const QUICK_ACTIONS: QuickAction[] = [
     icon: AlertTriangle, 
     label: "Emergency Help", 
     prompt: "I have a plumbing emergency! I need help right away.", 
-    color: "from-red-500 to-red-600" 
+    color: "from-emergency-red to-red-600",
+    iconColor: "text-emergency-red"
   },
   { 
     icon: Calendar, 
     label: "Book Appointment", 
     prompt: "I'd like to schedule a plumbing appointment", 
-    color: "from-blue-500 to-blue-600" 
+    color: "from-johnson-blue to-johnson-teal",
+    iconColor: "text-johnson-blue"
   },
   { 
     icon: Wrench, 
     label: "Get Quote", 
     prompt: "Can I get a price estimate for plumbing service?", 
-    color: "from-green-500 to-green-600" 
+    color: "from-service-green to-emerald-500",
+    iconColor: "text-service-green"
   },
   { 
     icon: Wrench, 
     label: "Our Services", 
     prompt: "What plumbing services do you offer?", 
-    color: "from-purple-500 to-purple-600" 
+    color: "from-johnson-orange to-orange-500",
+    iconColor: "text-johnson-orange"
   },
 ];
 
@@ -108,11 +113,11 @@ function AppointmentCard({ data }: { data: any }) {
         <dd className="text-right truncate text-slate-900 dark:text-white">{data?.address || 'Your address'}</dd>
       </dl>
       <div className="mt-4 grid gap-3 border-t border-slate-200 dark:border-slate-700 pt-4 sm:grid-cols-2">
-        <Button variant="outline" className="w-full">
+        <Button variant="brand-outline" className="w-full">
           <Phone className="w-4 h-4 mr-2" />
           Call
         </Button>
-        <Button className="w-full bg-blue-600 hover:bg-blue-700">
+        <Button variant="brand-primary" className="w-full">
           <MapPin className="w-4 h-4 mr-2" />
           Directions
         </Button>
@@ -132,14 +137,14 @@ function QuoteCard({ data }: { data: any }) {
         <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300">Estimate</Badge>
       </div>
       <div className="mt-4 text-center py-4 bg-slate-50 dark:bg-slate-700/50 rounded-xl">
-        <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">${data?.price || '99'}</p>
+        <p className="text-3xl font-bold text-johnson-blue dark:text-johnson-teal">${data?.price || '99'}</p>
         <p className="text-sm text-slate-500 dark:text-slate-400">Service Call Fee</p>
       </div>
       <p className="mt-3 text-xs text-slate-500 dark:text-slate-400 text-center">
         Final price determined after on-site diagnosis. No hidden fees.
       </p>
       <div className="mt-4 grid gap-3 border-t border-slate-200 dark:border-slate-700 pt-4">
-        <Button className="w-full bg-blue-600 hover:bg-blue-700">
+        <Button variant="brand-primary" className="w-full">
           <Calendar className="w-4 h-4 mr-2" />
           Book Now
         </Button>
@@ -168,7 +173,7 @@ function EmergencyCard() {
       </div>
       <div className="mt-4 grid gap-3 border-t border-red-300 dark:border-red-800 pt-4">
         <a href="tel:6174799911" className="block">
-          <Button className="w-full bg-red-600 hover:bg-red-700">
+          <Button variant="brand-urgent" className="w-full">
             <Phone className="w-4 h-4 mr-2" />
             Call (617) 479-9911
           </Button>
@@ -389,7 +394,7 @@ export function PlumbingAssistantApp() {
             <div>
               <h1 className="font-semibold text-slate-900 dark:text-white flex items-center gap-2">
                 Johnson Bros. Plumbing
-                <Sparkles className="w-4 h-4 text-blue-500" />
+                <Sparkles className="w-4 h-4 text-johnson-orange" />
               </h1>
               <p className="text-xs text-slate-500 dark:text-slate-400">AI-Powered Assistant • Available 24/7</p>
             </div>
@@ -399,7 +404,7 @@ export function PlumbingAssistantApp() {
               href="tel:6174799911" 
               data-testid="app-call-button"
             >
-              <Button variant="outline" size="sm">
+              <Button variant="brand-outline" size="sm">
                 <Phone className="w-4 h-4 mr-1" />
                 <span className="hidden sm:inline">(617) 479-9911</span>
               </Button>
@@ -426,7 +431,7 @@ export function PlumbingAssistantApp() {
               className="space-y-6"
             >
               <div className="text-center py-8">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25 mb-4">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-johnson-blue to-johnson-teal text-white shadow-lg shadow-johnson-blue/25 mb-4">
                   <MessageSquare className="w-8 h-8" />
                 </div>
                 <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
@@ -450,7 +455,7 @@ export function PlumbingAssistantApp() {
                   >
                     <div className={`absolute inset-0 bg-gradient-to-br ${action.color} opacity-10 group-hover:opacity-20 transition-opacity`} />
                     <div className="relative">
-                      <action.icon className="w-5 h-5 text-slate-700 dark:text-slate-300 mb-2" />
+                      <action.icon className={`w-5 h-5 ${action.iconColor} dark:text-slate-200 mb-2`} />
                       <span className="font-medium text-slate-900 dark:text-white block">{action.label}</span>
                       <ChevronRight className="w-4 h-4 text-slate-400 absolute top-1/2 right-0 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
                     </div>
@@ -471,7 +476,7 @@ export function PlumbingAssistantApp() {
                       transition={{ delay: 0.3 + index * 0.1 }}
                       className="bg-white dark:bg-slate-800/50 rounded-xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm"
                     >
-                      <Wrench className="w-6 h-6 text-blue-600 dark:text-blue-400 mb-2" />
+                      <Wrench className="w-6 h-6 text-johnson-blue dark:text-johnson-teal mb-2" />
                       <h4 className="font-medium text-slate-900 dark:text-white text-sm">{service.title}</h4>
                       <p className="text-xs text-slate-500 dark:text-slate-400">{service.desc}</p>
                     </MotionDiv>
@@ -490,7 +495,7 @@ export function PlumbingAssistantApp() {
                 >
                   {message.role === 'assistant' && (
                     <div className="flex-shrink-0 mr-3">
-                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-johnson-blue to-johnson-teal flex items-center justify-center">
                         <Wrench className="w-4 h-4 text-white" />
                       </div>
                     </div>
@@ -500,7 +505,7 @@ export function PlumbingAssistantApp() {
                     {message.toolsUsed && message.toolsUsed.length > 0 && (
                       <div className="flex flex-wrap gap-1.5 mb-2">
                         {message.toolsUsed.map((tool, i) => (
-                          <Badge key={i} variant="secondary" className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+                          <Badge key={i} variant="secondary" className="text-xs bg-johnson-blue/10 text-johnson-blue dark:bg-johnson-blue/20 dark:text-johnson-teal">
                             <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse mr-1.5" />
                             {formatToolName(tool)}
                           </Badge>
@@ -511,7 +516,7 @@ export function PlumbingAssistantApp() {
                     <div
                       className={`rounded-2xl px-4 py-3 ${
                         message.role === 'user'
-                          ? 'bg-blue-600 text-white rounded-br-md'
+                          ? 'bg-johnson-blue text-white rounded-br-md'
                           : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-bl-md shadow-sm border border-slate-200 dark:border-slate-700'
                       }`}
                       data-testid={`message-${message.role}-${index}`}
@@ -519,9 +524,9 @@ export function PlumbingAssistantApp() {
                       {message.isStreaming ? (
                         <div className="flex items-center gap-2">
                           <div className="flex gap-1">
-                            <span className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                            <span className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                            <span className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                            <span className="w-2 h-2 bg-johnson-blue rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                            <span className="w-2 h-2 bg-johnson-blue rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                            <span className="w-2 h-2 bg-johnson-blue rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                           </div>
                           <span className="text-sm text-slate-500 dark:text-slate-400">Thinking...</span>
                         </div>
@@ -603,7 +608,8 @@ export function PlumbingAssistantApp() {
               type="submit"
               disabled={!input.trim() || isLoading}
               size="icon"
-              className="bg-blue-600 hover:bg-blue-700 rounded-xl shrink-0 h-10 w-10 disabled:opacity-50"
+              variant="brand-primary"
+              className="rounded-xl shrink-0 h-10 w-10 disabled:opacity-50"
               data-testid="app-send-button"
             >
               {isLoading ? (
@@ -614,7 +620,7 @@ export function PlumbingAssistantApp() {
             </Button>
           </div>
           <p className="text-xs text-center text-slate-400 dark:text-slate-500 mt-2">
-            For emergencies, call <a href="tel:6174799911" className="text-blue-600 dark:text-blue-400 font-medium hover:underline">(617) 479-9911</a> • Powered by AI
+            For emergencies, call <a href="tel:6174799911" className="text-johnson-blue dark:text-johnson-teal font-medium hover:underline">(617) 479-9911</a> • Powered by AI
           </p>
         </form>
       </div>
