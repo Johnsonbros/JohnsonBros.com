@@ -451,8 +451,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const lastNameTrimmed = typeof lastName === 'string' ? lastName.trim() : '';
       const phoneTrimmed = typeof phone === 'string' ? phone.replace(/\D/g, '') : '';
       
-      logDebug("[CustomerSearch] Input received:", { firstName, lastName, phone });
-      logDebug("[CustomerSearch] After trimming:", { firstNameTrimmed, lastNameTrimmed, phoneTrimmed });
+      Logger.debug("[CustomerSearch] Input received:", { firstName, lastName, phone });
+      Logger.debug("[CustomerSearch] After trimming:", { firstNameTrimmed, lastNameTrimmed, phoneTrimmed });
       
       if (!firstNameTrimmed || firstNameTrimmed.length < 2) {
         return res.status(400).json({ 
@@ -480,7 +480,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const searchLast = normalizeStr(lastNameTrimmed);
       const searchPhone = normalizePhone(phoneTrimmed);
       
-      logDebug("[CustomerSearch] Normalized search params:", { searchFirst, searchLast, searchPhone });
+      Logger.debug("[CustomerSearch] Normalized search params:", { searchFirst, searchLast, searchPhone });
       
       const customers: any[] = [];
       const seenIds = new Set<string>();
@@ -495,7 +495,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             name: lastNameTrimmed,
           });
           
-          logDebug("[CustomerSearch] HCP returned customers:", hcpCustomers?.length || 0);
+          Logger.debug("[CustomerSearch] HCP returned customers:", { count: hcpCustomers?.length || 0 });
           
           for (const c of hcpCustomers || []) {
             const custFirst = normalizeStr(c.first_name || '');
@@ -506,7 +506,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const custHome = normalizePhone(c.home_number || '');
             const custWork = normalizePhone(c.work_number || '');
             
-            logDebug("[CustomerSearch] Checking customer:", {
+            Logger.debug("[CustomerSearch] Checking customer:", {
               id: c.id,
               custFirst,
               custLast,
@@ -518,18 +518,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             // Check if first and last name match exactly
             if (custFirst !== searchFirst || custLast !== searchLast) {
-              logDebug("[CustomerSearch] Name mismatch - skipping");
+              Logger.debug("[CustomerSearch] Name mismatch - skipping");
               continue;
             }
             
             // Check if ANY phone matches (normalize all to last 10 digits)
             const phoneMatches = searchPhone === custMobile || searchPhone === custHome || searchPhone === custWork;
             if (!phoneMatches) {
-              logDebug("[CustomerSearch] Phone mismatch - none of the customer's phones match:", { searchPhone, custMobile, custHome, custWork });
+              Logger.debug("[CustomerSearch] Phone mismatch - none of the customer's phones match:", { searchPhone, custMobile, custHome, custWork });
               continue;
             }
             
-            logDebug("[CustomerSearch] MATCH FOUND:", c.id);
+            Logger.debug("[CustomerSearch] MATCH FOUND:", { customerId: c.id });
             
             // Found a match - include all their addresses
             if (!seenIds.has(c.id)) {
