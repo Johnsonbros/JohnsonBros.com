@@ -380,6 +380,18 @@ export function CustomChatWidget({ className }: CustomChatWidgetProps) {
       return { cardType: 'customer_lookup', cardIntent: customerLookupIntent };
     }
     
+    const lowerContent = content.toLowerCase();
+    const askingForLookup = (
+      (lowerContent.includes('phone') || lowerContent.includes('email')) &&
+      (lowerContent.includes('look up') || lowerContent.includes('find your') || 
+       lowerContent.includes('enter your') || lowerContent.includes('provide your') ||
+       lowerContent.includes('what is your') || lowerContent.includes("what's your"))
+    );
+    if (askingForLookup) {
+      setShowCustomerLookup(true);
+      return { cardType: 'customer_lookup' };
+    }
+    
     return { cardType: null };
   };
 
