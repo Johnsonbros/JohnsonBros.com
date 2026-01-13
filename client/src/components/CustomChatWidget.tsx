@@ -379,29 +379,41 @@ function CustomerLookupCard({
       <CardContent className="space-y-3 pt-0">
         <form onSubmit={handleSearch} className="space-y-2">
           <div className="grid grid-cols-2 gap-2">
-            <div className="relative">
-              <User className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-1.5 ml-1">
+                <User className="w-3.5 h-3.5 text-gray-400" />
+                <span className="text-[10px] font-medium text-gray-500 uppercase">First Name</span>
+              </div>
               <Input
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 placeholder="First name"
-                className="pl-8 h-9 text-sm"
+                className="h-9 text-sm"
               />
             </div>
-            <Input
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-              placeholder="Last name"
-              className="h-9 text-sm"
-            />
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-1.5 ml-1">
+                <User className="w-3.5 h-3.5 text-gray-400" />
+                <span className="text-[10px] font-medium text-gray-500 uppercase">Last Name</span>
+              </div>
+              <Input
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                placeholder="Last name"
+                className="h-9 text-sm"
+              />
+            </div>
           </div>
-          <div className="relative">
-            <Phone className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-1.5 ml-1">
+              <Phone className="w-3.5 h-3.5 text-gray-400" />
+              <span className="text-[10px] font-medium text-gray-500 uppercase">Phone Number</span>
+            </div>
             <Input
               value={phone}
               onChange={(e) => setPhone(formatPhoneDisplay(e.target.value))}
               placeholder="Phone number"
-              className="pl-8 h-9 text-sm"
+              className="h-9 text-sm"
               type="tel"
             />
           </div>
