@@ -364,7 +364,7 @@ export const customerInsightRelations = relations(customerInsights, ({ one }) =>
 | `customerContext` | `housecallProId` | Enables upsert on HCP sync |
 | `customerContext` | `sharedThreadCustomerId` | One context per shared thread customer |
 | `customerJobHistory` | `housecallProJobId` | Prevents duplicate job records |
-| `customer_addresses` | `housecall_pro_address_id` (add via migration) | Links addresses to HCP |
+| `customer_addresses` | `housecall_pro_address_id` (unique index via migration) | Links addresses to HCP + required for upserts |
 | `conversationEmbeddings` | `messageId` | One embedding per message |
 
 **ID Reconciliation Strategy:**
@@ -372,9 +372,11 @@ export const customerInsightRelations = relations(customerInsights, ({ one }) =>
 2. When looking up addresses for job history, use `housecallProAddressId` to find the matching `customer_addresses` record
 3. When merging sharedThread customers, preserve the HCP IDs and update foreign keys accordingly
 
-### Migration File: `migrations/0002_customer_context.sql`
+### Migration Files: `migrations/0002_customer_context.sql` and `migrations/0003_extend_customer_addresses.sql`
 
-Create new migration file with all table definitions.
+Create a migration for the new context/history/insights/batch tables, and a second migration to extend
+`customer_addresses`. This avoids a numbering collision with the existing `0001_shared_thread_persistence.sql`
+and keeps address extensions isolated for easier rollback.
 
 ---
 
@@ -567,11 +569,15 @@ Regular customer who prefers morning appointments. Had root intrusion issue last
 - Age mentions: "water heater is approximately 10-12 years old"
 - Issues: "found tree roots in main sewer line"
 
-#### 4.4 Webhook Handler: `POST /api/webhooks/housecallpro`
+#### 4.4 Webhook Handler: existing `/webhooks/housecall` endpoint
 
-**File:** `server/src/webhooks.ts` (modify existing)
+**Files:** `server/routes.ts` (route registration) and `server/src/webhooks.ts` (processing)
 
-**Events to handle:**
+**Why this correction?** The repo already exposes the Housecall Pro webhook endpoint at
+`/webhooks/housecall` and routes events through `WebhookProcessor.processWebhookEvent()`. Adding a new
+`/api/webhooks/housecallpro` endpoint would duplicate logic and bypass signature verification.
+
+**Events to handle inside `WebhookProcessor.processEventAsync()`:**
 - `job.completed` → Trigger `syncJobHistory()`, update property's `lastServiceDate`
 - `customer.updated` → Trigger `syncCustomerFromHCP()`
 
@@ -1010,7 +1016,7 @@ describe('Cross-Channel Context', () => {
 
 ### 10.1 Database Migration
 
-**Step 1:** Run migration `0002_customer_context.sql`  
+**Step 1:** Run migrations `0002_customer_context.sql` and `0003_extend_customer_addresses.sql`  
 **Step 2:** Backfill `customerContext` from existing `sharedThreadCustomers`  
 **Step 3:** Link existing `customers` table records to `customerContext` via phone/email match
 
@@ -1089,6 +1095,7 @@ export const FEATURE_FLAGS = {
 | `server/routes/customerContext.ts` | API endpoints | 150 |
 | `client/src/pages/admin/CustomerContext.tsx` | Admin dashboard page | 400 |
 | `migrations/0002_customer_context.sql` | Database migration | 150 |
+| `migrations/0003_extend_customer_addresses.sql` | Extend customer_addresses | 40 |
 | `server/lib/__tests__/customerContextService.test.ts` | Unit tests | 200 |
 
 ### Files to Modify
@@ -1100,7 +1107,7 @@ export const FEATURE_FLAGS = {
 | `server/lib/smsBookingAgent.ts` | Add context injection | +30 |
 | `server/lib/realtimeVoice.ts` | Add context injection | +30 |
 | `src/booker.ts` | Add `get_customer_context` tool | +50 |
-| `server/src/webhooks.ts` | Add HCP job.completed handler | +30 |
+| `server/src/webhooks.ts` | Extend WebhookProcessor for HCP sync | +30 |
 | `server/routes.ts` | Register new routes | +10 |
 
 ---
@@ -1192,16 +1199,16 @@ export const customerAddresses = pgTable('customer_addresses', {
   plumbingAge: integer('plumbing_age'),
   knownIssues: text('known_issues').array(),
   lastServiceType: text('last_service_type'),
-  lastInspectionDate: timestamp('last_inspection_date'), // Required field
+  lastInspectionDate: timestamp('last_inspection_date'), // Optional; cannot be required on existing rows
 }, (table) => ({
   // ... existing indexes ...
-  hcpAddressIdx: index('ca_hcp_address_idx').on(table.housecallProAddressId),
+  hcpAddressIdx: uniqueIndex('ca_hcp_address_idx').on(table.housecallProAddressId),
 }));
 ```
 
 **Migration SQL:**
 ```sql
--- migrations/0002_extend_customer_addresses.sql
+-- migrations/0003_extend_customer_addresses.sql
 ALTER TABLE customer_addresses
 ADD COLUMN housecall_pro_address_id TEXT,
 ADD COLUMN street_line_2 TEXT,
@@ -1216,7 +1223,7 @@ ADD COLUMN known_issues TEXT[],
 ADD COLUMN last_service_type TEXT,
 ADD COLUMN last_inspection_date TIMESTAMP;
 
-CREATE INDEX ca_hcp_address_idx ON customer_addresses(housecall_pro_address_id);
+CREATE UNIQUE INDEX ca_hcp_address_idx ON customer_addresses(housecall_pro_address_id);
 ```
 
 **Remove:** `customerProperties` table from Phase 1 - it is no longer needed.
@@ -1337,8 +1344,8 @@ export async function syncJobHistory(customerContextId: string): Promise<void> {
       housecallProJobId: job.id,
       invoiceNumber: job.invoice_number,
       serviceType: job.name || extractServiceType(job.description),
-      description: job.description,  // Required field - issueDescription equivalent
-      notes: job.notes,              // Required field - resolutionNotes equivalent
+      description: job.description,  // Optional: issueDescription equivalent (HCP may omit)
+      notes: job.notes,              // Optional: resolutionNotes equivalent (HCP may omit)
       scheduledDate: job.schedule?.scheduled_start ? new Date(job.schedule.scheduled_start) : null,
       completedDate: job.work_timestamps?.completed_at ? new Date(job.work_timestamps.completed_at) : null,
       workStatus: job.work_status,
@@ -1369,53 +1376,47 @@ export async function syncJobHistory(customerContextId: string): Promise<void> {
 **Webhook Handling:**
 
 ```typescript
-// server/src/webhooks.ts - ADD to existing file
+// server/src/webhooks.ts - extend WebhookProcessor.processEventAsync()
+// (the /webhooks/housecall endpoint is already registered in server/routes.ts)
 
-// HousecallPro webhook events
-app.post('/api/webhooks/housecallpro', async (req, res) => {
-  const event = req.body;
-  
-  switch (event.event_type) {
-    case 'job.completed':
-      const jobId = event.job?.id;
-      const customerId = event.job?.customer?.id;
+switch (eventType) {
+  case 'job.completed':
+    const jobId = payload.job?.id;
+    const customerId = payload.job?.customer?.id;
+    
+    if (customerId) {
+      // Find customerContext by HCP ID
+      const [context] = await db.select()
+        .from(customerContext)
+        .where(eq(customerContext.housecallProId, customerId));
       
-      if (customerId) {
-        // Find customerContext by HCP ID
-        const [context] = await db.select()
-          .from(customerContext)
-          .where(eq(customerContext.housecallProId, customerId));
+      if (context) {
+        // Background sync job history
+        syncJobHistory(context.id).catch(err => 
+          Logger.error('[Webhook] Job sync failed', { error: err, jobId })
+        );
         
-        if (context) {
-          // Background sync job history
-          syncJobHistory(context.id).catch(err => 
-            Logger.error('[Webhook] Job sync failed', { error: err, jobId })
-          );
-          
-          // Update address lastServiceDate
-          if (event.job?.address?.id) {
-            await db.update(customerAddresses).set({
-              lastServiceDate: new Date(),
-              lastServiceType: event.job?.name,
-              jobCount: sql`${customerAddresses.jobCount} + 1`,
-            }).where(eq(customerAddresses.housecallProAddressId, event.job.address.id));
-          }
+        // Update address lastServiceDate
+        if (payload.job?.address?.id) {
+          await db.update(customerAddresses).set({
+            lastServiceDate: new Date(),
+            lastServiceType: payload.job?.name,
+            jobCount: sql`${customerAddresses.jobCount} + 1`,
+          }).where(eq(customerAddresses.housecallProAddressId, payload.job.address.id));
         }
       }
-      break;
-      
-    case 'customer.updated':
-      const hcpCustomerId = event.customer?.id;
-      if (hcpCustomerId) {
-        syncCustomerFromHCP(hcpCustomerId).catch(err =>
-          Logger.error('[Webhook] Customer sync failed', { error: err, hcpCustomerId })
-        );
-      }
-      break;
-  }
-  
-  res.status(200).json({ received: true });
-});
+    }
+    break;
+    
+  case 'customer.updated':
+    const hcpCustomerId = payload.customer?.id;
+    if (hcpCustomerId) {
+      syncCustomerFromHCP(hcpCustomerId).catch(err =>
+        Logger.error('[Webhook] Customer sync failed', { error: err, hcpCustomerId })
+      );
+    }
+    break;
+}
 ```
 
 ---
@@ -1838,7 +1839,8 @@ export async function pollBatchStatus(): Promise<void> {
 
 **Push AI Notes to HCP:**
 
-The HousecallPro API supports updating customer records via `PUT /customers/{id}`. This enables pushing AI-collected context back to HCP.
+The HousecallPro API supports updating customer records via `PUT /customers/{id}`. Use note-specific
+endpoints where possible to avoid overwriting existing notes.
 
 ```typescript
 // server/lib/housecallProSync.ts - ADD these functions
@@ -1883,19 +1885,13 @@ export async function pushContextToHCP(customerContextId: string): Promise<void>
   
   // Update customer in HCP
   try {
-    await hcpClient.callAPI(
-      `/customers/${context.housecallProId}`,
-      {},
-      {
-        method: 'PUT',
-        body: {
-          // Append to existing notes (HCP may have existing notes)
-          notes: notes.join('\n'),
-          // Can also update tags
-          tags: context.tags || [],
-        }
-      }
-    );
+    // Prefer addCustomerNote() to avoid overwriting existing notes.
+    await hcpClient.addCustomerNote(context.housecallProId, notes.join('\n'));
+
+    // Use updateCustomer() only for structured fields (e.g., tags).
+    if (context.tags?.length) {
+      await hcpClient.updateCustomer(context.housecallProId, { tags: context.tags });
+    }
     
     Logger.info(`[HCP Sync] Pushed context to HCP for customer ${context.housecallProId}`);
   } catch (error) {
@@ -1958,14 +1954,14 @@ export async function pushAddressToHCP(
 |---------|--------|----------|
 | Customer preference learned during conversation | Update preferences | `PUT /customers/{id}` |
 | New address discovered | Create address | `POST /customers/{id}/addresses` |
-| Conversation summary updated | Append to notes | `PUT /customers/{id}` |
+| Conversation summary updated | Append to notes | `POST /customers/{id}/notes` |
 | Tag added (e.g., "VIP", "Family Discount") | Update tags | `PUT /customers/{id}` |
 
 **Integration Points:**
 
 ```typescript
 // In server/lib/sharedThread.ts - after memory compression
-export async function compressMemory(customerId: string): Promise<void> {
+export async function memoryCompression(customerId: string, threadId: string, force = false): Promise<void> {
   // ... existing compression logic ...
   
   // After compression, push summary to HCP
@@ -1983,14 +1979,14 @@ export async function compressMemory(customerId: string): Promise<void> {
 
 ---
 
-### Issue 6: Missing Required Fields
+### Issue 6: Missing Fields for Context Capture
 
 **Added to `customerJobHistory` schema:**
-- `description` → Serves as `issueDescription` (customer's reported problem)
-- `notes` → Serves as `resolutionNotes` (technician's notes on what was done)
+- `description` → Serves as `issueDescription` (customer's reported problem; nullable if missing in HCP)
+- `notes` → Serves as `resolutionNotes` (technician's notes; nullable if missing in HCP)
 
 **Added to `customerAddresses` schema (via migration):**
-- `lastInspectionDate` → Tracks when property was last inspected
+- `lastInspectionDate` → Tracks when property was last inspected (nullable to avoid breaking existing rows)
 - `housecall_pro_address_id` → Links to HCP address record
 
 ---
@@ -2003,7 +1999,7 @@ export async function compressMemory(customerId: string): Promise<void> {
 | `customerContext.housecallProId` | UNIQUE constraint for upsert operations |
 | Job → Address relationship | Via `housecallProAddressId` crosswalk (not foreign key) |
 | Batch API usage | Embeddings + Insights with full result ingestion workflow |
-| Bidirectional sync | Push notes/preferences to HCP via `PUT /customers/{id}` |
+| Bidirectional sync | Push notes via `POST /customers/{id}/notes`, update tags/preferences via `PUT /customers/{id}` |
 
 ---
 
