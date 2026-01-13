@@ -10,7 +10,8 @@ export interface CreateCustomerData {
 
 export interface LookupCustomerData {
   phone: string;
-  name: string;
+  firstName: string;
+  lastName: string;
 }
 
 export async function createCustomer(data: CreateCustomerData) {

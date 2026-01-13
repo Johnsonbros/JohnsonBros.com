@@ -189,7 +189,8 @@ const newCustomerSchema = z.object({
 });
 
 const returningCustomerSchema = z.object({
-  name: z.string().min(1, "Name is required"),
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
   phone: z.string().min(10, "Phone number must be at least 10 digits"),
 });
 
@@ -291,7 +292,8 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
   const returningCustomerForm = useForm<ReturningCustomerFormValues>({
     resolver: zodResolver(returningCustomerSchema),
     defaultValues: {
-      name: "",
+      firstName: "",
+      lastName: "",
       phone: "",
     },
   });
@@ -1378,19 +1380,34 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
                   <form onSubmit={returningCustomerForm.handleSubmit((data) => {
                     lookupCustomerMutation.mutate(data);
                   })} className="space-y-4">
-                    <FormField
-                      control={returningCustomerForm.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Name</FormLabel>
-                          <FormControl>
-                            <Input {...field} placeholder="John Doe" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={returningCustomerForm.control}
+                        name="firstName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>First Name</FormLabel>
+                            <FormControl>
+                              <Input {...field} placeholder="John" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={returningCustomerForm.control}
+                        name="lastName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Last Name</FormLabel>
+                            <FormControl>
+                              <Input {...field} placeholder="Smith" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
 
                     <FormField
                       control={returningCustomerForm.control}
