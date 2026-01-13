@@ -69,6 +69,22 @@ export const BOOKING_CONFIRMATION_WIDGET = `
       font-weight: 600;
       text-decoration: none;
     }
+    .trust-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .trust-pill {
+      background: #ecfdf5;
+      color: #047857;
+      border: 1px solid #a7f3d0;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+    }
   </style>
 </head>
 <body>
@@ -119,6 +135,11 @@ export const BOOKING_CONFIRMATION_WIDGET = `
         <div class="confirmation-number">
           <div class="conf-label">Confirmation Number</div>
           <div class="conf-value">\${jobId}</div>
+        </div>
+        <div class="trust-strip">
+          <span class="trust-pill">Licensed & Insured</span>
+          <span class="trust-pill">Same-day availability</span>
+          <span class="trust-pill">4.9★ Google Reviews</span>
         </div>
         <div class="footer">
           Need to reschedule? Call us at <a href="tel:+16174799911" class="phone-link">\${phone}</a>
@@ -229,6 +250,22 @@ export const AVAILABILITY_WIDGET = `
     }
     .action-btn:hover { background: #2563eb; }
     .action-btn:disabled { background: #9ca3af; cursor: not-allowed; }
+    .trust-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 16px;
+    }
+    .trust-pill {
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+    }
   </style>
 </head>
 <body>
@@ -290,6 +327,11 @@ export const AVAILABILITY_WIDGET = `
           </div>
         </div>
         <div class="slots-container">\${slotsHtml}</div>
+        <div class="trust-strip">
+          <span class="trust-pill">Live availability</span>
+          <span class="trust-pill">24/7 emergency</span>
+          <span class="trust-pill">South Shore experts</span>
+        </div>
       \`;
       
       if (window.openai?.notifyIntrinsicHeight) {
@@ -379,6 +421,23 @@ export const SERVICES_WIDGET = `
       color: #6b7280;
       text-align: center;
     }
+    .trust-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+      justify-content: center;
+    }
+    .trust-pill {
+      background: #fff7ed;
+      color: #b45309;
+      border: 1px solid #fed7aa;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+    }
   </style>
 </head>
 <body>
@@ -423,6 +482,11 @@ export const SERVICES_WIDGET = `
           </div>
         </div>
         <div class="services-list">\${servicesHtml}</div>
+        <div class="trust-strip">
+          <span class="trust-pill">Licensed & Insured</span>
+          <span class="trust-pill">15+ years local</span>
+          <span class="trust-pill">Same-day options</span>
+        </div>
         <div class="footer">$99 service call fee waived when we do the work</div>
       \`;
       
@@ -521,6 +585,22 @@ export const QUOTE_WIDGET = `
       text-align: center;
     }
     .cta:hover { background: #2563eb; }
+    .trust-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .trust-pill {
+      background: #e0f2fe;
+      color: #1e40af;
+      border: 1px solid #bfdbfe;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+    }
   </style>
 </head>
 <body>
@@ -573,6 +653,11 @@ export const QUOTE_WIDGET = `
             <span class="label">Service Call</span>
             <span class="value">$99 (waived if we do the work)</span>
           </div>
+        </div>
+        <div class="trust-strip">
+          <span class="trust-pill">Transparent pricing</span>
+          <span class="trust-pill">Licensed & insured</span>
+          <span class="trust-pill">Rated 4.9★</span>
         </div>
       \`;
       
@@ -682,6 +767,23 @@ export const EMERGENCY_WIDGET = `
       color: #991b1b;
       margin-top: 8px;
     }
+    .trust-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+      justify-content: center;
+    }
+    .trust-pill {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fecaca;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+    }
   </style>
 </head>
 <body>
@@ -735,6 +837,11 @@ export const EMERGENCY_WIDGET = `
         \` : ''}
         <a href="tel:+16174799911" class="call-action">Call Now: \${phone}</a>
         <div class="call-note">24/7 Emergency Line - We're here to help</div>
+        <div class="trust-strip">
+          <span class="trust-pill">Rapid response</span>
+          <span class="trust-pill">Licensed techs</span>
+          <span class="trust-pill">24/7 on-call</span>
+        </div>
       \`;
       
       if (window.openai?.notifyIntrinsicHeight) {
