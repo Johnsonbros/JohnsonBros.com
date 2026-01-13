@@ -45,6 +45,14 @@ interface Message {
   cardIntents?: CardIntent[];
 }
 
+interface CustomerAddress {
+  id: string;
+  street: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+}
+
 interface CustomerResult {
   id: string;
   firstName: string;
@@ -52,6 +60,8 @@ interface CustomerResult {
   phone: string;
   email?: string;
   address?: string;
+  addresses?: CustomerAddress[];
+  selectedAddressId?: string;
 }
 
 interface QuickAction {
@@ -170,7 +180,7 @@ function EmergencyCard() {
 interface CustomerLookupSearch {
   firstName: string;
   lastName: string;
-  address: string;
+  phone: string;
 }
 
 interface CustomerLookupCardProps {
@@ -192,10 +202,28 @@ function CustomerLookupCard({
 }: CustomerLookupCardProps) {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [address, setAddress] = useState('');
+  const [phone, setPhone] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [step, setStep] = useState<'search' | 'select_address' | 'verify'>('search');
+  const [foundCustomer, setFoundCustomer] = useState<CustomerResult | null>(null);
+  const [verificationCode, setVerificationCode] = useState('');
+  const [isSendingCode, setIsSendingCode] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [verificationError, setVerificationError] = useState('');
 
-  const canSearch = firstName.trim() && lastName.trim() && address.trim();
+  const formatPhoneDisplay = (value: string) => {
+    const digits = value.replace(/\D/g, '').slice(0, 10);
+    if (digits.length >= 7) {
+      return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+    } else if (digits.length >= 4) {
+      return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+    } else if (digits.length > 0) {
+      return `(${digits}`;
+    }
+    return '';
+  };
+
+  const canSearch = firstName.trim().length >= 2 && lastName.trim().length >= 2 && phone.replace(/\D/g, '').length >= 10;
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -203,15 +231,137 @@ function CustomerLookupCard({
       onSearch({
         firstName: firstName.trim(),
         lastName: lastName.trim(),
-        address: address.trim(),
+        phone: phone.replace(/\D/g, ''),
       });
     }
   };
 
-  const handleSelect = (customer: CustomerResult) => {
-    setSelectedId(customer.id);
-    onSelectCustomer(customer);
+  const handleSelectAddress = async (customer: CustomerResult, addressId: string, addressStr: string) => {
+    setSelectedId(addressId);
+    setFoundCustomer({ ...customer, selectedAddressId: addressId, address: addressStr });
+    setStep('verify');
+    setIsSendingCode(true);
+    try {
+      const response = await fetch('/api/v1/booking/send-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: customer.phone }),
+      });
+      if (!response.ok) throw new Error('Failed to send code');
+    } catch (err) {
+      setVerificationError('Failed to send verification code');
+    } finally {
+      setIsSendingCode(false);
+    }
   };
+
+  const handleVerify = async () => {
+    if (!foundCustomer || verificationCode.length !== 6) return;
+    setIsVerifying(true);
+    setVerificationError('');
+    try {
+      const response = await fetch('/api/v1/booking/verify-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: foundCustomer.phone, code: verificationCode }),
+      });
+      const data = await response.json();
+      if (data.verified) {
+        onSelectCustomer(foundCustomer);
+      } else {
+        setVerificationError('Invalid code. Please try again.');
+      }
+    } catch (err) {
+      setVerificationError('Verification failed. Please try again.');
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const handleSelect = (customer: CustomerResult) => {
+    if (customer.addresses && customer.addresses.length > 0) {
+      setFoundCustomer(customer);
+      setStep('select_address');
+    } else {
+      setSelectedId(customer.id);
+      onSelectCustomer(customer);
+    }
+  };
+
+  if (step === 'verify' && foundCustomer) {
+    return (
+      <Card className="w-full border-blue-200 bg-gradient-to-br from-white to-blue-50/30 dark:from-slate-800 dark:to-slate-900 shadow-lg mt-2">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+            <div className="w-7 h-7 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
+              <Phone className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
+            </div>
+            Verify Your Phone
+          </CardTitle>
+          <CardDescription className="text-xs text-gray-600 dark:text-gray-400">
+            We sent a 6-digit code to {foundCustomer.phone}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3 pt-0">
+          <Input
+            value={verificationCode}
+            onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+            placeholder="Enter 6-digit code"
+            className="h-10 text-center text-lg tracking-widest font-mono"
+            maxLength={6}
+          />
+          {verificationError && (
+            <p className="text-xs text-red-500">{verificationError}</p>
+          )}
+          <Button
+            onClick={handleVerify}
+            disabled={isVerifying || isSendingCode || verificationCode.length !== 6}
+            className="w-full h-9"
+          >
+            {isVerifying ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-2" /> : null}
+            {isVerifying ? 'Verifying...' : 'Verify & Continue'}
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => setStep('select_address')} className="w-full text-xs">
+            Back to address selection
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (step === 'select_address' && foundCustomer && foundCustomer.addresses) {
+    return (
+      <Card className="w-full border-blue-200 bg-gradient-to-br from-white to-blue-50/30 dark:from-slate-800 dark:to-slate-900 shadow-lg mt-2">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+            <div className="w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+              <MapPin className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+            </div>
+            Select Service Address
+          </CardTitle>
+          <CardDescription className="text-xs text-gray-600 dark:text-gray-400">
+            Hi {foundCustomer.firstName}! Which address do you need service at?
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2 pt-0">
+          {foundCustomer.addresses.map((addr: any) => (
+            <Button
+              key={addr.id}
+              variant={selectedId === addr.id ? 'default' : 'outline'}
+              className="w-full justify-start text-left h-auto py-2.5 px-3"
+              onClick={() => handleSelectAddress(foundCustomer, addr.id, addr.street)}
+            >
+              <MapPin className="w-4 h-4 mr-2 flex-shrink-0" />
+              <span className="text-sm">{addr.street}{addr.city ? `, ${addr.city}` : ''}{addr.state ? `, ${addr.state}` : ''} {addr.zip || ''}</span>
+            </Button>
+          ))}
+          <Button variant="ghost" size="sm" onClick={() => setStep('search')} className="w-full text-xs mt-2">
+            Not me? Search again
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full border-blue-200 bg-gradient-to-br from-white to-blue-50/30 dark:from-slate-800 dark:to-slate-900 shadow-lg mt-2">
@@ -223,7 +373,7 @@ function CustomerLookupCard({
           Look Up Your Account
         </CardTitle>
         <CardDescription className="text-xs text-gray-600 dark:text-gray-400">
-          Enter your name and address to find your account
+          Enter your name and phone number to find your account
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3 pt-0">
@@ -246,12 +396,13 @@ function CustomerLookupCard({
             />
           </div>
           <div className="relative">
-            <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+            <Phone className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
             <Input
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              placeholder="Street address (e.g., 123 Main St)"
+              value={phone}
+              onChange={(e) => setPhone(formatPhoneDisplay(e.target.value))}
+              placeholder="Phone number"
               className="pl-8 h-9 text-sm"
+              type="tel"
             />
           </div>
           <Button
@@ -478,7 +629,7 @@ export function CustomChatWidget({ className }: CustomChatWidgetProps) {
         body: JSON.stringify({
           firstName: search.firstName,
           lastName: search.lastName,
-          address: search.address,
+          phone: search.phone,
         }),
       });
       
@@ -493,7 +644,13 @@ export function CustomChatWidget({ className }: CustomChatWidgetProps) {
         lastName: c.lastName || '',
         phone: c.phone || c.mobileNumber || '',
         email: c.email || '',
-        address: c.address || c.streetAddress || '',
+        addresses: (c.addresses || []).map((addr: any) => ({
+          id: addr.id || '',
+          street: addr.street || '',
+          city: addr.city || '',
+          state: addr.state || '',
+          zip: addr.zip || '',
+        })),
       }));
       
       setCustomerSearchResults(results);
@@ -510,7 +667,8 @@ export function CustomChatWidget({ className }: CustomChatWidgetProps) {
   const handleSelectCustomer = useCallback((customer: CustomerResult) => {
     setShowCustomerLookup(false);
     setCustomerSearchResults(undefined);
-    sendMessageRef.current?.(`I'm ${customer.firstName} ${customer.lastName}, phone: ${customer.phone}`);
+    const addressInfo = customer.address ? `, address: ${customer.address}` : '';
+    sendMessageRef.current?.(`I'm ${customer.firstName} ${customer.lastName}, phone: ${customer.phone}${addressInfo}. My account has been verified.`);
   }, []);
 
   const handleNewCustomer = useCallback(() => {

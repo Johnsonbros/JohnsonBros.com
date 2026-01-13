@@ -441,15 +441,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Customer search for chat widget lookup - exact match by name and address
+  // Customer search for chat widget lookup - exact match by first name, last name, and phone
   app.post("/api/v1/customers/search", publicReadLimiter, async (req, res) => {
     try {
-      const { firstName, lastName, address } = req.body;
+      const { firstName, lastName, phone } = req.body;
       
       // Validate and trim inputs
       const firstNameTrimmed = typeof firstName === 'string' ? firstName.trim() : '';
       const lastNameTrimmed = typeof lastName === 'string' ? lastName.trim() : '';
-      const addressTrimmed = typeof address === 'string' ? address.trim() : '';
+      const phoneTrimmed = typeof phone === 'string' ? phone.replace(/\D/g, '') : '';
       
       if (!firstNameTrimmed || firstNameTrimmed.length < 2) {
         return res.status(400).json({ 
@@ -463,64 +463,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           customers: [] 
         });
       }
-      if (!addressTrimmed || addressTrimmed.length < 3) {
+      if (!phoneTrimmed || phoneTrimmed.length < 10) {
         return res.status(400).json({ 
-          error: "address must be at least 3 characters", 
+          error: "phone must be at least 10 digits", 
           customers: [] 
         });
       }
       
       const normalizeStr = (s: string) => s.toLowerCase().trim();
-      
-      // Parse address into base street and optional unit
-      const parseAddress = (addr: string): { base: string; unit: string | null } => {
-        let normalized = addr
-          .toLowerCase()
-          .trim()
-          .replace(/\bstreet\b/gi, 'st')
-          .replace(/\bavenue\b/gi, 'ave')
-          .replace(/\broad\b/gi, 'rd')
-          .replace(/\bdrive\b/gi, 'dr')
-          .replace(/\blane\b/gi, 'ln')
-          .replace(/\bcourt\b/gi, 'ct')
-          .replace(/\bplace\b/gi, 'pl')
-          .replace(/\bboulevard\b/gi, 'blvd')
-          .replace(/[.,]/g, '')
-          .replace(/\s+/g, ' ')
-          .trim();
-        
-        // Extract apt/unit number if present
-        const unitMatch = normalized.match(/\b(?:apt|apartment|unit|#|suite|ste)\s*(\w+)\s*$/i);
-        let unit: string | null = null;
-        
-        if (unitMatch) {
-          unit = unitMatch[1].toLowerCase();
-          // Remove the unit part from the base address
-          normalized = normalized.replace(unitMatch[0], '').trim();
-        }
-        
-        return { base: normalized, unit };
-      };
-      
-      // Check if addresses match (base must match, unit is optional)
-      const addressesMatch = (searchParsed: { base: string; unit: string | null }, custParsed: { base: string; unit: string | null }): boolean => {
-        // Base street must match exactly
-        if (searchParsed.base !== custParsed.base) {
-          return false;
-        }
-        
-        // If both have units, they must match
-        if (searchParsed.unit && custParsed.unit) {
-          return searchParsed.unit === custParsed.unit;
-        }
-        
-        // If only one side has a unit, still consider it a match (unit is optional)
-        return true;
-      };
+      const normalizePhone = (p: string) => p.replace(/\D/g, '').slice(-10);
       
       const searchFirst = normalizeStr(firstNameTrimmed);
       const searchLast = normalizeStr(lastNameTrimmed);
-      const searchAddrParsed = parseAddress(addressTrimmed);
+      const searchPhone = normalizePhone(phoneTrimmed);
       
       const customers: any[] = [];
       const seenIds = new Set<string>();
@@ -544,20 +499,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
               continue;
             }
             
-            // Check addresses for match (base street exact, unit optional)
-            const addresses = c.addresses || [];
-            let matchedAddress = '';
-            
-            for (const addr of addresses) {
-              const custAddrParsed = parseAddress(addr.street || '');
-              if (addressesMatch(searchAddrParsed, custAddrParsed)) {
-                matchedAddress = addr.street || '';
-                break;
-              }
+            // Check if phone matches (normalize both to last 10 digits)
+            const custPhone = normalizePhone(c.mobile_number || c.home_number || '');
+            if (custPhone !== searchPhone) {
+              continue;
             }
             
-            if (matchedAddress && !seenIds.has(c.id)) {
+            // Found a match - include all their addresses
+            if (!seenIds.has(c.id)) {
               seenIds.add(c.id);
+              const addresses = (c.addresses || []).map((addr: any) => ({
+                id: addr.id || `addr_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+                street: addr.street || '',
+                city: addr.city || '',
+                state: addr.state || '',
+                zip: addr.zip || '',
+              }));
+              
               customers.push({
                 id: c.id,
                 housecallProId: c.id,
@@ -565,7 +523,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 lastName: c.last_name || '',
                 phone: c.mobile_number || c.home_number || '',
                 email: c.email || '',
-                address: matchedAddress,
+                addresses: addresses,
               });
             }
           }
@@ -573,7 +531,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           logError("HCP customer search failed:", hcpError);
         }
       }
-      
       
       return res.json({ customers });
     } catch (error) {
