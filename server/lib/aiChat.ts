@@ -192,96 +192,33 @@ Include a code block with language tag \`card_intent\` containing valid JSON. ID
 ### Card Types and Schemas
 
 1. **lead_card** - Initial contact, gathering basic info:
-\`\`\`json
-{
-  "id": "<UUID>",
-  "type": "lead_card",
-  "title": "Quick Contact Info",
-  "message": "Let me get your details so we can help",
-  "prefill": {
-    "name": "",
-    "phone": "",
-    "issueDescription": "customer's described issue"
-  }
-}
+\`\`\`card_intent
+{"id":"<UUID>","type":"lead_card","title":"Quick Contact Info","message":"Let me get your details so we can help","prefill":{"name":"","phone":"","issueDescription":"customer's described issue"}}
 \`\`\`
 
 2. **new_customer_info** - Full customer form for new customers:
-\`\`\`json
-{
-  "id": "<UUID>",
-  "type": "new_customer_info",
-  "title": "Your Information",
-  "message": "Please fill in your details",
-  "prefill": {
-    "firstName": "",
-    "lastName": "",
-    "phone": "",
-    "email": "",
-    "address": {
-      "line1": "",
-      "city": "",
-      "state": "MA",
-      "zip": ""
-    }
-  }
-}
+\`\`\`card_intent
+{"id":"<UUID>","type":"new_customer_info","title":"Your Information","message":"Please fill in your details","prefill":{"firstName":"","lastName":"","phone":"","email":"","address":{"line1":"","city":"","state":"MA","zip":""}}}
 \`\`\`
 
 3. **returning_customer_lookup** - Customer lookup form:
-\`\`\`json
-{
-  "id": "<UUID>",
-  "type": "returning_customer_lookup",
-  "title": "Welcome Back!",
-  "message": "Enter your phone or email to find your account"
-}
+\`\`\`card_intent
+{"id":"<UUID>","type":"returning_customer_lookup","title":"Welcome Back!","message":"Enter your phone or email to find your account"}
 \`\`\`
 
 4. **date_picker** - Date selection:
-\`\`\`json
-{
-  "id": "<UUID>",
-  "type": "date_picker",
-  "title": "Choose a Date",
-  "message": "Select your preferred appointment date",
-  "serviceId": "service-id-if-known"
-}
+\`\`\`card_intent
+{"id":"<UUID>","type":"date_picker","title":"Choose a Date","message":"Select your preferred appointment date","serviceId":"service-id-if-known"}
 \`\`\`
 
 5. **time_picker** - Time slot selection (after date selected):
-\`\`\`json
-{
-  "id": "<UUID>",
-  "type": "time_picker",
-  "title": "Choose a Time",
-  "message": "Select your preferred time",
-  "selectedDate": "2025-01-15",
-  "slots": [
-    {"id": "slot-1", "label": "8:00 AM - 11:00 AM", "timeWindow": "MORNING", "available": true},
-    {"id": "slot-2", "label": "11:00 AM - 2:00 PM", "timeWindow": "MIDDAY", "available": true},
-    {"id": "slot-3", "label": "2:00 PM - 5:00 PM", "timeWindow": "AFTERNOON", "available": false}
-  ]
-}
+\`\`\`card_intent
+{"id":"<UUID>","type":"time_picker","title":"Choose a Time","message":"Select your preferred time","selectedDate":"2025-01-15","slots":[{"id":"slot-1","label":"8:00 AM - 11:00 AM","timeWindow":"MORNING","available":true},{"id":"slot-2","label":"11:00 AM - 2:00 PM","timeWindow":"MIDDAY","available":true},{"id":"slot-3","label":"2:00 PM - 5:00 PM","timeWindow":"AFTERNOON","available":false}]}
 \`\`\`
 
 6. **booking_confirmation** - After successful booking:
-\`\`\`json
-{
-  "id": "<UUID>",
-  "type": "booking_confirmation",
-  "title": "Appointment Confirmed!",
-  "message": "Your appointment is booked",
-  "booking": {
-    "customerName": "John Smith",
-    "phone": "(617) 555-1234",
-    "address": "123 Main St, Quincy, MA 02169",
-    "serviceType": "Drain Cleaning",
-    "scheduledDate": "2025-01-15",
-    "scheduledTime": "8:00 AM - 11:00 AM",
-    "confirmationNumber": "JB-12345"
-  }
-}
+\`\`\`card_intent
+{"id":"<UUID>","type":"booking_confirmation","title":"Appointment Confirmed!","message":"Your appointment is booked","booking":{"customerName":"John Smith","phone":"(617) 555-1234","address":"123 Main St, Quincy, MA 02169","serviceType":"Drain Cleaning","scheduledDate":"2025-01-15","scheduledTime":"8:00 AM - 11:00 AM","confirmationNumber":"JB-12345"}}
 \`\`\`
 
 ### Rules

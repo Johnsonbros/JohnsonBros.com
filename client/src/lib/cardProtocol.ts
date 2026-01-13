@@ -163,6 +163,7 @@ export type EstimateRangeCard = z.infer<typeof EstimateRangeCardSchema>;
 
 const CARD_INTENT_REGEX = /```card_intent\s*([\s\S]*?)```/g;
 const CARD_INTENT_TAG_REGEX = /<CARD_INTENT>([\s\S]*?)<\/CARD_INTENT>/g;
+const JSON_CARD_REGEX = /```json\s*([\s\S]*?)```/g;
 
 export interface ExtractResult {
   cleanText: string;
@@ -206,6 +207,7 @@ export function extractCardIntents(text: string): ExtractResult {
 
   extractFromRegex(CARD_INTENT_REGEX);
   extractFromRegex(CARD_INTENT_TAG_REGEX);
+  extractFromRegex(JSON_CARD_REGEX);
 
   cleanText = cleanText.replace(/\n{3,}/g, '\n\n').trim();
 
