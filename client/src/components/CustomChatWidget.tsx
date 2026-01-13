@@ -641,7 +641,7 @@ export function CustomChatWidget({ className }: CustomChatWidgetProps) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.2 }}
-            className="fixed bottom-36 md:bottom-24 right-4 z-50 w-[380px] max-w-[calc(100vw-2rem)] h-[520px] rounded-2xl shadow-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col"
+            className="fixed bottom-36 md:bottom-24 left-4 z-50 w-[380px] max-w-[calc(100vw-2rem)] h-[520px] rounded-2xl shadow-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col"
             data-testid="chat-widget-container"
           >
             <div className="flex-shrink-0 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-3 flex items-center justify-between">
@@ -833,7 +833,7 @@ export function CustomChatWidget({ className }: CustomChatWidgetProps) {
         )}
       </AnimatePresence>
 
-      <div className="fixed bottom-24 md:bottom-6 right-6 z-50 flex flex-col items-center gap-1">
+      <div className="fixed bottom-24 md:bottom-6 left-6 z-50 flex flex-col items-center gap-1">
         <AnimatePresence>
           {scrollProgress > 0.5 && !isOpen && (
             <MotionSpan
