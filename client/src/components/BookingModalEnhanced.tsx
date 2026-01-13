@@ -32,6 +32,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { z } from "zod";
 import { formatTimeSlotWindow, isWeekendDate } from "@/lib/timeUtils";
 import { PricingEstimate } from "./PricingEstimate";
+import { AddressAutocomplete } from "./AddressAutocomplete";
 
 // Types
 interface AvailableTimeSlot {
@@ -1357,7 +1358,11 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
                         <FormItem>
                           <FormLabel>Service Address</FormLabel>
                           <FormControl>
-                            <Input {...field} placeholder="123 Main St, City, State ZIP" />
+                            <AddressAutocomplete
+                              value={field.value}
+                              onChange={field.onChange}
+                              placeholder="Start typing your address..."
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -1529,6 +1534,9 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
                         <ChevronRight className="w-4 h-4 ml-1" />
                       </Button>
                     </div>
+                    {bookingData.smsVerification.status !== "verified" && (
+                      <p className="text-xs text-amber-600 text-center">Please verify your phone number to continue</p>
+                    )}
                   </form>
                 </Form>
               </TabsContent>
