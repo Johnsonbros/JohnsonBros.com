@@ -40,7 +40,7 @@ interface Message {
   toolsUsed?: string[];
   isStreaming?: boolean;
   feedback?: 'positive' | 'negative' | null;
-  card?: 'appointment' | 'quote' | 'emergency' | 'customer_lookup' | null;
+  card?: 'appointment' | 'quote' | 'emergency' | 'customer_lookup' | 'lead' | null;
   cardData?: any;
   cardIntents?: CardIntent[];
 }
@@ -174,6 +174,160 @@ function EmergencyCard() {
         </a>
       </div>
     </div>
+  );
+}
+
+interface LeadFormData {
+  firstName: string;
+  lastName: string;
+  phone: string;
+  email: string;
+  marketingOptIn: boolean;
+  issueDescription?: string;
+}
+
+interface LeadCardProps {
+  onSubmit: (data: LeadFormData) => void;
+  isLoading?: boolean;
+  prefill?: Partial<LeadFormData>;
+}
+
+function LeadCard({ onSubmit, isLoading, prefill }: LeadCardProps) {
+  const [firstName, setFirstName] = useState(prefill?.firstName || '');
+  const [lastName, setLastName] = useState(prefill?.lastName || '');
+  const [phone, setPhone] = useState(prefill?.phone || '');
+  const [email, setEmail] = useState(prefill?.email || '');
+  const [marketingOptIn, setMarketingOptIn] = useState(true);
+
+  const formatPhoneDisplay = (value: string) => {
+    const digits = value.replace(/\D/g, '').slice(0, 10);
+    if (digits.length >= 7) {
+      return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+    } else if (digits.length >= 4) {
+      return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+    } else if (digits.length > 0) {
+      return `(${digits}`;
+    }
+    return '';
+  };
+
+  const canSubmit = firstName.trim().length >= 2 && 
+                    lastName.trim().length >= 2 && 
+                    phone.replace(/\D/g, '').length >= 10 &&
+                    email.includes('@');
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (canSubmit) {
+      onSubmit({
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        phone: phone.replace(/\D/g, ''),
+        email: email.trim(),
+        marketingOptIn,
+        issueDescription: prefill?.issueDescription,
+      });
+    }
+  };
+
+  return (
+    <Card className="w-full border-blue-200 bg-gradient-to-br from-white to-blue-50/30 dark:from-slate-800 dark:to-slate-900 shadow-lg mt-2">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+          <div className="w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+            <MessageSquare className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+          </div>
+          Get Your Free Quote
+        </CardTitle>
+        <CardDescription className="text-xs text-gray-600 dark:text-gray-400">
+          Share your info and we'll get back to you with pricing
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="pt-0">
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <label className="flex items-center gap-1 text-xs font-medium text-gray-700 dark:text-gray-300">
+                <User className="w-3 h-3" />
+                First Name
+              </label>
+              <Input
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                placeholder="First name"
+                className="h-8 text-sm"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="flex items-center gap-1 text-xs font-medium text-gray-700 dark:text-gray-300">
+                <User className="w-3 h-3" />
+                Last Name
+              </label>
+              <Input
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                placeholder="Last name"
+                className="h-8 text-sm"
+              />
+            </div>
+          </div>
+          <div className="space-y-1">
+            <label className="flex items-center gap-1 text-xs font-medium text-gray-700 dark:text-gray-300">
+              <Phone className="w-3 h-3" />
+              Phone Number
+            </label>
+            <Input
+              value={phone}
+              onChange={(e) => setPhone(formatPhoneDisplay(e.target.value))}
+              placeholder="(617) 555-1234"
+              className="h-8 text-sm"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="flex items-center gap-1 text-xs font-medium text-gray-700 dark:text-gray-300">
+              <MessageSquare className="w-3 h-3" />
+              Email Address
+            </label>
+            <Input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              className="h-8 text-sm"
+            />
+          </div>
+          <div className="flex items-start gap-2 pt-1">
+            <input
+              type="checkbox"
+              id="marketing-opt-in"
+              checked={marketingOptIn}
+              onChange={(e) => setMarketingOptIn(e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+            <label htmlFor="marketing-opt-in" className="text-xs text-gray-600 dark:text-gray-400">
+              I agree to receive text messages about my quote and special offers. Message & data rates may apply.
+            </label>
+          </div>
+          <Button
+            type="submit"
+            disabled={!canSubmit || isLoading}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white h-9 text-sm"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Submitting...
+              </>
+            ) : (
+              <>
+                <Send className="w-4 h-4 mr-2" />
+                Get My Quote
+              </>
+            )}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -523,6 +677,9 @@ export function CustomChatWidget({ className }: CustomChatWidgetProps) {
   const [customerSearchResults, setCustomerSearchResults] = useState<CustomerResult[] | undefined>(undefined);
   const [isSearchingCustomer, setIsSearchingCustomer] = useState(false);
   const [showCustomerLookup, setShowCustomerLookup] = useState(false);
+  const [showLeadCard, setShowLeadCard] = useState(false);
+  const [isSubmittingLead, setIsSubmittingLead] = useState(false);
+  const [leadCardPrefill, setLeadCardPrefill] = useState<Partial<LeadFormData>>({});
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -553,7 +710,6 @@ export function CustomChatWidget({ className }: CustomChatWidgetProps) {
 
   const detectCardType = (content: string, toolsUsed?: string[]): { cardType: Message['card']; cardIntent?: CardIntent } => {
     if (toolsUsed?.includes('book_service_call')) return { cardType: 'appointment' };
-    if (toolsUsed?.includes('get_quote')) return { cardType: 'quote' };
     if (toolsUsed?.includes('emergency_help')) return { cardType: 'emergency' };
     if (toolsUsed?.includes('lookup_customer')) {
       setShowCustomerLookup(true);
@@ -561,6 +717,25 @@ export function CustomChatWidget({ className }: CustomChatWidgetProps) {
     }
     
     const { cards } = extractCardIntents(content);
+    
+    // Check for lead_card intent first
+    const leadCardIntent = cards.find(intent => intent.type === 'lead_card');
+    if (leadCardIntent) {
+      setShowLeadCard(true);
+      if (leadCardIntent.type === 'lead_card' && leadCardIntent.prefill) {
+        setLeadCardPrefill({
+          issueDescription: (leadCardIntent.prefill as any)?.issueDescription || '',
+        });
+      }
+      return { cardType: 'lead', cardIntent: leadCardIntent };
+    }
+    
+    // For get_quote, show lead card instead of quote card (capture info first)
+    if (toolsUsed?.includes('get_quote')) {
+      setShowLeadCard(true);
+      return { cardType: 'lead' };
+    }
+    
     const customerLookupIntent = cards.find(
       intent => intent.type === 'returning_customer_lookup'
     );
@@ -687,6 +862,55 @@ export function CustomChatWidget({ className }: CustomChatWidgetProps) {
     setShowCustomerLookup(false);
     setCustomerSearchResults(undefined);
     sendMessageRef.current?.("I'm a new customer");
+  }, []);
+
+  const handleLeadSubmit = useCallback(async (data: LeadFormData) => {
+    setIsSubmittingLead(true);
+    
+    try {
+      // Call existing leads API with the expected structure
+      const response = await fetch('/api/v1/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          customer: {
+            first_name: data.firstName,
+            last_name: data.lastName,
+            mobile_number: data.phone,
+            email: data.email,
+            notifications_enabled: data.marketingOptIn,
+            sms_consent: data.marketingOptIn,
+            address: 'To be confirmed via chat',
+            notes: data.issueDescription || 'Quote request via chat widget',
+            lead_source: 'Chat Widget',
+            tags: ['Chat Lead', 'Quote Request'],
+          },
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to submit lead');
+      }
+      
+      const result = await response.json();
+      
+      // Hide the lead card and send confirmation message
+      setShowLeadCard(false);
+      setLeadCardPrefill({});
+      
+      // Send message to AI confirming lead was captured
+      sendMessageRef.current?.(
+        `My info: ${data.firstName} ${data.lastName}, phone: ${data.phone}, email: ${data.email}. ${data.marketingOptIn ? 'I opted in for text updates.' : ''} Please let me know about pricing and next steps.`
+      );
+    } catch (error) {
+      console.error('Lead submission error:', error);
+      // Still hide the card and notify AI about the issue
+      setShowLeadCard(false);
+      sendMessageRef.current?.(`I tried to submit my info but there was an issue. My name is ${data.firstName} ${data.lastName}, phone: ${data.phone}, email: ${data.email}`);
+    } finally {
+      setIsSubmittingLead(false);
+    }
   }, []);
 
   const sendMessage = useCallback(async (messageText: string) => {
@@ -935,6 +1159,13 @@ export function CustomChatWidget({ className }: CustomChatWidgetProps) {
                         {message.card === 'appointment' && <AppointmentCard data={message.cardData} />}
                         {message.card === 'quote' && <QuoteCard data={message.cardData} />}
                         {message.card === 'emergency' && <EmergencyCard />}
+                        {message.card === 'lead' && (
+                          <LeadCard
+                            onSubmit={handleLeadSubmit}
+                            isLoading={isSubmittingLead}
+                            prefill={leadCardPrefill}
+                          />
+                        )}
                         {message.card === 'customer_lookup' && (
                           <CustomerLookupCard
                             onSearch={handleCustomerSearch}
