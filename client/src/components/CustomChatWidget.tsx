@@ -120,7 +120,7 @@ function AppointmentCard({ data }: { data: any }) {
   );
 }
 
-function QuoteCard({ data }: { data: any }) {
+function QuoteCard({ data, onBookNow }: { data: any; onBookNow?: () => void }) {
   return (
     <div className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-md p-3 mt-2">
       <div className="flex items-start justify-between gap-2">
@@ -138,7 +138,11 @@ function QuoteCard({ data }: { data: any }) {
         Final price after on-site diagnosis. No hidden fees.
       </p>
       <div className="mt-3 border-t border-slate-200 dark:border-slate-700 pt-3">
-        <Button size="sm" className="w-full bg-blue-600 hover:bg-blue-700 text-xs h-8">
+        <Button 
+          size="sm" 
+          className="w-full bg-blue-600 hover:bg-blue-700 text-xs h-8"
+          onClick={onBookNow}
+        >
           <Calendar className="w-3 h-3 mr-1" />
           Book Now
         </Button>
@@ -1157,7 +1161,12 @@ export function CustomChatWidget({ className }: CustomChatWidgetProps) {
                         </div>
 
                         {message.card === 'appointment' && <AppointmentCard data={message.cardData} />}
-                        {message.card === 'quote' && <QuoteCard data={message.cardData} />}
+                        {message.card === 'quote' && (
+                          <QuoteCard 
+                            data={message.cardData} 
+                            onBookNow={() => sendMessageRef.current?.("I'd like to book an appointment. I'm ready to proceed with the $99 service fee.")}
+                          />
+                        )}
                         {message.card === 'emergency' && <EmergencyCard />}
                         {message.card === 'lead' && (
                           <LeadCard
