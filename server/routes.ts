@@ -441,6 +441,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Customer search for chat widget lookup
+  app.get("/api/v1/customers/search", publicReadLimiter, async (req, res) => {
+    try {
+      const { q } = req.query;
+      
+      if (!q || typeof q !== 'string' || q.trim().length < 2) {
+        return res.json({ customers: [] });
+      }
+      
+      const query = q.trim();
+      const customers: any[] = [];
+      
+      if (API_KEY) {
+        const hcpClient = HousecallProClient.getInstance();
+        
+        // Search by phone or email
+        const isPhone = /[\d\s\-\(\)]+/.test(query) && query.replace(/\D/g, '').length >= 7;
+        const isEmail = query.includes('@');
+        
+        try {
+          const hcpCustomers = await hcpClient.searchCustomers({
+            phone: isPhone ? query : undefined,
+            email: isEmail ? query : undefined,
+          });
+          
+          for (const c of hcpCustomers || []) {
+            customers.push({
+              id: c.id,
+              housecallProId: c.id,
+              firstName: c.first_name || '',
+              lastName: c.last_name || '',
+              phone: c.mobile_number || c.home_number || '',
+              email: c.email || '',
+              address: c.addresses?.[0]?.street || '',
+            });
+          }
+        } catch (hcpError) {
+          logError("HCP customer search failed:", hcpError);
+        }
+      }
+      
+      // Also search local storage
+      const localByEmail = query.includes('@') ? await storage.getCustomerByEmail(query) : null;
+      const localByPhone = !query.includes('@') ? await storage.getCustomerByPhone(query) : null;
+      
+      if (localByEmail && !customers.find(c => c.email === localByEmail.email)) {
+        customers.push({
+          id: localByEmail.id?.toString(),
+          firstName: localByEmail.firstName,
+          lastName: localByEmail.lastName,
+          phone: localByEmail.phone,
+          email: localByEmail.email,
+          address: '',
+        });
+      }
+      
+      if (localByPhone && !customers.find(c => c.phone === localByPhone.phone)) {
+        customers.push({
+          id: localByPhone.id?.toString(),
+          firstName: localByPhone.firstName,
+          lastName: localByPhone.lastName,
+          phone: localByPhone.phone,
+          email: localByPhone.email,
+          address: '',
+        });
+      }
+      
+      return res.json({ customers });
+    } catch (error) {
+      logError("Error searching customers:", error);
+      res.status(500).json({ error: "Search failed", customers: [] });
+    }
+  });
+
   // Customer portal data (profile + service history)
   app.get("/api/v1/customer/portal", publicReadLimiter, async (req, res) => {
     try {

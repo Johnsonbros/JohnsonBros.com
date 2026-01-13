@@ -13,14 +13,20 @@ import {
   MessageSquare,
   Calendar,
   MapPin,
-  AlertTriangle
+  AlertTriangle,
+  Search,
+  User,
+  Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { motion, AnimatePresence, HTMLMotionProps } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import logoIcon from '@assets/JBros_Wrench_Logo_WP.png';
+import { extractCardIntents, type CardIntent, type ReturningCustomerLookupCard as ReturningCustomerLookupCardType } from '@/lib/cardProtocol';
 
 const MotionDiv = motion.div as React.FC<HTMLMotionProps<'div'> & React.HTMLAttributes<HTMLDivElement>>;
 const MotionSpan = motion.span as React.FC<HTMLMotionProps<'span'> & React.HTMLAttributes<HTMLSpanElement>>;
@@ -34,8 +40,18 @@ interface Message {
   toolsUsed?: string[];
   isStreaming?: boolean;
   feedback?: 'positive' | 'negative' | null;
-  card?: 'appointment' | 'quote' | 'emergency' | null;
+  card?: 'appointment' | 'quote' | 'emergency' | 'customer_lookup' | null;
   cardData?: any;
+  cardIntents?: CardIntent[];
+}
+
+interface CustomerResult {
+  id: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  email?: string;
+  address?: string;
 }
 
 interface QuickAction {
@@ -151,6 +167,154 @@ function EmergencyCard() {
   );
 }
 
+interface CustomerLookupCardProps {
+  onSearch: (query: string) => void;
+  onSelectCustomer: (customer: CustomerResult) => void;
+  onNewCustomer: () => void;
+  onDismiss?: () => void;
+  isLoading?: boolean;
+  results?: CustomerResult[];
+  searchValue?: string;
+}
+
+function CustomerLookupCard({
+  onSearch,
+  onSelectCustomer,
+  onNewCustomer,
+  onDismiss,
+  isLoading,
+  results,
+  searchValue: initialSearchValue,
+}: CustomerLookupCardProps) {
+  const [searchValue, setSearchValue] = useState(initialSearchValue || '');
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchValue.trim()) {
+      onSearch(searchValue.trim());
+    }
+  };
+
+  const handleSelect = (customer: CustomerResult) => {
+    setSelectedId(customer.id);
+    onSelectCustomer(customer);
+  };
+
+  return (
+    <Card className="w-full border-blue-200 bg-gradient-to-br from-white to-blue-50/30 dark:from-slate-800 dark:to-slate-900 shadow-lg mt-2">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+          <div className="w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+            <Search className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+          </div>
+          Look Up Your Account
+        </CardTitle>
+        <CardDescription className="text-xs text-gray-600 dark:text-gray-400">
+          Enter your phone or email to find your account
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3 pt-0">
+        <form onSubmit={handleSearch} className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+            <Input
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              placeholder="Phone or email..."
+              className="pl-8 h-9 text-sm"
+            />
+          </div>
+          <Button
+            type="submit"
+            variant="secondary"
+            size="sm"
+            disabled={isLoading || !searchValue.trim()}
+            className="h-9"
+          >
+            {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Search'}
+          </Button>
+        </form>
+
+        {results && results.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">
+              Found {results.length} customer{results.length > 1 ? 's' : ''}
+            </p>
+            <div className="space-y-1.5 max-h-[150px] overflow-y-auto">
+              {results.map((customer) => (
+                <button
+                  key={customer.id}
+                  onClick={() => handleSelect(customer)}
+                  className={`w-full p-2.5 rounded-lg border text-left transition-all text-sm ${
+                    selectedId === customer.id
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 ring-2 ring-blue-200 dark:ring-blue-800'
+                      : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-0.5">
+                      <div className="flex items-center gap-1.5">
+                        <User className="w-3.5 h-3.5 text-gray-400" />
+                        <span className="font-medium text-gray-900 dark:text-white">
+                          {customer.firstName} {customer.lastName}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                        <Phone className="w-3 h-3" />
+                        {customer.phone}
+                      </div>
+                      {customer.address && (
+                        <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                          <MapPin className="w-3 h-3" />
+                          {customer.address}
+                        </div>
+                      )}
+                    </div>
+                    {selectedId === customer.id && (
+                      <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center">
+                        <Check className="w-3 h-3 text-white" />
+                      </div>
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {results && results.length === 0 && (
+          <div className="text-center py-3">
+            <p className="text-xs text-gray-500 mb-2">No customers found</p>
+            <Button
+              onClick={onNewCustomer}
+              variant="outline"
+              size="sm"
+              className="border-blue-300 text-blue-600 hover:bg-blue-50 text-xs h-8"
+            >
+              <User className="w-3 h-3 mr-1.5" />
+              I'm a new customer
+            </Button>
+          </div>
+        )}
+
+        {!results && (
+          <div className="text-center py-1">
+            <Button
+              onClick={onNewCustomer}
+              variant="link"
+              size="sm"
+              className="text-blue-600 text-xs"
+            >
+              I'm a new customer
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 interface CustomChatWidgetProps {
   className?: string;
 }
@@ -163,6 +327,9 @@ export function CustomChatWidget({ className }: CustomChatWidgetProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [customerSearchResults, setCustomerSearchResults] = useState<CustomerResult[] | undefined>(undefined);
+  const [isSearchingCustomer, setIsSearchingCustomer] = useState(false);
+  const [showCustomerLookup, setShowCustomerLookup] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -191,12 +358,29 @@ export function CustomChatWidget({ className }: CustomChatWidgetProps) {
     }
   }, [isOpen]);
 
-  const detectCardType = (content: string, toolsUsed?: string[]): Message['card'] => {
-    if (toolsUsed?.includes('book_service_call')) return 'appointment';
-    if (toolsUsed?.includes('get_quote')) return 'quote';
-    if (toolsUsed?.includes('emergency_help')) return 'emergency';
-    if (content.toLowerCase().includes('emergency') && content.toLowerCase().includes('call')) return 'emergency';
-    return null;
+  const detectCardType = (content: string, toolsUsed?: string[]): { cardType: Message['card']; cardIntent?: CardIntent } => {
+    if (toolsUsed?.includes('book_service_call')) return { cardType: 'appointment' };
+    if (toolsUsed?.includes('get_quote')) return { cardType: 'quote' };
+    if (toolsUsed?.includes('emergency_help')) return { cardType: 'emergency' };
+    if (toolsUsed?.includes('lookup_customer')) {
+      setShowCustomerLookup(true);
+      return { cardType: 'customer_lookup' };
+    }
+    if (content.toLowerCase().includes('emergency') && content.toLowerCase().includes('call')) return { cardType: 'emergency' };
+    
+    const { cards } = extractCardIntents(content);
+    const customerLookupIntent = cards.find(
+      intent => intent.type === 'returning_customer_lookup'
+    );
+    if (customerLookupIntent) {
+      setShowCustomerLookup(true);
+      if (customerLookupIntent.type === 'returning_customer_lookup' && customerLookupIntent.results) {
+        setCustomerSearchResults(customerLookupIntent.results as CustomerResult[]);
+      }
+      return { cardType: 'customer_lookup', cardIntent: customerLookupIntent };
+    }
+    
+    return { cardType: null };
   };
 
   const extractCardData = (content: string, cardType: Message['card'], toolResults?: any[]): any => {
@@ -225,6 +409,52 @@ export function CustomChatWidget({ className }: CustomChatWidgetProps) {
     
     return null;
   };
+
+  const handleCustomerSearch = useCallback(async (query: string) => {
+    setIsSearchingCustomer(true);
+    setCustomerSearchResults(undefined);
+    
+    try {
+      const response = await fetch(`/api/v1/customers/search?q=${encodeURIComponent(query)}`, {
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Search failed');
+      }
+      
+      const data = await response.json();
+      const results: CustomerResult[] = (data.customers || []).map((c: any) => ({
+        id: c.id?.toString() || c.housecallProId || '',
+        firstName: c.firstName || '',
+        lastName: c.lastName || '',
+        phone: c.phone || c.mobileNumber || '',
+        email: c.email || '',
+        address: c.address || c.streetAddress || '',
+      }));
+      
+      setCustomerSearchResults(results);
+    } catch (error) {
+      console.error('Customer search error:', error);
+      setCustomerSearchResults([]);
+    } finally {
+      setIsSearchingCustomer(false);
+    }
+  }, []);
+
+  const sendMessageRef = useRef<((msg: string) => void) | null>(null);
+
+  const handleSelectCustomer = useCallback((customer: CustomerResult) => {
+    setShowCustomerLookup(false);
+    setCustomerSearchResults(undefined);
+    sendMessageRef.current?.(`I'm ${customer.firstName} ${customer.lastName}, phone: ${customer.phone}`);
+  }, []);
+
+  const handleNewCustomer = useCallback(() => {
+    setShowCustomerLookup(false);
+    setCustomerSearchResults(undefined);
+    sendMessageRef.current?.("I'm a new customer");
+  }, []);
 
   const sendMessage = useCallback(async (messageText: string) => {
     if (!messageText.trim() || isLoading) return;
@@ -269,7 +499,7 @@ export function CustomChatWidget({ className }: CustomChatWidgetProps) {
 
       if (data.success) {
         setSessionId(data.sessionId);
-        const cardType = detectCardType(data.message, data.toolsUsed);
+        const { cardType, cardIntent } = detectCardType(data.message, data.toolsUsed);
         const cardData = extractCardData(data.message, cardType, data.toolResults);
         
         setMessages(prev => prev.map(msg => 
@@ -281,6 +511,7 @@ export function CustomChatWidget({ className }: CustomChatWidgetProps) {
                 isStreaming: false,
                 card: cardType,
                 cardData,
+                cardIntents: cardIntent ? [cardIntent] : undefined,
               }
             : msg
         ));
@@ -302,6 +533,10 @@ export function CustomChatWidget({ className }: CustomChatWidgetProps) {
       setIsLoading(false);
     }
   }, [sessionId, isLoading]);
+
+  useEffect(() => {
+    sendMessageRef.current = sendMessage;
+  }, [sendMessage]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -470,6 +705,16 @@ export function CustomChatWidget({ className }: CustomChatWidgetProps) {
                         {message.card === 'appointment' && <AppointmentCard data={message.cardData} />}
                         {message.card === 'quote' && <QuoteCard data={message.cardData} />}
                         {message.card === 'emergency' && <EmergencyCard />}
+                        {message.card === 'customer_lookup' && showCustomerLookup && (
+                          <CustomerLookupCard
+                            onSearch={handleCustomerSearch}
+                            onSelectCustomer={handleSelectCustomer}
+                            onNewCustomer={handleNewCustomer}
+                            onDismiss={() => setShowCustomerLookup(false)}
+                            isLoading={isSearchingCustomer}
+                            results={customerSearchResults}
+                          />
+                        )}
 
                         {message.role === 'assistant' && !message.isStreaming && (
                           <div className="flex items-center gap-0.5 mt-1">
