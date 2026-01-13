@@ -27,6 +27,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { z } from "zod";
 import { formatTimeSlotWindow, isWeekendDate } from "@/lib/timeUtils";
 import { PricingEstimate } from "./PricingEstimate";
@@ -1306,24 +1308,33 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
                       </div>
 
                       {bookingData.smsVerification.status === "pending" && (
-                        <div className="flex items-center gap-2">
-                          <Input
-                            value={smsCode}
-                            onChange={(e) => setSmsCode(e.target.value)}
-                            placeholder="Enter 6-digit code"
-                            className="h-9"
-                          />
-                          <Button
-                            type="button"
-                            size="sm"
-                            disabled={smsCode.trim().length < 4 || confirmSmsVerificationMutation.isPending}
-                            onClick={() => {
-                              if (!smsPhone) return;
-                              confirmSmsVerificationMutation.mutate({ phone: smsPhone, code: smsCode.trim() });
-                            }}
-                          >
-                            {confirmSmsVerificationMutation.isPending ? "Verifying..." : "Verify"}
-                          </Button>
+                        <div className="space-y-3">
+                          <p className="text-xs text-gray-600">Enter the 6-digit code sent to your phone</p>
+                          <div className="flex flex-col items-center gap-3">
+                            <InputOTP
+                              maxLength={6}
+                              value={smsCode}
+                              onChange={(value) => {
+                                setSmsCode(value);
+                                if (value.length === 6 && smsPhone) {
+                                  confirmSmsVerificationMutation.mutate({ phone: smsPhone, code: value });
+                                }
+                              }}
+                              autoComplete="one-time-code"
+                            >
+                              <InputOTPGroup>
+                                <InputOTPSlot index={0} />
+                                <InputOTPSlot index={1} />
+                                <InputOTPSlot index={2} />
+                                <InputOTPSlot index={3} />
+                                <InputOTPSlot index={4} />
+                                <InputOTPSlot index={5} />
+                              </InputOTPGroup>
+                            </InputOTP>
+                            {confirmSmsVerificationMutation.isPending && (
+                              <p className="text-xs text-blue-600">Verifying...</p>
+                            )}
+                          </div>
                         </div>
                       )}
 
@@ -1364,13 +1375,16 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
                       </Button>
                       <Button 
                         type="submit" 
-                        disabled={createCustomerMutation.isPending}
+                        disabled={createCustomerMutation.isPending || bookingData.smsVerification.status !== "verified"}
                         className="bg-johnson-blue hover:bg-johnson-teal"
                       >
                         {createCustomerMutation.isPending ? "Creating..." : "Continue"}
                         <ChevronRight className="w-4 h-4 ml-1" />
                       </Button>
                     </div>
+                    {bookingData.smsVerification.status !== "verified" && (
+                      <p className="text-xs text-amber-600 text-center">Please verify your phone number to continue</p>
+                    )}
                   </form>
                 </Form>
               </TabsContent>
@@ -1455,24 +1469,33 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
                       </div>
 
                       {bookingData.smsVerification.status === "pending" && (
-                        <div className="flex items-center gap-2">
-                          <Input
-                            value={smsCode}
-                            onChange={(e) => setSmsCode(e.target.value)}
-                            placeholder="Enter 6-digit code"
-                            className="h-9"
-                          />
-                          <Button
-                            type="button"
-                            size="sm"
-                            disabled={smsCode.trim().length < 4 || confirmSmsVerificationMutation.isPending}
-                            onClick={() => {
-                              if (!smsPhone) return;
-                              confirmSmsVerificationMutation.mutate({ phone: smsPhone, code: smsCode.trim() });
-                            }}
-                          >
-                            {confirmSmsVerificationMutation.isPending ? "Verifying..." : "Verify"}
-                          </Button>
+                        <div className="space-y-3">
+                          <p className="text-xs text-gray-600">Enter the 6-digit code sent to your phone</p>
+                          <div className="flex flex-col items-center gap-3">
+                            <InputOTP
+                              maxLength={6}
+                              value={smsCode}
+                              onChange={(value) => {
+                                setSmsCode(value);
+                                if (value.length === 6 && smsPhone) {
+                                  confirmSmsVerificationMutation.mutate({ phone: smsPhone, code: value });
+                                }
+                              }}
+                              autoComplete="one-time-code"
+                            >
+                              <InputOTPGroup>
+                                <InputOTPSlot index={0} />
+                                <InputOTPSlot index={1} />
+                                <InputOTPSlot index={2} />
+                                <InputOTPSlot index={3} />
+                                <InputOTPSlot index={4} />
+                                <InputOTPSlot index={5} />
+                              </InputOTPGroup>
+                            </InputOTP>
+                            {confirmSmsVerificationMutation.isPending && (
+                              <p className="text-xs text-blue-600">Verifying...</p>
+                            )}
+                          </div>
                         </div>
                       )}
 
@@ -1499,7 +1522,7 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
                       </Button>
                       <Button 
                         type="submit" 
-                        disabled={lookupCustomerMutation.isPending}
+                        disabled={lookupCustomerMutation.isPending || bookingData.smsVerification.status !== "verified"}
                         className="bg-johnson-blue hover:bg-johnson-teal"
                       >
                         {lookupCustomerMutation.isPending ? "Looking up..." : "Continue"}
@@ -1511,26 +1534,40 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
               </TabsContent>
             </Tabs>
 
-            <div className="border border-gray-200 rounded-lg p-4 space-y-3">
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  id="booking-for-someone-else"
-                  checked={bookingData.bookingFor.isForSomeoneElse}
-                  onCheckedChange={(checked) => setBookingData(prev => ({
-                    ...prev,
-                    bookingFor: {
-                      ...prev.bookingFor,
-                      isForSomeoneElse: Boolean(checked)
-                    }
-                  }))}
-                />
-                <Label htmlFor="booking-for-someone-else">Booking for someone else</Label>
-              </div>
+            <Collapsible
+              open={bookingData.bookingFor.isForSomeoneElse}
+              onOpenChange={(open) => setBookingData(prev => ({
+                ...prev,
+                bookingFor: {
+                  ...prev.bookingFor,
+                  isForSomeoneElse: open
+                }
+              }))}
+            >
+              <div className="border border-gray-200 rounded-lg p-3">
+                <CollapsibleTrigger asChild>
+                  <button type="button" className="flex items-center gap-2 w-full text-left text-sm">
+                    <Checkbox
+                      id="booking-for-someone-else"
+                      checked={bookingData.bookingFor.isForSomeoneElse}
+                      onCheckedChange={(checked) => setBookingData(prev => ({
+                        ...prev,
+                        bookingFor: {
+                          ...prev.bookingFor,
+                          isForSomeoneElse: Boolean(checked)
+                        }
+                      }))}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                    <Label htmlFor="booking-for-someone-else" className="cursor-pointer text-sm">
+                      Booking for someone else
+                    </Label>
+                    <ChevronRight className={`h-4 w-4 ml-auto transition-transform ${bookingData.bookingFor.isForSomeoneElse ? 'rotate-90' : ''}`} />
+                  </button>
+                </CollapsibleTrigger>
 
-              {bookingData.bookingFor.isForSomeoneElse && (
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="space-y-1">
-                    <Label>Recipient Name</Label>
+                <CollapsibleContent className="pt-3">
+                  <div className="grid gap-2">
                     <Input
                       value={bookingData.bookingFor.recipient.name}
                       onChange={(e) => setBookingData(prev => ({
@@ -1543,11 +1580,9 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
                           }
                         }
                       }))}
-                      placeholder="Full name"
+                      placeholder="Recipient's full name"
+                      className="h-9"
                     />
-                  </div>
-                  <div className="space-y-1">
-                    <Label>Recipient Phone</Label>
                     <Input
                       type="tel"
                       value={bookingData.bookingFor.recipient.phone}
@@ -1561,11 +1596,9 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
                           }
                         }
                       }))}
-                      placeholder="(555) 123-4567"
+                      placeholder="Recipient's phone"
+                      className="h-9"
                     />
-                  </div>
-                  <div className="space-y-1 sm:col-span-2">
-                    <Label>Relationship (optional)</Label>
                     <Input
                       value={bookingData.bookingFor.recipient.relationship}
                       onChange={(e) => setBookingData(prev => ({
@@ -1578,12 +1611,13 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
                           }
                         }
                       }))}
-                      placeholder="Property manager, family member, tenant, etc."
+                      placeholder="Relationship (e.g., tenant, parent)"
+                      className="h-9"
                     />
                   </div>
-                </div>
-              )}
-            </div>
+                </CollapsibleContent>
+              </div>
+            </Collapsible>
           </div>
         )}
 
