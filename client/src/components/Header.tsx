@@ -124,23 +124,25 @@ export default function Header({ onBookService }: HeaderProps) {
       {/* Main Header */}
       <header className="bg-johnson-blue shadow-lg sticky top-0 z-50 border-t-2 border-johnson-blue">
         {/* Mobile Layout - Simplified */}
-        <div className="lg:hidden px-2 py-2 flex justify-between items-center gap-2 relative z-50">
-          {/* Logo */}
-          <img 
-            src="/JB_logo_New_1756136293648.png" 
-            alt="Johnson Bros. Plumbing & Drain Cleaning" 
-            className="h-8 w-auto max-w-[120px] object-contain flex-shrink-0"
-            data-testid="company-logo"
-          />
+        <div className="lg:hidden px-3 py-2 flex items-center justify-between relative z-50">
+          {/* Logo - constrained width */}
+          <div className="flex-1 min-w-0">
+            <img 
+              src="/JB_logo_New_1756136293648.png" 
+              alt="Johnson Bros. Plumbing & Drain Cleaning" 
+              className="h-10 w-auto max-w-[200px] object-contain"
+              data-testid="company-logo"
+            />
+          </div>
           
-          {/* Hamburger Menu Button */}
+          {/* Hamburger Menu Button - always visible */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="text-white p-2 hover:bg-white/10 rounded-lg transition-colors flex-shrink-0"
+            className="text-white p-2 hover:bg-white/10 rounded-lg transition-colors ml-2"
             aria-label="Toggle menu"
             data-testid="mobile-menu-toggle"
           >
-            {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            {isMobileMenuOpen ? <X className="h-7 w-7" /> : <Menu className="h-7 w-7" />}
           </button>
         </div>
 
