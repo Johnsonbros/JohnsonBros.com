@@ -133,46 +133,15 @@ export default function Header({ onBookService }: HeaderProps) {
             data-testid="company-logo"
           />
           
-          {/* Quick Action Buttons */}
-          <div className="flex items-center gap-2 flex-1 justify-end">
-            {onBookService ? (
-              <button 
-                onClick={onBookService}
-                className="bg-johnson-orange hover:bg-orange-600 text-white px-3 py-1.5 rounded-lg font-bold text-xs transition-colors flex items-center gap-1"
-                data-testid="mobile-book-button"
-              >
-                <Calendar className="h-4 w-4" />
-                <span>Book</span>
-              </button>
-            ) : (
-              <Link 
-                href="/#booking"
-                className="bg-johnson-orange hover:bg-orange-600 text-white px-3 py-1.5 rounded-lg font-bold text-xs transition-colors flex items-center gap-1"
-                data-testid="mobile-book-link"
-              >
-                <Calendar className="h-4 w-4" />
-                <span>Book</span>
-              </Link>
-            )}
-            <a 
-              href="tel:6174799911" 
-              className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs transition-colors flex items-center gap-1"
-              data-testid="mobile-call-button"
-            >
-              <Phone className="h-4 w-4" />
-              <span>Call</span>
-            </a>
-            
-            {/* Hamburger Menu Button */}
-            <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="text-white p-2 hover:bg-white/10 rounded-lg transition-colors flex-shrink-0"
-              aria-label="Toggle menu"
-              data-testid="mobile-menu-toggle"
-            >
-              {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </button>
-          </div>
+          {/* Hamburger Menu Button */}
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="text-white p-2 hover:bg-white/10 rounded-lg transition-colors flex-shrink-0"
+            aria-label="Toggle menu"
+            data-testid="mobile-menu-toggle"
+          >
+            {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
         </div>
 
         {/* Mobile Menu Overlay */}
