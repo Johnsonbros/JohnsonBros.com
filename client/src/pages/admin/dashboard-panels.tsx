@@ -1075,6 +1075,7 @@ export function WebhooksPanel() {
 
 export function SettingsPanel() {
   const user = getAdminUser();
+  const { toast } = useToast();
 
   const { data: authData } = useQuery<AuthMeResponse>({
     queryKey: ['/api/admin/auth/me'],
@@ -1088,15 +1089,103 @@ export function SettingsPanel() {
     enabled: isAuthenticated(),
   });
 
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+  
+  const webhookUrls = {
+    sms: `${baseUrl}/api/v1/twilio/sms`,
+    voice: `${baseUrl}/api/v1/twilio/voice`,
+    voiceRealtime: `${baseUrl}/api/v1/twilio/voice/realtime`,
+    voiceStatus: `${baseUrl}/api/v1/twilio/voice/status`,
+    mcp: `${baseUrl}/mcp`,
+  };
+
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      toast({ title: 'Copied!', description: `${label} URL copied to clipboard` });
+    }).catch(() => {
+      toast({ title: 'Copy failed', description: 'Please copy manually', variant: 'destructive' });
+    });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Settings</h2>
-          <p className="text-sm text-gray-600">Admin access details and recent system activity.</p>
+          <p className="text-sm text-gray-600">Admin access details, webhook URLs, and recent system activity.</p>
         </div>
         <Badge variant="outline" className="text-xs">{user?.role ?? '—'}</Badge>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Twilio Webhook URLs</CardTitle>
+          <CardDescription>Copy these URLs into your Twilio console for SMS and Voice configuration.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div className="flex-1 min-w-0 mr-3">
+                <p className="text-sm font-medium text-gray-700">SMS Webhook</p>
+                <p className="text-xs text-gray-500 truncate">{webhookUrls.sms}</p>
+              </div>
+              <Button size="sm" variant="outline" onClick={() => copyToClipboard(webhookUrls.sms, 'SMS Webhook')}>
+                Copy
+              </Button>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div className="flex-1 min-w-0 mr-3">
+                <p className="text-sm font-medium text-gray-700">Voice Webhook</p>
+                <p className="text-xs text-gray-500 truncate">{webhookUrls.voice}</p>
+              </div>
+              <Button size="sm" variant="outline" onClick={() => copyToClipboard(webhookUrls.voice, 'Voice Webhook')}>
+                Copy
+              </Button>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div className="flex-1 min-w-0 mr-3">
+                <p className="text-sm font-medium text-gray-700">Voice Realtime (Media Streams)</p>
+                <p className="text-xs text-gray-500 truncate">{webhookUrls.voiceRealtime}</p>
+              </div>
+              <Button size="sm" variant="outline" onClick={() => copyToClipboard(webhookUrls.voiceRealtime, 'Voice Realtime')}>
+                Copy
+              </Button>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div className="flex-1 min-w-0 mr-3">
+                <p className="text-sm font-medium text-gray-700">Voice Status Callback</p>
+                <p className="text-xs text-gray-500 truncate">{webhookUrls.voiceStatus}</p>
+              </div>
+              <Button size="sm" variant="outline" onClick={() => copyToClipboard(webhookUrls.voiceStatus, 'Voice Status')}>
+                Copy
+              </Button>
+            </div>
+          </div>
+          <div className="pt-2 border-t">
+            <p className="text-xs text-gray-500">
+              Configure these in Twilio Console → Phone Numbers → Your Number → Messaging/Voice Configuration
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>MCP Server Endpoint</CardTitle>
+          <CardDescription>Public endpoint for AI assistants (ChatGPT, Claude) to access booking tools.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+            <div className="flex-1 min-w-0 mr-3">
+              <p className="text-sm font-medium text-blue-700">MCP Server URL</p>
+              <p className="text-xs text-blue-600 truncate">{webhookUrls.mcp}</p>
+            </div>
+            <Button size="sm" variant="outline" onClick={() => copyToClipboard(webhookUrls.mcp, 'MCP Server')}>
+              Copy
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
