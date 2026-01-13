@@ -19,13 +19,37 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { motion, AnimatePresence, HTMLMotionProps } from 'framer-motion';
+import { motion, HTMLMotionProps } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import logoIcon from '@assets/JBros_Wrench_Logo_WP.png';
 
 const MotionDiv = motion.div as React.FC<HTMLMotionProps<'div'> & React.HTMLAttributes<HTMLDivElement>>;
-const MotionSpan = motion.span as React.FC<HTMLMotionProps<'span'> & React.HTMLAttributes<HTMLSpanElement>>;
 const MotionButton = motion.button as React.FC<HTMLMotionProps<'button'> & React.ButtonHTMLAttributes<HTMLButtonElement>>;
+
+interface AppointmentCardData {
+  date: string;
+  service: string;
+  address: string;
+  confirmationNumber?: string;
+}
+
+interface QuoteCardData {
+  price: string;
+  service: string;
+}
+
+type CardData = AppointmentCardData | QuoteCardData | null;
+type CardType = 'appointment' | 'quote' | 'emergency' | null;
+
+interface ToolResult {
+  tool: string;
+  result?: {
+    scheduledDate?: string;
+    serviceName?: string;
+    address?: string;
+    jobId?: string;
+  };
+}
 
 interface Message {
   id: string;
@@ -35,8 +59,8 @@ interface Message {
   toolsUsed?: string[];
   isStreaming?: boolean;
   feedback?: 'positive' | 'negative' | null;
-  card?: 'appointment' | 'quote' | 'emergency' | null;
-  cardData?: any;
+  card?: CardType;
+  cardData?: CardData;
 }
 
 interface QuickAction {
@@ -85,7 +109,7 @@ const SERVICE_CARDS = [
   { title: "24/7 Emergency", desc: "Always available" },
 ];
 
-function AppointmentCard({ data }: { data: any }) {
+function AppointmentCard({ data }: { data: AppointmentCardData | null }) {
   return (
     <div className="w-full max-w-sm rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg p-4 mt-3">
       <div className="flex items-start justify-between gap-3">
@@ -126,7 +150,7 @@ function AppointmentCard({ data }: { data: any }) {
   );
 }
 
-function QuoteCard({ data }: { data: any }) {
+function QuoteCard({ data }: { data: QuoteCardData | null }) {
   return (
     <div className="w-full max-w-sm rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg p-4 mt-3">
       <div className="flex items-start justify-between gap-3">
@@ -209,19 +233,26 @@ export function PlumbingAssistantApp() {
     }
   }, [input]);
 
-  const detectCardType = (content: string, toolsUsed?: string[]): Message['card'] => {
+  useEffect(() => {
+    return () => {
+      abortControllerRef.current?.abort();
+    };
+  }, []);
+
+  const detectCardType = (content: string, toolsUsed?: string[]): CardType => {
+    const normalizedContent = content.toLowerCase();
     if (toolsUsed?.includes('book_service_call')) return 'appointment';
     if (toolsUsed?.includes('get_quote')) return 'quote';
     if (toolsUsed?.includes('emergency_help')) return 'emergency';
-    if (content.toLowerCase().includes('emergency') && content.toLowerCase().includes('call')) return 'emergency';
+    if (normalizedContent.includes('emergency') && normalizedContent.includes('call')) return 'emergency';
     return null;
   };
 
-  const extractCardData = (content: string, cardType: Message['card'], toolResults?: any[]): any => {
+  const extractCardData = (content: string, cardType: CardType, toolResults?: ToolResult[]): CardData => {
     if (!cardType) return null;
     
     if (cardType === 'appointment' && toolResults) {
-      const bookingResult = toolResults.find((r: any) => r.tool === 'book_service_call');
+      const bookingResult = toolResults.find((result) => result.tool === 'book_service_call');
       if (bookingResult?.result) {
         return {
           date: bookingResult.result.scheduledDate || 'Tomorrow · 9:00 AM',
@@ -247,14 +278,14 @@ export function PlumbingAssistantApp() {
   const sendMessage = useCallback(async (messageText: string) => {
     if (!messageText.trim() || isLoading) return;
 
+    const trimmedMessage = messageText.trim();
     const userMessage: Message = {
       id: `user-${Date.now()}`,
       role: 'user',
-      content: messageText.trim(),
+      content: trimmedMessage,
       timestamp: new Date(),
     };
 
-    setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
 
@@ -266,7 +297,7 @@ export function PlumbingAssistantApp() {
       isStreaming: true,
     };
 
-    setMessages(prev => [...prev, streamingMessage]);
+    setMessages(prev => [...prev, userMessage, streamingMessage]);
 
     try {
       abortControllerRef.current = new AbortController();
@@ -276,7 +307,7 @@ export function PlumbingAssistantApp() {
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
-          message: messageText.trim(),
+          message: trimmedMessage,
           ...(sessionId && { sessionId }),
         }),
         signal: abortControllerRef.current.signal,
@@ -290,15 +321,17 @@ export function PlumbingAssistantApp() {
 
       if (data.success) {
         setSessionId(data.sessionId);
-        const cardType = detectCardType(data.message, data.toolsUsed);
-        const cardData = extractCardData(data.message, cardType, data.toolResults);
+        const toolsUsed = Array.isArray(data.toolsUsed) ? data.toolsUsed : undefined;
+        const toolResults = Array.isArray(data.toolResults) ? data.toolResults : undefined;
+        const cardType = detectCardType(data.message, toolsUsed);
+        const cardData = extractCardData(data.message, cardType, toolResults);
         
         setMessages(prev => prev.map(msg => 
           msg.id === streamingMessage.id 
             ? {
                 ...msg,
                 content: data.message,
-                toolsUsed: data.toolsUsed,
+                toolsUsed,
                 isStreaming: false,
                 card: cardType,
                 cardData,
@@ -343,9 +376,13 @@ export function PlumbingAssistantApp() {
   };
 
   const copyToClipboard = async (text: string, id: string) => {
-    await navigator.clipboard.writeText(text);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (error) {
+      console.error('Failed to copy text:', error);
+    }
   };
 
   const handleFeedback = (messageId: string, feedback: 'positive' | 'negative') => {
@@ -414,6 +451,7 @@ export function PlumbingAssistantApp() {
                 onClick={clearConversation}
                 className="p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                 data-testid="app-clear-button"
+                aria-label="Clear conversation"
               >
                 <RotateCcw className="w-4 h-4" />
               </button>
@@ -547,6 +585,7 @@ export function PlumbingAssistantApp() {
                           onClick={() => copyToClipboard(message.content, message.id)}
                           className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                           data-testid={`copy-${message.id}`}
+                          aria-label="Copy response"
                         >
                           {copiedId === message.id ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
                         </button>
@@ -554,6 +593,7 @@ export function PlumbingAssistantApp() {
                           onClick={() => handleFeedback(message.id, 'positive')}
                           className={`p-1.5 rounded-lg transition-colors ${message.feedback === 'positive' ? 'text-green-500 bg-green-50 dark:bg-green-950' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
                           data-testid={`thumbs-up-${message.id}`}
+                          aria-label="Mark response as helpful"
                         >
                           <ThumbsUp className="w-3.5 h-3.5" />
                         </button>
@@ -561,6 +601,7 @@ export function PlumbingAssistantApp() {
                           onClick={() => handleFeedback(message.id, 'negative')}
                           className={`p-1.5 rounded-lg transition-colors ${message.feedback === 'negative' ? 'text-red-500 bg-red-50 dark:bg-red-950' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
                           data-testid={`thumbs-down-${message.id}`}
+                          aria-label="Mark response as unhelpful"
                         >
                           <ThumbsDown className="w-3.5 h-3.5" />
                         </button>
@@ -568,6 +609,7 @@ export function PlumbingAssistantApp() {
                           onClick={() => regenerateResponse(message.id)}
                           className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                           data-testid={`regenerate-${message.id}`}
+                          aria-label="Regenerate response"
                         >
                           <RotateCcw className="w-3.5 h-3.5" />
                         </button>
