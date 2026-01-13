@@ -69,6 +69,8 @@ app.use((req, res, next) => {
     '/api/v1/twilio',         // Twilio webhooks use signature validation
     '/api/v1/chat',           // AI chat endpoints (session-based)
     '/api/v1/chatkit',        // ChatKit session endpoints
+    '/api/v1/customers/search', // Customer lookup (read-only, rate-limited)
+    '/api/v1/leads',          // Lead creation from chat widget (rate-limited)
     '/mcp',                   // MCP endpoint for AI assistants (external clients)
     '/.well-known',           // Discovery endpoints
     '/api/mcp',               // MCP API endpoints
