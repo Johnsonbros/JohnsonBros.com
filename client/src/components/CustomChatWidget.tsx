@@ -167,14 +167,19 @@ function EmergencyCard() {
   );
 }
 
+interface CustomerLookupSearch {
+  firstName: string;
+  lastName: string;
+  address: string;
+}
+
 interface CustomerLookupCardProps {
-  onSearch: (query: string) => void;
+  onSearch: (search: CustomerLookupSearch) => void;
   onSelectCustomer: (customer: CustomerResult) => void;
   onNewCustomer: () => void;
   onDismiss?: () => void;
   isLoading?: boolean;
   results?: CustomerResult[];
-  searchValue?: string;
 }
 
 function CustomerLookupCard({
@@ -184,15 +189,22 @@ function CustomerLookupCard({
   onDismiss,
   isLoading,
   results,
-  searchValue: initialSearchValue,
 }: CustomerLookupCardProps) {
-  const [searchValue, setSearchValue] = useState(initialSearchValue || '');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [address, setAddress] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  const canSearch = firstName.trim() && lastName.trim() && address.trim();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchValue.trim()) {
-      onSearch(searchValue.trim());
+    if (canSearch) {
+      onSearch({
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        address: address.trim(),
+      });
     }
   };
 
@@ -211,17 +223,34 @@ function CustomerLookupCard({
           Look Up Your Account
         </CardTitle>
         <CardDescription className="text-xs text-gray-600 dark:text-gray-400">
-          Enter your phone or email to find your account
+          Enter your name and address to find your account
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3 pt-0">
-        <form onSubmit={handleSearch} className="flex gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+        <form onSubmit={handleSearch} className="space-y-2">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="relative">
+              <User className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+              <Input
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                placeholder="First name"
+                className="pl-8 h-9 text-sm"
+              />
+            </div>
             <Input
-              value={searchValue}
-              onChange={(e) => setSearchValue(e.target.value)}
-              placeholder="Phone or email..."
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              placeholder="Last name"
+              className="h-9 text-sm"
+            />
+          </div>
+          <div className="relative">
+            <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+            <Input
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder="Street address (e.g., 123 Main St)"
               className="pl-8 h-9 text-sm"
             />
           </div>
@@ -229,10 +258,11 @@ function CustomerLookupCard({
             type="submit"
             variant="secondary"
             size="sm"
-            disabled={isLoading || !searchValue.trim()}
-            className="h-9"
+            disabled={isLoading || !canSearch}
+            className="w-full h-9"
           >
-            {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Search'}
+            {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-2" /> : <Search className="w-3.5 h-3.5 mr-2" />}
+            {isLoading ? 'Searching...' : 'Find My Account'}
           </Button>
         </form>
 
@@ -381,11 +411,22 @@ export function CustomChatWidget({ className }: CustomChatWidgetProps) {
     }
     
     const lowerContent = content.toLowerCase();
+    // Trigger customer lookup card when AI asks for customer identification
     const askingForLookup = (
-      (lowerContent.includes('phone') || lowerContent.includes('email')) &&
-      (lowerContent.includes('look up') || lowerContent.includes('find your') || 
-       lowerContent.includes('enter your') || lowerContent.includes('provide your') ||
-       lowerContent.includes('what is your') || lowerContent.includes("what's your"))
+      // Traditional phone/email lookup prompts
+      ((lowerContent.includes('phone') || lowerContent.includes('email')) &&
+       (lowerContent.includes('look up') || lowerContent.includes('find your') || 
+        lowerContent.includes('enter your') || lowerContent.includes('provide your') ||
+        lowerContent.includes('what is your') || lowerContent.includes("what's your"))) ||
+      // Name/address lookup prompts
+      ((lowerContent.includes('name') || lowerContent.includes('address')) &&
+       (lowerContent.includes('look up') || lowerContent.includes('find your') ||
+        lowerContent.includes('verify') || lowerContent.includes('confirm'))) ||
+      // Direct account lookup prompts
+      (lowerContent.includes('look up your account') || 
+       lowerContent.includes('find your account') ||
+       lowerContent.includes('used us before') || 
+       lowerContent.includes('returning customer'))
     );
     if (askingForLookup) {
       setShowCustomerLookup(true);
@@ -422,13 +463,20 @@ export function CustomChatWidget({ className }: CustomChatWidgetProps) {
     return null;
   };
 
-  const handleCustomerSearch = useCallback(async (query: string) => {
+  const handleCustomerSearch = useCallback(async (search: CustomerLookupSearch) => {
     setIsSearchingCustomer(true);
     setCustomerSearchResults(undefined);
     
     try {
-      const response = await fetch(`/api/v1/customers/search?q=${encodeURIComponent(query)}`, {
+      const response = await fetch('/api/v1/customers/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
+        body: JSON.stringify({
+          firstName: search.firstName,
+          lastName: search.lastName,
+          address: search.address,
+        }),
       });
       
       if (!response.ok) {

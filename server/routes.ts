@@ -441,72 +441,139 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Customer search for chat widget lookup
-  app.get("/api/v1/customers/search", publicReadLimiter, async (req, res) => {
+  // Customer search for chat widget lookup - exact match by name and address
+  app.post("/api/v1/customers/search", publicReadLimiter, async (req, res) => {
     try {
-      const { q } = req.query;
+      const { firstName, lastName, address } = req.body;
       
-      if (!q || typeof q !== 'string' || q.trim().length < 2) {
-        return res.json({ customers: [] });
+      // Validate and trim inputs
+      const firstNameTrimmed = typeof firstName === 'string' ? firstName.trim() : '';
+      const lastNameTrimmed = typeof lastName === 'string' ? lastName.trim() : '';
+      const addressTrimmed = typeof address === 'string' ? address.trim() : '';
+      
+      if (!firstNameTrimmed || firstNameTrimmed.length < 2) {
+        return res.status(400).json({ 
+          error: "firstName must be at least 2 characters", 
+          customers: [] 
+        });
+      }
+      if (!lastNameTrimmed || lastNameTrimmed.length < 2) {
+        return res.status(400).json({ 
+          error: "lastName must be at least 2 characters", 
+          customers: [] 
+        });
+      }
+      if (!addressTrimmed || addressTrimmed.length < 3) {
+        return res.status(400).json({ 
+          error: "address must be at least 3 characters", 
+          customers: [] 
+        });
       }
       
-      const query = q.trim();
-      const customers: any[] = [];
+      const normalizeStr = (s: string) => s.toLowerCase().trim();
       
+      // Parse address into base street and optional unit
+      const parseAddress = (addr: string): { base: string; unit: string | null } => {
+        let normalized = addr
+          .toLowerCase()
+          .trim()
+          .replace(/\bstreet\b/gi, 'st')
+          .replace(/\bavenue\b/gi, 'ave')
+          .replace(/\broad\b/gi, 'rd')
+          .replace(/\bdrive\b/gi, 'dr')
+          .replace(/\blane\b/gi, 'ln')
+          .replace(/\bcourt\b/gi, 'ct')
+          .replace(/\bplace\b/gi, 'pl')
+          .replace(/\bboulevard\b/gi, 'blvd')
+          .replace(/[.,]/g, '')
+          .replace(/\s+/g, ' ')
+          .trim();
+        
+        // Extract apt/unit number if present
+        const unitMatch = normalized.match(/\b(?:apt|apartment|unit|#|suite|ste)\s*(\w+)\s*$/i);
+        let unit: string | null = null;
+        
+        if (unitMatch) {
+          unit = unitMatch[1].toLowerCase();
+          // Remove the unit part from the base address
+          normalized = normalized.replace(unitMatch[0], '').trim();
+        }
+        
+        return { base: normalized, unit };
+      };
+      
+      // Check if addresses match (base must match, unit is optional)
+      const addressesMatch = (searchParsed: { base: string; unit: string | null }, custParsed: { base: string; unit: string | null }): boolean => {
+        // Base street must match exactly
+        if (searchParsed.base !== custParsed.base) {
+          return false;
+        }
+        
+        // If both have units, they must match
+        if (searchParsed.unit && custParsed.unit) {
+          return searchParsed.unit === custParsed.unit;
+        }
+        
+        // If only one side has a unit, still consider it a match (unit is optional)
+        return true;
+      };
+      
+      const searchFirst = normalizeStr(firstNameTrimmed);
+      const searchLast = normalizeStr(lastNameTrimmed);
+      const searchAddrParsed = parseAddress(addressTrimmed);
+      
+      const customers: any[] = [];
+      const seenIds = new Set<string>();
+      
+      // Search HousecallPro
       if (API_KEY) {
         const hcpClient = HousecallProClient.getInstance();
         
-        // Search by phone or email
-        const isPhone = /[\d\s\-\(\)]+/.test(query) && query.replace(/\D/g, '').length >= 7;
-        const isEmail = query.includes('@');
-        
         try {
+          // Search HCP by last name first, then filter by exact match
           const hcpCustomers = await hcpClient.searchCustomers({
-            phone: isPhone ? query : undefined,
-            email: isEmail ? query : undefined,
+            name: lastNameTrimmed,
           });
           
           for (const c of hcpCustomers || []) {
-            customers.push({
-              id: c.id,
-              housecallProId: c.id,
-              firstName: c.first_name || '',
-              lastName: c.last_name || '',
-              phone: c.mobile_number || c.home_number || '',
-              email: c.email || '',
-              address: c.addresses?.[0]?.street || '',
-            });
+            const custFirst = normalizeStr(c.first_name || '');
+            const custLast = normalizeStr(c.last_name || '');
+            
+            // Check if first and last name match exactly
+            if (custFirst !== searchFirst || custLast !== searchLast) {
+              continue;
+            }
+            
+            // Check addresses for match (base street exact, unit optional)
+            const addresses = c.addresses || [];
+            let matchedAddress = '';
+            
+            for (const addr of addresses) {
+              const custAddrParsed = parseAddress(addr.street || '');
+              if (addressesMatch(searchAddrParsed, custAddrParsed)) {
+                matchedAddress = addr.street || '';
+                break;
+              }
+            }
+            
+            if (matchedAddress && !seenIds.has(c.id)) {
+              seenIds.add(c.id);
+              customers.push({
+                id: c.id,
+                housecallProId: c.id,
+                firstName: c.first_name || '',
+                lastName: c.last_name || '',
+                phone: c.mobile_number || c.home_number || '',
+                email: c.email || '',
+                address: matchedAddress,
+              });
+            }
           }
         } catch (hcpError) {
           logError("HCP customer search failed:", hcpError);
         }
       }
       
-      // Also search local storage
-      const localByEmail = query.includes('@') ? await storage.getCustomerByEmail(query) : null;
-      const localByPhone = !query.includes('@') ? await storage.getCustomerByPhone(query) : null;
-      
-      if (localByEmail && !customers.find(c => c.email === localByEmail.email)) {
-        customers.push({
-          id: localByEmail.id?.toString(),
-          firstName: localByEmail.firstName,
-          lastName: localByEmail.lastName,
-          phone: localByEmail.phone,
-          email: localByEmail.email,
-          address: '',
-        });
-      }
-      
-      if (localByPhone && !customers.find(c => c.phone === localByPhone.phone)) {
-        customers.push({
-          id: localByPhone.id?.toString(),
-          firstName: localByPhone.firstName,
-          lastName: localByPhone.lastName,
-          phone: localByPhone.phone,
-          email: localByPhone.email,
-          address: '',
-        });
-      }
       
       return res.json({ customers });
     } catch (error) {
