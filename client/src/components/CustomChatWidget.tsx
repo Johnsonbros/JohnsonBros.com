@@ -27,6 +27,7 @@ import { motion, AnimatePresence, HTMLMotionProps } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import logoIcon from '@assets/JBros_Wrench_Logo_WP.png';
 import { extractCardIntents, type CardIntent, type ReturningCustomerLookupCard as ReturningCustomerLookupCardType } from '@/lib/cardProtocol';
+import { AppointmentCard, QuoteCard, EmergencyCard } from '@/components/chat/SharedChatCards';
 
 const MotionDiv = motion.div as React.FC<HTMLMotionProps<'div'> & React.HTMLAttributes<HTMLDivElement>>;
 const MotionSpan = motion.span as React.FC<HTMLMotionProps<'span'> & React.HTMLAttributes<HTMLSpanElement>>;
@@ -76,110 +77,6 @@ const QUICK_ACTIONS: QuickAction[] = [
   { icon: Calendar, label: "Can I book an appointment?", prompt: "Can I book an appointment?" },
   { icon: MessageSquare, label: "What types of services do you offer?", prompt: "What types of services do you offer?" },
 ];
-
-function AppointmentCard({ data }: { data: any }) {
-  return (
-    <div className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-md p-3 mt-2">
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <p className="text-slate-500 dark:text-slate-400 text-xs">Appointment Confirmed</p>
-          <h2 className="mt-0.5 text-sm font-semibold text-slate-900 dark:text-white">Johnson Bros. Plumbing</h2>
-        </div>
-        <Badge className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 text-xs">Confirmed</Badge>
-      </div>
-      <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-2 gap-y-1 text-xs">
-        <dt className="flex items-center gap-1 font-medium text-slate-500 dark:text-slate-400">
-          <Calendar className="size-3" />
-          Date
-        </dt>
-        <dd className="text-right text-slate-900 dark:text-white">{data?.date || 'Tomorrow · 9:00 AM'}</dd>
-        <dt className="flex items-center gap-1 font-medium text-slate-500 dark:text-slate-400">
-          <Wrench className="size-3" />
-          Service
-        </dt>
-        <dd className="text-right text-slate-900 dark:text-white">{data?.service || 'General Plumbing'}</dd>
-        <dt className="flex items-center gap-1 font-medium text-slate-500 dark:text-slate-400">
-          <MapPin className="size-3" />
-          Address
-        </dt>
-        <dd className="text-right truncate text-slate-900 dark:text-white">{data?.address || 'Your address'}</dd>
-      </dl>
-      <div className="mt-3 grid gap-2 border-t border-slate-200 dark:border-slate-700 pt-3 grid-cols-2">
-        <a href="tel:6174799911" className="block">
-          <Button variant="outline" size="sm" className="w-full text-xs h-8">
-            <Phone className="w-3 h-3 mr-1" />
-            Call
-          </Button>
-        </a>
-        <Button size="sm" className="w-full bg-blue-600 hover:bg-blue-700 text-xs h-8">
-          <MapPin className="w-3 h-3 mr-1" />
-          Directions
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-function QuoteCard({ data, onBookNow }: { data: any; onBookNow?: () => void }) {
-  return (
-    <div className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-md p-3 mt-2">
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <p className="text-slate-500 dark:text-slate-400 text-xs">Service Quote</p>
-          <h2 className="mt-0.5 text-sm font-semibold text-slate-900 dark:text-white">{data?.service || 'Plumbing Service'}</h2>
-        </div>
-        <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300 text-xs">Estimate</Badge>
-      </div>
-      <div className="mt-2 text-center py-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
-        <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">${data?.price || '99'}</p>
-        <p className="text-xs text-slate-500 dark:text-slate-400">Service Call Fee</p>
-      </div>
-      <p className="mt-2 text-xs text-slate-500 dark:text-slate-400 text-center">
-        Final price after on-site diagnosis. No hidden fees.
-      </p>
-      <div className="mt-3 border-t border-slate-200 dark:border-slate-700 pt-3">
-        <Button 
-          size="sm" 
-          className="w-full bg-blue-600 hover:bg-blue-700 text-xs h-8"
-          onClick={onBookNow}
-        >
-          <Calendar className="w-3 h-3 mr-1" />
-          Book Now
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-function EmergencyCard() {
-  return (
-    <div className="w-full rounded-xl border-2 border-red-500 bg-red-50 dark:bg-red-950/30 shadow-md p-3 mt-2">
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <p className="text-red-600 dark:text-red-400 text-xs font-medium">Emergency? Call Us Now</p>
-          <h2 className="mt-0.5 text-sm font-semibold text-red-700 dark:text-red-300">We're Here 24/7</h2>
-        </div>
-        <Badge className="bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300 text-xs">Urgent</Badge>
-      </div>
-      <div className="mt-2 space-y-1.5 text-xs">
-        <p className="text-red-700 dark:text-red-300">
-          For fastest service, please call us directly. Our team is standing by to dispatch a technician immediately.
-        </p>
-        <p className="text-red-600 dark:text-red-400 font-medium">
-          Life-threatening emergency? Call 911 first.
-        </p>
-      </div>
-      <div className="mt-3 border-t border-red-300 dark:border-red-800 pt-3">
-        <a href="tel:6174799911" className="block">
-          <Button size="sm" className="w-full bg-red-600 hover:bg-red-700 text-xs h-8">
-            <Phone className="w-3 h-3 mr-1" />
-            Call (617) 479-9911 Now
-          </Button>
-        </a>
-      </div>
-    </div>
-  );
-}
 
 interface LeadFormData {
   firstName: string;
