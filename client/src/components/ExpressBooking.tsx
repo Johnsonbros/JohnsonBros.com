@@ -254,10 +254,6 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
                 </div>
               </div>
 
-              <div className="absolute bottom-3 right-3 flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                <span className="text-white text-xs font-bold uppercase tracking-wider">Live Service Feed</span>
-              </div>
             </div>
           </div>
 
