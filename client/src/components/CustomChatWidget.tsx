@@ -1032,6 +1032,7 @@ export function CustomChatWidget({ className }: CustomChatWidgetProps) {
     // Trigger customer lookup card when AI asks for customer identification
     const askingForLookup = (
       // Traditional phone/email lookup prompts - expanded patterns
+      (// Direct account lookup prompts
       ((lowerContent.includes('phone') || lowerContent.includes('email')) &&
        (lowerContent.includes('look up') || lowerContent.includes('find your') || 
         lowerContent.includes('enter your') || lowerContent.includes('provide') ||
@@ -1042,13 +1043,10 @@ export function CustomChatWidget({ className }: CustomChatWidgetProps) {
       ((lowerContent.includes('name') || lowerContent.includes('address')) &&
        (lowerContent.includes('look up') || lowerContent.includes('find your') ||
         lowerContent.includes('verify') || lowerContent.includes('confirm') ||
-        lowerContent.includes('retrieve'))) ||
-      // Direct account lookup prompts
-      (lowerContent.includes('look up your account') || 
+        lowerContent.includes('retrieve'))) || (lowerContent.includes('look up your account') || 
        lowerContent.includes('find your account') ||
        lowerContent.includes('used us before') || 
-       lowerContent.includes('returning customer') ||
-        lowerContent.includes('retrieve your details'))
+       lowerContent.includes('returning customer') || lowerContent.includes('retrieve your details')))
     );
     if (askingForLookup) {
       setShowCustomerLookup(true);
@@ -1356,7 +1354,7 @@ export function CustomChatWidget({ className }: CustomChatWidgetProps) {
                 </div>
                 <div>
                   <h3 className="font-semibold text-sm">Johnson Bros. Plumbing</h3>
-                  <p className="text-xs text-blue-100">AI Assistant • 24/7</p>
+                  <p className="text-xs text-blue-100">ZEKE • AI Assistant • 24/7</p>
                 </div>
               </div>
               <div className="flex items-center gap-1">
@@ -1568,7 +1566,6 @@ export function CustomChatWidget({ className }: CustomChatWidgetProps) {
           </MotionDiv>
         )}
       </AnimatePresence>
-
       <div className="fixed bottom-24 md:bottom-6 left-6 z-50 flex flex-col items-center gap-1">
         <AnimatePresence>
           {scrollProgress > 0.5 && !isOpen && (
