@@ -26,6 +26,22 @@ export default function Header({ onBookService }: HeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [mobileServicesOpen, setMobileServicesOpen] = useState(false);
   const [mobileAreasOpen, setMobileAreasOpen] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  // Detect desktop vs mobile using JavaScript (bypasses CSS issues)
+  useEffect(() => {
+    const DESKTOP_BREAKPOINT = 1024;
+    const checkIsDesktop = () => {
+      setIsDesktop(window.innerWidth >= DESKTOP_BREAKPOINT);
+    };
+    
+    // Check immediately
+    checkIsDesktop();
+    
+    // Listen for resize events
+    window.addEventListener('resize', checkIsDesktop);
+    return () => window.removeEventListener('resize', checkIsDesktop);
+  }, []);
 
   // Fetch real-time Google reviews data
   const { data: reviewsData } = useQuery<GoogleReviewsData>({
@@ -124,7 +140,8 @@ export default function Header({ onBookService }: HeaderProps) {
       {/* Main Header */}
       <header className="bg-johnson-blue shadow-lg sticky top-0 z-50 border-t-2 border-johnson-blue">
         {/* Mobile Layout - Simplified */}
-        <div className="mobile-header-layout px-3 py-2 flex items-center justify-between relative z-50">
+        {!isDesktop && (
+        <div className="px-3 py-2 flex items-center justify-between relative z-50">
           {/* Logo - constrained width */}
           <div className="flex-1 min-w-0">
             <img 
@@ -145,10 +162,11 @@ export default function Header({ onBookService }: HeaderProps) {
             {isMobileMenuOpen ? <X className="h-7 w-7" /> : <Menu className="h-7 w-7" />}
           </button>
         </div>
+        )}
 
         {/* Mobile Menu Overlay */}
-        {isMobileMenuOpen && (
-          <div className="mobile-header-layout fixed inset-0 bg-johnson-blue z-[60] shadow-2xl flex flex-col">
+        {!isDesktop && isMobileMenuOpen && (
+          <div className="fixed inset-0 bg-johnson-blue z-[60] shadow-2xl flex flex-col">
             {/* Solid header with logo in mobile menu - stays fixed */}
             <div className="bg-johnson-blue px-2 py-1 flex justify-between items-center gap-1 border-b border-white/10 flex-shrink-0">
               <img 
@@ -307,7 +325,8 @@ export default function Header({ onBookService }: HeaderProps) {
         )}
 
         {/* Desktop Layout */}
-        <div className="desktop-header-layout">
+        {isDesktop && (
+        <div>
           <div className="container mx-auto px-8 py-4">
             <div className="flex justify-between items-center gap-6">
               {/* Logo */}
@@ -443,6 +462,7 @@ export default function Header({ onBookService }: HeaderProps) {
             </div>
           </div>
         </div>
+        )}
       </header>
     </>
   );
