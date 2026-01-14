@@ -327,20 +327,20 @@ export default function Header({ onBookService }: HeaderProps) {
         {/* Desktop Layout */}
         {isDesktop && (
         <div>
-          <div className="container mx-auto px-8 py-4">
-            <div className="flex justify-between items-center gap-6">
+          <div className="container mx-auto px-6 py-4">
+            <div className="flex justify-between items-center gap-4">
               {/* Logo */}
               <div className="flex items-center flex-shrink-0">
                 <img 
                   src="/JB_logo_New_1756136293648.png" 
                   alt="Johnson Bros. Plumbing & Drain Cleaning" 
-                  className="h-14 w-auto max-h-14 max-w-[260px] object-contain"
+                  className="h-16 w-auto max-h-16 max-w-[300px] object-contain"
                   data-testid="company-logo-desktop"
                 />
               </div>
 
               {/* Desktop Navigation */}
-              <nav className="flex items-center space-x-6 xl:space-x-8">
+              <nav className="flex items-center space-x-4 xl:space-x-6">
                 <Link href="/" className="text-white hover:text-blue-200 transition-colors font-semibold text-base whitespace-nowrap">
                   Home
                 </Link>
@@ -423,19 +423,7 @@ export default function Header({ onBookService }: HeaderProps) {
               </nav>
 
               {/* Desktop CTA - Rating + Book Now */}
-              <div className="flex items-center gap-4 flex-shrink-0">
-                <div className="flex items-center gap-2 bg-white/15 backdrop-blur-sm px-3 py-2 rounded-lg border border-white/20">
-                  <div className="flex text-yellow-400">
-                    <Star className="h-4 w-4 fill-current" />
-                    <Star className="h-4 w-4 fill-current" />
-                    <Star className="h-4 w-4 fill-current" />
-                    <Star className="h-4 w-4 fill-current" />
-                    <Star className="h-4 w-4 fill-current" />
-                  </div>
-                  <span className="text-white text-sm font-bold" data-testid="rating-display">
-                    {reviewsData?.averageRating?.toFixed(1) || "4.8"}
-                  </span>
-                </div>
+              <div className="flex flex-col items-end gap-2 flex-shrink-0">
                 {onBookService ? (
                   <Button 
                     onClick={onBookService}
@@ -458,6 +446,18 @@ export default function Header({ onBookService }: HeaderProps) {
                     </Button>
                   </Link>
                 )}
+                <div className="flex items-center gap-2 bg-white/15 backdrop-blur-sm px-3 py-2 rounded-lg border border-white/20">
+                  <div className="flex text-yellow-400">
+                    <Star className="h-4 w-4 fill-current" />
+                    <Star className="h-4 w-4 fill-current" />
+                    <Star className="h-4 w-4 fill-current" />
+                    <Star className="h-4 w-4 fill-current" />
+                    <Star className="h-4 w-4 fill-current" />
+                  </div>
+                  <span className="text-white text-sm font-bold" data-testid="rating-display">
+                    {reviewsData?.averageRating?.toFixed(1) || "4.8"}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
