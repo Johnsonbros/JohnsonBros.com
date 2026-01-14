@@ -3768,6 +3768,78 @@ registerToolWithDiagnostics(
   }
 );
 
+// Emergency Help Tool - triggers emergency card in chat UI
+registerToolWithDiagnostics(
+  "emergency_help",
+  {
+    title: "Provide Emergency Guidance",
+    description: `Called when a customer has a plumbing emergency. This tool:
+1. Displays the emergency contact card in the chat UI
+2. Provides immediate guidance for the emergency situation
+
+WHEN TO USE:
+- Customer mentions "emergency", "urgent", "burst pipe", "flooding", "gas smell", "sewage backup", "no water", "no heat"
+- Any situation where safety may be at risk
+- Customer clicks the emergency quick action button
+
+ALWAYS call this tool BEFORE your text response when handling emergencies.`,
+    inputSchema: {
+      type: "object",
+      properties: {
+        emergency_type: {
+          type: "string",
+          description: "Type of emergency: burst_pipe, flooding, gas_leak, sewage_backup, no_water, no_heat, electrical_hazard, other"
+        },
+        description: {
+          type: "string",
+          description: "Brief description of the emergency situation"
+        }
+      }
+    },
+    annotations: {
+      title: "Emergency Help",
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false
+    }
+  } as any,
+  async (raw) => {
+    const correlationId = randomUUID();
+    const input = raw || {};
+    
+    log.info({ input, correlationId }, "emergency_help: triggered");
+    
+    const result = {
+      success: true,
+      action: "emergency_card_displayed",
+      emergency_phone: "(617) 479-9911",
+      message: "Emergency card displayed to customer. Please direct them to call immediately.",
+      emergency_type: input.emergency_type || "unknown",
+      description: input.description || "",
+      guidance: {
+        immediate_action: "Call (617) 479-9911 for immediate assistance",
+        life_threatening: "For gas leaks or electrical hazards near water, call 911 first",
+        safety_tips: [
+          "Turn off water at the main shutoff if possible",
+          "Avoid electrical switches near standing water",
+          "Open windows if you smell gas",
+          "Move valuables away from water damage"
+        ]
+      },
+      correlation_id: correlationId
+    };
+    
+    log.info({ correlationId }, "emergency_help: success");
+    
+    return {
+      content: [
+        { type: "text", text: JSON.stringify(result, null, 2) }
+      ]
+    };
+  }
+);
+
 export function getToolMetricsSnapshot() {
   const byTool: Record<string, {
     total_calls: number;
