@@ -1315,10 +1315,38 @@ export function CustomChatWidget({ className }: CustomChatWidgetProps) {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const handleFeedback = (messageId: string, feedback: 'positive' | 'negative') => {
+  const handleFeedback = async (messageId: string, feedback: 'positive' | 'negative') => {
     setMessages(prev => prev.map(msg => 
       msg.id === messageId ? { ...msg, feedback } : msg
     ));
+    
+    const message = messages.find(m => m.id === messageId);
+    if (!message || message.role !== 'assistant') return;
+    
+    const messageIndex = messages.findIndex(m => m.id === messageId);
+    const userMessage = messages.slice(0, messageIndex).reverse().find(m => m.role === 'user');
+    
+    const conversationContext = messages.slice(Math.max(0, messageIndex - 4), messageIndex + 1)
+      .map(m => ({ role: m.role, content: m.content }));
+    
+    try {
+      await fetch('/api/v1/chat/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: sessionId || 'unknown',
+          channel: 'web',
+          userMessage: userMessage?.content || '',
+          assistantResponse: message.content,
+          feedbackType: feedback,
+          conversationContext,
+          toolsUsed: message.toolsUsed || [],
+          messageIndex
+        })
+      });
+    } catch (error) {
+      console.error('Failed to save feedback:', error);
+    }
   };
 
   const clearConversation = () => {
