@@ -103,7 +103,7 @@ export function LeadCaptureCard({ payload, onSubmit, onDismiss, isLoading }: Lea
 
           <div className="space-y-2">
             <Label htmlFor="lead-issue" className="text-sm font-medium text-gray-700">
-              What's the issue?
+              What do you need a quote on?
             </Label>
             <div className="relative">
               <MessageSquare className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
@@ -111,7 +111,7 @@ export function LeadCaptureCard({ payload, onSubmit, onDismiss, isLoading }: Lea
                 id="lead-issue"
                 value={issueDescription}
                 onChange={(event) => setIssueDescription(event.target.value)}
-                placeholder="Describe your plumbing issue..."
+                placeholder="Describe what you'd like a quote for..."
                 className="pl-10 min-h-[80px] resize-none"
                 required
               />
