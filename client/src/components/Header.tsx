@@ -321,7 +321,7 @@ export default function Header({ onBookService }: HeaderProps) {
               </div>
 
               {/* Desktop Navigation */}
-              <nav className="flex items-center space-x-6 xl:space-x-8">
+              <nav className="flex items-center space-x-5">
                 <Link href="/" className="text-white hover:text-blue-200 transition-colors font-semibold text-sm whitespace-nowrap">
                   Home
                 </Link>
@@ -370,18 +370,37 @@ export default function Header({ onBookService }: HeaderProps) {
                 <Link href="/family-discount" className="text-white hover:text-blue-200 transition-colors font-semibold text-sm whitespace-nowrap" data-testid="desktop-nav-family-discount">
                   Family Discount
                 </Link>
-                <Link href="/customer-portal" className="text-white hover:text-blue-200 transition-colors font-semibold text-sm whitespace-nowrap" data-testid="desktop-nav-customer-portal">
-                  Portal
-                </Link>
-                <Link href="/blog" className="text-white hover:text-blue-200 transition-colors font-semibold text-sm whitespace-nowrap" data-testid="desktop-nav-blog">
-                  Blog
-                </Link>
-                <Link href="/contact" className="text-white hover:text-blue-200 transition-colors font-semibold text-sm whitespace-nowrap" data-testid="desktop-nav-contact">
-                  Contact
-                </Link>
+                
                 <Link href="/referral" className="text-white hover:text-blue-200 transition-colors font-semibold text-sm whitespace-nowrap" data-testid="desktop-nav-referral">
                   Referral
                 </Link>
+
+                {/* More Dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="text-white hover:text-blue-200 transition-colors font-semibold text-sm whitespace-nowrap flex items-center gap-1 outline-none cursor-pointer">
+                      More
+                      <ChevronDown className="h-4 w-4" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-48">
+                    <DropdownMenuItem asChild>
+                      <Link href="/customer-portal" className="cursor-pointer text-sm py-2" data-testid="desktop-nav-customer-portal">
+                        Customer Portal
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/blog" className="cursor-pointer text-sm py-2" data-testid="desktop-nav-blog">
+                        Blog
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/contact" className="cursor-pointer text-sm py-2" data-testid="desktop-nav-contact">
+                        Contact Us
+                      </Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </nav>
 
               {/* Desktop CTA Buttons */}
