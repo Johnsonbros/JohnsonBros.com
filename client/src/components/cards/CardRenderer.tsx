@@ -4,8 +4,8 @@ import { ReturningCustomerLookupCard } from './ReturningCustomerLookupCard';
 import { DatePickerCard } from './DatePickerCard';
 import { TimePickerCard } from './TimePickerCard';
 import { BookingConfirmationCard } from './BookingConfirmationCard';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 
 interface CardRendererProps {
   card: CardIntent;
@@ -81,44 +81,44 @@ export function CardRenderer({ card, onAction, onDismiss, isLoading }: CardRende
 
     case 'service_recommendation':
       return (
-        <Card>
-          <CardHeader>
-            <CardTitle>{card.title}</CardTitle>
-            <CardDescription>{card.summary}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {card.priceRange && (
-              <p className="text-sm font-medium text-primary">
-                ${card.priceRange.min} - ${card.priceRange.max}
-              </p>
-            )}
+        <Card className="w-full border-blue-200/70 bg-gradient-to-br from-white to-blue-50/30 shadow-lg dark:border-blue-900/40 dark:from-slate-900 dark:to-slate-950/40">
+          <div className="space-y-3">
+            <div className="space-y-2 px-5 pt-5 sm:px-6">
+              <h3 className="text-base font-semibold text-foreground">{card.title}</h3>
+              <p className="text-sm text-muted-foreground">{card.summary}</p>
+              {card.priceRange && (
+                <p className="text-sm font-semibold text-blue-600 dark:text-blue-300">
+                  ${card.priceRange.min} - ${card.priceRange.max}
+                </p>
+              )}
+            </div>
             {card.cta && (
-              <Button
-                onClick={() => onAction(card.cta!.action, card.cta!.payload)}
-                className="w-full"
-              >
-                {card.cta.label}
-              </Button>
+              <div className="px-5 pb-5 sm:px-6">
+                <Button
+                  onClick={() => onAction(card.cta!.action, card.cta!.payload)}
+                  className="w-full"
+                >
+                  {card.cta.label}
+                </Button>
+              </div>
             )}
-          </CardContent>
+          </div>
         </Card>
       );
 
     case 'estimate_range':
       return (
-        <Card>
-          <CardHeader>
-            <CardTitle>{card.title}</CardTitle>
-            <CardDescription>{card.summary}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <p className="text-lg font-semibold text-primary">
+        <Card className="w-full border-green-200/70 bg-gradient-to-br from-white to-green-50/30 shadow-lg dark:border-green-900/40 dark:from-slate-900 dark:to-slate-950/40">
+          <div className="space-y-3 px-5 py-5 sm:px-6">
+            <h3 className="text-base font-semibold text-foreground">{card.title}</h3>
+            <p className="text-sm text-muted-foreground">{card.summary}</p>
+            <p className="text-lg font-bold text-green-600 dark:text-green-300">
               ${card.range.min} - ${card.range.max}
             </p>
             {card.disclaimer && (
               <p className="text-xs text-muted-foreground italic">{card.disclaimer}</p>
             )}
-          </CardContent>
+          </div>
         </Card>
       );
 
