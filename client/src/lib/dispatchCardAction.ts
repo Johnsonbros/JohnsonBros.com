@@ -1,4 +1,5 @@
 import type { CardIntent } from './cardProtocol';
+import { callOpenAITool } from './toolActionHandlers';
 
 export interface ActionResult {
   ok: boolean;
@@ -28,6 +29,23 @@ export async function dispatchCardAction(
   context: ActionContext
 ): Promise<ActionResult> {
   try {
+    if (action === 'book_service_call' || action === 'get_quote') {
+      const result = await callOpenAITool({ name: action, input: payload });
+
+      const toolResult = result as Record<string, unknown>;
+      const message = resolveToolMessage(toolResult, action);
+
+      return {
+        ok: true,
+        action,
+        correlationId: (toolResult?.correlation_id as string) || '',
+        result: {
+          message,
+          data: toolResult,
+        },
+      };
+    }
+
     const response = await fetch('/api/actions/dispatch', {
       method: 'POST',
       headers: {
@@ -78,6 +96,15 @@ export function createFallbackCard(action: string, error: ActionResult['error'])
     message: "We're having trouble completing your request online. Call us and we'll get you scheduled in 60 seconds.",
     prefill: {},
   };
+}
+
+function resolveToolMessage(toolResult: Record<string, unknown>, action: string): string {
+  if (typeof toolResult?.summary === 'string') return toolResult.summary;
+  if (typeof toolResult?.next_steps === 'string') return toolResult.next_steps;
+  if (typeof toolResult?.message === 'string') return toolResult.message;
+  if (typeof toolResult?.error === 'string') return toolResult.error;
+
+  return `Completed ${action.replace(/_/g, ' ')}.`;
 }
 
 export const ACTION_TYPES = {
