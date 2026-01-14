@@ -1260,10 +1260,13 @@ export function CustomChatWidget({ className }: CustomChatWidgetProps) {
 
       if (data.success) {
         setSessionId(data.sessionId);
-        const { cleanText: emergencyCleanText, found } = stripEmergencyHelpCard(data.message);
-        const { cleanText, cards } = extractCardIntents(emergencyCleanText);
-        const { cardType, cardIntent } = detectCardType(cleanText, data.toolsUsed, found, cards);
-        const cardData = extractCardData(cleanText, cardType, data.toolResults);
+        const { cleanText: emergencyCleanText, found: hasEmergencyCard } = stripEmergencyHelpCard(data.message);
+        const { cleanText: extractedText, cards } = extractCardIntents(emergencyCleanText);
+        const { cardType, cardIntent } = detectCardType(extractedText, data.toolsUsed, hasEmergencyCard, cards);
+        const cardData = extractCardData(extractedText, cardType, data.toolResults);
+        
+        // When emergency card is shown, minimize verbose text since the card contains all info
+        const cleanText = (cardType === 'emergency') ? '' : extractedText;
         
         setMessages(prev => prev.map(msg => 
           msg.id === streamingMessage.id 
@@ -1353,7 +1356,7 @@ export function CustomChatWidget({ className }: CustomChatWidgetProps) {
                   <Wrench className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-sm">Johnson Bros. Plumbing</h3>
+                  <h3 className="font-semibold text-sm text-center">Johnson Bros. Plumbing & Drain Cleaning</h3>
                   <p className="text-xs text-blue-100">ZEKE • AI Assistant • 24/7</p>
                 </div>
               </div>
