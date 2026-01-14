@@ -52,6 +52,6 @@ function tryParseCard(jsonString: string): CardIntent | null {
 export function stripCardIntents(text: string): string {
   return text
     .replace(CARD_INTENT_REGEX, '')
-    .replace(/```json\s*\{[\s\S]*?"type"\s*:\s*"(lead_card|new_customer_info|returning_customer_lookup|date_picker|time_picker|booking_confirmation|service_recommendation|estimate_range)"[\s\S]*?\}[\s\S]*?```/g, '')
+    .replace(/```json\s*\{[\s\S]*?"type"\s*:\s*"(lead_card|new_customer_info|returning_customer_lookup|date_picker|time_picker|booking_confirmation|service_recommendation|service_fee|estimate_range)"[\s\S]*?\}[\s\S]*?```/g, '')
     .trim();
 }

@@ -110,6 +110,37 @@ const sampleCards: CardIntent[] = [
       },
     },
   },
+  {
+    id: '0e4f8b5f-4f87-46ba-9e46-77cc247e4f1c',
+    type: 'service_fee',
+    title: 'Service Fee Details',
+    priority: 'medium',
+    amount: 99,
+    message: 'We charge a $99 service call fee for the visit, credited toward approved repairs.',
+    cta: {
+      label: 'Book a visit',
+      action: 'book_service_call',
+      payload: {
+        source: 'card-gallery',
+      },
+    },
+  },
+  {
+    id: 'b49ac12d-5b50-49d9-9691-9c5ac8de694e',
+    type: 'service_fee',
+    title: 'Service Fee Waived',
+    priority: 'high',
+    amount: 99,
+    waived: true,
+    message: 'High same-day availability means the $99 visit fee is waived for bookings today.',
+    cta: {
+      label: 'Lock in waived fee',
+      action: 'book_service_call',
+      payload: {
+        source: 'card-gallery',
+      },
+    },
+  },
 ];
 
 export default function CardGalleryPage() {
