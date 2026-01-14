@@ -49,6 +49,7 @@ interface Message {
   feedback?: 'positive' | 'negative' | null;
   card?: CardType;
   cardData?: CardData;
+  cards?: CardIntent[];
 }
 
 interface QuickAction {
@@ -103,6 +104,7 @@ export function PlumbingAssistantApp() {
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [cardActionLoading, setCardActionLoading] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -213,18 +215,21 @@ export function PlumbingAssistantApp() {
         setSessionId(data.sessionId);
         const toolsUsed = Array.isArray(data.toolsUsed) ? data.toolsUsed : undefined;
         const toolResults = Array.isArray(data.toolResults) ? data.toolResults : undefined;
-        const cardType = detectCardType(data.message, toolsUsed);
-        const cardData = extractCardData(data.message, cardType, toolResults);
+        const { cleanText, cards } = extractCardIntents(data.message);
+        const hasCards = cards.length > 0;
+        const cardType = hasCards ? null : detectCardType(cleanText, toolsUsed);
+        const cardData = hasCards ? null : extractCardData(cleanText, cardType, toolResults);
         
         setMessages(prev => prev.map(msg => 
           msg.id === streamingMessage.id 
             ? {
                 ...msg,
-                content: data.message,
+                content: cleanText,
                 toolsUsed,
                 isStreaming: false,
                 card: cardType,
                 cardData,
+                cards: hasCards ? cards : undefined,
               }
             : msg
         ));
@@ -307,6 +312,63 @@ export function PlumbingAssistantApp() {
       'emergency_help': 'Emergency info',
     };
     return toolNames[tool] || tool;
+  };
+
+  const handleCardAction = async (action: string, payload?: Record<string, unknown>) => {
+    if (!sessionId) {
+      console.error('No session ID available for card action');
+      return;
+    }
+
+    const cardId = payload?.cardId as string | undefined;
+    setCardActionLoading(cardId || 'unknown');
+
+    try {
+      const result = await dispatchCardAction(action, payload || {}, {
+        threadId: sessionId,
+        sessionId,
+      });
+
+      if (result.ok && result.result?.message) {
+        const { cleanText, cards } = extractCardIntents(result.result.message);
+
+        const newMessage: Message = {
+          id: `assistant-${Date.now()}`,
+          role: 'assistant',
+          content: cleanText,
+          timestamp: new Date(),
+          cards: cards.length > 0 ? cards : undefined,
+        };
+
+        setMessages(prev => [...prev, newMessage]);
+      } else if (!result.ok) {
+        const errorMessage: Message = {
+          id: `assistant-${Date.now()}`,
+          role: 'assistant',
+          content: `Sorry, there was an issue: ${result.error?.details || 'Unknown error'}. Please try again or call us at (617) 479-9911.`,
+          timestamp: new Date(),
+        };
+        setMessages(prev => [...prev, errorMessage]);
+      }
+    } catch (error) {
+      console.error('Card action error:', error);
+      const errorMessage: Message = {
+        id: `assistant-${Date.now()}`,
+        role: 'assistant',
+        content: "I'm having trouble processing that. Please call us at **(617) 479-9911** for immediate assistance.",
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setCardActionLoading(null);
+    }
+  };
+
+  const handleCardDismiss = (cardId: string) => {
+    setMessages(prev => prev.map(msg => ({
+      ...msg,
+      cards: msg.cards?.filter(card => card.id !== cardId),
+    })));
   };
 
   return (
@@ -441,29 +503,31 @@ export function PlumbingAssistantApp() {
                       </div>
                     )}
                     
-                    <div
-                      className={`rounded-2xl px-4 py-3 ${
-                        message.role === 'user'
-                          ? 'bg-johnson-blue text-white rounded-br-md'
-                          : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-bl-md shadow-sm border border-slate-200 dark:border-slate-700'
-                      }`}
-                      data-testid={`message-${message.role}-${index}`}
-                    >
-                      {message.isStreaming ? (
-                        <div className="flex items-center gap-2">
-                          <div className="flex gap-1">
-                            <span className="w-2 h-2 bg-johnson-blue rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                            <span className="w-2 h-2 bg-johnson-blue rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                            <span className="w-2 h-2 bg-johnson-blue rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                    {(message.isStreaming || message.content) && (
+                      <div
+                        className={`rounded-2xl px-4 py-3 ${
+                          message.role === 'user'
+                            ? 'bg-johnson-blue text-white rounded-br-md'
+                            : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-bl-md shadow-sm border border-slate-200 dark:border-slate-700'
+                        }`}
+                        data-testid={`message-${message.role}-${index}`}
+                      >
+                        {message.isStreaming ? (
+                          <div className="flex items-center gap-2">
+                            <div className="flex gap-1">
+                              <span className="w-2 h-2 bg-johnson-blue rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                              <span className="w-2 h-2 bg-johnson-blue rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                              <span className="w-2 h-2 bg-johnson-blue rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                            </div>
+                            <span className="text-sm text-slate-500 dark:text-slate-400">Thinking...</span>
                           </div>
-                          <span className="text-sm text-slate-500 dark:text-slate-400">Thinking...</span>
-                        </div>
-                      ) : (
-                        <div className={`text-sm prose prose-sm max-w-none ${message.role === 'user' ? 'prose-invert' : 'dark:prose-invert'} [&>p]:mb-2 [&>p:last-child]:mb-0 [&>ul]:my-2 [&>ol]:my-2`}>
-                          <ReactMarkdown>{message.content}</ReactMarkdown>
-                        </div>
-                      )}
-                    </div>
+                        ) : (
+                          <div className={`text-sm prose prose-sm max-w-none ${message.role === 'user' ? 'prose-invert' : 'dark:prose-invert'} [&>p]:mb-2 [&>p:last-child]:mb-0 [&>ul]:my-2 [&>ol]:my-2`}>
+                            <ReactMarkdown>{message.content}</ReactMarkdown>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     {message.card === 'appointment' && <AppointmentCard data={message.cardData} variant="expanded" />}
                     {message.card === 'quote' && <QuoteCard data={message.cardData} variant="expanded" />}
