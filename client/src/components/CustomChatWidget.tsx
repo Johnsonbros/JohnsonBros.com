@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { motion, AnimatePresence, HTMLMotionProps } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
@@ -99,6 +100,7 @@ function LeadCard({ onSubmit, isLoading, prefill }: LeadCardProps) {
   const [phone, setPhone] = useState(prefill?.phone || '');
   const [email, setEmail] = useState(prefill?.email || '');
   const [marketingOptIn, setMarketingOptIn] = useState(true);
+  const [issueDescription, setIssueDescription] = useState(prefill?.issueDescription || '');
 
   const formatPhoneDisplay = (value: string) => {
     const digits = value.replace(/\D/g, '').slice(0, 10);
@@ -126,7 +128,7 @@ function LeadCard({ onSubmit, isLoading, prefill }: LeadCardProps) {
         phone: phone.replace(/\D/g, ''),
         email: email.trim(),
         marketingOptIn,
-        issueDescription: prefill?.issueDescription,
+        issueDescription: issueDescription.trim() || undefined,
       });
     }
   };
@@ -195,6 +197,18 @@ function LeadCard({ onSubmit, isLoading, prefill }: LeadCardProps) {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
               className="h-8 text-sm"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="flex items-center gap-1 text-xs font-medium text-gray-700 dark:text-gray-300">
+              <MessageSquare className="w-3 h-3" />
+              What do you need a quote on?
+            </label>
+            <Textarea
+              value={issueDescription}
+              onChange={(e) => setIssueDescription(e.target.value)}
+              placeholder="Briefly describe the work you need..."
+              className="min-h-[70px] text-sm"
             />
           </div>
           <div className="flex items-start gap-2 pt-1">
@@ -903,7 +917,8 @@ export function CustomChatWidget({ className }: CustomChatWidgetProps) {
   const detectCardType = (
     content: string,
     toolsUsed?: string[],
-    hasEmergencyCard: boolean = false
+    hasEmergencyCard: boolean = false,
+    cardIntents?: CardIntent[]
   ): { cardType: Message['card']; cardIntent?: CardIntent } => {
     if (toolsUsed?.includes('book_service_call')) return { cardType: 'appointment' };
     if (toolsUsed?.includes('emergency_help') || hasEmergencyCard) return { cardType: 'emergency' };
@@ -912,7 +927,7 @@ export function CustomChatWidget({ className }: CustomChatWidgetProps) {
       return { cardType: 'customer_lookup' };
     }
     
-    const { cards } = extractCardIntents(content);
+    const cards = cardIntents ?? extractCardIntents(content).cards;
     
     // Check for lead_card intent first
     const leadCardIntent = cards.find(intent => intent.type === 'lead_card');
@@ -1117,8 +1132,9 @@ export function CustomChatWidget({ className }: CustomChatWidgetProps) {
       setLeadCardPrefill({});
       
       // Send message to AI confirming lead was captured
+      const issueDetail = data.issueDescription ? ` Issue: ${data.issueDescription}.` : '';
       sendMessageRef.current?.(
-        `My info: ${data.firstName} ${data.lastName}, phone: ${data.phone}, email: ${data.email}. ${data.marketingOptIn ? 'I opted in for text updates.' : ''} Please let me know about pricing and next steps.`
+        `My info: ${data.firstName} ${data.lastName}, phone: ${data.phone}, email: ${data.email}.${issueDetail} ${data.marketingOptIn ? 'I opted in for text updates.' : ''} Please let me know about pricing and next steps.`
       );
     } catch (error) {
       console.error('Lead submission error:', error);
@@ -1197,8 +1213,9 @@ export function CustomChatWidget({ className }: CustomChatWidgetProps) {
 
       if (data.success) {
         setSessionId(data.sessionId);
-        const { cleanText, found } = stripEmergencyHelpCard(data.message);
-        const { cardType, cardIntent } = detectCardType(cleanText, data.toolsUsed, found);
+        const { cleanText: emergencyCleanText, found } = stripEmergencyHelpCard(data.message);
+        const { cleanText, cards } = extractCardIntents(emergencyCleanText);
+        const { cardType, cardIntent } = detectCardType(cleanText, data.toolsUsed, found, cards);
         const cardData = extractCardData(cleanText, cardType, data.toolResults);
         
         setMessages(prev => prev.map(msg => 
