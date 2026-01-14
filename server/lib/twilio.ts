@@ -95,6 +95,29 @@ export async function sendSMS(to: string, body: string): Promise<any> {
   });
 }
 
+export async function createOutboundCall(options: {
+  to: string;
+  from?: string;
+  url: string;
+  statusCallback?: string;
+}): Promise<any> {
+  const client = await getTwilioClient();
+  const from = options.from || await getTwilioPhoneNumber();
+
+  if (!from) {
+    throw new Error('No Twilio phone number configured');
+  }
+
+  return client.calls.create({
+    to: options.to,
+    from,
+    url: options.url,
+    statusCallback: options.statusCallback,
+    statusCallbackEvent: options.statusCallback ? ['initiated', 'ringing', 'answered', 'completed'] : undefined,
+    statusCallbackMethod: options.statusCallback ? 'POST' : undefined
+  });
+}
+
 export function generateTwiML(message: string): string {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <Response>

@@ -4,7 +4,7 @@
 import { Request, Response, Router } from 'express';
 import { Logger } from '../src/logger';
 import { processChat, clearSession } from './aiChat';
-import { generateTwiML, generateVoiceTwiML, getTwilioPhoneNumber } from './twilio';
+import { createOutboundCall, generateTwiML, generateVoiceTwiML, getTwilioPhoneNumber } from './twilio';
 import { agentTracing } from './agentTracing';
 import crypto from 'crypto';
 
@@ -15,6 +15,25 @@ const voiceSessions: Map<string, {
   conversationStarted: boolean;
   lastActivity: number;
 }> = new Map();
+
+function requireInternalSecret(req: Request, res: Response): boolean {
+  const internalSecret = process.env.INTERNAL_SECRET;
+
+  if (!internalSecret) {
+    Logger.error('[Twilio] INTERNAL_SECRET not configured');
+    res.status(500).json({ error: 'Internal secret not configured' });
+    return false;
+  }
+
+  const provided = req.headers['x-internal-secret'];
+  if (provided !== internalSecret) {
+    Logger.warn('[Twilio] Unauthorized outbound call attempt');
+    res.status(403).json({ error: 'Unauthorized' });
+    return false;
+  }
+
+  return true;
+}
 
 // Validate Twilio webhook signature
 function validateTwilioSignature(req: Request): boolean {
@@ -72,6 +91,43 @@ router.post('/sms', async (req: Request, res: Response) => {
     res.type('text/xml').send(generateTwiML(
       'Sorry, I\'m having trouble right now. Please call us at (617) 479-9911.'
     ));
+  }
+});
+
+// Outbound voice call - requires internal secret
+router.post('/voice/outbound', async (req: Request, res: Response) => {
+  try {
+    if (!requireInternalSecret(req, res)) {
+      return;
+    }
+
+    const { to, mode, from } = req.body as { to?: string; mode?: 'realtime' | 'ivr'; from?: string };
+
+    if (!to) {
+      res.status(400).json({ error: 'Missing destination phone number' });
+      return;
+    }
+
+    const baseUrl = process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
+    const twimlPath = mode === 'ivr' ? '/api/v1/twilio/voice' : '/api/v1/twilio/voice/realtime';
+    const call = await createOutboundCall({
+      to,
+      from,
+      url: `${baseUrl}${twimlPath}`,
+      statusCallback: `${baseUrl}/api/v1/twilio/voice/status`
+    });
+
+    Logger.info('[Twilio] Outbound call initiated', { to, callSid: call.sid, mode: mode || 'realtime' });
+
+    res.json({
+      success: true,
+      callSid: call.sid,
+      to,
+      mode: mode || 'realtime'
+    });
+  } catch (error: any) {
+    Logger.error('[Twilio] Failed to initiate outbound call:', { error: error?.message });
+    res.status(500).json({ error: 'Failed to initiate outbound call' });
   }
 });
 
