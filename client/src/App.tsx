@@ -87,6 +87,7 @@ const FamilyDiscount = lazy(() => import("@/pages/family-discount"));
 const MyPlan = lazy(() => import("@/pages/my-plan"));
 const ReviewsPage = lazy(() => import("@/pages/reviews"));
 const CustomerPortal = lazy(() => import("@/pages/customer-portal"));
+const CardGalleryPage = lazy(() => import("@/pages/card-gallery"));
 
 function ScrollToTop() {
   const [location] = useLocation();
@@ -118,6 +119,7 @@ function Router() {
           <Route path="/family-discount" component={FamilyDiscount} />
           <Route path="/my-plan" component={MyPlan} />
           <Route path="/customer-portal" component={CustomerPortal} />
+          <Route path="/cards" component={CardGalleryPage} />
           <Route path="/reviews" component={ReviewsPage} />
           <Route path="/webhooks" component={Webhooks} />
           <Route path="/check-ins" component={CheckIns} />

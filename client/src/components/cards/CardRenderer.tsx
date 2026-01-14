@@ -5,6 +5,8 @@ import { ReturningCustomerLookupCard } from './ReturningCustomerLookupCard';
 import { DatePickerCard } from './DatePickerCard';
 import { TimePickerCard } from './TimePickerCard';
 import { BookingConfirmationCard } from './BookingConfirmationCard';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 
 interface CardRendererProps {
   card: CardIntent;
@@ -80,37 +82,45 @@ export function CardRenderer({ card, onAction, onDismiss, isLoading }: CardRende
 
     case 'service_recommendation':
       return (
-        <div className="bg-white border border-blue-200 rounded-xl p-4 shadow-sm">
-          <h3 className="font-semibold text-gray-900 mb-2">{card.title}</h3>
-          <p className="text-sm text-gray-600 mb-3">{card.summary}</p>
-          {card.priceRange && (
-            <p className="text-sm font-medium text-blue-600 mb-3">
-              ${card.priceRange.min} - ${card.priceRange.max}
-            </p>
-          )}
-          {card.cta && (
-            <button
-              onClick={() => onAction(card.cta!.action, card.cta!.payload)}
-              className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              {card.cta.label}
-            </button>
-          )}
-        </div>
+        <Card className="w-full border-blue-200/70 bg-gradient-to-br from-white to-blue-50/30 shadow-lg dark:border-blue-900/40 dark:from-slate-900 dark:to-slate-950/40">
+          <div className="space-y-3">
+            <div className="space-y-2 px-5 pt-5 sm:px-6">
+              <h3 className="text-base font-semibold text-foreground">{card.title}</h3>
+              <p className="text-sm text-muted-foreground">{card.summary}</p>
+              {card.priceRange && (
+                <p className="text-sm font-semibold text-blue-600 dark:text-blue-300">
+                  ${card.priceRange.min} - ${card.priceRange.max}
+                </p>
+              )}
+            </div>
+            {card.cta && (
+              <div className="px-5 pb-5 sm:px-6">
+                <Button
+                  onClick={() => onAction(card.cta!.action, card.cta!.payload)}
+                  className="w-full"
+                >
+                  {card.cta.label}
+                </Button>
+              </div>
+            )}
+          </div>
+        </Card>
       );
 
     case 'estimate_range':
       return (
-        <div className="bg-white border border-green-200 rounded-xl p-4 shadow-sm">
-          <h3 className="font-semibold text-gray-900 mb-2">{card.title}</h3>
-          <p className="text-sm text-gray-600 mb-3">{card.summary}</p>
-          <p className="text-lg font-bold text-green-600 mb-2">
-            ${card.range.min} - ${card.range.max}
-          </p>
-          {card.disclaimer && (
-            <p className="text-xs text-gray-500 italic">{card.disclaimer}</p>
-          )}
-        </div>
+        <Card className="w-full border-green-200/70 bg-gradient-to-br from-white to-green-50/30 shadow-lg dark:border-green-900/40 dark:from-slate-900 dark:to-slate-950/40">
+          <div className="space-y-3 px-5 py-5 sm:px-6">
+            <h3 className="text-base font-semibold text-foreground">{card.title}</h3>
+            <p className="text-sm text-muted-foreground">{card.summary}</p>
+            <p className="text-lg font-bold text-green-600 dark:text-green-300">
+              ${card.range.min} - ${card.range.max}
+            </p>
+            {card.disclaimer && (
+              <p className="text-xs text-muted-foreground italic">{card.disclaimer}</p>
+            )}
+          </div>
+        </Card>
       );
 
     default:
