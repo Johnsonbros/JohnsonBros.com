@@ -1,11 +1,14 @@
 import type { CardIntent } from '@/lib/cardProtocol';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import {
+  AppointmentConfirmationCard,
+  DatePickerCard,
+  LeadCaptureCard,
+  TimePickerCard,
+} from '@johnsonbros/unified-cards';
 import { NewCustomerInfoCard } from './NewCustomerInfoCard';
 import { ReturningCustomerLookupCard } from './ReturningCustomerLookupCard';
-import { DatePickerCard } from './DatePickerCard';
-import { TimePickerCard } from './TimePickerCard';
-import { BookingConfirmationCard } from './BookingConfirmationCard';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 
 interface CardRendererProps {
   card: CardIntent;
