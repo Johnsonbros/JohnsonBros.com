@@ -1578,16 +1578,14 @@ $50 REFERRAL CREDIT APPLIES - New customer receives $50 credit toward any servic
     try {
       const { resolved, limit = 50 } = req.query;
       
-      let query = db.select().from(smsVerificationFailures).orderBy(desc(smsVerificationFailures.createdAt)).limit(Number(limit));
-      
-      if (resolved === 'false') {
-        query = db.select().from(smsVerificationFailures)
-          .where(eq(smsVerificationFailures.resolved, false))
-          .orderBy(desc(smsVerificationFailures.createdAt))
-          .limit(Number(limit));
-      }
-      
-      const failures = await query;
+      const failures = resolved === 'false' 
+        ? await db.select().from(smsVerificationFailures)
+            .where(eq(smsVerificationFailures.resolved, false))
+            .orderBy(desc(smsVerificationFailures.createdAt))
+            .limit(Number(limit))
+        : await db.select().from(smsVerificationFailures)
+            .orderBy(desc(smsVerificationFailures.createdAt))
+            .limit(Number(limit));
       
       // Group by failure type for summary
       const summary = {

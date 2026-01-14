@@ -87,6 +87,8 @@ The frontend is built with React and TypeScript, utilizing Radix UI primitives a
 - **Capacity Calculation**: Real-time availability from HousecallPro, technician schedules, and time of day.
 - **Booking Workflow**: Integrates customer lookup/creation, address management, service selection, and job creation within HousecallPro.
   - **SMS Verification Required**: All online bookings require phone verification via 6-digit OTP code sent by SMS. This prevents fake bookings and verifies customer identity.
+  - **SMS Verification Retry & Fallback**: If SMS fails to send, customers can retry up to 2 times. After 2 failed attempts, the system shows a "Call to Schedule" card with the office phone number. All failures are logged to `sms_verification_failures` table with suggested fixes.
+  - **SMS Failure Tracking**: Database table tracks all SMS failures with: phone, failure type (send_failed, verify_failed, max_retries_exceeded), error message, attempt number, IP address, user agent, and auto-generated suggested fixes. Admin can view/resolve via `/api/v1/admin/sms-failures`.
   - **Address Autocomplete**: Service address field uses Google Places API for autocomplete, ensuring properly formatted addresses for HousecallPro.
   - **Known Limitation - Household Members**: If a family member (spouse, child, etc.) wants to book for an address where another household member's phone is on file, they must call the office directly. The online booking system verifies the phone number on record, so unregistered household members cannot complete online bookings.
 - **Pricing & Fees**: Automatic service fee waivers based on capacity, premium pricing for emergency services.
