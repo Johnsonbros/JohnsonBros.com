@@ -26,7 +26,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { motion, AnimatePresence, HTMLMotionProps } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import logoIcon from '@assets/JBros_Wrench_Logo_WP.png';
-import { extractCardIntents, type CardIntent, type ReturningCustomerLookupCard as ReturningCustomerLookupCardType } from '@/lib/cardProtocol';
+import { extractCardIntents, stripEmergencyHelpCard, type CardIntent, type ReturningCustomerLookupCard as ReturningCustomerLookupCardType } from '@/lib/cardProtocol';
 import { AppointmentCard, QuoteCard, EmergencyCard } from '@/components/chat/SharedChatCards';
 
 const MotionDiv = motion.div as React.FC<HTMLMotionProps<'div'> & React.HTMLAttributes<HTMLDivElement>>;
@@ -900,9 +900,13 @@ export function CustomChatWidget({ className }: CustomChatWidgetProps) {
     }
   }, [isOpen]);
 
-  const detectCardType = (content: string, toolsUsed?: string[]): { cardType: Message['card']; cardIntent?: CardIntent } => {
+  const detectCardType = (
+    content: string,
+    toolsUsed?: string[],
+    hasEmergencyCard: boolean = false
+  ): { cardType: Message['card']; cardIntent?: CardIntent } => {
     if (toolsUsed?.includes('book_service_call')) return { cardType: 'appointment' };
-    if (toolsUsed?.includes('emergency_help')) return { cardType: 'emergency' };
+    if (toolsUsed?.includes('emergency_help') || hasEmergencyCard) return { cardType: 'emergency' };
     if (toolsUsed?.includes('lookup_customer')) {
       setShowCustomerLookup(true);
       return { cardType: 'customer_lookup' };
@@ -1193,14 +1197,15 @@ export function CustomChatWidget({ className }: CustomChatWidgetProps) {
 
       if (data.success) {
         setSessionId(data.sessionId);
-        const { cardType, cardIntent } = detectCardType(data.message, data.toolsUsed);
-        const cardData = extractCardData(data.message, cardType, data.toolResults);
+        const { cleanText, found } = stripEmergencyHelpCard(data.message);
+        const { cardType, cardIntent } = detectCardType(cleanText, data.toolsUsed, found);
+        const cardData = extractCardData(cleanText, cardType, data.toolResults);
         
         setMessages(prev => prev.map(msg => 
           msg.id === streamingMessage.id 
             ? {
                 ...msg,
-                content: data.message,
+                content: cleanText,
                 toolsUsed: data.toolsUsed,
                 isStreaming: false,
                 card: cardType,

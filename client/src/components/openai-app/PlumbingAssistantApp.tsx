@@ -23,7 +23,7 @@ import ReactMarkdown from 'react-markdown';
 import logoIcon from '@assets/JBros_Wrench_Logo_WP.png';
 import { AppointmentCard, QuoteCard, EmergencyCard, type AppointmentCardData, type QuoteCardData } from '@/components/chat/SharedChatCards';
 import { dispatchCardAction } from '@/lib/dispatchCardAction';
-import { extractCardIntents, type CardIntent } from '@/lib/cardProtocol';
+import { extractCardIntents, stripEmergencyHelpCard, type CardIntent } from '@/lib/cardProtocol';
 
 const MotionDiv = motion.div as React.FC<HTMLMotionProps<'div'> & React.HTMLAttributes<HTMLDivElement>>;
 const MotionButton = motion.button as React.FC<HTMLMotionProps<'button'> & React.ButtonHTMLAttributes<HTMLButtonElement>>;
@@ -133,11 +133,11 @@ export function PlumbingAssistantApp() {
     };
   }, []);
 
-  const detectCardType = (content: string, toolsUsed?: string[]): CardType => {
+  const detectCardType = (content: string, toolsUsed?: string[], hasEmergencyCard: boolean = false): CardType => {
     const normalizedContent = content.toLowerCase();
     if (toolsUsed?.includes('book_service_call')) return 'appointment';
     if (toolsUsed?.includes('get_quote')) return 'quote';
-    if (toolsUsed?.includes('emergency_help')) return 'emergency';
+    if (toolsUsed?.includes('emergency_help') || hasEmergencyCard) return 'emergency';
     if (normalizedContent.includes('emergency') && normalizedContent.includes('call')) return 'emergency';
     return null;
   };
@@ -218,15 +218,16 @@ export function PlumbingAssistantApp() {
         const toolsUsed = Array.isArray(data.toolsUsed) ? data.toolsUsed : undefined;
         const toolResults = Array.isArray(data.toolResults) ? data.toolResults : undefined;
         const { cleanText, cards } = extractCardIntents(data.message);
+        const { cleanText: strippedText, found } = stripEmergencyHelpCard(cleanText);
         const hasCards = cards.length > 0;
-        const cardType = hasCards ? null : detectCardType(cleanText, toolsUsed);
-        const cardData = hasCards ? null : extractCardData(cleanText, cardType, toolResults);
+        const cardType = hasCards ? null : detectCardType(strippedText, toolsUsed, found);
+        const cardData = hasCards ? null : extractCardData(strippedText, cardType, toolResults);
         
         setMessages(prev => prev.map(msg => 
           msg.id === streamingMessage.id 
             ? {
                 ...msg,
-                content: cleanText,
+                content: strippedText,
                 toolsUsed,
                 isStreaming: false,
                 card: cardType,
@@ -333,13 +334,18 @@ export function PlumbingAssistantApp() {
 
       if (result.ok && result.result?.message) {
         const { cleanText, cards } = extractCardIntents(result.result.message);
+        const { cleanText: strippedText, found } = stripEmergencyHelpCard(cleanText);
+        const cardType = cards.length > 0 ? null : detectCardType(strippedText, undefined, found);
+        const cardData = cards.length > 0 ? null : extractCardData(strippedText, cardType);
 
         const newMessage: Message = {
           id: `assistant-${Date.now()}`,
           role: 'assistant',
-          content: cleanText,
+          content: strippedText,
           timestamp: new Date(),
           cards: cards.length > 0 ? cards : undefined,
+          card: cardType,
+          cardData,
         };
 
         setMessages(prev => [...prev, newMessage]);
