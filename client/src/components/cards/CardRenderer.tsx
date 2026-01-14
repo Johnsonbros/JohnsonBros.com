@@ -7,6 +7,7 @@ import { LeadCard as LeadCaptureCard } from './LeadCard';
 import { BookingConfirmationCard as AppointmentConfirmationCard } from './BookingConfirmationCard';
 import { NewCustomerInfoCard } from './NewCustomerInfoCard';
 import { ReturningCustomerLookupCard } from './ReturningCustomerLookupCard';
+import { ServiceFeeCard } from './ServiceFeeCard';
 
 interface CardRendererProps {
   card: CardIntent;
@@ -105,6 +106,15 @@ export function CardRenderer({ card, onAction, onDismiss, isLoading }: CardRende
             )}
           </div>
         </Card>
+      );
+
+    case 'service_fee':
+      return (
+        <ServiceFeeCard
+          card={card}
+          onAction={onAction}
+          onDismiss={handleDismiss}
+        />
       );
 
     case 'estimate_range':
