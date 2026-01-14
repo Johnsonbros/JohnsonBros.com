@@ -8,6 +8,7 @@ import { useState, useEffect, useRef } from "react";
 import { formatTimeSlotWindow } from "@/lib/timeUtils";
 import { format, addDays } from "date-fns";
 import plumberVideo from "@assets/Website video_1759942431968.mp4";
+import bluePipesBg from "/blue-pipes-bg.png";
 
 interface HeroSectionProps {
   onBookService: () => void;
@@ -46,6 +47,8 @@ interface CapacityData {
 export default function ExpressBooking({ onBookService }: HeroSectionProps) {
   const [userZip, setUserZip] = useState<string | null>(null);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<ExpressWindow | null>(null);
+  const [videoInView, setVideoInView] = useState(false);
+  const videoContainerRef = useRef<HTMLDivElement>(null);
   
   // Fetch today's capacity data (using v1 API endpoint)
   const { data: todayCapacity } = useQuery<CapacityData>({
@@ -79,6 +82,26 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
     if (storedZip) {
       setUserZip(storedZip);
     }
+  }, []);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setVideoInView(true);
+            observer.disconnect();
+          }
+        });
+      },
+      { rootMargin: '200px', threshold: 0.1 }
+    );
+
+    if (videoContainerRef.current) {
+      observer.observe(videoContainerRef.current);
+    }
+
+    return () => observer.disconnect();
   }, []);
 
   const handleTimeSlotBooking = (slot: ExpressWindow, isNextDay: boolean = false) => {
@@ -212,16 +235,31 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
 
           {/* Row 2: Video card on desktop - aligns with time slot row */}
           <div className="hidden lg:flex lg:col-start-2 lg:row-start-2 items-start">
-            <div className="relative w-full aspect-video rounded-xl overflow-hidden shadow-xl border-4 border-white/20">
-              <video 
-                src={plumberVideo}
-                autoPlay
-                loop
-                muted
-                playsInline
-                className="w-full h-full object-cover"
-                aria-label="Professional plumber at work"
-              />
+            <div
+              ref={videoContainerRef}
+              className="relative w-full aspect-video rounded-xl overflow-hidden shadow-xl border-4 border-white/20"
+            >
+              {videoInView && (
+                <video 
+                  src={plumberVideo}
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  preload="metadata"
+                  poster={bluePipesBg}
+                  className="w-full h-full object-cover"
+                  aria-label="Professional plumber at work"
+                />
+              )}
+              {!videoInView && (
+                <img
+                  src={bluePipesBg}
+                  alt="Professional plumbing background"
+                  className="w-full h-full object-cover"
+                  loading="eager"
+                />
+              )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
               
               {/* Floating Service Badge - Positioned bottom LEFT of the video on desktop (Switched) */}
