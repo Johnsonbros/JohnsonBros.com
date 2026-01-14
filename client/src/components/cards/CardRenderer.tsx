@@ -1,12 +1,10 @@
 import type { CardIntent } from '@/lib/cardProtocol';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import {
-  AppointmentConfirmationCard,
-  DatePickerCard,
-  LeadCaptureCard,
-  TimePickerCard,
-} from '@johnsonbros/unified-cards';
+import { DatePickerCard } from './DatePickerCard';
+import { TimePickerCard } from './TimePickerCard';
+import { LeadCard as LeadCaptureCard } from './LeadCard';
+import { BookingConfirmationCard as AppointmentConfirmationCard } from './BookingConfirmationCard';
 import { NewCustomerInfoCard } from './NewCustomerInfoCard';
 import { ReturningCustomerLookupCard } from './ReturningCustomerLookupCard';
 
@@ -24,7 +22,7 @@ export function CardRenderer({ card, onAction, onDismiss, isLoading }: CardRende
     case 'lead_card':
       return (
         <LeadCaptureCard
-          payload={card}
+          card={card}
           onSubmit={(data) => onAction('SUBMIT_LEAD', { cardId: card.id, ...data })}
           onDismiss={handleDismiss}
           isLoading={isLoading}
@@ -56,7 +54,7 @@ export function CardRenderer({ card, onAction, onDismiss, isLoading }: CardRende
     case 'date_picker':
       return (
         <DatePickerCard
-          payload={card}
+          card={card}
           onSelectDate={(date) => onAction('SELECT_DATE', { cardId: card.id, date, serviceId: card.serviceId })}
           onDismiss={handleDismiss}
           isLoading={isLoading}
@@ -66,7 +64,7 @@ export function CardRenderer({ card, onAction, onDismiss, isLoading }: CardRende
     case 'time_picker':
       return (
         <TimePickerCard
-          payload={card}
+          card={card}
           onSelectSlot={(slotId, timeWindow) => onAction('SELECT_TIME', { cardId: card.id, slotId, timeWindow, date: card.selectedDate })}
           onDismiss={handleDismiss}
           isLoading={isLoading}
@@ -76,7 +74,7 @@ export function CardRenderer({ card, onAction, onDismiss, isLoading }: CardRende
     case 'booking_confirmation':
       return (
         <AppointmentConfirmationCard
-          payload={{ ...card, title: card.title ?? 'Booking Confirmed' }}
+          card={{ ...card, title: card.title ?? 'Booking Confirmed' }}
           onAction={onAction}
           onDismiss={handleDismiss}
         />
