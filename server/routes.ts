@@ -3705,6 +3705,34 @@ Sitemap: ${siteUrl}/sitemap.xml
     }
   });
 
+  const widgetToolAllowList = new Set([
+    "book_service_call",
+    "search_availability",
+    "get_services",
+    "get_quote",
+    "emergency_help",
+  ]);
+
+  app.post('/api/mcp/:toolName', mcpLimiter, mcpLoggingMiddleware, async (req, res) => {
+    const { toolName } = req.params;
+
+    if (!widgetToolAllowList.has(toolName)) {
+      return res.status(404).json({ error: "Tool not available" });
+    }
+
+    try {
+      const payload = req.body || {};
+      const { parsed, raw } = await callMcpTool<any>(toolName, payload);
+      res.json(parsed ?? { raw });
+    } catch (error) {
+      logError(`Error in ${toolName} endpoint:`, error);
+      res.status(500).json({
+        error: "An error occurred while calling the tool. Please try again.",
+        details: getErrorMessage(error),
+      });
+    }
+  });
+
   // Standard MCP discovery endpoint - serves the full manifest
   app.get('/.well-known/mcp/manifest.json', mcpLimiter, mcpLoggingMiddleware, async (req, res) => {
     try {

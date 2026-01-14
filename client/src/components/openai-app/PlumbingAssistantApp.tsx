@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { 
-  Send, 
-  Loader2, 
+import {
+  Send,
+  Loader2,
   Phone,
-  Wrench, 
+  Wrench,
   ChevronRight,
   Sparkles,
   ThumbsUp,
@@ -13,12 +13,19 @@ import {
   RotateCcw,
   MessageSquare,
   Calendar,
-  MapPin,
-  AlertTriangle
+  AlertTriangle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  BookingConfirmationWidget,
+  EmergencyWidget,
+  QuoteWidget,
+  type BookingConfirmationData,
+  type EmergencyData,
+  type QuoteData,
+} from '@/components/widgets';
 import { motion, HTMLMotionProps } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import logoIcon from '@assets/JBros_Wrench_Logo_WP.png';
@@ -109,103 +116,38 @@ const SERVICE_CARDS = [
   { title: "24/7 Emergency", desc: "Always available" },
 ];
 
-function AppointmentCard({ data }: { data: AppointmentCardData | null }) {
-  return (
-    <div className="w-full max-w-sm rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg p-4 mt-3">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-slate-500 dark:text-slate-400 text-sm">Appointment</p>
-          <h2 className="mt-1 text-lg font-semibold text-slate-900 dark:text-white">Johnson Bros. Plumbing</h2>
-        </div>
-        <Badge className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">Confirmed</Badge>
-      </div>
-      <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-3 gap-y-2 text-sm">
-        <dt className="flex items-center gap-1.5 font-medium text-slate-500 dark:text-slate-400">
-          <Calendar className="size-4" />
-          Date
-        </dt>
-        <dd className="text-right text-slate-900 dark:text-white">{data?.date || 'Tomorrow · 9:00 AM'}</dd>
-        <dt className="flex items-center gap-1.5 font-medium text-slate-500 dark:text-slate-400">
-          <Wrench className="size-4" />
-          Service
-        </dt>
-        <dd className="text-right text-slate-900 dark:text-white">{data?.service || 'General Plumbing'}</dd>
-        <dt className="flex items-center gap-1.5 font-medium text-slate-500 dark:text-slate-400">
-          <MapPin className="size-4" />
-          Address
-        </dt>
-        <dd className="text-right truncate text-slate-900 dark:text-white">{data?.address || 'Your address'}</dd>
-      </dl>
-      <div className="mt-4 grid gap-3 border-t border-slate-200 dark:border-slate-700 pt-4 sm:grid-cols-2">
-        <Button variant="brand-outline" className="w-full">
-          <Phone className="w-4 h-4 mr-2" />
-          Call
-        </Button>
-        <Button variant="brand-primary" className="w-full">
-          <MapPin className="w-4 h-4 mr-2" />
-          Directions
-        </Button>
-      </div>
-    </div>
-  );
-}
+const EMERGENCY_FALLBACK: EmergencyData = {
+  title: "Emergency Service",
+  urgency: "urgent",
+  immediateSteps: [
+    "Turn off the main water supply if possible",
+    "Move valuables and electronics away from water",
+    "Call our emergency line for immediate dispatch",
+  ],
+  doNotDo: ["Don't attempt repairs if the area is unsafe"],
+};
 
-function QuoteCard({ data }: { data: QuoteCardData | null }) {
-  return (
-    <div className="w-full max-w-sm rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg p-4 mt-3">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-slate-500 dark:text-slate-400 text-sm">Service Quote</p>
-          <h2 className="mt-1 text-lg font-semibold text-slate-900 dark:text-white">{data?.service || 'Plumbing Service'}</h2>
-        </div>
-        <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300">Estimate</Badge>
-      </div>
-      <div className="mt-4 text-center py-4 bg-slate-50 dark:bg-slate-700/50 rounded-xl">
-        <p className="text-3xl font-bold text-johnson-blue dark:text-johnson-teal">${data?.price || '99'}</p>
-        <p className="text-sm text-slate-500 dark:text-slate-400">Service Call Fee</p>
-      </div>
-      <p className="mt-3 text-xs text-slate-500 dark:text-slate-400 text-center">
-        Final price determined after on-site diagnosis. No hidden fees.
-      </p>
-      <div className="mt-4 grid gap-3 border-t border-slate-200 dark:border-slate-700 pt-4">
-        <Button variant="brand-primary" className="w-full">
-          <Calendar className="w-4 h-4 mr-2" />
-          Book Now
-        </Button>
-      </div>
-    </div>
-  );
-}
+const mapAppointmentData = (
+  data: AppointmentCardData | null
+): BookingConfirmationData | null => {
+  if (!data) return null;
+  return {
+    scheduled_time: data.date,
+    service_description: data.service,
+    address: data.address,
+    job_id: data.confirmationNumber,
+  };
+};
 
-function EmergencyCard() {
-  return (
-    <div className="w-full max-w-sm rounded-2xl border-2 border-red-500 bg-red-50 dark:bg-red-950/30 shadow-lg p-4 mt-3">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-red-600 dark:text-red-400 text-sm font-medium">Emergency Service</p>
-          <h2 className="mt-1 text-lg font-semibold text-red-700 dark:text-red-300">24/7 Available</h2>
-        </div>
-        <Badge className="bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300">Urgent</Badge>
-      </div>
-      <div className="mt-4 space-y-2 text-sm">
-        <p className="text-red-700 dark:text-red-300 font-medium">Immediate Steps:</p>
-        <ul className="list-disc list-inside text-red-600 dark:text-red-400 space-y-1">
-          <li>Turn off water supply if possible</li>
-          <li>Move valuables away from water</li>
-          <li>Call us immediately</li>
-        </ul>
-      </div>
-      <div className="mt-4 grid gap-3 border-t border-red-300 dark:border-red-800 pt-4">
-        <a href="tel:6174799911" className="block">
-          <Button variant="brand-urgent" className="w-full">
-            <Phone className="w-4 h-4 mr-2" />
-            Call (617) 479-9911
-          </Button>
-        </a>
-      </div>
-    </div>
-  );
-}
+const mapQuoteData = (data: QuoteCardData | null): QuoteData | null => {
+  if (!data) return null;
+  const priceValue = Number.parseInt(data.price, 10);
+  return {
+    service: data.service,
+    estimate_min: Number.isNaN(priceValue) ? undefined : priceValue,
+    estimate_max: Number.isNaN(priceValue) ? undefined : priceValue,
+  };
+};
 
 export function PlumbingAssistantApp() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -575,9 +517,17 @@ export function PlumbingAssistantApp() {
                       )}
                     </div>
 
-                    {message.card === 'appointment' && <AppointmentCard data={message.cardData} />}
-                    {message.card === 'quote' && <QuoteCard data={message.cardData} />}
-                    {message.card === 'emergency' && <EmergencyCard />}
+                    {message.card === 'appointment' && (
+                      <BookingConfirmationWidget
+                        data={mapAppointmentData(message.cardData as AppointmentCardData)}
+                      />
+                    )}
+                    {message.card === 'quote' && (
+                      <QuoteWidget data={mapQuoteData(message.cardData as QuoteCardData)} />
+                    )}
+                    {message.card === 'emergency' && (
+                      <EmergencyWidget data={EMERGENCY_FALLBACK} />
+                    )}
 
                     {message.role === 'assistant' && !message.isStreaming && (
                       <div className="flex items-center gap-1 mt-2">
