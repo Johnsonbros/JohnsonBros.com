@@ -334,13 +334,13 @@ export default function Header({ onBookService }: HeaderProps) {
                 <img 
                   src="/JB_logo_New_1756136293648.png" 
                   alt="Johnson Bros. Plumbing & Drain Cleaning" 
-                  className="h-20 w-auto max-h-20 max-w-[350px] object-contain"
+                  className="h-35 w-auto max-h-35 max-w-[450px] object-contain"
                   data-testid="company-logo-desktop"
                 />
               </div>
 
               {/* Desktop Navigation */}
-              <nav className="flex items-center space-x-4 xl:space-x-6">
+              <nav className="flex items-center space-x-4 xl:space-x-8">
                 <Link href="/" className="text-white hover:text-blue-200 transition-colors font-semibold text-base whitespace-nowrap">
                   Home
                 </Link>
