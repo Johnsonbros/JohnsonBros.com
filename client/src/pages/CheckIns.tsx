@@ -5,6 +5,7 @@ import { MapPin, Clock, Wrench, CheckCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { ServiceHeatMap } from '@/components/ServiceHeatMap';
 
 interface CheckIn {
   id: number;
@@ -134,6 +135,21 @@ export default function CheckInsPage() {
               </CardContent>
             </Card>
           </div>
+
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MapPin className="h-5 w-5" />
+                Service Coverage Heatmap
+              </CardTitle>
+              <CardDescription>
+                See where our team is actively serving customers across the South Shore.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ServiceHeatMap />
+            </CardContent>
+          </Card>
 
           {/* Check-ins List */}
           <Card>
