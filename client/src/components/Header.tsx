@@ -385,16 +385,16 @@ export default function Header({ onBookService }: HeaderProps) {
               </nav>
 
               {/* Desktop CTA Buttons */}
-              <div className="flex items-center space-x-4 flex-shrink-0">
-                <div className="flex items-center space-x-2 bg-gradient-to-r from-white/20 to-white/10 backdrop-blur-sm px-3 py-2 rounded-lg border border-white/20 shadow-sm">
+              <div className="flex flex-col items-center flex-shrink-0">
+                <div className="flex items-center space-x-2 bg-gradient-to-r from-white/20 to-white/10 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-white/20 shadow-sm mb-1.5">
                   <div className="flex text-yellow-400 space-x-0.5">
-                    <Star className="h-4 w-4 fill-current" />
-                    <Star className="h-4 w-4 fill-current" />
-                    <Star className="h-4 w-4 fill-current" />
-                    <Star className="h-4 w-4 fill-current" />
-                    <Star className="h-4 w-4 fill-current" />
+                    <Star className="h-3.5 w-3.5 fill-current" />
+                    <Star className="h-3.5 w-3.5 fill-current" />
+                    <Star className="h-3.5 w-3.5 fill-current" />
+                    <Star className="h-3.5 w-3.5 fill-current" />
+                    <Star className="h-3.5 w-3.5 fill-current" />
                   </div>
-                  <span className="text-white text-sm font-bold" data-testid="rating-display">
+                  <span className="text-white text-xs font-bold" data-testid="rating-display">
                     {reviewsData?.averageRating?.toFixed(1) || "4.8"}
                   </span>
                 </div>
