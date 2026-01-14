@@ -307,7 +307,7 @@ export default function Header({ onBookService }: HeaderProps) {
         )}
 
         {/* Desktop Layout */}
-        <div className="hidden lg:block">
+        <div className="max-lg:hidden">
           <div className="container mx-auto px-8 py-4">
             <div className="flex justify-between items-center gap-6">
               {/* Logo */}
