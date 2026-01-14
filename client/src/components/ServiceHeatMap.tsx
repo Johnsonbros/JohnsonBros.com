@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { MapPin, Activity, Users, TrendingUp, Navigation, Phone, CheckCircle2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { Loader } from "@googlemaps/js-api-loader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "wouter";
+import { getGoogleMapsLoader } from "@/lib/googleMapsLoader";
 
 /// <reference types="@types/google.maps" />
 
@@ -74,18 +74,13 @@ export function ServiceHeatMap({ onBookService }: ServiceHeatMapProps) {
     if (!heatMapData || heatMapData.length === 0 || !mapRef.current || !isMapVisible) return;
 
     const initializeMap = async () => {
-      const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-      
-      if (!apiKey) {
+      const loader = getGoogleMapsLoader();
+
+      if (!loader) {
         console.warn("Google Maps API key is not configured. Map features will be limited.");
         // You could optionally show a message to the user or use a fallback
+        return;
       }
-      
-      const loader = new Loader({
-        apiKey: apiKey || "",
-        version: "weekly",
-        libraries: ["visualization", "geometry"]
-      });
 
       try {
         const google = await loader.load();

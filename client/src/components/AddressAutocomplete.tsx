@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { Loader } from "@googlemaps/js-api-loader";
 import { Input } from "@/components/ui/input";
 import { MapPin, Loader2 } from "lucide-react";
+import { getGoogleMapsLoader } from "@/lib/googleMapsLoader";
 
 interface AddressAutocompleteProps {
   value: string;
@@ -22,18 +22,12 @@ export function AddressAutocomplete({
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-    
-    if (!apiKey) {
+    const loader = getGoogleMapsLoader();
+
+    if (!loader) {
       setIsLoading(false);
       return;
     }
-
-    const loader = new Loader({
-      apiKey,
-      version: "weekly",
-      libraries: ["places"]
-    });
 
     loader.importLibrary("places").then(() => {
       setIsLoading(false);
