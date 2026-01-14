@@ -32,6 +32,7 @@ export default defineConfig({
   server: {
     fs: {
       strict: true,
+      allow: [path.resolve(import.meta.dirname, "shared")],
       deny: ["**/.*"],
     },
   },
