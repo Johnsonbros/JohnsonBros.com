@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="ui://widget/ui-kit.css">
+  <link rel="stylesheet" href="ui://widget/shared-card.css">
+</head>
+<body class="widget-body">
+  <div id="widget-root"></div>
+  <script type="module">
+    import { getToolOutput, notifyHeight } from "ui://widget/shared-card.js";
+
+    const data = getToolOutput();
+    const root = document.getElementById('widget-root');
+
+    const customer = data.customer_name || 'Customer';
+    const scheduled = data.scheduled_time || 'To be confirmed';
+    const address = data.address || 'Address on file';
+    const service = data.service_description || 'Plumbing service';
+    const jobId = data.job_id || data.confirmation_number || 'PENDING';
+    const phone = '(617) 479-9911';
+
+    root.className = 'card card-accent-success';
+    root.innerHTML = `
+      <div class="card-header">
+        <div class="icon-badge success">✓</div>
+        <div>
+          <div class="card-title">Appointment Confirmed</div>
+          <div class="card-subtitle">Johnson Bros. Plumbing</div>
+        </div>
+      </div>
+      <div class="card-content">
+        <div class="detail-row">
+          <span class="detail-label">Customer</span>
+          <span class="detail-value">${customer}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">When</span>
+          <span class="detail-value">${scheduled}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Service</span>
+          <span class="detail-value">${service}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Location</span>
+          <span class="detail-value">${address}</span>
+        </div>
+        <div class="confirmation-number">
+          <div class="label">Confirmation Number</div>
+          <div class="value">${jobId}</div>
+        </div>
+        <div class="pill-row">
+          <span class="pill success">Licensed &amp; insured</span>
+          <span class="pill success">Same-day availability</span>
+          <span class="pill success">4.9★ Google reviews</span>
+        </div>
+      </div>
+      <div class="card-footer">
+        Need to reschedule? Call us at <strong>${phone}</strong>
+      </div>
+    `;
+
+    notifyHeight(root);
+  </script>
+</body>
+</html>

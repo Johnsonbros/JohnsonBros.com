@@ -20,6 +20,7 @@ export default defineConfig({
     alias: {
       "@": path.resolve(import.meta.dirname, "client", "src"),
       "@shared": path.resolve(import.meta.dirname, "shared"),
+      "@johnsonbros/unified-cards": path.resolve(import.meta.dirname, "shared", "unified-cards"),
       "@assets": path.resolve(import.meta.dirname, "attached_assets"),
     },
   },

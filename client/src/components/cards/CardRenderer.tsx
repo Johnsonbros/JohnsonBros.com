@@ -1,5 +1,4 @@
 import type { CardIntent } from '@/lib/cardProtocol';
-import { LeadCard } from './LeadCard';
 import { NewCustomerInfoCard } from './NewCustomerInfoCard';
 import { ReturningCustomerLookupCard } from './ReturningCustomerLookupCard';
 import { DatePickerCard } from './DatePickerCard';
@@ -21,8 +20,8 @@ export function CardRenderer({ card, onAction, onDismiss, isLoading }: CardRende
   switch (card.type) {
     case 'lead_card':
       return (
-        <LeadCard
-          card={card}
+        <LeadCaptureCard
+          payload={card}
           onSubmit={(data) => onAction('SUBMIT_LEAD', { cardId: card.id, ...data })}
           onDismiss={handleDismiss}
           isLoading={isLoading}
@@ -54,7 +53,7 @@ export function CardRenderer({ card, onAction, onDismiss, isLoading }: CardRende
     case 'date_picker':
       return (
         <DatePickerCard
-          card={card}
+          payload={card}
           onSelectDate={(date) => onAction('SELECT_DATE', { cardId: card.id, date, serviceId: card.serviceId })}
           onDismiss={handleDismiss}
           isLoading={isLoading}
@@ -64,7 +63,7 @@ export function CardRenderer({ card, onAction, onDismiss, isLoading }: CardRende
     case 'time_picker':
       return (
         <TimePickerCard
-          card={card}
+          payload={card}
           onSelectSlot={(slotId, timeWindow) => onAction('SELECT_TIME', { cardId: card.id, slotId, timeWindow, date: card.selectedDate })}
           onDismiss={handleDismiss}
           isLoading={isLoading}
@@ -73,8 +72,8 @@ export function CardRenderer({ card, onAction, onDismiss, isLoading }: CardRende
 
     case 'booking_confirmation':
       return (
-        <BookingConfirmationCard
-          card={card}
+        <AppointmentConfirmationCard
+          payload={{ ...card, title: card.title ?? 'Booking Confirmed' }}
           onAction={onAction}
           onDismiss={handleDismiss}
         />

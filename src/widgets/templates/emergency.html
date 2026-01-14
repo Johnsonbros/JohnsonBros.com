@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="ui://widget/ui-kit.css">
+  <link rel="stylesheet" href="ui://widget/shared-card.css">
+</head>
+<body class="widget-body">
+  <div id="widget-root"></div>
+  <script type="module">
+    import { getToolOutput, notifyHeight } from "ui://widget/shared-card.js";
+
+    const data = getToolOutput();
+    const root = document.getElementById('widget-root');
+
+    const title = data.title || 'Emergency Guidance';
+    const urgency = data.urgency || 'critical';
+    const steps = data.immediateSteps || data.steps || [];
+    const dontDo = data.doNotDo || [];
+    const phone = '(617) 479-9911';
+
+    const stepsHtml = steps.length
+      ? `<ul class="list">${steps.map(step => `<li>${step}</li>`).join('')}</ul>`
+      : '<div class="empty-state">Stay safe and wait for our technician.</div>';
+
+    const dontHtml = dontDo.length
+      ? `
+        <div>
+          <div class="list-title">Avoid this</div>
+          <ul class="list danger">${dontDo.map(item => `<li>${item}</li>`).join('')}</ul>
+        </div>
+      `
+      : '';
+
+    root.className = 'card card-accent-danger';
+    root.innerHTML = `
+      <div class="card-header">
+        <div class="icon-badge danger">!</div>
+        <div>
+          <div class="card-title">${title}</div>
+          <div class="card-subtitle"><span class="badge danger">${urgency.toUpperCase()}</span></div>
+        </div>
+      </div>
+      <div class="card-content">
+        <div>
+          <div class="list-title">Do this now</div>
+          ${stepsHtml}
+        </div>
+        ${dontHtml}
+        <a class="action-button danger" href="tel:+16174799911">Call Now: ${phone}</a>
+        <div class="pill-row">
+          <span class="pill danger">Rapid response</span>
+          <span class="pill danger">Licensed techs</span>
+          <span class="pill danger">24/7 on-call</span>
+        </div>
+      </div>
+    `;
+
+    notifyHeight(root);
+  </script>
+</body>
+</html>

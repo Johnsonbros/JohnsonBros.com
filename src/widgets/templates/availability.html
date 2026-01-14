@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="ui://widget/ui-kit.css">
+  <link rel="stylesheet" href="ui://widget/shared-card.css">
+</head>
+<body class="widget-body">
+  <div id="widget-root"></div>
+  <script type="module">
+    import { getToolOutput, notifyHeight } from "ui://widget/shared-card.js";
+
+    const data = getToolOutput();
+    const root = document.getElementById('widget-root');
+
+    const slots = data.available_slots || data.windows || [];
+    const serviceType = data.service_type || 'Plumbing Service';
+
+    function formatTime(iso) {
+      const d = new Date(iso);
+      return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+    }
+
+    function formatDate(iso) {
+      const d = new Date(iso);
+      return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    }
+
+    const groupedSlots = {};
+    slots.filter(slot => slot?.available !== false).forEach(slot => {
+      const day = formatDate(slot.start_time);
+      if (!groupedSlots[day]) groupedSlots[day] = [];
+      groupedSlots[day].push(slot);
+    });
+
+    const days = Object.keys(groupedSlots);
+    let slotsHtml = '';
+
+    if (days.length === 0) {
+      slotsHtml = '<div class="empty-state">No available slots found for the requested dates.</div>';
+    } else {
+      days.slice(0, 5).forEach(day => {
+        const daySlots = groupedSlots[day].slice(0, 6);
+        slotsHtml += `
+          <div>
+            <div class="list-title">${day}</div>
+            <div class="slot-grid">
+              ${daySlots.map(slot => `<div class="slot">${formatTime(slot.start_time)}</div>`).join('')}
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    root.className = 'card card-accent-info';
+    root.innerHTML = `
+      <div class="card-header">
+        <div class="icon-badge info">📅</div>
+        <div>
+          <div class="card-title">Available Appointments</div>
+          <div class="card-subtitle">${serviceType}</div>
+        </div>
+      </div>
+      <div class="card-content">
+        ${slotsHtml}
+        <div class="pill-row">
+          <span class="pill info">Live availability</span>
+          <span class="pill info">24/7 emergency</span>
+          <span class="pill info">South Shore experts</span>
+        </div>
+      </div>
+    `;
+
+    notifyHeight(root);
+  </script>
+</body>
+</html>

@@ -89,6 +89,10 @@ const smsVerificationStore = new Map<string, { code: string; expiresAt: number; 
 const SMS_VERIFICATION_TTL_MS = 10 * 60 * 1000;
 const SMS_VERIFICATION_MAX_ATTEMPTS = 5;
 const BLOG_REVIEW_NOTIFICATION_PHONE = process.env.BUSINESS_NOTIFICATION_PHONE || '+16174799911';
+const toolCallSchema = z.object({
+  name: z.string().min(1),
+  input: z.record(z.unknown()).optional(),
+});
 
 function normalizePhone(phone: string) {
   const digits = phone.replace(/\D/g, "");
@@ -1758,6 +1762,39 @@ $50 REFERRAL CREDIT APPLIES - New customer receives $50 credit toward any servic
         return res.status(400).json({ error: "Invalid booking data", details: error.errors });
       }
       res.status(500).json({ error: "Failed to create booking" });
+    }
+  });
+
+  app.post("/api/v1/tools/call", publicWriteLimiter, async (req, res) => {
+    try {
+      const parseResult = toolCallSchema.safeParse(req.body);
+
+      if (!parseResult.success) {
+        return res.status(400).json({
+          ok: false,
+          error: {
+            code: "VALIDATION_ERROR",
+            details: parseResult.error.message,
+          },
+        });
+      }
+
+      const { name, input } = parseResult.data;
+      const { parsed } = await callMcpTool<any>(name, input ?? {});
+
+      return res.json({
+        ok: true,
+        result: parsed ?? null,
+      });
+    } catch (error) {
+      logError("Tool call error:", error);
+      return res.status(500).json({
+        ok: false,
+        error: {
+          code: "TOOL_CALL_FAILED",
+          details: getErrorMessage(error),
+        },
+      });
     }
   });
 
@@ -3701,6 +3738,34 @@ Sitemap: ${siteUrl}/sitemap.xml
         error: "An error occurred while searching availability. Please try again.",
         error_code: "INTERNAL_ERROR",
         details: getErrorMessage(error)
+      });
+    }
+  });
+
+  const widgetToolAllowList = new Set([
+    "book_service_call",
+    "search_availability",
+    "get_services",
+    "get_quote",
+    "emergency_help",
+  ]);
+
+  app.post('/api/mcp/:toolName', mcpLimiter, mcpLoggingMiddleware, async (req, res) => {
+    const { toolName } = req.params;
+
+    if (!widgetToolAllowList.has(toolName)) {
+      return res.status(404).json({ error: "Tool not available" });
+    }
+
+    try {
+      const payload = req.body || {};
+      const { parsed, raw } = await callMcpTool<any>(toolName, payload);
+      res.json(parsed ?? { raw });
+    } catch (error) {
+      logError(`Error in ${toolName} endpoint:`, error);
+      res.status(500).json({
+        error: "An error occurred while calling the tool. Please try again.",
+        details: getErrorMessage(error),
       });
     }
   });

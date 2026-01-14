@@ -4,14 +4,8 @@ import { z } from "zod";
 import { fetch } from "undici";
 import pino from "pino";
 import { randomUUID } from "crypto";
+import { readFile } from "node:fs/promises";
 import { CapacityCalculator } from "../server/src/capacity.js";
-import { 
-  BOOKING_CONFIRMATION_WIDGET, 
-  AVAILABILITY_WIDGET, 
-  SERVICES_WIDGET, 
-  QUOTE_WIDGET, 
-  EMERGENCY_WIDGET 
-} from "./widgets/booking-widget.js";
 
 const log = pino({ name: "jb-booker", level: process.env.LOG_LEVEL || "info" });
 
@@ -644,16 +638,21 @@ const server = new McpServer({
 // Register ChatGPT UI widget templates as MCP resources
 // These render interactive UI inside ChatGPT when tools are called
 const WIDGET_DOMAIN = process.env.SITE_URL || "https://chatgpt.com";
+const TEMPLATE_ROOT = new URL("./widgets/templates/", import.meta.url);
+
+async function loadWidgetTemplate(filename: string) {
+  return readFile(new URL(filename, TEMPLATE_ROOT), "utf8");
+}
 
 server.resource(
   "booking-confirmation-widget",
-  "ui://widget/booking-confirmation.html",
+  "ui://widget/v2/booking-confirmation.html",
   {},
   async () => ({
     contents: [{
-      uri: "ui://widget/booking-confirmation.html",
+      uri: "ui://widget/v2/booking-confirmation.html",
       mimeType: "text/html+skybridge",
-      text: BOOKING_CONFIRMATION_WIDGET,
+      text: await loadWidgetTemplate("booking-confirmation.html"),
       _meta: {
         "openai/widgetPrefersBorder": true,
         "openai/widgetDomain": WIDGET_DOMAIN
@@ -664,13 +663,13 @@ server.resource(
 
 server.resource(
   "availability-widget",
-  "ui://widget/availability.html",
+  "ui://widget/v2/availability.html",
   {},
   async () => ({
     contents: [{
-      uri: "ui://widget/availability.html",
+      uri: "ui://widget/v2/availability.html",
       mimeType: "text/html+skybridge",
-      text: AVAILABILITY_WIDGET,
+      text: await loadWidgetTemplate("availability.html"),
       _meta: {
         "openai/widgetPrefersBorder": true,
         "openai/widgetDomain": WIDGET_DOMAIN
@@ -681,13 +680,13 @@ server.resource(
 
 server.resource(
   "services-widget",
-  "ui://widget/services.html",
+  "ui://widget/v2/services.html",
   {},
   async () => ({
     contents: [{
-      uri: "ui://widget/services.html",
+      uri: "ui://widget/v2/services.html",
       mimeType: "text/html+skybridge",
-      text: SERVICES_WIDGET,
+      text: await loadWidgetTemplate("services.html"),
       _meta: {
         "openai/widgetPrefersBorder": true,
         "openai/widgetDomain": WIDGET_DOMAIN
@@ -698,13 +697,13 @@ server.resource(
 
 server.resource(
   "quote-widget",
-  "ui://widget/quote.html",
+  "ui://widget/v2/quote.html",
   {},
   async () => ({
     contents: [{
-      uri: "ui://widget/quote.html",
+      uri: "ui://widget/v2/quote.html",
       mimeType: "text/html+skybridge",
-      text: QUOTE_WIDGET,
+      text: await loadWidgetTemplate("quote.html"),
       _meta: {
         "openai/widgetPrefersBorder": true,
         "openai/widgetDomain": WIDGET_DOMAIN
@@ -715,13 +714,13 @@ server.resource(
 
 server.resource(
   "emergency-widget",
-  "ui://widget/emergency.html",
+  "ui://widget/v2/emergency.html",
   {},
   async () => ({
     contents: [{
-      uri: "ui://widget/emergency.html",
+      uri: "ui://widget/v2/emergency.html",
       mimeType: "text/html+skybridge",
-      text: EMERGENCY_WIDGET,
+      text: await loadWidgetTemplate("emergency.html"),
       _meta: {
         "openai/widgetPrefersBorder": true,
         "openai/widgetDomain": WIDGET_DOMAIN
@@ -730,7 +729,46 @@ server.resource(
   })
 );
 
-log.info("Registered 5 ChatGPT widget templates for interactive UI");
+server.resource(
+  "widget-ui-kit-css",
+  "ui://widget/ui-kit.css",
+  {},
+  async () => ({
+    contents: [{
+      uri: "ui://widget/ui-kit.css",
+      mimeType: "text/css",
+      text: await loadWidgetTemplate("ui-kit.css")
+    }]
+  })
+);
+
+server.resource(
+  "widget-shared-card-css",
+  "ui://widget/shared-card.css",
+  {},
+  async () => ({
+    contents: [{
+      uri: "ui://widget/shared-card.css",
+      mimeType: "text/css",
+      text: await loadWidgetTemplate("shared-card.css")
+    }]
+  })
+);
+
+server.resource(
+  "widget-shared-card-js",
+  "ui://widget/shared-card.js",
+  {},
+  async () => ({
+    contents: [{
+      uri: "ui://widget/shared-card.js",
+      mimeType: "text/javascript",
+      text: await loadWidgetTemplate("shared-card.js")
+    }]
+  })
+);
+
+log.info("Registered 5 ChatGPT widget templates and shared widget assets");
 
 type ToolMetrics = {
   totalCalls: number;
@@ -928,7 +966,7 @@ IMPORTANT: All required fields must be provided. Phone must be a valid 10-digit 
       openWorldHint: true
     },
     _meta: {
-      "openai/outputTemplate": "ui://widget/booking-confirmation.html",
+      "openai/outputTemplate": "ui://widget/v2/booking-confirmation.html",
       "openai/toolInvocation/invoking": "Scheduling your appointment...",
       "openai/toolInvocation/invoked": "Appointment confirmed!"
     }
@@ -1256,7 +1294,7 @@ TIP: Use 'get_capacity' first to understand overall scheduling availability befo
       openWorldHint: false
     },
     _meta: {
-      "openai/outputTemplate": "ui://widget/availability.html",
+      "openai/outputTemplate": "ui://widget/v2/availability.html",
       "openai/toolInvocation/invoking": "Checking available appointments...",
       "openai/toolInvocation/invoked": "Here are the available times"
     }
@@ -1774,7 +1812,7 @@ RETURNS: Service name, price range (min/max in USD), estimated duration, urgency
       openWorldHint: false
     },
     _meta: {
-      "openai/outputTemplate": "ui://widget/quote.html",
+      "openai/outputTemplate": "ui://widget/v2/quote.html",
       "openai/toolInvocation/invoking": "Calculating your estimate...",
       "openai/toolInvocation/invoked": "Here's your instant estimate"
     }
@@ -1954,7 +1992,7 @@ IMPORTANT: For gas leaks, always advise leaving the house and calling 911 first.
       openWorldHint: false
     },
     _meta: {
-      "openai/outputTemplate": "ui://widget/emergency.html",
+      "openai/outputTemplate": "ui://widget/v2/emergency.html",
       "openai/toolInvocation/invoking": "Getting emergency guidance...",
       "openai/toolInvocation/invoked": "Here's what to do right now"
     }
@@ -2115,7 +2153,7 @@ RETURNS: List of services with price ranges and durations, plus business contact
       openWorldHint: false
     },
     _meta: {
-      "openai/outputTemplate": "ui://widget/services.html",
+      "openai/outputTemplate": "ui://widget/v2/services.html",
       "openai/toolInvocation/invoking": "Loading services...",
       "openai/toolInvocation/invoked": "Here are our services"
     }

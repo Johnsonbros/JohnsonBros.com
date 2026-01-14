@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { 
-  Send, 
-  Loader2, 
+import {
+  Send,
+  Loader2,
   Phone,
-  Wrench, 
+  Wrench,
   ChevronRight,
   Sparkles,
   ThumbsUp,
@@ -13,30 +13,26 @@ import {
   RotateCcw,
   MessageSquare,
   Calendar,
-  MapPin,
   AlertTriangle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  BookingConfirmationWidget,
+  EmergencyWidget,
+  QuoteWidget,
+  type BookingConfirmationData,
+  type EmergencyData,
+  type QuoteData,
+} from '@/components/widgets';
 import { motion, HTMLMotionProps } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import logoIcon from '@assets/JBros_Wrench_Logo_WP.png';
+import { AppointmentCard, QuoteCard, EmergencyCard, type AppointmentCardData, type QuoteCardData } from '@/components/chat/SharedChatCards';
 
 const MotionDiv = motion.div as React.FC<HTMLMotionProps<'div'> & React.HTMLAttributes<HTMLDivElement>>;
 const MotionButton = motion.button as React.FC<HTMLMotionProps<'button'> & React.ButtonHTMLAttributes<HTMLButtonElement>>;
-
-interface AppointmentCardData {
-  date: string;
-  service: string;
-  address: string;
-  confirmationNumber?: string;
-}
-
-interface QuoteCardData {
-  price: string;
-  service: string;
-}
 
 type CardData = AppointmentCardData | QuoteCardData | null;
 type CardType = 'appointment' | 'quote' | 'emergency' | null;
@@ -61,6 +57,7 @@ interface Message {
   feedback?: 'positive' | 'negative' | null;
   card?: CardType;
   cardData?: CardData;
+  cards?: CardIntent[];
 }
 
 interface QuickAction {
@@ -109,110 +106,13 @@ const SERVICE_CARDS = [
   { title: "24/7 Emergency", desc: "Always available" },
 ];
 
-function AppointmentCard({ data }: { data: AppointmentCardData | null }) {
-  return (
-    <div className="w-full max-w-sm rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg p-4 mt-3">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-slate-500 dark:text-slate-400 text-sm">Appointment</p>
-          <h2 className="mt-1 text-lg font-semibold text-slate-900 dark:text-white">Johnson Bros. Plumbing</h2>
-        </div>
-        <Badge className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">Confirmed</Badge>
-      </div>
-      <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-3 gap-y-2 text-sm">
-        <dt className="flex items-center gap-1.5 font-medium text-slate-500 dark:text-slate-400">
-          <Calendar className="size-4" />
-          Date
-        </dt>
-        <dd className="text-right text-slate-900 dark:text-white">{data?.date || 'Tomorrow · 9:00 AM'}</dd>
-        <dt className="flex items-center gap-1.5 font-medium text-slate-500 dark:text-slate-400">
-          <Wrench className="size-4" />
-          Service
-        </dt>
-        <dd className="text-right text-slate-900 dark:text-white">{data?.service || 'General Plumbing'}</dd>
-        <dt className="flex items-center gap-1.5 font-medium text-slate-500 dark:text-slate-400">
-          <MapPin className="size-4" />
-          Address
-        </dt>
-        <dd className="text-right truncate text-slate-900 dark:text-white">{data?.address || 'Your address'}</dd>
-      </dl>
-      <div className="mt-4 grid gap-3 border-t border-slate-200 dark:border-slate-700 pt-4 sm:grid-cols-2">
-        <Button variant="brand-outline" className="w-full">
-          <Phone className="w-4 h-4 mr-2" />
-          Call
-        </Button>
-        <Button variant="brand-primary" className="w-full">
-          <MapPin className="w-4 h-4 mr-2" />
-          Directions
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-function QuoteCard({ data }: { data: QuoteCardData | null }) {
-  return (
-    <div className="w-full max-w-sm rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg p-4 mt-3">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-slate-500 dark:text-slate-400 text-sm">Service Quote</p>
-          <h2 className="mt-1 text-lg font-semibold text-slate-900 dark:text-white">{data?.service || 'Plumbing Service'}</h2>
-        </div>
-        <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300">Estimate</Badge>
-      </div>
-      <div className="mt-4 text-center py-4 bg-slate-50 dark:bg-slate-700/50 rounded-xl">
-        <p className="text-3xl font-bold text-johnson-blue dark:text-johnson-teal">${data?.price || '99'}</p>
-        <p className="text-sm text-slate-500 dark:text-slate-400">Service Call Fee</p>
-      </div>
-      <p className="mt-3 text-xs text-slate-500 dark:text-slate-400 text-center">
-        Final price determined after on-site diagnosis. No hidden fees.
-      </p>
-      <div className="mt-4 grid gap-3 border-t border-slate-200 dark:border-slate-700 pt-4">
-        <Button variant="brand-primary" className="w-full">
-          <Calendar className="w-4 h-4 mr-2" />
-          Book Now
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-function EmergencyCard() {
-  return (
-    <div className="w-full max-w-sm rounded-2xl border-2 border-red-500 bg-red-50 dark:bg-red-950/30 shadow-lg p-4 mt-3">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-red-600 dark:text-red-400 text-sm font-medium">Emergency Service</p>
-          <h2 className="mt-1 text-lg font-semibold text-red-700 dark:text-red-300">24/7 Available</h2>
-        </div>
-        <Badge className="bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300">Urgent</Badge>
-      </div>
-      <div className="mt-4 space-y-2 text-sm">
-        <p className="text-red-700 dark:text-red-300 font-medium">Immediate Steps:</p>
-        <ul className="list-disc list-inside text-red-600 dark:text-red-400 space-y-1">
-          <li>Turn off water supply if possible</li>
-          <li>Move valuables away from water</li>
-          <li>Call us immediately</li>
-        </ul>
-      </div>
-      <div className="mt-4 grid gap-3 border-t border-red-300 dark:border-red-800 pt-4">
-        <a href="tel:6174799911" className="block">
-          <Button variant="brand-urgent" className="w-full">
-            <Phone className="w-4 h-4 mr-2" />
-            Call (617) 479-9911
-          </Button>
-        </a>
-      </div>
-    </div>
-  );
-}
-
 export function PlumbingAssistantApp() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [cardActionLoading, setCardActionLoading] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -323,18 +223,21 @@ export function PlumbingAssistantApp() {
         setSessionId(data.sessionId);
         const toolsUsed = Array.isArray(data.toolsUsed) ? data.toolsUsed : undefined;
         const toolResults = Array.isArray(data.toolResults) ? data.toolResults : undefined;
-        const cardType = detectCardType(data.message, toolsUsed);
-        const cardData = extractCardData(data.message, cardType, toolResults);
+        const { cleanText, cards } = extractCardIntents(data.message);
+        const hasCards = cards.length > 0;
+        const cardType = hasCards ? null : detectCardType(cleanText, toolsUsed);
+        const cardData = hasCards ? null : extractCardData(cleanText, cardType, toolResults);
         
         setMessages(prev => prev.map(msg => 
           msg.id === streamingMessage.id 
             ? {
                 ...msg,
-                content: data.message,
+                content: cleanText,
                 toolsUsed,
                 isStreaming: false,
                 card: cardType,
                 cardData,
+                cards: hasCards ? cards : undefined,
               }
             : msg
         ));
@@ -417,6 +320,63 @@ export function PlumbingAssistantApp() {
       'emergency_help': 'Emergency info',
     };
     return toolNames[tool] || tool;
+  };
+
+  const handleCardAction = async (action: string, payload?: Record<string, unknown>) => {
+    if (!sessionId) {
+      console.error('No session ID available for card action');
+      return;
+    }
+
+    const cardId = payload?.cardId as string | undefined;
+    setCardActionLoading(cardId || 'unknown');
+
+    try {
+      const result = await dispatchCardAction(action, payload || {}, {
+        threadId: sessionId,
+        sessionId,
+      });
+
+      if (result.ok && result.result?.message) {
+        const { cleanText, cards } = extractCardIntents(result.result.message);
+
+        const newMessage: Message = {
+          id: `assistant-${Date.now()}`,
+          role: 'assistant',
+          content: cleanText,
+          timestamp: new Date(),
+          cards: cards.length > 0 ? cards : undefined,
+        };
+
+        setMessages(prev => [...prev, newMessage]);
+      } else if (!result.ok) {
+        const errorMessage: Message = {
+          id: `assistant-${Date.now()}`,
+          role: 'assistant',
+          content: `Sorry, there was an issue: ${result.error?.details || 'Unknown error'}. Please try again or call us at (617) 479-9911.`,
+          timestamp: new Date(),
+        };
+        setMessages(prev => [...prev, errorMessage]);
+      }
+    } catch (error) {
+      console.error('Card action error:', error);
+      const errorMessage: Message = {
+        id: `assistant-${Date.now()}`,
+        role: 'assistant',
+        content: "I'm having trouble processing that. Please call us at **(617) 479-9911** for immediate assistance.",
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setCardActionLoading(null);
+    }
+  };
+
+  const handleCardDismiss = (cardId: string) => {
+    setMessages(prev => prev.map(msg => ({
+      ...msg,
+      cards: msg.cards?.filter(card => card.id !== cardId),
+    })));
   };
 
   return (
@@ -551,33 +511,35 @@ export function PlumbingAssistantApp() {
                       </div>
                     )}
                     
-                    <div
-                      className={`rounded-2xl px-4 py-3 ${
-                        message.role === 'user'
-                          ? 'bg-johnson-blue text-white rounded-br-md'
-                          : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-bl-md shadow-sm border border-slate-200 dark:border-slate-700'
-                      }`}
-                      data-testid={`message-${message.role}-${index}`}
-                    >
-                      {message.isStreaming ? (
-                        <div className="flex items-center gap-2">
-                          <div className="flex gap-1">
-                            <span className="w-2 h-2 bg-johnson-blue rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                            <span className="w-2 h-2 bg-johnson-blue rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                            <span className="w-2 h-2 bg-johnson-blue rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                    {(message.isStreaming || message.content) && (
+                      <div
+                        className={`rounded-2xl px-4 py-3 ${
+                          message.role === 'user'
+                            ? 'bg-johnson-blue text-white rounded-br-md'
+                            : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-bl-md shadow-sm border border-slate-200 dark:border-slate-700'
+                        }`}
+                        data-testid={`message-${message.role}-${index}`}
+                      >
+                        {message.isStreaming ? (
+                          <div className="flex items-center gap-2">
+                            <div className="flex gap-1">
+                              <span className="w-2 h-2 bg-johnson-blue rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                              <span className="w-2 h-2 bg-johnson-blue rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                              <span className="w-2 h-2 bg-johnson-blue rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                            </div>
+                            <span className="text-sm text-slate-500 dark:text-slate-400">Thinking...</span>
                           </div>
-                          <span className="text-sm text-slate-500 dark:text-slate-400">Thinking...</span>
-                        </div>
-                      ) : (
-                        <div className={`text-sm prose prose-sm max-w-none ${message.role === 'user' ? 'prose-invert' : 'dark:prose-invert'} [&>p]:mb-2 [&>p:last-child]:mb-0 [&>ul]:my-2 [&>ol]:my-2`}>
-                          <ReactMarkdown>{message.content}</ReactMarkdown>
-                        </div>
-                      )}
-                    </div>
+                        ) : (
+                          <div className={`text-sm prose prose-sm max-w-none ${message.role === 'user' ? 'prose-invert' : 'dark:prose-invert'} [&>p]:mb-2 [&>p:last-child]:mb-0 [&>ul]:my-2 [&>ol]:my-2`}>
+                            <ReactMarkdown>{message.content}</ReactMarkdown>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
-                    {message.card === 'appointment' && <AppointmentCard data={message.cardData} />}
-                    {message.card === 'quote' && <QuoteCard data={message.cardData} />}
-                    {message.card === 'emergency' && <EmergencyCard />}
+                    {message.card === 'appointment' && <AppointmentCard data={message.cardData} variant="expanded" />}
+                    {message.card === 'quote' && <QuoteCard data={message.cardData} variant="expanded" />}
+                    {message.card === 'emergency' && <EmergencyCard variant="expanded" />}
 
                     {message.role === 'assistant' && !message.isStreaming && (
                       <div className="flex items-center gap-1 mt-2">

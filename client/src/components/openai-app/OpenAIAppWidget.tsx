@@ -46,7 +46,7 @@ export function OpenAIAppWidget({ className }: OpenAIAppWidgetProps) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className={`fixed z-50 overflow-hidden rounded-2xl shadow-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 ${
+            className={`fixed z-50 overflow-hidden rounded-2xl shadow-2xl bg-card text-card-foreground border border-border ${
               isExpanded 
                 ? 'inset-4 md:inset-8' 
                 : 'bottom-24 md:bottom-24 right-4 w-[420px] max-w-[calc(100vw-2rem)] h-[600px] max-h-[calc(100dvh-120px)]'
@@ -81,14 +81,14 @@ export function OpenAIAppWidget({ className }: OpenAIAppWidgetProps) {
               initial={{ opacity: 0, scale: 0.8, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.8, y: 10 }}
-              className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-3 max-w-[200px]"
+              className="bg-card text-card-foreground rounded-2xl shadow-lg border border-border p-3 max-w-[200px]"
             >
-              <p className="text-sm text-slate-700 dark:text-slate-300">
+              <p className="text-sm text-muted-foreground">
                 Need plumbing help? Chat with our AI assistant!
               </p>
               <button
                 onClick={() => setIsOpen(true)}
-                className="mt-2 text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline"
+                className="mt-2 text-xs font-medium text-primary hover:underline"
                 data-testid="start-chatting-button"
               >
                 Start chatting →
@@ -103,7 +103,7 @@ export function OpenAIAppWidget({ className }: OpenAIAppWidgetProps) {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
-              className="text-xs font-medium text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 px-3 py-1 rounded-full shadow-sm border border-slate-200 dark:border-slate-700"
+              className="text-xs font-medium text-muted-foreground bg-card px-3 py-1 rounded-full shadow-sm border border-border"
             >
               AI Assistant
             </MotionSpan>
@@ -112,7 +112,7 @@ export function OpenAIAppWidget({ className }: OpenAIAppWidgetProps) {
 
         <MotionButton
           onClick={() => setIsOpen(!isOpen)}
-          className="relative rounded-full bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-xl shadow-blue-500/25 flex items-center justify-center transition-all"
+          className="relative rounded-full bg-primary text-primary-foreground hover:bg-primary/90 shadow-xl shadow-primary/25 flex items-center justify-center transition-all ring-1 ring-primary/30"
           style={{
             width: `${64 + scrollProgress * 12}px`,
             height: `${64 + scrollProgress * 12}px`,
@@ -133,7 +133,7 @@ export function OpenAIAppWidget({ className }: OpenAIAppWidgetProps) {
           data-testid="openai-app-toggle"
         >
           {hasNewMessage && !isOpen && (
-            <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white dark:border-slate-900 animate-pulse" />
+            <span className="absolute -top-1 -right-1 w-4 h-4 bg-destructive rounded-full border-2 border-background animate-pulse" />
           )}
           <AnimatePresence mode="wait">
             {isOpen ? (
