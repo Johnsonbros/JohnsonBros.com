@@ -8,12 +8,14 @@ import { getGoogleMapsLoader } from "@/lib/googleMapsLoader";
 
 /// <reference types="@types/google.maps" />
 
-interface HeatMapData {
-  city: string;
-  count: number;
-  lat: number;
-  lng: number;
-  intensity: number;
+interface HeatMapSnapshot {
+  imageUrl: string;
+  dataPointCount: number;
+  generatedAt: string;
+  metadata?: {
+    generatedAt?: string;
+    dataPoints?: number;
+  } | null;
 }
 
 interface ServiceHeatMapProps {
@@ -23,26 +25,34 @@ interface ServiceHeatMapProps {
 export function ServiceHeatMap({ onBookService }: ServiceHeatMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
-  const heatmapRef = useRef<any>(null);
-  const [showHeatmap, setShowHeatmap] = useState(true);
-  const [currentGradient, setCurrentGradient] = useState<'default' | 'custom'>('custom');
-  const [hoveredCity, setHoveredCity] = useState<string | null>(null);
+  const snapshotOverlayRef = useRef<google.maps.GroundOverlay | null>(null);
+  const googleMapsRef = useRef<typeof google | null>(null);
   const [totalCustomers, setTotalCustomers] = useState(0);
   const [isLocating, setIsLocating] = useState(false);
   const [isMapVisible, setIsMapVisible] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   
-  const { data: heatMapData, isLoading } = useQuery<HeatMapData[]>({
-    queryKey: ['/api/v1/social-proof/service-heat-map'],
+  const { data: heatMapSnapshot, isLoading } = useQuery<HeatMapSnapshot | null>({
+    queryKey: ['/api/heatmap/snapshot'],
+    queryFn: async () => {
+      const response = await fetch('/api/heatmap/snapshot', { credentials: 'include' });
+      if (response.status === 404) {
+        return null;
+      }
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || response.statusText);
+      }
+      return response.json();
+    },
   });
 
-  // Calculate total customers from heat map data
+  // Calculate total customers from snapshot metadata
   useEffect(() => {
-    if (heatMapData) {
-      const total = heatMapData.reduce((sum, point) => sum + point.count, 0);
-      setTotalCustomers(total * 4); // Adjust multiplier for granular data
+    if (heatMapSnapshot?.dataPointCount) {
+      setTotalCustomers(heatMapSnapshot.dataPointCount);
     }
-  }, [heatMapData]);
+  }, [heatMapSnapshot]);
 
   // Lazy load map when it comes into view to reduce API costs
   useEffect(() => {
@@ -71,7 +81,7 @@ export function ServiceHeatMap({ onBookService }: ServiceHeatMapProps) {
   }, [isMapVisible]);
 
   useEffect(() => {
-    if (!heatMapData || heatMapData.length === 0 || !mapRef.current || !isMapVisible) return;
+    if (!mapRef.current || !isMapVisible) return;
 
     const initializeMap = async () => {
       const loader = getGoogleMapsLoader();
@@ -84,6 +94,7 @@ export function ServiceHeatMap({ onBookService }: ServiceHeatMapProps) {
 
       try {
         const google = await loader.load();
+        googleMapsRef.current = google;
         
         // Mobile-optimized map settings
         const isMobile = window.innerWidth <= 768;
@@ -422,7 +433,46 @@ export function ServiceHeatMap({ onBookService }: ServiceHeatMapProps) {
         (mapInstanceRef.current as any).pulseIntervals.forEach((id: NodeJS.Timeout) => clearInterval(id));
       }
     };
-  }, [heatMapData, isMapVisible]);
+  }, [isMapVisible]);
+
+  useEffect(() => {
+    if (!heatMapSnapshot?.imageUrl) {
+      if (snapshotOverlayRef.current) {
+        snapshotOverlayRef.current.setMap(null);
+        snapshotOverlayRef.current = null;
+      }
+      return;
+    }
+
+    const google = googleMapsRef.current;
+    const map = mapInstanceRef.current as google.maps.Map | null;
+
+    if (!google || !map) return;
+
+    const bounds = {
+      north: 42.9,
+      south: 41.2,
+      west: -73.5,
+      east: -69.9,
+    };
+
+    if (snapshotOverlayRef.current) {
+      snapshotOverlayRef.current.setMap(null);
+    }
+
+    snapshotOverlayRef.current = new google.maps.GroundOverlay(
+      heatMapSnapshot.imageUrl,
+      bounds,
+      { opacity: 0.55 }
+    );
+    snapshotOverlayRef.current.setMap(map);
+
+    return () => {
+      if (snapshotOverlayRef.current) {
+        snapshotOverlayRef.current.setMap(null);
+      }
+    };
+  }, [heatMapSnapshot?.imageUrl]);
 
   if (isLoading) {
     return (
@@ -453,7 +503,7 @@ export function ServiceHeatMap({ onBookService }: ServiceHeatMapProps) {
     "Duxbury"
   ];
 
-  if (!heatMapData || heatMapData.length === 0) {
+  if (!heatMapSnapshot) {
     return (
       <div className="bg-gradient-to-br from-blue-50 via-white to-green-50 w-full">
         <Card className="max-w-5xl mx-auto border border-blue-100/70 shadow-lg">
@@ -464,7 +514,7 @@ export function ServiceHeatMap({ onBookService }: ServiceHeatMapProps) {
                 <div>
                   <h3 className="text-2xl font-semibold text-gray-900">Service Coverage Snapshot</h3>
                   <p className="text-sm text-gray-500">
-                    Live map data is loading. In the meantime, here are our core service areas.
+                    Snapshot data is loading. In the meantime, here are our core service areas.
                   </p>
                 </div>
               </div>
@@ -647,9 +697,17 @@ export function ServiceHeatMap({ onBookService }: ServiceHeatMapProps) {
             <div className="flex items-center gap-2">
               <div className="flex items-center">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse mr-1"></div>
-                <span className="text-xs font-medium text-gray-700">Live Data</span>
+                <span className="text-xs font-medium text-gray-700">Snapshot</span>
               </div>
-              <span className="text-xs text-gray-500">• Updated {new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</span>
+              <span className="text-xs text-gray-500">
+                • Updated {heatMapSnapshot?.generatedAt
+                  ? new Date(heatMapSnapshot.generatedAt).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                    })
+                  : 'Pending'}
+              </span>
             </div>
           </div>
         </div>
@@ -664,25 +722,17 @@ export function ServiceHeatMap({ onBookService }: ServiceHeatMapProps) {
                   <div className="w-2 h-2 md:w-3 md:h-3 bg-green-500 rounded-full relative"></div>
                 </div>
                 <span className="text-xs md:text-sm font-bold text-gray-800">
-                  LIVE COVERAGE
+                  COVERAGE SNAPSHOT
                 </span>
               </div>
               <span className="text-xs text-gray-600">
-                {heatMapData ? `${Math.floor(heatMapData.length / 15)} Service Areas • 3,000+ Customers` : 'Loading...'}
+                {heatMapSnapshot
+                  ? `${Math.max(1, Math.floor(heatMapSnapshot.dataPointCount / 15))} Service Areas • ${heatMapSnapshot.dataPointCount.toLocaleString()} Customers`
+                  : 'Loading...'}
               </span>
             </div>
           </div>
         </div>
-
-        {/* City popup on hover/click */}
-        {hoveredCity && (
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none">
-            <div className="bg-white px-4 py-2 rounded-lg shadow-xl border-2 border-blue-500 animate-fade-in-up">
-              <p className="text-sm font-bold text-gray-800">📍 {hoveredCity}</p>
-              <p className="text-xs text-gray-600">We service this area!</p>
-            </div>
-          </div>
-        )}
         
         
         {/* Loading indicator for location */}
