@@ -156,24 +156,24 @@ function EmergencyCard() {
     <div className="w-full rounded-xl border-2 border-red-500 bg-red-50 dark:bg-red-950/30 shadow-md p-3 mt-2">
       <div className="flex items-start justify-between gap-2">
         <div>
-          <p className="text-red-600 dark:text-red-400 text-xs font-medium">Emergency Service</p>
-          <h2 className="mt-0.5 text-sm font-semibold text-red-700 dark:text-red-300">24/7 Available</h2>
+          <p className="text-red-600 dark:text-red-400 text-xs font-medium">Emergency? Call Us Now</p>
+          <h2 className="mt-0.5 text-sm font-semibold text-red-700 dark:text-red-300">We're Here 24/7</h2>
         </div>
         <Badge className="bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300 text-xs">Urgent</Badge>
       </div>
-      <div className="mt-2 space-y-1 text-xs">
-        <p className="text-red-700 dark:text-red-300 font-medium">Immediate Steps:</p>
-        <ul className="list-disc list-inside text-red-600 dark:text-red-400 space-y-0.5">
-          <li>Turn off water supply</li>
-          <li>Move valuables from water</li>
-          <li>Call us immediately</li>
-        </ul>
+      <div className="mt-2 space-y-1.5 text-xs">
+        <p className="text-red-700 dark:text-red-300">
+          For fastest service, please call us directly. Our team is standing by to dispatch a technician immediately.
+        </p>
+        <p className="text-red-600 dark:text-red-400 font-medium">
+          Life-threatening emergency? Call 911 first.
+        </p>
       </div>
       <div className="mt-3 border-t border-red-300 dark:border-red-800 pt-3">
         <a href="tel:6174799911" className="block">
           <Button size="sm" className="w-full bg-red-600 hover:bg-red-700 text-xs h-8">
             <Phone className="w-3 h-3 mr-1" />
-            Call (617) 479-9911
+            Call (617) 479-9911 Now
           </Button>
         </a>
       </div>
