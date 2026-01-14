@@ -315,7 +315,7 @@ export default function Header({ onBookService }: HeaderProps) {
                 <img 
                   src="/JB_logo_New_1756136293648.png" 
                   alt="Johnson Bros. Plumbing & Drain Cleaning" 
-                  className="h-8 w-auto max-w-[140px] object-contain"
+                  className="h-6 w-auto max-w-[120px] object-contain"
                   data-testid="company-logo-desktop"
                 />
               </div>
