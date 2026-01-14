@@ -308,27 +308,27 @@ export default function Header({ onBookService }: HeaderProps) {
 
         {/* Desktop Layout */}
         <div className="hidden lg:block">
-          <div className="container mx-auto px-6 py-3">
-            <div className="flex justify-between items-center gap-8">
+          <div className="container mx-auto px-8 py-4">
+            <div className="flex justify-between items-center gap-6">
               {/* Logo */}
-              <div className="flex items-center flex-shrink-0" style={{ height: '48px', overflow: 'hidden' }}>
+              <div className="flex items-center flex-shrink-0">
                 <img 
                   src="/JB_logo_New_1756136293648.png" 
                   alt="Johnson Bros. Plumbing & Drain Cleaning" 
-                  style={{ height: '48px', width: 'auto', maxHeight: '48px' }}
+                  className="h-14 w-auto"
                   data-testid="company-logo-desktop"
                 />
               </div>
 
               {/* Desktop Navigation */}
-              <nav className="flex items-center space-x-5">
-                <Link href="/" className="text-white hover:text-blue-200 transition-colors font-semibold text-sm whitespace-nowrap">
+              <nav className="flex items-center space-x-6 xl:space-x-8">
+                <Link href="/" className="text-white hover:text-blue-200 transition-colors font-semibold text-base whitespace-nowrap">
                   Home
                 </Link>
 
                 {/* Desktop Services Dropdown */}
                 <DropdownMenu>
-                  <DropdownMenuTrigger className="text-white hover:text-blue-200 transition-colors font-semibold text-sm whitespace-nowrap flex items-center gap-1 outline-none">
+                  <DropdownMenuTrigger className="text-white hover:text-blue-200 transition-colors font-semibold text-base whitespace-nowrap flex items-center gap-1 outline-none">
                     Services
                     <ChevronDown className="h-4 w-4" />
                   </DropdownMenuTrigger>
@@ -346,7 +346,7 @@ export default function Header({ onBookService }: HeaderProps) {
                 {/* Desktop Service Areas Dropdown */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className="text-white hover:text-blue-200 transition-colors font-semibold text-sm whitespace-nowrap flex items-center gap-1 outline-none cursor-pointer">
+                    <button className="text-white hover:text-blue-200 transition-colors font-semibold text-base whitespace-nowrap flex items-center gap-1 outline-none cursor-pointer">
                       Areas
                       <ChevronDown className="h-4 w-4" />
                     </button>
@@ -367,18 +367,18 @@ export default function Header({ onBookService }: HeaderProps) {
                   </DropdownMenuContent>
                 </DropdownMenu>
 
-                <Link href="/family-discount" className="text-white hover:text-blue-200 transition-colors font-semibold text-sm whitespace-nowrap" data-testid="desktop-nav-family-discount">
+                <Link href="/family-discount" className="text-white hover:text-blue-200 transition-colors font-semibold text-base whitespace-nowrap" data-testid="desktop-nav-family-discount">
                   Family Discount
                 </Link>
                 
-                <Link href="/referral" className="text-white hover:text-blue-200 transition-colors font-semibold text-sm whitespace-nowrap" data-testid="desktop-nav-referral">
+                <Link href="/referral" className="text-white hover:text-blue-200 transition-colors font-semibold text-base whitespace-nowrap" data-testid="desktop-nav-referral">
                   Referral
                 </Link>
 
                 {/* More Dropdown */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className="text-white hover:text-blue-200 transition-colors font-semibold text-sm whitespace-nowrap flex items-center gap-1 outline-none cursor-pointer">
+                    <button className="text-white hover:text-blue-200 transition-colors font-semibold text-base whitespace-nowrap flex items-center gap-1 outline-none cursor-pointer">
                       More
                       <ChevronDown className="h-4 w-4" />
                     </button>
@@ -403,17 +403,17 @@ export default function Header({ onBookService }: HeaderProps) {
                 </DropdownMenu>
               </nav>
 
-              {/* Desktop CTA Buttons */}
-              <div className="flex flex-col items-center flex-shrink-0">
-                <div className="flex items-center space-x-2 bg-gradient-to-r from-white/20 to-white/10 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-white/20 shadow-sm mb-1.5">
-                  <div className="flex text-yellow-400 space-x-0.5">
-                    <Star className="h-3.5 w-3.5 fill-current" />
-                    <Star className="h-3.5 w-3.5 fill-current" />
-                    <Star className="h-3.5 w-3.5 fill-current" />
-                    <Star className="h-3.5 w-3.5 fill-current" />
-                    <Star className="h-3.5 w-3.5 fill-current" />
+              {/* Desktop CTA - Rating + Book Now */}
+              <div className="flex items-center gap-4 flex-shrink-0">
+                <div className="flex items-center gap-2 bg-white/15 backdrop-blur-sm px-3 py-2 rounded-lg border border-white/20">
+                  <div className="flex text-yellow-400">
+                    <Star className="h-4 w-4 fill-current" />
+                    <Star className="h-4 w-4 fill-current" />
+                    <Star className="h-4 w-4 fill-current" />
+                    <Star className="h-4 w-4 fill-current" />
+                    <Star className="h-4 w-4 fill-current" />
                   </div>
-                  <span className="text-white text-xs font-bold" data-testid="rating-display">
+                  <span className="text-white text-sm font-bold" data-testid="rating-display">
                     {reviewsData?.averageRating?.toFixed(1) || "4.8"}
                   </span>
                 </div>
@@ -421,8 +421,8 @@ export default function Header({ onBookService }: HeaderProps) {
                   <Button 
                     onClick={onBookService}
                     variant="brand-accent"
-                    size="default"
-                    className="px-6 py-2 text-sm font-bold whitespace-nowrap"
+                    size="lg"
+                    className="px-8 py-3 text-base font-bold whitespace-nowrap shadow-lg"
                     data-testid="header-book-service-button-desktop"
                   >
                     Book Now
@@ -431,8 +431,8 @@ export default function Header({ onBookService }: HeaderProps) {
                   <Link href="/#booking">
                     <Button 
                       variant="brand-accent"
-                      size="default"
-                      className="px-6 py-2 text-sm font-bold whitespace-nowrap"
+                      size="lg"
+                      className="px-8 py-3 text-base font-bold whitespace-nowrap shadow-lg"
                       data-testid="header-book-service-link-desktop"
                     >
                       Book Now
