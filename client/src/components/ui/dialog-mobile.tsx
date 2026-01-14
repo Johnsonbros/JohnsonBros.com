@@ -105,6 +105,18 @@ const MobileDialogContent = React.forwardRef<
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
+        onPointerDownOutside={(e) => {
+          const target = e.target as HTMLElement;
+          if (target.closest('.pac-container') || target.closest('.pac-item')) {
+            e.preventDefault();
+          }
+        }}
+        onInteractOutside={(e) => {
+          const target = e.target as HTMLElement;
+          if (target.closest('.pac-container') || target.closest('.pac-item')) {
+            e.preventDefault();
+          }
+        }}
         {...props}
       >
         {isMobile && fullScreen ? (
