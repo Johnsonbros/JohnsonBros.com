@@ -8,6 +8,7 @@ import { BookingConfirmationCard as AppointmentConfirmationCard } from './Bookin
 import { NewCustomerInfoCard } from './NewCustomerInfoCard';
 import { ReturningCustomerLookupCard } from './ReturningCustomerLookupCard';
 import { ServiceFeeCard } from './ServiceFeeCard';
+import { EmergencyInstructionsCard } from '@johnsonbros/unified-cards';
 
 interface CardRendererProps {
   card: CardIntent;
@@ -131,6 +132,23 @@ export function CardRenderer({ card, onAction, onDismiss, isLoading }: CardRende
             )}
           </div>
         </Card>
+      );
+
+    case 'emergency_help':
+      return (
+        <EmergencyInstructionsCard
+          payload={{
+            title: card.title,
+            message: card.message,
+            severity: card.severity,
+            instructions: card.instructions ?? [],
+            contactLabel: card.contactLabel,
+            contactPhone: card.contactPhone,
+            cta: card.cta,
+          }}
+          onAction={onAction}
+          onDismiss={handleDismiss}
+        />
       );
 
     default:

@@ -10,6 +10,7 @@ export const CardTypeEnum = z.enum([
   'service_recommendation',
   'service_fee',
   'estimate_range',
+  'emergency_help',
 ]);
 
 export type CardType = z.infer<typeof CardTypeEnum>;
@@ -153,6 +154,20 @@ export const EstimateRangeCardSchema = BaseCardSchema.extend({
   disclaimer: z.string().optional(),
 });
 
+export const EmergencyHelpCardSchema = BaseCardSchema.extend({
+  type: z.literal('emergency_help'),
+  message: z.string().optional(),
+  severity: z.enum(['low', 'medium', 'high', 'critical']).optional(),
+  instructions: z.array(z.string()).default([]),
+  contactLabel: z.string().optional(),
+  contactPhone: z.string().optional(),
+  cta: z.object({
+    label: z.string(),
+    action: z.string(),
+    payload: z.record(z.unknown()).optional(),
+  }).optional(),
+});
+
 export const CardIntentSchema = z.discriminatedUnion('type', [
   LeadCardSchema,
   NewCustomerInfoCardSchema,
@@ -163,6 +178,7 @@ export const CardIntentSchema = z.discriminatedUnion('type', [
   ServiceRecommendationCardSchema,
   ServiceFeeCardSchema,
   EstimateRangeCardSchema,
+  EmergencyHelpCardSchema,
 ]);
 
 export type CardIntent = z.infer<typeof CardIntentSchema>;
@@ -175,11 +191,12 @@ export type BookingConfirmationCard = z.infer<typeof BookingConfirmationCardSche
 export type ServiceRecommendationCard = z.infer<typeof ServiceRecommendationCardSchema>;
 export type ServiceFeeCard = z.infer<typeof ServiceFeeCardSchema>;
 export type EstimateRangeCard = z.infer<typeof EstimateRangeCardSchema>;
+export type EmergencyHelpCard = z.infer<typeof EmergencyHelpCardSchema>;
 
 const CARD_INTENT_REGEX = /```card_intent\s*([\s\S]*?)```/g;
 const CARD_INTENT_TAG_REGEX = /<CARD_INTENT>([\s\S]*?)<\/CARD_INTENT>/g;
 const JSON_CARD_REGEX = /```json\s*([\s\S]*?)```/g;
-const INLINE_JSON_CARD_REGEX = /(\{[\s\S]*?"type"\s*:\s*"(lead_card|new_customer_info|returning_customer_lookup|date_picker|time_picker|booking_confirmation|service_recommendation|service_fee|estimate_range)"[\s\S]*?\})/g;
+const INLINE_JSON_CARD_REGEX = /(\{[\s\S]*?"type"\s*:\s*"(lead_card|new_customer_info|returning_customer_lookup|date_picker|time_picker|booking_confirmation|service_recommendation|service_fee|estimate_range|emergency_help)"[\s\S]*?\})/g;
 const EMERGENCY_HELP_BLOCK_REGEX = /```(?:json)?\s*({[\s\S]*?"type"\s*:\s*"emergency_help"[\s\S]*?})\s*```/g;
 const EMERGENCY_HELP_INLINE_REGEX = /\{[\s\S]*?"type"\s*:\s*"emergency_help"[\s\S]*?\}/g;
 
