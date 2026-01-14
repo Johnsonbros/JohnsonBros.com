@@ -2136,3 +2136,45 @@ export const insertBusinessNotificationSchema = createInsertSchema(businessNotif
 
 export type BusinessNotification = typeof businessNotifications.$inferSelect;
 export type InsertBusinessNotification = z.infer<typeof insertBusinessNotificationSchema>;
+
+// ============================================
+// SMS VERIFICATION FAILURE TRACKING
+// ============================================
+
+export const smsVerificationFailures = pgTable('sms_verification_failures', {
+  id: serial('id').primaryKey(),
+  phone: text('phone').notNull(),
+  failureType: text('failure_type').notNull(), // send_failed, verify_failed, max_retries_exceeded
+  errorCode: text('error_code'),
+  errorMessage: text('error_message'),
+  twilioSid: text('twilio_sid'),
+  twilioErrorCode: text('twilio_error_code'),
+  attemptNumber: integer('attempt_number').default(1).notNull(),
+  ipAddress: text('ip_address'),
+  userAgent: text('user_agent'),
+  sessionId: text('session_id'),
+  customerName: text('customer_name'),
+  suggestedFix: text('suggested_fix'),
+  resolved: boolean('resolved').default(false).notNull(),
+  resolvedAt: timestamp('resolved_at'),
+  resolvedBy: text('resolved_by'),
+  resolutionNotes: text('resolution_notes'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  phoneIdx: index('sms_fail_phone_idx').on(table.phone),
+  failureTypeIdx: index('sms_fail_type_idx').on(table.failureType),
+  resolvedIdx: index('sms_fail_resolved_idx').on(table.resolved),
+  createdAtIdx: index('sms_fail_created_at_idx').on(table.createdAt),
+}));
+
+export const insertSmsVerificationFailureSchema = createInsertSchema(smsVerificationFailures).omit({
+  id: true,
+  resolved: true,
+  resolvedAt: true,
+  resolvedBy: true,
+  resolutionNotes: true,
+  createdAt: true,
+});
+
+export type SmsVerificationFailure = typeof smsVerificationFailures.$inferSelect;
+export type InsertSmsVerificationFailure = z.infer<typeof insertSmsVerificationFailureSchema>;

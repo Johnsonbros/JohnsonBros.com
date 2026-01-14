@@ -538,12 +538,14 @@ function CustomerLookupCard({
   const [lastName, setLastName] = useState('');
   const [phone, setPhone] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [step, setStep] = useState<'search' | 'select_address' | 'verify'>('search');
+  const [step, setStep] = useState<'search' | 'select_address' | 'verify' | 'call_fallback'>('search');
   const [foundCustomer, setFoundCustomer] = useState<CustomerResult | null>(null);
   const [verificationCode, setVerificationCode] = useState('');
   const [isSendingCode, setIsSendingCode] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [verificationError, setVerificationError] = useState('');
+  const [sendRetryCount, setSendRetryCount] = useState(0);
+  const MAX_SEND_RETRIES = 2;
 
   const formatPhoneDisplay = (value: string) => {
     const digits = value.replace(/\D/g, '').slice(0, 10);
@@ -570,23 +572,74 @@ function CustomerLookupCard({
     }
   };
 
-  const handleSelectAddress = async (customer: CustomerResult, addressId: string, addressStr: string) => {
-    setSelectedId(addressId);
-    setFoundCustomer({ ...customer, selectedAddressId: addressId, address: addressStr });
-    setStep('verify');
-    setIsSendingCode(true);
+  const logVerificationFailure = async (failureType: string, errorMessage: string, attemptNumber: number) => {
     try {
-      const response = await fetch('/api/v1/booking/send-verification', {
+      await fetch('/api/v1/sms-verification/log-failure', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: foundCustomer?.phone || phone,
+          failureType,
+          errorMessage,
+          attemptNumber,
+          customerName: foundCustomer ? `${foundCustomer.firstName} ${foundCustomer.lastName}` : `${firstName} ${lastName}`,
+        }),
+      });
+    } catch (e) {
+      console.error('Failed to log verification failure:', e);
+    }
+  };
+
+  const sendVerificationCode = async (customer: CustomerResult, isRetry = false) => {
+    const currentAttempt = isRetry ? sendRetryCount + 1 : 1;
+    if (!isRetry) setSendRetryCount(0);
+    
+    setIsSendingCode(true);
+    setVerificationError('');
+    
+    try {
+      const response = await fetch('/api/v1/sms-verification/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone: customer.phone }),
       });
-      if (!response.ok) throw new Error('Failed to send code');
-    } catch (err) {
-      setVerificationError('Failed to send verification code');
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to send code');
+      }
+      
+      if (isRetry) setSendRetryCount(currentAttempt);
+      setVerificationError('');
+    } catch (err: any) {
+      const errorMsg = err.message || 'Failed to send verification code';
+      
+      if (currentAttempt >= MAX_SEND_RETRIES) {
+        await logVerificationFailure('max_retries_exceeded', errorMsg, currentAttempt);
+        setStep('call_fallback');
+      } else {
+        await logVerificationFailure('send_failed', errorMsg, currentAttempt);
+        setSendRetryCount(currentAttempt);
+        setVerificationError(`Failed to send code. ${MAX_SEND_RETRIES - currentAttempt} retry${MAX_SEND_RETRIES - currentAttempt !== 1 ? 's' : ''} remaining.`);
+      }
     } finally {
       setIsSendingCode(false);
     }
+  };
+
+  const handleResendCode = async () => {
+    if (!foundCustomer || sendRetryCount >= MAX_SEND_RETRIES) {
+      setStep('call_fallback');
+      return;
+    }
+    await sendVerificationCode(foundCustomer, true);
+  };
+
+  const handleSelectAddress = async (customer: CustomerResult, addressId: string, addressStr: string) => {
+    setSelectedId(addressId);
+    setFoundCustomer({ ...customer, selectedAddressId: addressId, address: addressStr });
+    setStep('verify');
+    await sendVerificationCode(customer, false);
   };
 
   const handleVerify = async () => {
@@ -594,18 +647,20 @@ function CustomerLookupCard({
     setIsVerifying(true);
     setVerificationError('');
     try {
-      const response = await fetch('/api/v1/booking/verify-code', {
+      const response = await fetch('/api/v1/sms-verification/confirm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone: foundCustomer.phone, code: verificationCode }),
       });
       const data = await response.json();
-      if (data.verified) {
+      if (data.success) {
         onSelectCustomer(foundCustomer);
       } else {
-        setVerificationError('Invalid code. Please try again.');
+        await logVerificationFailure('verify_failed', data.error || 'Invalid code', 1);
+        setVerificationError(data.error || 'Invalid code. Please try again.');
       }
-    } catch (err) {
+    } catch (err: any) {
+      await logVerificationFailure('verify_failed', err.message || 'Verification failed', 1);
       setVerificationError('Verification failed. Please try again.');
     } finally {
       setIsVerifying(false);
@@ -621,6 +676,40 @@ function CustomerLookupCard({
       onSelectCustomer(customer);
     }
   };
+
+  if (step === 'call_fallback') {
+    return (
+      <Card className="w-full border-amber-300 bg-gradient-to-br from-amber-50 to-orange-50/30 dark:from-slate-800 dark:to-slate-900 shadow-lg mt-2">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+            <div className="w-7 h-7 rounded-full bg-amber-100 dark:bg-amber-900 flex items-center justify-center">
+              <Phone className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+            </div>
+            Let's Schedule Over the Phone
+          </CardTitle>
+          <CardDescription className="text-xs text-gray-600 dark:text-gray-400">
+            We're having trouble sending the verification code. Please give us a quick call and we'll get you scheduled right away!
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3 pt-0">
+          <div className="p-3 bg-white dark:bg-slate-700 rounded-lg border border-amber-200 dark:border-amber-800">
+            <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">Johnson Bros. Plumbing</p>
+            <p className="text-lg font-bold text-blue-600 dark:text-blue-400">(617) 479-9911</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Mon-Fri: 8AM-5PM | Emergencies: 24/7</p>
+          </div>
+          <a href="tel:6174799911" className="block">
+            <Button className="w-full h-10 bg-blue-600 hover:bg-blue-700">
+              <Phone className="w-4 h-4 mr-2" />
+              Call Now to Schedule
+            </Button>
+          </a>
+          <Button variant="ghost" size="sm" onClick={() => { setSendRetryCount(0); setStep('select_address'); }} className="w-full text-xs">
+            Try again with a different address
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (step === 'verify' && foundCustomer) {
     return (
@@ -645,7 +734,30 @@ function CustomerLookupCard({
             maxLength={6}
           />
           {verificationError && (
-            <p className="text-xs text-red-500">{verificationError}</p>
+            <div className="space-y-2">
+              <p className="text-xs text-red-500">{verificationError}</p>
+              {sendRetryCount < MAX_SEND_RETRIES && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleResendCode}
+                  disabled={isSendingCode}
+                  className="w-full text-xs h-8"
+                >
+                  {isSendingCode ? (
+                    <>
+                      <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <RotateCcw className="w-3 h-3 mr-1" />
+                      Resend Code ({MAX_SEND_RETRIES - sendRetryCount} attempt{MAX_SEND_RETRIES - sendRetryCount !== 1 ? 's' : ''} left)
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
           )}
           <Button
             onClick={handleVerify}

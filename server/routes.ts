@@ -9,7 +9,7 @@ import {
   insertBlogPostSchema, insertKeywordSchema, insertPostKeywordSchema,
   type BlogPost, type Keyword, type PostKeyword, type KeywordRanking,
   checkIns, jobLocations,
-  insertLeadSchema
+  insertLeadSchema, smsVerificationFailures
 } from "@shared/schema";
 import { z } from "zod";
 import { db } from "./db";
@@ -1512,6 +1512,120 @@ $50 REFERRAL CREDIT APPLIES - New customer receives $50 credit toward any servic
     } catch (error) {
       logError("SMS verification confirm error:", error);
       res.status(500).json({ error: "Unable to confirm verification code. Please try again later." });
+    }
+  });
+
+  // Log SMS verification failures for debugging and tracking
+  app.post("/api/v1/sms-verification/log-failure", publicWriteLimiter, async (req, res) => {
+    try {
+      const schema = z.object({
+        phone: z.string().min(10),
+        failureType: z.enum(['send_failed', 'verify_failed', 'max_retries_exceeded']),
+        errorMessage: z.string().optional(),
+        attemptNumber: z.number().default(1),
+        customerName: z.string().optional(),
+      });
+      const { phone, failureType, errorMessage, attemptNumber, customerName } = schema.parse(req.body);
+      const normalizedPhone = normalizePhone(phone);
+      
+      // Generate suggested fixes based on failure type and error message
+      let suggestedFix = '';
+      if (failureType === 'send_failed') {
+        if (errorMessage?.includes('unverified')) {
+          suggestedFix = 'Phone number may need to be added to Twilio verified numbers for trial account.';
+        } else if (errorMessage?.includes('invalid')) {
+          suggestedFix = 'Verify phone number format is correct and includes country code.';
+        } else if (errorMessage?.includes('rate')) {
+          suggestedFix = 'Rate limiting in effect. Customer should wait before retrying.';
+        } else {
+          suggestedFix = 'Check Twilio dashboard for specific error details and account status.';
+        }
+      } else if (failureType === 'verify_failed') {
+        suggestedFix = 'Customer entered incorrect code. May need to resend.';
+      } else if (failureType === 'max_retries_exceeded') {
+        suggestedFix = 'Multiple SMS send failures. Check Twilio account status, balance, and phone number configuration.';
+      }
+
+      // Log to database
+      await db.insert(smsVerificationFailures).values({
+        phone: normalizedPhone,
+        failureType,
+        errorMessage: errorMessage || null,
+        attemptNumber,
+        customerName: customerName || null,
+        suggestedFix,
+        ipAddress: req.ip || req.connection.remoteAddress || null,
+        userAgent: req.headers['user-agent'] || null,
+        sessionId: (req as any).sessionID || null,
+      });
+
+      Logger.warn('[SMS Verification] Failure logged:', {
+        phone: normalizedPhone.slice(-4).padStart(normalizedPhone.length, '*'),
+        failureType,
+        attemptNumber,
+        suggestedFix,
+      });
+
+      res.json({ success: true, logged: true });
+    } catch (error) {
+      logError("SMS verification failure logging error:", error);
+      res.status(500).json({ error: "Failed to log verification failure." });
+    }
+  });
+
+  // Get SMS verification failures for admin review
+  app.get("/api/v1/admin/sms-failures", authenticate, async (req, res) => {
+    try {
+      const { resolved, limit = 50 } = req.query;
+      
+      let query = db.select().from(smsVerificationFailures).orderBy(desc(smsVerificationFailures.createdAt)).limit(Number(limit));
+      
+      if (resolved === 'false') {
+        query = db.select().from(smsVerificationFailures)
+          .where(eq(smsVerificationFailures.resolved, false))
+          .orderBy(desc(smsVerificationFailures.createdAt))
+          .limit(Number(limit));
+      }
+      
+      const failures = await query;
+      
+      // Group by failure type for summary
+      const summary = {
+        total: failures.length,
+        byType: failures.reduce((acc, f) => {
+          acc[f.failureType] = (acc[f.failureType] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>),
+        unresolvedCount: failures.filter(f => !f.resolved).length,
+      };
+
+      res.json({ failures, summary });
+    } catch (error) {
+      logError("SMS failures fetch error:", error);
+      res.status(500).json({ error: "Failed to fetch SMS failures." });
+    }
+  });
+
+  // Mark SMS failure as resolved
+  app.patch("/api/v1/admin/sms-failures/:id/resolve", authenticate, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { resolutionNotes } = req.body;
+      const adminUser = (req as any).user;
+
+      await db.update(smsVerificationFailures)
+        .set({
+          resolved: true,
+          resolvedAt: new Date(),
+          resolvedBy: adminUser?.email || 'admin',
+          resolutionNotes: resolutionNotes || null,
+        })
+        .where(eq(smsVerificationFailures.id, Number(id)));
+
+      res.json({ success: true });
+    } catch (error) {
+      logError("SMS failure resolve error:", error);
+      res.status(500).json({ error: "Failed to resolve SMS failure." });
     }
   });
 
