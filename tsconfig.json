@@ -18,7 +18,9 @@
     "downlevelIteration": true,
     "paths": {
       "@/*": ["./client/src/*"],
-      "@shared/*": ["./shared/*"]
+      "@shared/*": ["./shared/*"],
+      "@johnsonbros/unified-cards": ["./shared/unified-cards/index.ts"],
+      "@johnsonbros/unified-cards/*": ["./shared/unified-cards/*"]
     }
   }
 }
