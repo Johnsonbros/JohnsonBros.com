@@ -266,7 +266,7 @@ function NewCustomerCard({ onSubmit, isLoading, prefill }: NewCustomerCardProps)
   const [firstName, setFirstName] = useState(prefill?.firstName || '');
   const [lastName, setLastName] = useState(prefill?.lastName || '');
   const [phone, setPhone] = useState(prefill?.phone || '');
-  const [address, setAddress] = useState(prefill?.address || '');
+  const [address, setAddress] = useState(typeof prefill?.address === 'string' ? prefill.address : '');
   const [city, setCity] = useState(prefill?.city || '');
   const [state, setState] = useState(prefill?.state || 'MA');
   const [zip, setZip] = useState(prefill?.zip || '');
@@ -283,10 +283,11 @@ function NewCustomerCard({ onSubmit, isLoading, prefill }: NewCustomerCardProps)
     return '';
   };
 
+  const addressStr = typeof address === 'string' ? address : '';
   const canSubmit = firstName.trim().length >= 2 && 
                     lastName.trim().length >= 2 && 
                     phone.replace(/\D/g, '').length >= 10 &&
-                    address.trim().length >= 5 &&
+                    addressStr.trim().length >= 5 &&
                     city.trim().length >= 2 &&
                     state.length === 2 &&
                     zip.replace(/\D/g, '').length >= 5;
@@ -298,7 +299,7 @@ function NewCustomerCard({ onSubmit, isLoading, prefill }: NewCustomerCardProps)
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         phone: phone.replace(/\D/g, ''),
-        address: address.trim(),
+        address: addressStr.trim(),
         city: city.trim(),
         state: state.toUpperCase(),
         zip: zip.replace(/\D/g, '').slice(0, 5),
@@ -1006,11 +1007,12 @@ export function CustomChatWidget({ className }: CustomChatWidgetProps) {
       setShowNewCustomerCard(true);
       if (newCustomerIntent.prefill) {
         const prefill = newCustomerIntent.prefill as any;
+        const addressValue = prefill?.line1 || prefill?.address || '';
         setNewCustomerPrefill({
           firstName: prefill?.firstName || '',
           lastName: prefill?.lastName || '',
           phone: prefill?.phone || '',
-          address: prefill?.line1 || prefill?.address || '',
+          address: typeof addressValue === 'string' ? addressValue : '',
           city: prefill?.city || '',
           state: prefill?.state || 'MA',
           zip: prefill?.zip || '',
