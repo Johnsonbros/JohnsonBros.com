@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { randomUUID } from 'crypto';
 import { db } from '../db';
 import { fineTuningTrainingData } from '@shared/schema';
+import { desc, eq, sql } from 'drizzle-orm';
 
 const router = Router();
 
@@ -145,6 +146,77 @@ router.post('/chat/feedback', async (req: Request, res: Response) => {
       success: false, 
       error: 'Unable to save feedback' 
     });
+  }
+});
+
+// Get training data for admin review
+router.get('/chat/training-data', async (req: Request, res: Response) => {
+  try {
+    const { feedbackType, limit = '50', offset = '0' } = req.query;
+    
+    let query = db.select().from(fineTuningTrainingData);
+    
+    if (feedbackType && (feedbackType === 'positive' || feedbackType === 'negative')) {
+      query = query.where(eq(fineTuningTrainingData.feedbackType, feedbackType)) as any;
+    }
+    
+    const data = await query
+      .orderBy(desc(fineTuningTrainingData.createdAt))
+      .limit(parseInt(limit as string))
+      .offset(parseInt(offset as string));
+    
+    const totalCount = await db.select({ count: sql<number>`count(*)` })
+      .from(fineTuningTrainingData);
+    
+    const stats = await db.select({
+      feedbackType: fineTuningTrainingData.feedbackType,
+      count: sql<number>`count(*)`
+    })
+      .from(fineTuningTrainingData)
+      .groupBy(fineTuningTrainingData.feedbackType);
+    
+    res.json({
+      success: true,
+      data,
+      total: totalCount[0]?.count || 0,
+      stats: {
+        positive: stats.find(s => s.feedbackType === 'positive')?.count || 0,
+        negative: stats.find(s => s.feedbackType === 'negative')?.count || 0
+      }
+    });
+  } catch (error: any) {
+    Logger.error('Get training data error:', error);
+    res.status(500).json({ success: false, error: 'Unable to retrieve training data' });
+  }
+});
+
+// Export training data in fine-tuning format
+router.get('/chat/training-data/export', async (req: Request, res: Response) => {
+  try {
+    const { format = 'jsonl' } = req.query;
+    
+    const data = await db.select()
+      .from(fineTuningTrainingData)
+      .where(eq(fineTuningTrainingData.feedbackType, 'positive'))
+      .orderBy(desc(fineTuningTrainingData.createdAt));
+    
+    if (format === 'jsonl') {
+      const jsonlData = data.map(item => JSON.stringify({
+        messages: [
+          { role: 'user', content: item.userMessage },
+          { role: 'assistant', content: item.assistantResponse }
+        ]
+      })).join('\n');
+      
+      res.setHeader('Content-Type', 'application/jsonl');
+      res.setHeader('Content-Disposition', 'attachment; filename=training-data.jsonl');
+      res.send(jsonlData);
+    } else {
+      res.json({ success: true, data });
+    }
+  } catch (error: any) {
+    Logger.error('Export training data error:', error);
+    res.status(500).json({ success: false, error: 'Unable to export training data' });
   }
 });
 
