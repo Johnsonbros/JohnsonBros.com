@@ -64,6 +64,25 @@
   to { height: 0; }
 }
 
+/* Desktop/Mobile Header Visibility - CSS fallback for responsive classes */
+.desktop-header-layout {
+  display: none;
+}
+
+.mobile-header-layout {
+  display: block;
+}
+
+@media (min-width: 1024px) {
+  .desktop-header-layout {
+    display: block;
+  }
+  
+  .mobile-header-layout {
+    display: none;
+  }
+}
+
 /* Mobile Performance Optimizations */
 @media (max-width: 768px) {
   * {

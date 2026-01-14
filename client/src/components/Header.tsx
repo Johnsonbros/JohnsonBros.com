@@ -124,7 +124,7 @@ export default function Header({ onBookService }: HeaderProps) {
       {/* Main Header */}
       <header className="bg-johnson-blue shadow-lg sticky top-0 z-50 border-t-2 border-johnson-blue">
         {/* Mobile Layout - Simplified */}
-        <div className="lg:hidden px-3 py-2 flex items-center justify-between relative z-50">
+        <div className="mobile-header-layout px-3 py-2 flex items-center justify-between relative z-50">
           {/* Logo - constrained width */}
           <div className="flex-1 min-w-0">
             <img 
@@ -148,7 +148,7 @@ export default function Header({ onBookService }: HeaderProps) {
 
         {/* Mobile Menu Overlay */}
         {isMobileMenuOpen && (
-          <div className="lg:hidden fixed inset-0 bg-johnson-blue z-[60] shadow-2xl flex flex-col">
+          <div className="mobile-header-layout fixed inset-0 bg-johnson-blue z-[60] shadow-2xl flex flex-col">
             {/* Solid header with logo in mobile menu - stays fixed */}
             <div className="bg-johnson-blue px-2 py-1 flex justify-between items-center gap-1 border-b border-white/10 flex-shrink-0">
               <img 
@@ -307,7 +307,7 @@ export default function Header({ onBookService }: HeaderProps) {
         )}
 
         {/* Desktop Layout */}
-        <div className="max-lg:hidden">
+        <div className="desktop-header-layout">
           <div className="container mx-auto px-8 py-4">
             <div className="flex justify-between items-center gap-6">
               {/* Logo */}
