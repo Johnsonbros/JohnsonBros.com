@@ -2162,7 +2162,22 @@ RETURNS: List of services with price ranges and durations, plus business contact
     const correlationId = randomUUID();
     
     try {
-      const input = GetServicesInput.parse(raw || {});
+      let normalizedRaw = raw ?? {};
+      if (typeof normalizedRaw === "string") {
+        try {
+          normalizedRaw = JSON.parse(normalizedRaw);
+        } catch (parseError) {
+          log.warn({ correlationId, error: (parseError as Error).message }, "get_services: unable to parse string input");
+          normalizedRaw = {};
+        }
+      }
+
+      const parsedInput = GetServicesInput.safeParse(normalizedRaw);
+      if (!parsedInput.success) {
+        log.warn({ correlationId, issues: parsedInput.error.issues }, "get_services: invalid input, using defaults");
+      }
+
+      const input = parsedInput.success ? parsedInput.data : {};
       log.info({ input, correlationId }, "get_services: start");
 
       let services = [...PLUMBING_SERVICES];
@@ -2190,16 +2205,27 @@ RETURNS: List of services with price ranges and durations, plus business contact
           id: s.id,
           name: s.name,
           description: s.description,
+          price_min: s.priceRange.min,
+          price_max: s.priceRange.max,
           price_range: `$${s.priceRange.min} - $${s.priceRange.max}`,
           estimated_duration: s.estimatedDuration,
+          estimatedDuration: s.estimatedDuration,
           category: s.category,
-          is_emergency: s.isEmergency || false
+          is_emergency: s.isEmergency || false,
+          isEmergency: s.isEmergency || false
         })),
         categories: ["emergency", "maintenance", "repair", "installation", "specialty"],
+        business: {
+          name: "Johnson Bros. Plumbing",
+          phone: "(617) 479-9911",
+          service_area: "Quincy, Greater Boston, and the South Shore",
+          emergency_available: true,
+          licensed_insured: true
+        },
         business_info: {
           name: "Johnson Bros. Plumbing",
-          phone: "(617) 555-0123",
-          service_area: "Greater Boston Area",
+          phone: "(617) 479-9911",
+          service_area: "Quincy, Greater Boston, and the South Shore",
           emergency_available: true,
           licensed_insured: true
         },
