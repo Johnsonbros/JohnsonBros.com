@@ -182,9 +182,9 @@ export function EmergencyCard({ variant = 'compact' }: { variant?: CardVariant }
       </div>
       <div className={cn('mt-2 space-y-1.5 text-red-700 dark:text-red-300', styles.description)}>
         <p>
-          For fastest service, please call us directly. Our team is standing by to dispatch a technician immediately.
+          For emergencies, please call us directly at (617) 479-9911 - you can tap the Call button below. For
+          life-threatening emergencies (like gas leaks or flooding causing electrical hazards), please call 911 first.
         </p>
-        <p className="text-red-600 dark:text-red-400 font-medium">Life-threatening emergency? Call 911 first.</p>
       </div>
       <div className={cn('mt-3 border-t border-red-300 dark:border-red-800 pt-3', variant === 'expanded' && 'mt-4 pt-4')}>
         <a href="tel:6174799911" className="block">
