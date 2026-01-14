@@ -13,7 +13,7 @@ import {
   RotateCcw,
   MessageSquare,
   Calendar,
-  AlertTriangle,
+  AlertTriangle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -29,21 +29,10 @@ import {
 import { motion, HTMLMotionProps } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import logoIcon from '@assets/JBros_Wrench_Logo_WP.png';
+import { AppointmentCard, QuoteCard, EmergencyCard, type AppointmentCardData, type QuoteCardData } from '@/components/chat/SharedChatCards';
 
 const MotionDiv = motion.div as React.FC<HTMLMotionProps<'div'> & React.HTMLAttributes<HTMLDivElement>>;
 const MotionButton = motion.button as React.FC<HTMLMotionProps<'button'> & React.ButtonHTMLAttributes<HTMLButtonElement>>;
-
-interface AppointmentCardData {
-  date: string;
-  service: string;
-  address: string;
-  confirmationNumber?: string;
-}
-
-interface QuoteCardData {
-  price: string;
-  service: string;
-}
 
 type CardData = AppointmentCardData | QuoteCardData | null;
 type CardType = 'appointment' | 'quote' | 'emergency' | null;
@@ -68,6 +57,7 @@ interface Message {
   feedback?: 'positive' | 'negative' | null;
   card?: CardType;
   cardData?: CardData;
+  cards?: CardIntent[];
 }
 
 interface QuickAction {
@@ -116,45 +106,13 @@ const SERVICE_CARDS = [
   { title: "24/7 Emergency", desc: "Always available" },
 ];
 
-const EMERGENCY_FALLBACK: EmergencyData = {
-  title: "Emergency Service",
-  urgency: "urgent",
-  immediateSteps: [
-    "Turn off the main water supply if possible",
-    "Move valuables and electronics away from water",
-    "Call our emergency line for immediate dispatch",
-  ],
-  doNotDo: ["Don't attempt repairs if the area is unsafe"],
-};
-
-const mapAppointmentData = (
-  data: AppointmentCardData | null
-): BookingConfirmationData | null => {
-  if (!data) return null;
-  return {
-    scheduled_time: data.date,
-    service_description: data.service,
-    address: data.address,
-    job_id: data.confirmationNumber,
-  };
-};
-
-const mapQuoteData = (data: QuoteCardData | null): QuoteData | null => {
-  if (!data) return null;
-  const priceValue = Number.parseInt(data.price, 10);
-  return {
-    service: data.service,
-    estimate_min: Number.isNaN(priceValue) ? undefined : priceValue,
-    estimate_max: Number.isNaN(priceValue) ? undefined : priceValue,
-  };
-};
-
 export function PlumbingAssistantApp() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [cardActionLoading, setCardActionLoading] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -265,18 +223,21 @@ export function PlumbingAssistantApp() {
         setSessionId(data.sessionId);
         const toolsUsed = Array.isArray(data.toolsUsed) ? data.toolsUsed : undefined;
         const toolResults = Array.isArray(data.toolResults) ? data.toolResults : undefined;
-        const cardType = detectCardType(data.message, toolsUsed);
-        const cardData = extractCardData(data.message, cardType, toolResults);
+        const { cleanText, cards } = extractCardIntents(data.message);
+        const hasCards = cards.length > 0;
+        const cardType = hasCards ? null : detectCardType(cleanText, toolsUsed);
+        const cardData = hasCards ? null : extractCardData(cleanText, cardType, toolResults);
         
         setMessages(prev => prev.map(msg => 
           msg.id === streamingMessage.id 
             ? {
                 ...msg,
-                content: data.message,
+                content: cleanText,
                 toolsUsed,
                 isStreaming: false,
                 card: cardType,
                 cardData,
+                cards: hasCards ? cards : undefined,
               }
             : msg
         ));
@@ -359,6 +320,63 @@ export function PlumbingAssistantApp() {
       'emergency_help': 'Emergency info',
     };
     return toolNames[tool] || tool;
+  };
+
+  const handleCardAction = async (action: string, payload?: Record<string, unknown>) => {
+    if (!sessionId) {
+      console.error('No session ID available for card action');
+      return;
+    }
+
+    const cardId = payload?.cardId as string | undefined;
+    setCardActionLoading(cardId || 'unknown');
+
+    try {
+      const result = await dispatchCardAction(action, payload || {}, {
+        threadId: sessionId,
+        sessionId,
+      });
+
+      if (result.ok && result.result?.message) {
+        const { cleanText, cards } = extractCardIntents(result.result.message);
+
+        const newMessage: Message = {
+          id: `assistant-${Date.now()}`,
+          role: 'assistant',
+          content: cleanText,
+          timestamp: new Date(),
+          cards: cards.length > 0 ? cards : undefined,
+        };
+
+        setMessages(prev => [...prev, newMessage]);
+      } else if (!result.ok) {
+        const errorMessage: Message = {
+          id: `assistant-${Date.now()}`,
+          role: 'assistant',
+          content: `Sorry, there was an issue: ${result.error?.details || 'Unknown error'}. Please try again or call us at (617) 479-9911.`,
+          timestamp: new Date(),
+        };
+        setMessages(prev => [...prev, errorMessage]);
+      }
+    } catch (error) {
+      console.error('Card action error:', error);
+      const errorMessage: Message = {
+        id: `assistant-${Date.now()}`,
+        role: 'assistant',
+        content: "I'm having trouble processing that. Please call us at **(617) 479-9911** for immediate assistance.",
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setCardActionLoading(null);
+    }
+  };
+
+  const handleCardDismiss = (cardId: string) => {
+    setMessages(prev => prev.map(msg => ({
+      ...msg,
+      cards: msg.cards?.filter(card => card.id !== cardId),
+    })));
   };
 
   return (
@@ -493,41 +511,35 @@ export function PlumbingAssistantApp() {
                       </div>
                     )}
                     
-                    <div
-                      className={`rounded-2xl px-4 py-3 ${
-                        message.role === 'user'
-                          ? 'bg-johnson-blue text-white rounded-br-md'
-                          : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-bl-md shadow-sm border border-slate-200 dark:border-slate-700'
-                      }`}
-                      data-testid={`message-${message.role}-${index}`}
-                    >
-                      {message.isStreaming ? (
-                        <div className="flex items-center gap-2">
-                          <div className="flex gap-1">
-                            <span className="w-2 h-2 bg-johnson-blue rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                            <span className="w-2 h-2 bg-johnson-blue rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                            <span className="w-2 h-2 bg-johnson-blue rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                    {(message.isStreaming || message.content) && (
+                      <div
+                        className={`rounded-2xl px-4 py-3 ${
+                          message.role === 'user'
+                            ? 'bg-johnson-blue text-white rounded-br-md'
+                            : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-bl-md shadow-sm border border-slate-200 dark:border-slate-700'
+                        }`}
+                        data-testid={`message-${message.role}-${index}`}
+                      >
+                        {message.isStreaming ? (
+                          <div className="flex items-center gap-2">
+                            <div className="flex gap-1">
+                              <span className="w-2 h-2 bg-johnson-blue rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                              <span className="w-2 h-2 bg-johnson-blue rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                              <span className="w-2 h-2 bg-johnson-blue rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                            </div>
+                            <span className="text-sm text-slate-500 dark:text-slate-400">Thinking...</span>
                           </div>
-                          <span className="text-sm text-slate-500 dark:text-slate-400">Thinking...</span>
-                        </div>
-                      ) : (
-                        <div className={`text-sm prose prose-sm max-w-none ${message.role === 'user' ? 'prose-invert' : 'dark:prose-invert'} [&>p]:mb-2 [&>p:last-child]:mb-0 [&>ul]:my-2 [&>ol]:my-2`}>
-                          <ReactMarkdown>{message.content}</ReactMarkdown>
-                        </div>
-                      )}
-                    </div>
+                        ) : (
+                          <div className={`text-sm prose prose-sm max-w-none ${message.role === 'user' ? 'prose-invert' : 'dark:prose-invert'} [&>p]:mb-2 [&>p:last-child]:mb-0 [&>ul]:my-2 [&>ol]:my-2`}>
+                            <ReactMarkdown>{message.content}</ReactMarkdown>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
-                    {message.card === 'appointment' && (
-                      <BookingConfirmationWidget
-                        data={mapAppointmentData(message.cardData as AppointmentCardData)}
-                      />
-                    )}
-                    {message.card === 'quote' && (
-                      <QuoteWidget data={mapQuoteData(message.cardData as QuoteCardData)} />
-                    )}
-                    {message.card === 'emergency' && (
-                      <EmergencyWidget data={EMERGENCY_FALLBACK} />
-                    )}
+                    {message.card === 'appointment' && <AppointmentCard data={message.cardData} variant="expanded" />}
+                    {message.card === 'quote' && <QuoteCard data={message.cardData} variant="expanded" />}
+                    {message.card === 'emergency' && <EmergencyCard variant="expanded" />}
 
                     {message.role === 'assistant' && !message.isStreaming && (
                       <div className="flex items-center gap-1 mt-2">

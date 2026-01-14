@@ -1,10 +1,11 @@
 import type { CardIntent } from '@/lib/cardProtocol';
-import { LeadCard } from './LeadCard';
 import { NewCustomerInfoCard } from './NewCustomerInfoCard';
 import { ReturningCustomerLookupCard } from './ReturningCustomerLookupCard';
 import { DatePickerCard } from './DatePickerCard';
 import { TimePickerCard } from './TimePickerCard';
 import { BookingConfirmationCard } from './BookingConfirmationCard';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 interface CardRendererProps {
   card: CardIntent;
@@ -19,8 +20,8 @@ export function CardRenderer({ card, onAction, onDismiss, isLoading }: CardRende
   switch (card.type) {
     case 'lead_card':
       return (
-        <LeadCard
-          card={card}
+        <LeadCaptureCard
+          payload={card}
           onSubmit={(data) => onAction('SUBMIT_LEAD', { cardId: card.id, ...data })}
           onDismiss={handleDismiss}
           isLoading={isLoading}
@@ -52,7 +53,7 @@ export function CardRenderer({ card, onAction, onDismiss, isLoading }: CardRende
     case 'date_picker':
       return (
         <DatePickerCard
-          card={card}
+          payload={card}
           onSelectDate={(date) => onAction('SELECT_DATE', { cardId: card.id, date, serviceId: card.serviceId })}
           onDismiss={handleDismiss}
           isLoading={isLoading}
@@ -62,7 +63,7 @@ export function CardRenderer({ card, onAction, onDismiss, isLoading }: CardRende
     case 'time_picker':
       return (
         <TimePickerCard
-          card={card}
+          payload={card}
           onSelectSlot={(slotId, timeWindow) => onAction('SELECT_TIME', { cardId: card.id, slotId, timeWindow, date: card.selectedDate })}
           onDismiss={handleDismiss}
           isLoading={isLoading}
@@ -71,8 +72,8 @@ export function CardRenderer({ card, onAction, onDismiss, isLoading }: CardRende
 
     case 'booking_confirmation':
       return (
-        <BookingConfirmationCard
-          card={card}
+        <AppointmentConfirmationCard
+          payload={{ ...card, title: card.title ?? 'Booking Confirmed' }}
           onAction={onAction}
           onDismiss={handleDismiss}
         />
@@ -80,37 +81,45 @@ export function CardRenderer({ card, onAction, onDismiss, isLoading }: CardRende
 
     case 'service_recommendation':
       return (
-        <div className="bg-white border border-blue-200 rounded-xl p-4 shadow-sm">
-          <h3 className="font-semibold text-gray-900 mb-2">{card.title}</h3>
-          <p className="text-sm text-gray-600 mb-3">{card.summary}</p>
-          {card.priceRange && (
-            <p className="text-sm font-medium text-blue-600 mb-3">
-              ${card.priceRange.min} - ${card.priceRange.max}
-            </p>
-          )}
-          {card.cta && (
-            <button
-              onClick={() => onAction(card.cta!.action, card.cta!.payload)}
-              className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              {card.cta.label}
-            </button>
-          )}
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>{card.title}</CardTitle>
+            <CardDescription>{card.summary}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {card.priceRange && (
+              <p className="text-sm font-medium text-primary">
+                ${card.priceRange.min} - ${card.priceRange.max}
+              </p>
+            )}
+            {card.cta && (
+              <Button
+                onClick={() => onAction(card.cta!.action, card.cta!.payload)}
+                className="w-full"
+              >
+                {card.cta.label}
+              </Button>
+            )}
+          </CardContent>
+        </Card>
       );
 
     case 'estimate_range':
       return (
-        <div className="bg-white border border-green-200 rounded-xl p-4 shadow-sm">
-          <h3 className="font-semibold text-gray-900 mb-2">{card.title}</h3>
-          <p className="text-sm text-gray-600 mb-3">{card.summary}</p>
-          <p className="text-lg font-bold text-green-600 mb-2">
-            ${card.range.min} - ${card.range.max}
-          </p>
-          {card.disclaimer && (
-            <p className="text-xs text-gray-500 italic">{card.disclaimer}</p>
-          )}
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>{card.title}</CardTitle>
+            <CardDescription>{card.summary}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <p className="text-lg font-semibold text-primary">
+              ${card.range.min} - ${card.range.max}
+            </p>
+            {card.disclaimer && (
+              <p className="text-xs text-muted-foreground italic">{card.disclaimer}</p>
+            )}
+          </CardContent>
+        </Card>
       );
 
     default:
