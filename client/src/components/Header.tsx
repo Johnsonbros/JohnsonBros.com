@@ -1,4 +1,4 @@
-import { Phone, Star, Menu, X, Calendar, Shield, Award, Home as HomeIcon, ChevronDown } from "lucide-react";
+import { Phone, Star, Menu, X, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { Link } from "wouter";
@@ -26,21 +26,19 @@ export default function Header({ onBookService }: HeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [mobileServicesOpen, setMobileServicesOpen] = useState(false);
   const [mobileAreasOpen, setMobileAreasOpen] = useState(false);
-  const [isDesktop, setIsDesktop] = useState(false);
 
-  // Detect desktop vs mobile using JavaScript (bypasses CSS issues)
   useEffect(() => {
-    const DESKTOP_BREAKPOINT = 1024;
-    const checkIsDesktop = () => {
-      setIsDesktop(window.innerWidth >= DESKTOP_BREAKPOINT);
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) {
+        setIsMobileMenuOpen(false);
+        setMobileServicesOpen(false);
+        setMobileAreasOpen(false);
+      }
     };
-    
-    // Check immediately
-    checkIsDesktop();
-    
-    // Listen for resize events
-    window.addEventListener('resize', checkIsDesktop);
-    return () => window.removeEventListener('resize', checkIsDesktop);
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   // Fetch real-time Google reviews data
@@ -140,18 +138,17 @@ export default function Header({ onBookService }: HeaderProps) {
       {/* Main Header */}
       <header className="bg-johnson-blue shadow-lg sticky top-0 z-50 border-t-2 border-johnson-blue">
         {/* Mobile Layout - Simplified */}
-        {!isDesktop && (
-        <div className="px-3 py-2 flex items-center justify-between relative z-50">
+        <div className="px-3 py-2 flex items-center justify-between relative z-50 md:hidden">
           {/* Logo - constrained width */}
           <div className="flex-1 min-w-0">
-            <img 
-              src="/JB_logo_New_1756136293648.png" 
-              alt="Johnson Bros. Plumbing & Drain Cleaning" 
+            <img
+              src="/JB_logo_New_1756136293648.png"
+              alt="Johnson Bros. Plumbing & Drain Cleaning"
               className="h-10 w-auto max-h-10 max-w-[200px] object-contain"
               data-testid="company-logo"
             />
           </div>
-          
+
           {/* Hamburger Menu Button - always visible */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -162,11 +159,54 @@ export default function Header({ onBookService }: HeaderProps) {
             {isMobileMenuOpen ? <X className="h-7 w-7" /> : <Menu className="h-7 w-7" />}
           </button>
         </div>
-        )}
+
+        {/* Tablet Layout */}
+        <div className="hidden md:flex lg:hidden px-5 py-3 items-center justify-between gap-4">
+          <div className="flex items-center flex-shrink-0">
+            <img
+              src="/JB_logo_New_1756136293648.png"
+              alt="Johnson Bros. Plumbing & Drain Cleaning"
+              className="h-12 w-auto max-h-12 max-w-[240px] object-contain"
+              data-testid="company-logo-tablet"
+            />
+          </div>
+          <div className="flex items-center gap-3">
+            {onBookService ? (
+              <Button
+                onClick={onBookService}
+                variant="brand-accent"
+                size="sm"
+                className="px-5 py-2 text-sm font-bold whitespace-nowrap shadow-lg"
+                data-testid="header-book-service-button-tablet"
+              >
+                Book Now
+              </Button>
+            ) : (
+              <Link href="/#booking">
+                <Button
+                  variant="brand-accent"
+                  size="sm"
+                  className="px-5 py-2 text-sm font-bold whitespace-nowrap shadow-lg"
+                  data-testid="header-book-service-link-tablet"
+                >
+                  Book Now
+                </Button>
+              </Link>
+            )}
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="text-white p-2 hover:bg-white/10 rounded-lg transition-colors"
+              aria-label="Toggle menu"
+              data-testid="tablet-menu-toggle"
+            >
+              {isMobileMenuOpen ? <X className="h-7 w-7" /> : <Menu className="h-7 w-7" />}
+            </button>
+          </div>
+        </div>
 
         {/* Mobile Menu Overlay */}
-        {!isDesktop && isMobileMenuOpen && (
-          <div className="fixed inset-0 bg-johnson-blue z-[60] shadow-2xl flex flex-col">
+        {isMobileMenuOpen && (
+          <div className="fixed inset-0 bg-johnson-blue z-[60] shadow-2xl flex flex-col lg:hidden">
             {/* Solid header with logo in mobile menu - stays fixed */}
             <div className="bg-johnson-blue px-2 py-1 flex justify-between items-center gap-1 border-b border-white/10 flex-shrink-0">
               <img 
@@ -325,7 +365,7 @@ export default function Header({ onBookService }: HeaderProps) {
         )}
 
         {/* Desktop Layout */}
-        {isDesktop && (
+        <div className="hidden lg:block">
         <div>
           <div className="container mx-auto px-6 py-4">
             <div className="flex justify-between items-center gap-4">
@@ -462,7 +502,7 @@ export default function Header({ onBookService }: HeaderProps) {
             </div>
           </div>
         </div>
-        )}
+        </div>
       </header>
     </>
   );
