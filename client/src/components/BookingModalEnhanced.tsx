@@ -513,6 +513,13 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
     onSuccess: (data: any) => {
       if (data.customer) {
         setBookingData(prev => ({ ...prev, customer: data.customer }));
+        if (customerType === "returning" && bookingData.smsVerification.status !== "verified") {
+          if (smsPhone && smsPhone.length >= 10) {
+            setSmsCode("");
+            startSmsVerificationMutation.mutate(smsPhone);
+          }
+          return;
+        }
         setCurrentStep(3);
       }
     },
@@ -567,6 +574,9 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
         title: "Phone verified",
         description: "Thanks! Your number is verified."
       });
+      if (customerType === "returning" && bookingData.customer) {
+        setCurrentStep(3);
+      }
     },
     onError: (error: any) => {
       setSmsError(error?.response?.data?.error || "Verification failed.");
@@ -1448,59 +1458,60 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
                           <Shield className="h-4 w-4 text-blue-600" />
                           <span className="text-sm font-medium text-blue-900">Verify phone by SMS</span>
                         </div>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          disabled={!smsPhone || smsPhone.length < 10 || startSmsVerificationMutation.isPending || bookingData.smsVerification.status === "verified"}
-                          onClick={() => {
-                            if (!smsPhone || smsPhone.length < 10) {
-                              toast({
-                                title: "Phone number required",
-                                description: "Enter a valid phone number to receive a verification code.",
-                                variant: "destructive",
-                              });
-                              return;
-                            }
-                            startSmsVerificationMutation.mutate(smsPhone);
-                          }}
-                        >
-                          {bookingData.smsVerification.status === "verified"
-                            ? "Verified"
-                            : startSmsVerificationMutation.isPending
-                            ? "Sending..."
-                            : "Send Code"}
-                        </Button>
+                        {bookingData.smsVerification.status === "pending" ? (
+                          <InputOTP
+                            maxLength={6}
+                            value={smsCode}
+                            onChange={(value) => {
+                              setSmsCode(value);
+                              if (value.length === 6 && smsPhone) {
+                                confirmSmsVerificationMutation.mutate({ phone: smsPhone, code: value });
+                              }
+                            }}
+                            autoComplete="one-time-code"
+                          >
+                            <InputOTPGroup>
+                              <InputOTPSlot index={0} />
+                              <InputOTPSlot index={1} />
+                              <InputOTPSlot index={2} />
+                              <InputOTPSlot index={3} />
+                              <InputOTPSlot index={4} />
+                              <InputOTPSlot index={5} />
+                            </InputOTPGroup>
+                          </InputOTP>
+                        ) : (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            disabled={!smsPhone || smsPhone.length < 10 || startSmsVerificationMutation.isPending || bookingData.smsVerification.status === "verified"}
+                            onClick={() => {
+                              if (!smsPhone || smsPhone.length < 10) {
+                                toast({
+                                  title: "Phone number required",
+                                  description: "Enter a valid phone number to receive a verification code.",
+                                  variant: "destructive",
+                                });
+                                return;
+                              }
+                              startSmsVerificationMutation.mutate(smsPhone);
+                            }}
+                          >
+                            {bookingData.smsVerification.status === "verified"
+                              ? "Verified"
+                              : startSmsVerificationMutation.isPending
+                              ? "Sending..."
+                              : "Send Code"}
+                          </Button>
+                        )}
                       </div>
 
                       {bookingData.smsVerification.status === "pending" && (
-                        <div className="space-y-3">
+                        <div className="space-y-2">
                           <p className="text-xs text-gray-600">Enter the 6-digit code sent to your phone</p>
-                          <div className="flex flex-col items-center gap-3">
-                            <InputOTP
-                              maxLength={6}
-                              value={smsCode}
-                              onChange={(value) => {
-                                setSmsCode(value);
-                                if (value.length === 6 && smsPhone) {
-                                  confirmSmsVerificationMutation.mutate({ phone: smsPhone, code: value });
-                                }
-                              }}
-                              autoComplete="one-time-code"
-                            >
-                              <InputOTPGroup>
-                                <InputOTPSlot index={0} />
-                                <InputOTPSlot index={1} />
-                                <InputOTPSlot index={2} />
-                                <InputOTPSlot index={3} />
-                                <InputOTPSlot index={4} />
-                                <InputOTPSlot index={5} />
-                              </InputOTPGroup>
-                            </InputOTP>
-                            {confirmSmsVerificationMutation.isPending && (
-                              <p className="text-xs text-blue-600">Verifying...</p>
-                            )}
-                          </div>
+                          {confirmSmsVerificationMutation.isPending && (
+                            <p className="text-xs text-blue-600">Verifying...</p>
+                          )}
                         </div>
                       )}
 
@@ -1527,7 +1538,7 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
                       </Button>
                       <Button 
                         type="submit" 
-                        disabled={lookupCustomerMutation.isPending || bookingData.smsVerification.status !== "verified"}
+                        disabled={lookupCustomerMutation.isPending || startSmsVerificationMutation.isPending || bookingData.smsVerification.status === "pending"}
                         className="bg-johnson-blue hover:bg-johnson-teal"
                       >
                         {lookupCustomerMutation.isPending ? "Looking up..." : "Continue"}
