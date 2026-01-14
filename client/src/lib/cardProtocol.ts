@@ -164,6 +164,8 @@ export type EstimateRangeCard = z.infer<typeof EstimateRangeCardSchema>;
 const CARD_INTENT_REGEX = /```card_intent\s*([\s\S]*?)```/g;
 const CARD_INTENT_TAG_REGEX = /<CARD_INTENT>([\s\S]*?)<\/CARD_INTENT>/g;
 const JSON_CARD_REGEX = /```json\s*([\s\S]*?)```/g;
+const EMERGENCY_HELP_BLOCK_REGEX = /```(?:json)?\s*({[\s\S]*?"type"\s*:\s*"emergency_help"[\s\S]*?})\s*```/g;
+const EMERGENCY_HELP_INLINE_REGEX = /\{[\s\S]*?"type"\s*:\s*"emergency_help"[\s\S]*?\}/g;
 
 export interface ExtractResult {
   cleanText: string;
@@ -217,6 +219,21 @@ export function extractCardIntents(text: string): ExtractResult {
   cleanText = cleanText.replace(/\n{3,}/g, '\n\n').trim();
 
   return { cleanText, cards, errors };
+}
+
+export function stripEmergencyHelpCard(text: string): { cleanText: string; found: boolean } {
+  const hasBlock = EMERGENCY_HELP_BLOCK_REGEX.test(text);
+  EMERGENCY_HELP_BLOCK_REGEX.lastIndex = 0;
+  const withoutBlocks = text.replace(EMERGENCY_HELP_BLOCK_REGEX, '').trim();
+
+  const hasInline = EMERGENCY_HELP_INLINE_REGEX.test(withoutBlocks);
+  EMERGENCY_HELP_INLINE_REGEX.lastIndex = 0;
+  const cleanText = withoutBlocks
+    .replace(EMERGENCY_HELP_INLINE_REGEX, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+
+  return { cleanText, found: hasBlock || hasInline };
 }
 
 export function isCardIntentComplete(text: string): boolean {
