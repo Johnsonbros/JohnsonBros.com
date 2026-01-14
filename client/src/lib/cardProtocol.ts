@@ -164,6 +164,7 @@ export type EstimateRangeCard = z.infer<typeof EstimateRangeCardSchema>;
 const CARD_INTENT_REGEX = /```card_intent\s*([\s\S]*?)```/g;
 const CARD_INTENT_TAG_REGEX = /<CARD_INTENT>([\s\S]*?)<\/CARD_INTENT>/g;
 const JSON_CARD_REGEX = /```json\s*([\s\S]*?)```/g;
+const INLINE_JSON_CARD_REGEX = /(\{[\s\S]*?"type"\s*:\s*"(lead_card|new_customer_info|returning_customer_lookup|date_picker|time_picker|booking_confirmation|service_recommendation|estimate_range)"[\s\S]*?\})/g;
 const EMERGENCY_HELP_BLOCK_REGEX = /```(?:json)?\s*({[\s\S]*?"type"\s*:\s*"emergency_help"[\s\S]*?})\s*```/g;
 const EMERGENCY_HELP_INLINE_REGEX = /\{[\s\S]*?"type"\s*:\s*"emergency_help"[\s\S]*?\}/g;
 
@@ -215,6 +216,7 @@ export function extractCardIntents(text: string): ExtractResult {
   extractFromRegex(CARD_INTENT_REGEX);
   extractFromRegex(CARD_INTENT_TAG_REGEX);
   extractFromRegex(JSON_CARD_REGEX);
+  extractFromRegex(INLINE_JSON_CARD_REGEX);
 
   cleanText = cleanText.replace(/\n{3,}/g, '\n\n').trim();
 
