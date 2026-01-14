@@ -42,7 +42,7 @@ interface Message {
   toolsUsed?: string[];
   isStreaming?: boolean;
   feedback?: 'positive' | 'negative' | null;
-  card?: 'appointment' | 'quote' | 'emergency' | 'customer_lookup' | 'lead' | 'new_customer' | null;
+  card?: 'appointment' | 'quote' | 'emergency' | 'customer_lookup' | 'lead' | 'new_customer' | 'customer_type' | null;
   cardData?: any;
   cardIntents?: CardIntent[];
 }
@@ -417,6 +417,46 @@ function NewCustomerCard({ onSubmit, isLoading, prefill }: NewCustomerCardProps)
             )}
           </Button>
         </form>
+      </CardContent>
+    </Card>
+  );
+}
+
+interface CustomerTypeCardProps {
+  onSelect: (response: string) => void;
+}
+
+function CustomerTypeCard({ onSelect }: CustomerTypeCardProps) {
+  return (
+    <Card className="w-full border-blue-200 bg-white shadow-sm mt-2">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+          <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center">
+            <User className="w-3.5 h-3.5 text-blue-600" />
+          </div>
+          Have you used Johnson Bros. Plumbing before?
+        </CardTitle>
+        <CardDescription className="text-xs text-gray-600">
+          Choose one so I can route you correctly.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="pt-0 space-y-2">
+        <Button
+          type="button"
+          variant="default"
+          className="w-full justify-start"
+          onClick={() => onSelect("Yes, we have used you before.")}
+        >
+          Yes, we have used you before
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full justify-start"
+          onClick={() => onSelect("No, I am a first time customer.")}
+        >
+          No, I am a first time customer
+        </Button>
       </CardContent>
     </Card>
   );
@@ -980,6 +1020,15 @@ export function CustomChatWidget({ className }: CustomChatWidgetProps) {
     }
     
     const lowerContent = content.toLowerCase();
+    const askingCustomerType = (
+      (lowerContent.includes('used johnson bros') && lowerContent.includes('before')) ||
+      lowerContent.includes('used us before') ||
+      lowerContent.includes('used you before') ||
+      lowerContent.includes('new or returning customer')
+    );
+    if (askingCustomerType) {
+      return { cardType: 'customer_type' };
+    }
     // Trigger customer lookup card when AI asks for customer identification
     const askingForLookup = (
       // Traditional phone/email lookup prompts - expanded patterns
@@ -999,7 +1048,7 @@ export function CustomChatWidget({ className }: CustomChatWidgetProps) {
        lowerContent.includes('find your account') ||
        lowerContent.includes('used us before') || 
        lowerContent.includes('returning customer') ||
-       lowerContent.includes('retrieve your details'))
+        lowerContent.includes('retrieve your details'))
     );
     if (askingForLookup) {
       setShowCustomerLookup(true);
@@ -1450,6 +1499,16 @@ export function CustomChatWidget({ className }: CustomChatWidgetProps) {
                             }}
                             isLoading={isSearchingCustomer}
                             results={customerSearchResults}
+                          />
+                        )}
+                        {message.card === 'customer_type' && (
+                          <CustomerTypeCard
+                            onSelect={(response) => {
+                              setMessages(prev => prev.map(m => 
+                                m.id === message.id ? { ...m, card: null } : m
+                              ));
+                              sendMessageRef.current?.(response);
+                            }}
                           />
                         )}
 
