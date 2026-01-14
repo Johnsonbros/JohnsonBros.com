@@ -28,6 +28,9 @@ import { extractCardIntents, type CardIntent } from '@/lib/cardProtocol';
 const MotionDiv = motion.div as React.FC<HTMLMotionProps<'div'> & React.HTMLAttributes<HTMLDivElement>>;
 const MotionButton = motion.button as React.FC<HTMLMotionProps<'button'> & React.ButtonHTMLAttributes<HTMLButtonElement>>;
 
+const APP_STATE_STORAGE_KEY = 'openai-app-state-v1';
+const MAX_STORED_MESSAGES = 50;
+
 type CardData = AppointmentCardData | QuoteCardData | null;
 type CardType = 'appointment' | 'quote' | 'emergency' | null;
 
@@ -53,6 +56,48 @@ interface Message {
   cardData?: CardData;
   cards?: CardIntent[];
 }
+
+type StoredMessage = Omit<Message, 'timestamp'> & { timestamp: string };
+
+type StoredAppState = {
+  sessionId: string | null;
+  messages: StoredMessage[];
+};
+
+const serializeMessages = (messages: Message[]): StoredMessage[] =>
+  messages.slice(-MAX_STORED_MESSAGES).map((message) => ({
+    ...message,
+    timestamp: message.timestamp.toISOString(),
+  }));
+
+const deserializeMessages = (messages: StoredMessage[]): Message[] =>
+  messages.map((message) => ({
+    ...message,
+    timestamp: new Date(message.timestamp),
+  }));
+
+const loadStoredState = (): StoredAppState | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const rawState = window.localStorage.getItem(APP_STATE_STORAGE_KEY);
+    if (!rawState) return null;
+    const parsed = JSON.parse(rawState) as StoredAppState;
+    if (!parsed || !Array.isArray(parsed.messages)) return null;
+    return parsed;
+  } catch (error) {
+    console.warn('Unable to read stored app state', error);
+    return null;
+  }
+};
+
+const saveStoredState = (state: StoredAppState): void => {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(APP_STATE_STORAGE_KEY, JSON.stringify(state));
+  } catch (error) {
+    console.warn('Unable to persist app state', error);
+  }
+};
 
 interface QuickAction {
   icon: typeof Wrench;
@@ -110,6 +155,24 @@ export function PlumbingAssistantApp() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const hasHydratedStateRef = useRef(false);
+
+  useEffect(() => {
+    const storedState = loadStoredState();
+    if (storedState) {
+      setSessionId(storedState.sessionId);
+      setMessages(deserializeMessages(storedState.messages));
+    }
+    hasHydratedStateRef.current = true;
+  }, []);
+
+  useEffect(() => {
+    if (!hasHydratedStateRef.current) return;
+    saveStoredState({
+      sessionId,
+      messages: serializeMessages(messages),
+    });
+  }, [messages, sessionId]);
 
   useEffect(() => {
     if (scrollRef.current) {
