@@ -2,10 +2,10 @@ import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader } from '@googlemaps/js-api-loader';
 import { MapPin, RefreshCw, Download, Activity, Users, TrendingUp } from 'lucide-react';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { getGoogleMapsLoader } from '@/lib/googleMapsLoader';
 
 export default function AdminHeatMap() {
   const mapRef = useRef<HTMLDivElement>(null);
@@ -103,19 +103,13 @@ export default function AdminHeatMap() {
     if (!mapRef.current || !heatMapData?.dataPoints || heatMapData.dataPoints.length === 0) return;
 
     const initializeMap = async () => {
-      const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-      
-      if (!apiKey) {
+      const loader = getGoogleMapsLoader();
+
+      if (!loader) {
         console.warn('Google Maps API key not configured');
         setIsLoading(false);
         return;
       }
-
-      const loader = new Loader({
-        apiKey,
-        version: 'weekly',
-        libraries: ['visualization'],
-      });
 
       try {
         const google = await loader.load();

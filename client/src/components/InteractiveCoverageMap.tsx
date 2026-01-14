@@ -1,13 +1,13 @@
 /// <reference types="@types/google.maps" />
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Loader } from "@googlemaps/js-api-loader";
 import { MapPin, Phone, ChevronRight, Navigation, CheckCircle2, AlertCircle, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
+import { getGoogleMapsLoader } from "@/lib/googleMapsLoader";
 
 interface ServiceLocation {
   name: string;
@@ -209,13 +209,13 @@ export function InteractiveCoverageMap({ onBookService, compact = false }: Inter
     if (!mapRef.current) return;
 
     const initMap = async () => {
-      const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-      
-      const loader = new Loader({
-        apiKey: apiKey || "",
-        version: "weekly",
-        libraries: ["marker", "geometry"]
-      });
+      const loader = getGoogleMapsLoader();
+
+      if (!loader) {
+        setMapError(true);
+        setIsMapLoaded(true);
+        return;
+      }
 
       try {
         const google = await loader.load();
