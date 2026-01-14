@@ -208,11 +208,11 @@ export default function Header({ onBookService }: HeaderProps) {
         {isMobileMenuOpen && (
           <div className="fixed inset-0 bg-johnson-blue z-[60] shadow-2xl flex flex-col lg:hidden">
             {/* Solid header with logo in mobile menu - stays fixed */}
-            <div className="bg-johnson-blue px-2 py-1 flex justify-between items-center gap-1 border-b border-white/10 flex-shrink-0">
+            <div className="bg-johnson-blue px-3 py-2 flex justify-between items-center gap-1 border-b border-white/10 flex-shrink-0">
               <img 
                 src="/JB_logo_New_1756136293648.png" 
                 alt="Johnson Bros. Plumbing & Drain Cleaning" 
-                className="h-10 sm:h-12 w-auto max-h-12 max-w-[180px] sm:max-w-[220px] object-contain"
+                className="h-14 w-auto max-h-14 max-w-[280px] object-contain"
               />
               <button
                 onClick={() => setIsMobileMenuOpen(false)}
