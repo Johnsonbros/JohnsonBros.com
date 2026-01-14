@@ -5,6 +5,8 @@ import { sendSMS, generateTwiML, generateVoiceTwiML, getTwilioPhoneNumber } from
 import { Logger } from './logger';
 import { z } from 'zod';
 import { randomUUID } from 'crypto';
+import { db } from '../db';
+import { fineTuningTrainingData } from '@shared/schema';
 
 const router = Router();
 
@@ -78,6 +80,71 @@ router.delete('/chat/session/:sessionId', (req: Request, res: Response) => {
   } catch (error: any) {
     Logger.error('Clear session error:', error);
     res.status(500).json({ success: false, error: 'Unable to clear session' });
+  }
+});
+
+// ========== FEEDBACK FOR FINE-TUNING ==========
+
+const feedbackSchema = z.object({
+  sessionId: z.string(),
+  channel: z.enum(['web', 'sms', 'voice']),
+  userMessage: z.string(),
+  assistantResponse: z.string(),
+  feedbackType: z.enum(['positive', 'negative']),
+  conversationContext: z.array(z.object({
+    role: z.string(),
+    content: z.string()
+  })).optional(),
+  toolsUsed: z.array(z.string()).optional(),
+  messageIndex: z.number().optional(),
+  customerPhone: z.string().optional()
+});
+
+router.post('/chat/feedback', async (req: Request, res: Response) => {
+  try {
+    const data = feedbackSchema.parse(req.body);
+    
+    Logger.info('Feedback received for fine-tuning', { 
+      sessionId: data.sessionId, 
+      feedbackType: data.feedbackType,
+      channel: data.channel
+    });
+    
+    await db.insert(fineTuningTrainingData).values({
+      sessionId: data.sessionId,
+      channel: data.channel,
+      userMessage: data.userMessage,
+      assistantResponse: data.assistantResponse,
+      feedbackType: data.feedbackType,
+      conversationContext: data.conversationContext || [],
+      toolsUsed: data.toolsUsed || [],
+      messageIndex: data.messageIndex,
+      customerPhone: data.customerPhone
+    });
+    
+    Logger.info('Feedback saved to training database', { 
+      sessionId: data.sessionId, 
+      feedbackType: data.feedbackType 
+    });
+    
+    res.json({
+      success: true,
+      message: 'Feedback saved for training'
+    });
+  } catch (error: any) {
+    Logger.error('Feedback save error:', error);
+    
+    if (error.name === 'ZodError') {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Invalid feedback format' 
+      });
+    }
+    
+    res.status(500).json({ 
+      success: false, 
+      error: 'Unable to save feedback' 
+    });
   }
 });
 
