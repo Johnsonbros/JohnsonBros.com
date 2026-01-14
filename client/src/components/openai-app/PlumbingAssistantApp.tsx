@@ -18,18 +18,12 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import {
-  BookingConfirmationWidget,
-  EmergencyWidget,
-  QuoteWidget,
-  type BookingConfirmationData,
-  type EmergencyData,
-  type QuoteData,
-} from '@/components/widgets';
 import { motion, HTMLMotionProps } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import logoIcon from '@assets/JBros_Wrench_Logo_WP.png';
 import { AppointmentCard, QuoteCard, EmergencyCard, type AppointmentCardData, type QuoteCardData } from '@/components/chat/SharedChatCards';
+import { dispatchCardAction } from '@/lib/dispatchCardAction';
+import { extractCardIntents, type CardIntent } from '@/lib/cardProtocol';
 
 const MotionDiv = motion.div as React.FC<HTMLMotionProps<'div'> & React.HTMLAttributes<HTMLDivElement>>;
 const MotionButton = motion.button as React.FC<HTMLMotionProps<'button'> & React.ButtonHTMLAttributes<HTMLButtonElement>>;
