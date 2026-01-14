@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { 
-  Send, 
-  Loader2, 
+import {
+  Send,
+  Loader2,
   Phone,
-  Wrench, 
+  Wrench,
   ChevronRight,
   Sparkles,
   ThumbsUp,
@@ -18,6 +18,14 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  BookingConfirmationWidget,
+  EmergencyWidget,
+  QuoteWidget,
+  type BookingConfirmationData,
+  type EmergencyData,
+  type QuoteData,
+} from '@/components/widgets';
 import { motion, HTMLMotionProps } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import logoIcon from '@assets/JBros_Wrench_Logo_WP.png';
