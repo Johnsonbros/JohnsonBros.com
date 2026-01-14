@@ -311,11 +311,11 @@ export default function Header({ onBookService }: HeaderProps) {
           <div className="container mx-auto px-6 py-3">
             <div className="flex justify-between items-center gap-8">
               {/* Logo */}
-              <div className="flex items-center flex-shrink-0">
+              <div className="flex items-center flex-shrink-0" style={{ height: '48px', overflow: 'hidden' }}>
                 <img 
                   src="/JB_logo_New_1756136293648.png" 
                   alt="Johnson Bros. Plumbing & Drain Cleaning" 
-                  className="h-12 w-auto object-contain"
+                  style={{ height: '48px', width: 'auto', maxHeight: '48px' }}
                   data-testid="company-logo-desktop"
                 />
               </div>
