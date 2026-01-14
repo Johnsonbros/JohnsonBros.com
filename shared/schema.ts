@@ -2178,3 +2178,43 @@ export const insertSmsVerificationFailureSchema = createInsertSchema(smsVerifica
 
 export type SmsVerificationFailure = typeof smsVerificationFailures.$inferSelect;
 export type InsertSmsVerificationFailure = z.infer<typeof insertSmsVerificationFailureSchema>;
+
+// ============================================
+// FINE-TUNING TRAINING DATA
+// ============================================
+
+export const fineTuningTrainingData = pgTable('fine_tuning_training_data', {
+  id: serial('id').primaryKey(),
+  sessionId: text('session_id').notNull(),
+  channel: text('channel').notNull(), // web, sms, voice
+  userMessage: text('user_message').notNull(),
+  assistantResponse: text('assistant_response').notNull(),
+  conversationContext: json('conversation_context').$type<Array<{ role: string; content: string }>>(),
+  toolsUsed: json('tools_used').$type<string[]>(),
+  feedbackType: text('feedback_type').notNull(), // positive, negative
+  messageIndex: integer('message_index'),
+  customerPhone: text('customer_phone'),
+  exportedForTraining: boolean('exported_for_training').default(false).notNull(),
+  exportedAt: timestamp('exported_at'),
+  qualityScore: integer('quality_score'),
+  reviewerNotes: text('reviewer_notes'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  sessionIdx: index('ft_session_idx').on(table.sessionId),
+  channelIdx: index('ft_channel_idx').on(table.channel),
+  feedbackTypeIdx: index('ft_feedback_type_idx').on(table.feedbackType),
+  exportedIdx: index('ft_exported_idx').on(table.exportedForTraining),
+  createdAtIdx: index('ft_created_at_idx').on(table.createdAt),
+}));
+
+export const insertFineTuningTrainingDataSchema = createInsertSchema(fineTuningTrainingData).omit({
+  id: true,
+  exportedForTraining: true,
+  exportedAt: true,
+  qualityScore: true,
+  reviewerNotes: true,
+  createdAt: true,
+});
+
+export type FineTuningTrainingData = typeof fineTuningTrainingData.$inferSelect;
+export type InsertFineTuningTrainingData = z.infer<typeof insertFineTuningTrainingDataSchema>;
