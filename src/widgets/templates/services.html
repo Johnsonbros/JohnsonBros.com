@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="ui://widget/ui-kit.css">
+  <link rel="stylesheet" href="ui://widget/shared-card.css">
+</head>
+<body class="widget-body">
+  <div id="widget-root"></div>
+  <script type="module">
+    import { getToolOutput, notifyHeight } from "ui://widget/shared-card.js";
+
+    const data = getToolOutput();
+    const root = document.getElementById('widget-root');
+
+    const services = data.services || [];
+    const businessName = data.business?.name || 'Johnson Bros. Plumbing';
+
+    const servicesHtml = services.slice(0, 8).map(service => {
+      const priceMin = service.priceRange?.min || service.price_min || 0;
+      const priceMax = service.priceRange?.max || service.price_max || 0;
+      const priceStr = priceMin === priceMax ? `$${priceMin}` : `$${priceMin} - $${priceMax}`;
+      const emergencyBadge = service.isEmergency ? '<span class="badge danger">24/7</span>' : '';
+      const duration = service.estimatedDuration || service.duration || '';
+
+      return `
+        <div class="service-row">
+          <div>
+            <div class="service-title">${service.name || service.title} ${emergencyBadge}</div>
+            <div class="service-description">${service.description || ''}</div>
+          </div>
+          <div class="service-meta">
+            <div><strong>${priceStr}</strong></div>
+            <div>${duration}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    root.className = 'card card-accent-warning';
+    root.innerHTML = `
+      <div class="card-header">
+        <div class="icon-badge warning">🛠</div>
+        <div>
+          <div class="card-title">Our Services</div>
+          <div class="card-subtitle">${businessName}</div>
+        </div>
+      </div>
+      <div class="card-content">
+        ${servicesHtml || '<div class="empty-state">Service list is updating. Ask us for recommendations!</div>'}
+        <div class="pill-row">
+          <span class="pill warning">Licensed &amp; insured</span>
+          <span class="pill warning">15+ years local</span>
+          <span class="pill warning">Same-day options</span>
+        </div>
+      </div>
+      <div class="card-footer">$99 service call fee waived when we do the work</div>
+    `;
+
+    notifyHeight(root);
+  </script>
+</body>
+</html>
