@@ -1,0 +1,37 @@
+Here’s a concise prompt you can give your developer to resolve the MCP connectivity issues:
+
+⸻
+
+Development Task: Fix MCP server integration for AI booking
+
+Background:
+Our site already includes a full Model Context Protocol (MCP) server and discovery card. The discovery file at /.well-known/mcp.json is served correctly and advertises the /mcp endpoint. However, external AI clients (like ChatGPT) cannot complete the MCP handshake. We consistently see HTTP 400 errors (“Expected property name or } in JSON”) when sending the required initialize request. This suggests the reverse proxy/load‑balancer is stripping or altering POST bodies before they reach the Express server. As a result, even valid JSON‑RPC requests never get parsed, and the AI clients can’t connect.
+
+What to do:
+	1.	Verify and fix proxy configuration:
+	•	Ensure that POST requests to /mcp are forwarded unchanged to the Express app. The current proxy appears to drop or rewrite the JSON body.
+	•	Allow both Content-Type: application/json and the optional Accept headers (application/json, text/event-stream) to pass through untouched.
+	•	Confirm that the MCP server on port 3001 receives the full request body by testing locally with curl and from behind the proxy.
+	2.	Relax the initialization headers:
+	•	Update the MCP handler to accept initialization requests with Accept: application/json alone. The current strict requirement for Accept: application/json, text/event-stream causes compatibility problems.
+	•	For the initial initialize call, treat a missing Accept header as application/json to improve robustness.
+	3.	Add a simple GET handler for /mcp:
+	•	Return a minimal JSON response (e.g., {status:"ready"}) for GET requests. This allows crawlers and AI agents to verify the endpoint’s presence without triggering stream errors.
+	4.	Serve discovery on all domains:
+	•	Mirror or redirect /.well-known/mcp.json on every domain we control (e.g., thejohnsonbros.com) so AI clients can discover the MCP server no matter which domain users visit.
+	5.	Re-test with curl and ChatGPT:
+	•	After deploying the changes, run the following command from a terminal and confirm it returns a 200 OK, a JSON body describing the server, and a Mcp-Session-Id header:
+
+curl -X POST https://<your-domain>/mcp \
+  -H "Content-Type: application/json" \
+  -H "X-MCP-Client: test-client" \
+  -H "User-Agent: mcp-client test-client" \
+  --data-binary '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"client":{"name":"test-client","version":"0.1"}}}'
+
+
+
+Goal: Once these fixes are applied, external AI agents should be able to discover our server via the .well-known/mcp.json file, initialize a session on /mcp, and call our booking tools (book_service_call, search_availability, etc.) without manual intervention.
+
+⸻
+
+You can copy and paste this prompt directly to your developer. It summarises the current issue, why it’s happening, and the specific steps needed to resolve it.
