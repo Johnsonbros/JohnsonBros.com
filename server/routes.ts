@@ -1467,16 +1467,44 @@ $50 REFERRAL CREDIT APPLIES - New customer receives $50 credit toward any servic
 
       smsVerificationStore.set(normalizedPhone, { code, expiresAt, attempts: 0 });
 
+      Logger.info('[SMS Verification] Attempting to send code', { 
+        phone: normalizedPhone.slice(-4).padStart(normalizedPhone.length, '*'),
+        codeLength: code.length 
+      });
+
       await sendSMS(normalizedPhone, `Your Johnson Bros. verification code is ${code}. It expires in 10 minutes.`);
+
+      Logger.info('[SMS Verification] Code sent successfully', { 
+        phone: normalizedPhone.slice(-4).padStart(normalizedPhone.length, '*')
+      });
 
       res.json({
         success: true,
         phone: normalizedPhone,
         expires_at: new Date(expiresAt).toISOString()
       });
-    } catch (error) {
-      logError("SMS verification start error:", error);
-      res.status(500).json({ error: "Unable to send verification code. Please try again later." });
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Unknown error';
+      const errorCode = error?.code || error?.status || 'N/A';
+      
+      Logger.error('[SMS Verification] Failed to send code', {
+        phone: req.body.phone?.slice(-4)?.padStart(10, '*'),
+        errorMessage,
+        errorCode,
+        errorDetails: error?.moreInfo || error?.details || null
+      });
+      
+      // Provide more specific error messages based on Twilio error codes
+      let userMessage = "Unable to send verification code. Please try again later.";
+      if (errorMessage.includes('unverified') || errorCode === 21608) {
+        userMessage = "This phone number cannot receive SMS from our system. Please contact us at (617) 479-9911.";
+      } else if (errorMessage.includes('invalid') || errorCode === 21211) {
+        userMessage = "Invalid phone number format. Please check and try again.";
+      } else if (errorCode === 21610) {
+        userMessage = "This number has opted out of SMS. Please contact us at (617) 479-9911.";
+      }
+      
+      res.status(500).json({ error: userMessage });
     }
   });
 
