@@ -72,14 +72,14 @@ export async function callOpenAITool<T = unknown>(payload: ToolCallPayload): Pro
 export async function bookAppointment(input: BookAppointmentInput) {
   return callOpenAITool({
     name: 'book_service_call',
-    input,
+    input: input as unknown as Record<string, unknown>,
   });
 }
 
 export async function getQuote(input: GetQuoteInput) {
   return callOpenAITool({
     name: 'get_quote',
-    input,
+    input: input as unknown as Record<string, unknown>,
   });
 }
 
