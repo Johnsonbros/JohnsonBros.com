@@ -2180,31 +2180,38 @@ Sitemap: ${siteUrl}/sitemap.xml
     }
   });
 
-  // Check service area (mock implementation)
+  // Check service area
   app.post("/api/v1/check-service-area", publicWriteLimiter, async (req, res) => {
     try {
       const { address } = req.body;
-      
+
       if (!address) {
         return res.status(400).json({ error: "Address is required" });
       }
 
-      // TODO: Integrate with Google Maps API or Housecall Pro service area check
-      // For now, we'll check if address contains MA (Massachusetts)
-      const isInServiceArea = address.toLowerCase().includes('ma') || 
-                             address.toLowerCase().includes('massachusetts') ||
-                             address.toLowerCase().includes('quincy') ||
-                             address.toLowerCase().includes('braintree') ||
-                             address.toLowerCase().includes('milton') ||
-                             address.toLowerCase().includes('weymouth') ||
-                             address.toLowerCase().includes('hingham') ||
-                             address.toLowerCase().includes('hull');
+      // Use Google Maps Geocoding API to get ZIP code
+      const { geocodeAddress, isZipInServiceArea } = await import('./src/util/geocoding');
+      const geocodeResult = await geocodeAddress(address);
+
+      // Load service area configuration
+      const { loadConfig } = await import('./src/config');
+      const config = loadConfig();
+
+      // Check if ZIP code is in service area
+      const isInServiceArea = isZipInServiceArea(
+        geocodeResult.zipCode,
+        config.geos,
+        config.express_zones
+      );
 
       res.json({
         inServiceArea: isInServiceArea,
-        message: isInServiceArea 
-          ? "Great! We provide service to your area." 
+        message: isInServiceArea
+          ? "Great! We provide service to your area."
           : "Sorry, we don't currently service this area. Please call us to discuss options.",
+        zipCode: geocodeResult.zipCode,
+        city: geocodeResult.city,
+        state: geocodeResult.state,
       });
     } catch (error) {
       res.status(500).json({ error: "Failed to check service area" });
