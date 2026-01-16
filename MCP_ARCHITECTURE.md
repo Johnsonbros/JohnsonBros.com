@@ -160,6 +160,34 @@ The server exposes an HTTP endpoint at `/mcp` that:
 - **Session Management**: Auto-cleanup of inactive sessions (15 min TTL)
 - **Guardrails**: Reschedule/cancel tools don't directly modify - they log and redirect to phone
 
+## Optional Enhancements (Future-Proofing)
+
+These are not required today, but they can help as MCP usage grows or if multiple services integrate with the MCP server.
+
+### Service-to-Service Authentication
+
+- **Goal**: Restrict MCP calls from internal services to a trusted network and enforce a shared secret.
+- **Approach**:
+  - Run the MCP server on a private/internal network (e.g., internal VPC subnet or Docker network).
+  - Require `MCP_AUTH_TOKEN` for all non-public calls, and rotate it regularly.
+  - Use allowlisted IP ranges or service identities at the network layer.
+
+### API Gateway
+
+- **Goal**: Centralize auth, rate limits, and observability across the website backend and MCP server.
+- **Approach**:
+  - Place an API gateway (NGINX, Kong, AWS API Gateway, Cloudflare, etc.) in front of both the main app and MCP.
+  - Enforce shared authentication and rate limiting policies.
+  - Add request tracing IDs for end-to-end visibility.
+
+### Versioned APIs
+
+- **Goal**: Decouple frontend deployments from backend/MCP changes by keeping backward compatibility.
+- **Approach**:
+  - Introduce versioned endpoints (e.g., `/api/v1/...`, `/mcp/v1`).
+  - Maintain older versions during migrations.
+  - Add explicit contract docs per version to prevent breaking changes.
+
 ## Environment Variables
 
 | Variable | Default | Purpose |
