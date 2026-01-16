@@ -23,6 +23,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { motion, AnimatePresence, HTMLMotionProps } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
@@ -678,13 +679,22 @@ function CustomerLookupCard({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 pt-0">
-          <Input
-            value={verificationCode}
-            onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-            placeholder="Enter 6-digit code"
-            className="h-10 text-center text-lg tracking-widest font-mono"
-            maxLength={6}
-          />
+          <div className="flex justify-center">
+            <InputOTP
+              maxLength={6}
+              value={verificationCode}
+              onChange={(value) => setVerificationCode(value)}
+            >
+              <InputOTPGroup>
+                <InputOTPSlot index={0} />
+                <InputOTPSlot index={1} />
+                <InputOTPSlot index={2} />
+                <InputOTPSlot index={3} />
+                <InputOTPSlot index={4} />
+                <InputOTPSlot index={5} />
+              </InputOTPGroup>
+            </InputOTP>
+          </div>
           {verificationError && (
             <div className="space-y-2">
               <p className="text-xs text-red-500">{verificationError}</p>
