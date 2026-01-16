@@ -200,6 +200,30 @@ app.all('/mcp', async (req, res) => {
 
   log.info({ method: req.method, path: req.path, ip: ipAddress, sessionId: sessionId || 'new' }, 'Received MCP request');
 
+  // Normalize Accept header for compatibility with external AI clients
+  // MCP SDK requires both application/json and text/event-stream, but many clients only send application/json
+  // This ensures the initialize request works with minimal headers
+  // We need to modify both Express headers AND the raw IncomingMessage headers
+  const originalAccept = req.headers['accept'] || '';
+  if (req.method === 'POST') {
+    if (!originalAccept.includes('text/event-stream')) {
+      const normalizedAccept = 'application/json, text/event-stream';
+      // Modify Express request headers
+      req.headers['accept'] = normalizedAccept;
+      // Also modify the raw headers array that the SDK reads from
+      const rawReq = req as IncomingMessage;
+      const acceptIndex = rawReq.rawHeaders.findIndex((h, i) => 
+        i % 2 === 0 && h.toLowerCase() === 'accept'
+      );
+      if (acceptIndex >= 0) {
+        rawReq.rawHeaders[acceptIndex + 1] = normalizedAccept;
+      } else {
+        rawReq.rawHeaders.push('Accept', normalizedAccept);
+      }
+      log.info({ originalAccept, normalized: normalizedAccept }, 'Normalized Accept header for MCP compatibility');
+    }
+  }
+
   // Apply rate limiting (use IP-based ID for new sessions)
   const rateLimitResult = checkMcpRateLimit(rateLimitSessionId, ipAddress);
   if (!rateLimitResult.allowed) {

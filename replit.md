@@ -37,6 +37,7 @@ The frontend is built with React and TypeScript, utilizing Radix UI primitives a
 - **Smart Booking Modal**: Multi-step flow for service selection, date/time, customer info, and confirmation, with new/returning customer detection and direct HousecallPro job creation.
 - **The Family Discount Membership**: $99/year program offering priority scheduling, waived service call fees, 10% discount on all jobs, and 1 referral gift ability per year. Managed through dedicated page at /family-discount with customer portal at /my-plan.
 - **MCP Server / ChatGPT App**: Enables AI assistants (ChatGPT, Claude) to interact with the plumbing business through 12 tools with comprehensive guardrails:
+  - **External AI Client Connectivity**: The MCP server is accessible to external AI clients via the `/mcp` endpoint. Accept header normalization ensures compatibility - clients sending only `application/json` are automatically upgraded to include `text/event-stream` to meet MCP SDK requirements. Discovery available at `/.well-known/mcp.json`.
   - **OpenAI Apps SDK Widget Integration**: MCP server registers 9 interactive UI templates for ChatGPT that render rich, interactive booking experiences:
     - Widget templates: `date-picker`, `time-picker`, `booking-confirmation`, `lead-capture`, `availability`, `services`, `quote`, `emergency`, `service-fee`
     - Location: `src/widgets/templates/` with HTML+Skybridge format

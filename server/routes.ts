@@ -3245,13 +3245,14 @@ Sitemap: ${siteUrl}/sitemap.xml
       const authorization = req.headers['authorization'];
       const userAgent = req.headers['user-agent'];
 
-      // Accept header normalization: accept application/json alone for compatibility
-      // MCP SDK may require text/event-stream for streaming, but initial requests work with just application/json
-      if (accept) {
-        headers['accept'] = String(accept);
+      // Accept header normalization: MCP SDK requires both application/json and text/event-stream
+      // Many external AI clients only send application/json, so we add text/event-stream automatically
+      const originalAccept = accept ? String(accept) : '';
+      if (originalAccept.includes('text/event-stream')) {
+        headers['accept'] = originalAccept;
       } else {
-        // Default to application/json if no Accept header provided
-        headers['accept'] = 'application/json';
+        // Add text/event-stream to satisfy MCP SDK requirements
+        headers['accept'] = 'application/json, text/event-stream';
       }
       
       if (sessionId) headers['mcp-session-id'] = String(sessionId);
