@@ -28,7 +28,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { z } from "zod";
 import { formatTimeSlotWindow, isWeekendDate } from "@/lib/timeUtils";
 import { PricingEstimate } from "./PricingEstimate";
@@ -1138,42 +1137,45 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
               </div>
             )}
 
-            <div className="space-y-3 mt-4">
-              <Label className="flex items-center gap-2">
-                <Camera className="h-4 w-4 text-johnson-blue" />
-                Add photos (optional)
-              </Label>
-              <Input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handlePhotoUpload}
-              />
-              <p className="text-xs text-gray-500">
-                Upload up to 5 photos (max 5MB each) to help our team prepare.
-              </p>
-              {bookingData.photos.length > 0 && (
-                <div className="grid grid-cols-3 gap-2">
-                  {bookingData.photos.map((photo) => (
-                    <div key={photo.id} className="relative group">
-                      <img
-                        src={photo.preview}
-                        alt={photo.filename}
-                        className="h-20 w-full rounded-md object-cover border"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removePhoto(photo.id)}
-                        className="absolute top-1 right-1 rounded-full bg-white/80 p-1 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
-                        aria-label={`Remove ${photo.filename}`}
-                      >
-                        <Trash2 className="h-3 w-3 text-red-600" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            {!(bookingData.selectedDate === new Date(new Date().toLocaleString("en-US", {timeZone: "America/New_York"})).toISOString().split('T')[0] && 
+              new Date(new Date().toLocaleString("en-US", {timeZone: "America/New_York"})).getHours() >= 12) && (
+              <div className="space-y-3 mt-4">
+                <Label className="flex items-center gap-2">
+                  <Camera className="h-4 w-4 text-johnson-blue" />
+                  Add photos (optional)
+                </Label>
+                <Input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handlePhotoUpload}
+                />
+                <p className="text-xs text-gray-500">
+                  Upload up to 5 photos (max 5MB each) to help our team prepare.
+                </p>
+                {bookingData.photos.length > 0 && (
+                  <div className="grid grid-cols-3 gap-2">
+                    {bookingData.photos.map((photo) => (
+                      <div key={photo.id} className="relative group">
+                        <img
+                          src={photo.preview}
+                          alt={photo.filename}
+                          className="h-20 w-full rounded-md object-cover border"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removePhoto(photo.id)}
+                          className="absolute top-1 right-1 rounded-full bg-white/80 p-1 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                          aria-label={`Remove ${photo.filename}`}
+                        >
+                          <Trash2 className="h-3 w-3 text-red-600" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Service Fee Info */}
             {!(bookingData.selectedDate === new Date(new Date().toLocaleString("en-US", {timeZone: "America/New_York"})).toISOString().split('T')[0] && 
@@ -1292,6 +1294,24 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
                       )}
                     />
 
+                    <FormField
+                      control={newCustomerForm.control}
+                      name="address"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Service Address</FormLabel>
+                          <FormControl>
+                            <AddressAutocomplete
+                              value={field.value}
+                              onChange={field.onChange}
+                              placeholder="Start typing your address..."
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
                     <div className="border border-blue-100 bg-blue-50/60 rounded-lg p-3 space-y-2">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -1365,24 +1385,6 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
                         <p className="text-xs text-red-600">{smsError}</p>
                       )}
                     </div>
-
-                    <FormField
-                      control={newCustomerForm.control}
-                      name="address"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Service Address</FormLabel>
-                          <FormControl>
-                            <AddressAutocomplete
-                              value={field.value}
-                              onChange={field.onChange}
-                              placeholder="Start typing your address..."
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
 
                     <div className="flex justify-between gap-2">
                       <Button
@@ -1557,91 +1559,6 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
                 </Form>
               </TabsContent>
             </Tabs>
-
-            <Collapsible
-              open={bookingData.bookingFor.isForSomeoneElse}
-              onOpenChange={(open) => setBookingData(prev => ({
-                ...prev,
-                bookingFor: {
-                  ...prev.bookingFor,
-                  isForSomeoneElse: open
-                }
-              }))}
-            >
-              <div className="border border-gray-200 rounded-lg p-3">
-                <CollapsibleTrigger asChild>
-                  <button type="button" className="flex items-center gap-2 w-full text-left text-sm">
-                    <Checkbox
-                      id="booking-for-someone-else"
-                      checked={bookingData.bookingFor.isForSomeoneElse}
-                      onCheckedChange={(checked) => setBookingData(prev => ({
-                        ...prev,
-                        bookingFor: {
-                          ...prev.bookingFor,
-                          isForSomeoneElse: Boolean(checked)
-                        }
-                      }))}
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                    <Label htmlFor="booking-for-someone-else" className="cursor-pointer text-sm">
-                      Booking for someone else
-                    </Label>
-                    <ChevronRight className={`h-4 w-4 ml-auto transition-transform ${bookingData.bookingFor.isForSomeoneElse ? 'rotate-90' : ''}`} />
-                  </button>
-                </CollapsibleTrigger>
-
-                <CollapsibleContent className="pt-3">
-                  <div className="grid gap-2">
-                    <Input
-                      value={bookingData.bookingFor.recipient.name}
-                      onChange={(e) => setBookingData(prev => ({
-                        ...prev,
-                        bookingFor: {
-                          ...prev.bookingFor,
-                          recipient: {
-                            ...prev.bookingFor.recipient,
-                            name: e.target.value
-                          }
-                        }
-                      }))}
-                      placeholder="Recipient's full name"
-                      className="h-9"
-                    />
-                    <Input
-                      type="tel"
-                      value={bookingData.bookingFor.recipient.phone}
-                      onChange={(e) => setBookingData(prev => ({
-                        ...prev,
-                        bookingFor: {
-                          ...prev.bookingFor,
-                          recipient: {
-                            ...prev.bookingFor.recipient,
-                            phone: e.target.value
-                          }
-                        }
-                      }))}
-                      placeholder="Recipient's phone"
-                      className="h-9"
-                    />
-                    <Input
-                      value={bookingData.bookingFor.recipient.relationship}
-                      onChange={(e) => setBookingData(prev => ({
-                        ...prev,
-                        bookingFor: {
-                          ...prev.bookingFor,
-                          recipient: {
-                            ...prev.bookingFor.recipient,
-                            relationship: e.target.value
-                          }
-                        }
-                      }))}
-                      placeholder="Relationship (e.g., tenant, parent)"
-                      className="h-9"
-                    />
-                  </div>
-                </CollapsibleContent>
-              </div>
-            </Collapsible>
           </div>
         )}
 
@@ -1686,15 +1603,6 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
                 <span className="font-medium">Address:</span>
                 <span className="text-right">{bookingData.customer.address}</span>
               </div>
-
-              {bookingData.bookingFor.isForSomeoneElse && (
-                <div className="flex flex-col gap-1">
-                  <span className="font-medium">Booking For:</span>
-                  <span className="text-sm text-gray-600">
-                    {bookingData.bookingFor.recipient.name || "Recipient"} {bookingData.bookingFor.recipient.relationship ? `(${bookingData.bookingFor.recipient.relationship})` : ""}
-                  </span>
-                </div>
-              )}
 
               {bookingData.smsVerification.status === "verified" && (
                 <div className="flex items-center gap-2 text-sm text-green-700">

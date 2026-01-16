@@ -83,6 +83,11 @@
   }
 }
 
+/* Google Places Autocomplete - ensure dropdown appears above modals */
+.pac-container {
+  z-index: 99999 !important;
+}
+
 /* Mobile Performance Optimizations */
 @media (max-width: 768px) {
   * {
