@@ -3200,32 +3200,130 @@ Sitemap: ${siteUrl}/sitemap.xml
     return configured.endsWith('/mcp') ? configured : `${configured.replace(/\/$/, '')}/mcp`;
   })();
 
-  // Public MCP transport proxy (exposes MCP over the main web port)
-  app.all('/mcp', async (req, res) => {
+  // GET /mcp - Status endpoint for crawlers and AI agents to verify endpoint presence
+  app.get('/mcp', (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Mcp-Session-Id, X-MCP-Client, Authorization');
+    res.setHeader('Access-Control-Expose-Headers', 'Mcp-Session-Id');
+    res.json({
+      status: 'ready',
+      name: 'Johnson Bros. Plumbing MCP Server',
+      version: '1.0.0',
+      protocol: 'mcp-streamable-http',
+      description: 'Model Context Protocol server for booking plumbing services',
+      methods: {
+        POST: 'Send JSON-RPC requests (initialize, tools/list, tools/call)',
+        GET: 'This status endpoint',
+        DELETE: 'Close MCP session'
+      },
+      discovery: '/.well-known/mcp.json',
+      documentation: '/api/mcp/docs'
+    });
+  });
+
+  // OPTIONS /mcp - CORS preflight
+  app.options('/mcp', (req, res) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Mcp-Session-Id, X-MCP-Client, Authorization, User-Agent');
+    res.setHeader('Access-Control-Expose-Headers', 'Mcp-Session-Id');
+    res.setHeader('Access-Control-Max-Age', '86400');
+    res.status(204).end();
+  });
+
+  // POST/DELETE /mcp - MCP transport proxy (exposes MCP over the main web port)
+  app.post('/mcp', async (req, res) => {
     try {
-      const headers: Record<string, string> = {};
-      const contentType = req.headers['content-type'];
+      const headers: Record<string, string> = {
+        'content-type': 'application/json'
+      };
       const accept = req.headers['accept'];
       const sessionId = req.headers['mcp-session-id'];
       const client = req.headers['x-mcp-client'];
       const authorization = req.headers['authorization'];
+      const userAgent = req.headers['user-agent'];
 
-      if (contentType) headers['content-type'] = String(contentType);
-      if (accept) headers['accept'] = String(accept);
+      // Accept header normalization: accept application/json alone for compatibility
+      // MCP SDK may require text/event-stream for streaming, but initial requests work with just application/json
+      if (accept) {
+        headers['accept'] = String(accept);
+      } else {
+        // Default to application/json if no Accept header provided
+        headers['accept'] = 'application/json';
+      }
+      
       if (sessionId) headers['mcp-session-id'] = String(sessionId);
       if (client) headers['x-mcp-client'] = String(client);
       if (authorization) headers['authorization'] = String(authorization);
+      if (userAgent) headers['user-agent'] = String(userAgent);
 
-      const body = req.method === 'GET' || req.method === 'HEAD'
-        ? undefined
-        : (req.body ? JSON.stringify(req.body) : undefined);
+      // Preserve the request body as-is (already parsed by express.json())
+      // Re-stringify to pass to internal MCP server
+      let body: string | undefined;
+      if (req.body && typeof req.body === 'object' && Object.keys(req.body).length > 0) {
+        body = JSON.stringify(req.body);
+      } else if (typeof req.body === 'string' && req.body.length > 0) {
+        body = req.body;
+      }
+
+      // Log for debugging MCP initialization issues
+      Logger.debug('[MCP Proxy] Forwarding request', {
+        method: req.method,
+        hasBody: !!body,
+        bodyLength: body?.length || 0,
+        accept: headers['accept'],
+        sessionId: sessionId || 'new'
+      });
 
       const response = await fetch(MCP_SERVER_INTERNAL_URL, {
-        method: req.method,
+        method: 'POST',
         headers,
         body
       });
 
+      // Set CORS headers on response
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Expose-Headers', 'Mcp-Session-Id');
+      
+      res.status(response.status);
+      response.headers.forEach((value, key) => {
+        if (key.toLowerCase() === 'transfer-encoding') return;
+        if (key.toLowerCase() === 'access-control-allow-origin') return; // Don't duplicate
+        res.setHeader(key, value);
+      });
+
+      if (!response.body) {
+        return res.end();
+      }
+
+      const stream = Readable.fromWeb(response.body as import('stream/web').ReadableStream);
+      stream.pipe(res);
+    } catch (error) {
+      logError('Error proxying MCP POST request:', error);
+      res.status(502).json({ 
+        jsonrpc: '2.0',
+        error: { code: -32000, message: 'Failed to reach MCP server' },
+        id: null
+      });
+    }
+  });
+
+  // DELETE /mcp - Session termination
+  app.delete('/mcp', async (req, res) => {
+    try {
+      const headers: Record<string, string> = {};
+      const sessionId = req.headers['mcp-session-id'];
+      
+      if (sessionId) headers['mcp-session-id'] = String(sessionId);
+
+      const response = await fetch(MCP_SERVER_INTERNAL_URL, {
+        method: 'DELETE',
+        headers
+      });
+
+      res.setHeader('Access-Control-Allow-Origin', '*');
       res.status(response.status);
       response.headers.forEach((value, key) => {
         if (key.toLowerCase() === 'transfer-encoding') return;
@@ -3239,7 +3337,7 @@ Sitemap: ${siteUrl}/sitemap.xml
       const stream = Readable.fromWeb(response.body as import('stream/web').ReadableStream);
       stream.pipe(res);
     } catch (error) {
-      logError('Error proxying MCP request:', error);
+      logError('Error proxying MCP DELETE request:', error);
       res.status(502).json({ error: 'Failed to reach MCP server' });
     }
   });
