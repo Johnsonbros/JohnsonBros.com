@@ -44,7 +44,8 @@ The frontend is built with React and TypeScript, utilizing Radix UI primitives a
     - Registered as MCP resources at `ui://widget/v2/*.html` with `text/html+skybridge` MIME type
     - Uses `window.openai` APIs: `toolOutput`, `callTool()`, `sendFollowUpMessage()`, `notifyIntrinsicHeight()`, `requestClose()`, `setWidgetState()`
     - Shared utilities in `shared-card.js` for consistent widget behavior
-  - `book_service_call` - Book plumbing appointments directly with HousecallPro (with service area validation)
+  - `send_phone_verification` - Send 6-digit SMS verification code to customer's phone (REQUIRED before booking)
+  - `book_service_call` - Book plumbing appointments directly with HousecallPro (with service area validation, requires phone_verification_code)
   - `search_availability` - Check available time slots for services
   - `get_quote` - Get instant price estimates based on service type and urgency
   - `get_services` - List all available plumbing services with descriptions

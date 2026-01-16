@@ -97,6 +97,7 @@ const BookInput = z.object({
   first_name: z.string().min(1),
   last_name: z.string().min(1),
   phone: z.string().min(7),
+  phone_verification_code: z.string().length(6).optional(), // 6-digit SMS verification code
   email: z.string().email().optional(),
   street: z.string().min(1),
   street_line_2: z.string().optional(),
@@ -112,6 +113,45 @@ const BookInput = z.object({
   show_for_days: z.number().int().min(1).max(30).default(7),
   tags: z.array(z.string()).default(["AI booking"])
 });
+
+// Phone verification helpers
+const MAIN_SERVER_URL = process.env.MAIN_SERVER_URL || 'http://localhost:5000';
+
+async function sendPhoneVerification(phone: string, correlationId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const res = await fetch(`${MAIN_SERVER_URL}/api/v1/sms-verification/start`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone })
+    });
+    const data = await res.json() as any;
+    if (!res.ok) {
+      return { success: false, error: data.error || 'Failed to send verification code' };
+    }
+    return { success: true };
+  } catch (error: any) {
+    log.error({ correlationId, error: error.message }, 'Failed to send phone verification');
+    return { success: false, error: 'Unable to send verification code. Please try again.' };
+  }
+}
+
+async function verifyPhoneCode(phone: string, code: string, correlationId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const res = await fetch(`${MAIN_SERVER_URL}/api/v1/sms-verification/confirm`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, code })
+    });
+    const data = await res.json() as any;
+    if (!res.ok) {
+      return { success: false, error: data.error || 'Invalid verification code' };
+    }
+    return { success: true };
+  } catch (error: any) {
+    log.error({ correlationId, error: error.message }, 'Failed to verify phone code');
+    return { success: false, error: 'Unable to verify code. Please try again.' };
+  }
+}
 
 type BookInput = z.infer<typeof BookInput>;
 
@@ -943,11 +983,13 @@ WHEN TO USE: After you have collected all required customer information (name, p
 WORKFLOW: 
 1. First use 'get_services' or 'get_quote' if the customer needs service/pricing information
 2. Then use 'search_availability' to show available time slots
-3. Finally use this tool to complete the booking once all details are confirmed
+3. REQUIRED: Use 'send_phone_verification' to send a verification code to the customer's phone
+4. Ask the customer for the 6-digit code they received
+5. Finally use this tool with all details including 'phone_verification_code' to complete the booking
 
 SERVICE AREA: Norfolk, Suffolk, and Plymouth Counties in Massachusetts (South Shore area including Quincy, Braintree, Weymouth, Abington, Rockland). If ZIP code is outside service area, a callback lead will be created instead.
 
-IMPORTANT: All required fields must be provided. Phone must be a valid 10-digit US number.`,
+IMPORTANT: All required fields must be provided. Phone must be a valid 10-digit US number. Phone verification code is REQUIRED to prevent fake bookings.`,
     inputSchema: {
       type: "object",
       properties: {
@@ -1022,9 +1064,13 @@ IMPORTANT: All required fields must be provided. Phone must be a valid 10-digit 
           type: "array", 
           items: { type: "string" }, 
           description: "Optional tags for the job. Example: ['Urgent', 'Repeat Customer']" 
+        },
+        phone_verification_code: {
+          type: "string",
+          description: "6-digit SMS verification code sent to customer's phone. REQUIRED for booking. Use 'send_phone_verification' tool first to send the code, then ask customer for the code they received."
         }
       },
-      required: ["first_name", "last_name", "phone", "street", "city", "state", "zip", "description"]
+      required: ["first_name", "last_name", "phone", "phone_verification_code", "street", "city", "state", "zip", "description"]
     },
     annotations: {
       title: "Book Service Appointment",
@@ -1055,6 +1101,30 @@ IMPORTANT: All required fields must be provided. Phone must be a valid 10-digit 
         );
       }
       log.info({ input: redactBookingInput(input), correlationId }, "book_service_call: start");
+
+      // Step 0: SMS verification - required for all AI bookings to prevent fake appointments
+      if (!input.phone_verification_code) {
+        throw createStructuredError(
+          ErrorType.VALIDATION,
+          "PHONE_VERIFICATION_REQUIRED",
+          "Phone verification code is required for booking",
+          "Phone verification is required to complete the booking. Please use 'send_phone_verification' first to send a 6-digit code to the customer's phone, then ask them for the code and include it in phone_verification_code.",
+          correlationId
+        );
+      }
+
+      const verifyResult = await verifyPhoneCode(input.phone, input.phone_verification_code, correlationId);
+      if (!verifyResult.success) {
+        log.info({ correlationId, phone_last4: phoneLast4(input.phone) }, "book_service_call: phone verification failed");
+        throw createStructuredError(
+          ErrorType.VALIDATION,
+          "PHONE_VERIFICATION_FAILED",
+          verifyResult.error || "Phone verification failed",
+          verifyResult.error || "The verification code is incorrect or expired. Please request a new code using 'send_phone_verification' and try again.",
+          correlationId
+        );
+      }
+      log.info({ correlationId, phone_last4: phoneLast4(input.phone) }, "book_service_call: phone verified successfully");
 
       // Step 0.5: Service area validation - check if zip code is within our service area
       if (!isInServiceArea(input.zip)) {
@@ -1304,6 +1374,122 @@ IMPORTANT: All required fields must be provided. Phone must be a valid 10-digit 
             error_type: structuredError.type,
             correlation_id: correlationId,
             details: structuredError.details
+          }, null, 2)
+        }]
+      };
+    }
+  }
+);
+
+// Register send_phone_verification tool
+registerToolWithDiagnostics(
+  "send_phone_verification",
+  {
+    title: "Send SMS verification code to customer's phone",
+    description: `Send a 6-digit verification code via SMS to verify the customer's phone number. This is REQUIRED before booking an appointment using 'book_service_call'.
+
+WHEN TO USE: After collecting customer's phone number, before attempting to book. The verification code expires in 10 minutes.
+
+WORKFLOW:
+1. Collect customer's phone number
+2. Call this tool to send the verification code
+3. Ask the customer for the 6-digit code they received
+4. Include the code as 'phone_verification_code' parameter when calling 'book_service_call'
+
+IMPORTANT: Verification is required for all bookings to prevent fake appointments. If the customer doesn't receive the code, they can retry or call (617) 479-9911 to book by phone.`,
+    inputSchema: {
+      type: "object",
+      properties: {
+        phone: {
+          type: "string",
+          description: "Customer's phone number to send verification code to. Must be a valid 10-digit US phone number. Examples: '6175551234', '(617) 555-1234'"
+        }
+      },
+      required: ["phone"]
+    },
+    annotations: {
+      title: "Send Phone Verification",
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false
+    }
+  } as any,
+  async (raw) => {
+    const correlationId = randomUUID();
+    
+    try {
+      const schema = z.object({
+        phone: z.string().min(7)
+      });
+      const input = schema.parse(raw);
+      
+      if (!isValidPhone(input.phone)) {
+        throw createStructuredError(
+          ErrorType.VALIDATION,
+          "INVALID_PHONE_NUMBER",
+          `Phone number failed validation: ${input.phone}`,
+          "The phone number provided is invalid. Please enter a valid 10-digit US phone number.",
+          correlationId
+        );
+      }
+      
+      log.info({ phone_last4: phoneLast4(input.phone), correlationId }, "send_phone_verification: sending code");
+      
+      const result = await sendPhoneVerification(input.phone, correlationId);
+      
+      if (!result.success) {
+        log.error({ phone_last4: phoneLast4(input.phone), error: result.error, correlationId }, "send_phone_verification: failed");
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify({
+              success: false,
+              error: result.error,
+              phone_last4: phoneLast4(input.phone),
+              fallback_action: "Customer can call (617) 479-9911 to book by phone if SMS is not working."
+            }, null, 2)
+          }]
+        };
+      }
+      
+      log.info({ phone_last4: phoneLast4(input.phone), correlationId }, "send_phone_verification: code sent successfully");
+      
+      return {
+        content: [{
+          type: "text",
+          text: JSON.stringify({
+            success: true,
+            message: `Verification code sent to phone ending in ${phoneLast4(input.phone)}. Please ask the customer for the 6-digit code they received.`,
+            next_step: "Ask the customer for the 6-digit verification code and include it as 'phone_verification_code' when calling 'book_service_call'.",
+            expires_in_minutes: 10
+          }, null, 2)
+        }]
+      };
+    } catch (err: any) {
+      log.error({ error: err.message, correlationId }, "send_phone_verification: error");
+      
+      if (err.type) {
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify({
+              success: false,
+              error: err.userMessage,
+              error_code: err.code,
+              correlation_id: correlationId
+            }, null, 2)
+          }]
+        };
+      }
+      
+      return {
+        content: [{
+          type: "text",
+          text: JSON.stringify({
+            success: false,
+            error: "Unable to send verification code. Please try again or call (617) 479-9911 to book by phone.",
+            correlation_id: correlationId
           }, null, 2)
         }]
       };
