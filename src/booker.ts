@@ -730,6 +730,74 @@ server.resource(
 );
 
 server.resource(
+  "date-picker-widget",
+  "ui://widget/v2/date-picker.html",
+  {},
+  async () => ({
+    contents: [{
+      uri: "ui://widget/v2/date-picker.html",
+      mimeType: "text/html+skybridge",
+      text: await loadWidgetTemplate("date-picker.html"),
+      _meta: {
+        "openai/widgetPrefersBorder": true,
+        "openai/widgetDomain": WIDGET_DOMAIN
+      }
+    }]
+  })
+);
+
+server.resource(
+  "time-picker-widget",
+  "ui://widget/v2/time-picker.html",
+  {},
+  async () => ({
+    contents: [{
+      uri: "ui://widget/v2/time-picker.html",
+      mimeType: "text/html+skybridge",
+      text: await loadWidgetTemplate("time-picker.html"),
+      _meta: {
+        "openai/widgetPrefersBorder": true,
+        "openai/widgetDomain": WIDGET_DOMAIN
+      }
+    }]
+  })
+);
+
+server.resource(
+  "lead-capture-widget",
+  "ui://widget/v2/lead-capture.html",
+  {},
+  async () => ({
+    contents: [{
+      uri: "ui://widget/v2/lead-capture.html",
+      mimeType: "text/html+skybridge",
+      text: await loadWidgetTemplate("lead-capture.html"),
+      _meta: {
+        "openai/widgetPrefersBorder": true,
+        "openai/widgetDomain": WIDGET_DOMAIN
+      }
+    }]
+  })
+);
+
+server.resource(
+  "service-fee-widget",
+  "ui://widget/v2/service-fee.html",
+  {},
+  async () => ({
+    contents: [{
+      uri: "ui://widget/v2/service-fee.html",
+      mimeType: "text/html+skybridge",
+      text: await loadWidgetTemplate("service-fee.html"),
+      _meta: {
+        "openai/widgetPrefersBorder": true,
+        "openai/widgetDomain": WIDGET_DOMAIN
+      }
+    }]
+  })
+);
+
+server.resource(
   "widget-ui-kit-css",
   "ui://widget/ui-kit.css",
   {},
@@ -768,7 +836,7 @@ server.resource(
   })
 );
 
-log.info("Registered 5 ChatGPT widget templates and shared widget assets");
+log.info("Registered 9 ChatGPT widget templates and shared widget assets");
 
 type ToolMetrics = {
   totalCalls: number;

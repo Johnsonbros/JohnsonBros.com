@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="ui://widget/ui-kit.css">
+  <link rel="stylesheet" href="ui://widget/shared-card.css">
+  <style>
+    .date-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin: 12px 0; }
+    .date-btn { 
+      padding: 8px 4px; border: none; border-radius: 8px; font-size: 13px;
+      cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px;
+      transition: all 0.15s ease;
+    }
+    .date-btn.available { background: #e0f2fe; color: #0369a1; }
+    .date-btn.available:hover { background: #0ea5e9; color: white; transform: scale(1.05); }
+    .date-btn.selected { background: #0ea5e9; color: white; box-shadow: 0 2px 8px rgba(14,165,233,0.4); }
+    .date-btn.unavailable { background: #f3f4f6; color: #9ca3af; cursor: not-allowed; }
+    .date-day { font-weight: 600; font-size: 14px; }
+    .date-label { font-size: 10px; opacity: 0.8; }
+    .date-slots { font-size: 9px; opacity: 0.7; }
+    .capacity-badge { font-size: 9px; padding: 2px 4px; border-radius: 4px; margin-top: 2px; }
+    .badge-waived { background: #dcfce7; color: #166534; }
+    .badge-limited { background: #fef3c7; color: #92400e; }
+    .week-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .nav-btn { background: #f3f4f6; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; }
+    .nav-btn:hover { background: #e5e7eb; }
+    .nav-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .loading { text-align: center; padding: 16px; color: #6b7280; }
+  </style>
+</head>
+<body class="widget-body">
+  <div id="widget-root"></div>
+  <script type="module">
+    import { getToolOutput, notifyHeight } from "ui://widget/shared-card.js";
+
+    const data = getToolOutput();
+    const root = document.getElementById('widget-root');
+    
+    const title = data.title || 'Select a Date';
+    const message = data.message || 'Choose your preferred appointment date';
+    const availableDates = data.available_dates || data.availableDates || [];
+    const serviceType = data.service_type || data.serviceType || 'general_plumbing';
+    
+    let weekOffset = 0;
+    let selectedDate = data.selected_date || data.selectedDate || null;
+
+    function formatDate(iso) {
+      const d = new Date(iso);
+      return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    }
+
+    function getWeekDays(offset) {
+      const now = new Date();
+      const start = new Date(now);
+      start.setDate(start.getDate() - start.getDay() + (offset * 7));
+      const days = [];
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(start);
+        d.setDate(start.getDate() + i);
+        days.push(d);
+      }
+      return days;
+    }
+
+    function getAvailabilityMap() {
+      const map = {};
+      availableDates.forEach(d => {
+        map[d.date] = d;
+      });
+      return map;
+    }
+
+    function render() {
+      const availMap = getAvailabilityMap();
+      const weekDays = getWeekDays(weekOffset);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const dateButtons = weekDays.map(d => {
+        const dateStr = d.toISOString().split('T')[0];
+        const avail = availMap[dateStr];
+        const isPast = d < today;
+        const isAvailable = avail && (avail.slotsAvailable || avail.slots_available) > 0 && !isPast;
+        const isSelected = selectedDate === dateStr;
+        const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
+        const dayNum = d.getDate();
+        const slots = avail?.slotsAvailable || avail?.slots_available || 0;
+        const capacity = avail?.capacityState || avail?.capacity_state;
+
+        let badgeHtml = '';
+        if (capacity === 'SAME_DAY_FEE_WAIVED') badgeHtml = '<span class="capacity-badge badge-waived">Fee Waived</span>';
+        else if (capacity === 'LIMITED_SAME_DAY') badgeHtml = '<span class="capacity-badge badge-limited">Limited</span>';
+
+        const classes = ['date-btn'];
+        if (isSelected) classes.push('selected');
+        else if (isAvailable) classes.push('available');
+        else classes.push('unavailable');
+
+        return \`<button class="\${classes.join(' ')}" data-date="\${dateStr}" \${!isAvailable ? 'disabled' : ''}>
+          <span class="date-label">\${dayName}</span>
+          <span class="date-day">\${dayNum}</span>
+          \${isAvailable ? \`<span class="date-slots">\${slots} slots</span>\` : ''}
+          \${badgeHtml}
+        </button>\`;
+      }).join('');
+
+      const weekStart = weekDays[0].toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const weekEnd = weekDays[6].toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+      root.className = 'card card-accent-info';
+      root.innerHTML = \`
+        <div class="card-header">
+          <div class="icon-badge info">📅</div>
+          <div>
+            <div class="card-title">\${title}</div>
+            <div class="card-subtitle">\${message}</div>
+          </div>
+        </div>
+        <div class="card-content">
+          <div class="week-nav">
+            <button class="nav-btn" id="prev-week" \${weekOffset <= 0 ? 'disabled' : ''}>← Prev</button>
+            <span>\${weekStart} - \${weekEnd}</span>
+            <button class="nav-btn" id="next-week" \${weekOffset >= 3 ? 'disabled' : ''}>Next →</button>
+          </div>
+          <div class="date-grid">\${dateButtons}</div>
+          <div class="pill-row">
+            <span class="pill info">Real-time availability</span>
+            <span class="pill info">Free estimates</span>
+          </div>
+        </div>
+      \`;
+
+      document.getElementById('prev-week')?.addEventListener('click', () => { weekOffset--; render(); });
+      document.getElementById('next-week')?.addEventListener('click', () => { weekOffset++; render(); });
+      
+      root.querySelectorAll('.date-btn.available').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          selectedDate = btn.dataset.date;
+          render();
+          if (window.openai?.callTool) {
+            await window.openai.callTool('search_availability', { date: selectedDate, serviceType });
+          }
+          if (window.openai?.sendFollowUpMessage) {
+            await window.openai.sendFollowUpMessage({ prompt: \`I'd like to book for \${formatDate(selectedDate)}\` });
+          }
+        });
+      });
+
+      notifyHeight(root);
+    }
+
+    render();
+  </script>
+</body>
+</html>

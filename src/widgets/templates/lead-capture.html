@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="ui://widget/ui-kit.css">
+  <link rel="stylesheet" href="ui://widget/shared-card.css">
+  <style>
+    .form-group { margin-bottom: 12px; }
+    .form-label { display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 4px; }
+    .form-input { 
+      width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px;
+      font-size: 14px; transition: border-color 0.15s; box-sizing: border-box;
+    }
+    .form-input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+    .form-input.error { border-color: #ef4444; }
+    .form-textarea { resize: vertical; min-height: 80px; }
+    .error-text { font-size: 11px; color: #ef4444; margin-top: 4px; }
+    .submit-btn { 
+      width: 100%; padding: 12px; background: #3b82f6; color: white; border: none;
+      border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer;
+      transition: background 0.15s; margin-top: 8px;
+    }
+    .submit-btn:hover { background: #2563eb; }
+    .submit-btn:disabled { background: #9ca3af; cursor: not-allowed; }
+    .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid white;
+      border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body class="widget-body">
+  <div id="widget-root"></div>
+  <script type="module">
+    import { getToolOutput, notifyHeight } from "ui://widget/shared-card.js";
+
+    const data = getToolOutput();
+    const root = document.getElementById('widget-root');
+    
+    const title = data.title || 'Get Started';
+    const message = data.message || "Tell us a bit about yourself and we'll get you scheduled.";
+    const prefill = data.prefill || {};
+
+    let formData = {
+      name: prefill.name || '',
+      phone: prefill.phone || '',
+      issue: prefill.issueDescription || prefill.issue_description || ''
+    };
+    let errors = {};
+    let isSubmitting = false;
+
+    function validate() {
+      errors = {};
+      if (!formData.name.trim()) errors.name = 'Name is required';
+      if (!formData.phone.trim()) errors.phone = 'Phone is required';
+      if (!formData.issue.trim()) errors.issue = 'Please describe your issue';
+      return Object.keys(errors).length === 0;
+    }
+
+    function render() {
+      root.className = 'card card-accent-info';
+      root.innerHTML = \`
+        <div class="card-header">
+          <div class="icon-badge info">👤</div>
+          <div>
+            <div class="card-title">\${title}</div>
+            <div class="card-subtitle">\${message}</div>
+          </div>
+        </div>
+        <div class="card-content">
+          <form id="lead-form">
+            <div class="form-group">
+              <label class="form-label">Name</label>
+              <input type="text" class="form-input \${errors.name ? 'error' : ''}" id="name" value="\${formData.name}" placeholder="Your name">
+              \${errors.name ? \`<div class="error-text">\${errors.name}</div>\` : ''}
+            </div>
+            <div class="form-group">
+              <label class="form-label">Phone</label>
+              <input type="tel" class="form-input \${errors.phone ? 'error' : ''}" id="phone" value="\${formData.phone}" placeholder="(617) 555-1234">
+              \${errors.phone ? \`<div class="error-text">\${errors.phone}</div>\` : ''}
+            </div>
+            <div class="form-group">
+              <label class="form-label">What can we help with?</label>
+              <textarea class="form-input form-textarea \${errors.issue ? 'error' : ''}" id="issue" placeholder="Describe your plumbing issue...">\${formData.issue}</textarea>
+              \${errors.issue ? \`<div class="error-text">\${errors.issue}</div>\` : ''}
+            </div>
+            <button type="submit" class="submit-btn" \${isSubmitting ? 'disabled' : ''}>
+              \${isSubmitting ? '<span class="spinner"></span> Submitting...' : 'Get Started'}
+            </button>
+          </form>
+          <div class="pill-row" style="margin-top: 12px;">
+            <span class="pill info">No obligation</span>
+            <span class="pill info">Free estimates</span>
+          </div>
+        </div>
+      \`;
+
+      const form = document.getElementById('lead-form');
+      const nameInput = document.getElementById('name');
+      const phoneInput = document.getElementById('phone');
+      const issueInput = document.getElementById('issue');
+
+      nameInput.addEventListener('input', e => { formData.name = e.target.value; });
+      phoneInput.addEventListener('input', e => { formData.phone = e.target.value; });
+      issueInput.addEventListener('input', e => { formData.issue = e.target.value; });
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!validate()) { render(); return; }
+        
+        isSubmitting = true;
+        render();
+
+        try {
+          if (window.openai?.sendFollowUpMessage) {
+            await window.openai.sendFollowUpMessage({ 
+              prompt: \`My name is \${formData.name}, phone \${formData.phone}. Issue: \${formData.issue}\` 
+            });
+          }
+        } finally {
+          isSubmitting = false;
+          render();
+        }
+      });
+
+      notifyHeight(root);
+    }
+
+    render();
+  </script>
+</body>
+</html>

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="ui://widget/ui-kit.css">
+  <link rel="stylesheet" href="ui://widget/shared-card.css">
+  <style>
+    .time-slots { display: flex; flex-direction: column; gap: 8px; margin: 12px 0; }
+    .time-slot { 
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 16px; border: 2px solid #e5e7eb; border-radius: 10px;
+      cursor: pointer; transition: all 0.15s ease; background: white;
+    }
+    .time-slot:hover:not(.unavailable) { border-color: #22c55e; background: #f0fdf4; }
+    .time-slot.selected { border-color: #22c55e; background: #dcfce7; }
+    .time-slot.unavailable { opacity: 0.5; cursor: not-allowed; background: #f9fafb; }
+    .slot-left { display: flex; align-items: center; gap: 12px; }
+    .slot-icon { font-size: 20px; }
+    .slot-label { font-weight: 600; color: #111827; }
+    .slot-time { font-size: 12px; color: #6b7280; }
+    .slot-right { display: flex; align-items: center; gap: 8px; }
+    .tech-count { font-size: 11px; color: #6b7280; }
+    .check-icon { color: #22c55e; font-size: 20px; }
+    .unavail-badge { font-size: 11px; color: #ef4444; font-weight: 500; }
+    .date-header { font-size: 14px; color: #374151; margin-bottom: 12px; font-weight: 500; }
+  </style>
+</head>
+<body class="widget-body">
+  <div id="widget-root"></div>
+  <script type="module">
+    import { getToolOutput, notifyHeight } from "ui://widget/shared-card.js";
+
+    const data = getToolOutput();
+    const root = document.getElementById('widget-root');
+    
+    const title = data.title || 'Select a Time';
+    const message = data.message || '';
+    const selectedDate = data.selected_date || data.selectedDate || '';
+    const slots = data.slots || [];
+    let selectedSlot = data.selected_slot || data.selectedSlot || null;
+
+    const TIME_ICONS = { MORNING: '🌅', MIDDAY: '☀️', AFTERNOON: '🌤️', EVENING: '🌙' };
+
+    function formatDate(iso) {
+      if (!iso) return '';
+      const d = new Date(iso);
+      return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+    }
+
+    function render() {
+      const slotsHtml = slots.map(slot => {
+        const isSelected = selectedSlot === slot.id;
+        const icon = TIME_ICONS[slot.timeWindow] || '⏰';
+        const classes = ['time-slot'];
+        if (isSelected) classes.push('selected');
+        if (!slot.available) classes.push('unavailable');
+
+        return \`<div class="\${classes.join(' ')}" data-id="\${slot.id}" \${!slot.available ? 'data-disabled="true"' : ''}>
+          <div class="slot-left">
+            <span class="slot-icon">\${icon}</span>
+            <div>
+              <div class="slot-label">\${slot.label}</div>
+              \${slot.startTime && slot.endTime ? \`<div class="slot-time">\${slot.startTime} - \${slot.endTime}</div>\` : ''}
+            </div>
+          </div>
+          <div class="slot-right">
+            \${slot.technicianCount > 1 ? \`<span class="tech-count">\${slot.technicianCount} techs</span>\` : ''}
+            \${!slot.available ? '<span class="unavail-badge">Unavailable</span>' : ''}
+            \${isSelected ? '<span class="check-icon">✓</span>' : ''}
+          </div>
+        </div>\`;
+      }).join('');
+
+      root.className = 'card card-accent-success';
+      root.innerHTML = \`
+        <div class="card-header">
+          <div class="icon-badge success">⏰</div>
+          <div>
+            <div class="card-title">\${title}</div>
+            <div class="card-subtitle">\${message || 'Choose your preferred time window'}</div>
+          </div>
+        </div>
+        <div class="card-content">
+          \${selectedDate ? \`<div class="date-header">\${formatDate(selectedDate)}</div>\` : ''}
+          <div class="time-slots">\${slotsHtml || '<div class="empty-state">No time slots available for this date.</div>'}</div>
+          <div class="pill-row">
+            <span class="pill success">Flexible scheduling</span>
+            <span class="pill success">On-time guarantee</span>
+          </div>
+        </div>
+      \`;
+
+      root.querySelectorAll('.time-slot:not([data-disabled])').forEach(el => {
+        el.addEventListener('click', async () => {
+          selectedSlot = el.dataset.id;
+          render();
+          const slot = slots.find(s => s.id === selectedSlot);
+          if (slot && window.openai?.sendFollowUpMessage) {
+            await window.openai.sendFollowUpMessage({ 
+              prompt: \`I'd like the \${slot.label} time slot on \${formatDate(selectedDate)}\` 
+            });
+          }
+        });
+      });
+
+      notifyHeight(root);
+    }
+
+    render();
+  </script>
+</body>
+</html>

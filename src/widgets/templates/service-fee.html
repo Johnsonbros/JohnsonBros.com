@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="ui://widget/ui-kit.css">
+  <link rel="stylesheet" href="ui://widget/shared-card.css">
+  <style>
+    .fee-box { 
+      padding: 16px; border-radius: 10px; margin: 12px 0;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .fee-box.standard { background: #fef3c7; border: 1px solid #fcd34d; }
+    .fee-box.waived { background: #dcfce7; border: 1px solid #86efac; }
+    .fee-label { font-weight: 500; color: #374151; }
+    .fee-amount { font-size: 20px; font-weight: 700; }
+    .fee-amount.waived { text-decoration: line-through; color: #9ca3af; margin-right: 8px; }
+    .fee-free { color: #16a34a; font-weight: 700; font-size: 20px; }
+    .fee-note { font-size: 12px; color: #16a34a; margin-top: 8px; }
+    .includes-list { font-size: 12px; color: #6b7280; margin: 12px 0; }
+    .includes-list ul { margin: 8px 0 0 0; padding-left: 20px; }
+    .includes-list li { margin: 4px 0; }
+    .accept-btn { 
+      width: 100%; padding: 12px; background: #3b82f6; color: white; border: none;
+      border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer;
+      transition: background 0.15s;
+    }
+    .accept-btn:hover { background: #2563eb; }
+  </style>
+</head>
+<body class="widget-body">
+  <div id="widget-root"></div>
+  <script type="module">
+    import { getToolOutput, notifyHeight } from "ui://widget/shared-card.js";
+
+    const data = getToolOutput();
+    const root = document.getElementById('widget-root');
+    
+    const title = data.title || 'Service Call Fee';
+    const message = data.message || '';
+    const amount = data.amount || 89;
+    const waived = data.waived || false;
+
+    function formatPrice(num) {
+      return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(num);
+    }
+
+    root.className = 'card card-accent-warning';
+    root.innerHTML = \`
+      <div class="card-header">
+        <div class="icon-badge warning">💰</div>
+        <div>
+          <div class="card-title">\${title}</div>
+          <div class="card-subtitle">\${message || 'Standard diagnostic fee'}</div>
+        </div>
+      </div>
+      <div class="card-content">
+        <div class="fee-box \${waived ? 'waived' : 'standard'}">
+          <span class="fee-label">Service Call Fee</span>
+          <div>
+            \${waived ? \`<span class="fee-amount waived">\${formatPrice(amount)}</span><span class="fee-free">FREE</span>\` : \`<span class="fee-amount">\${formatPrice(amount)}</span>\`}
+          </div>
+        </div>
+        \${waived ? '<div class="fee-note">Same-day service fee waived due to availability!</div>' : ''}
+        <div class="includes-list">
+          The service call fee includes:
+          <ul>
+            <li>On-site diagnosis by a licensed technician</li>
+            <li>Written estimate for repairs</li>
+            <li>Credit towards approved work</li>
+          </ul>
+        </div>
+        <button class="accept-btn" id="accept-btn">I Understand, Continue</button>
+      </div>
+    \`;
+
+    document.getElementById('accept-btn').addEventListener('click', async () => {
+      if (window.openai?.sendFollowUpMessage) {
+        await window.openai.sendFollowUpMessage({ prompt: 'I understand and accept the service fee. Please proceed.' });
+      }
+      if (window.openai?.requestClose) {
+        window.openai.requestClose();
+      }
+    });
+
+    notifyHeight(root);
+  </script>
+</body>
+</html>
