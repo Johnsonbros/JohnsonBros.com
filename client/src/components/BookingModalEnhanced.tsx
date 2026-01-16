@@ -350,8 +350,13 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
     }
   }, [isOpen]);
 
+  const normalizePhoneForComparison = (phone: string) => phone.replace(/\D/g, '').slice(-10);
+  
   useEffect(() => {
-    if (smsPhone && bookingData.smsVerification.phone && smsPhone !== bookingData.smsVerification.phone) {
+    const normalizedSmsPhone = normalizePhoneForComparison(smsPhone || '');
+    const normalizedVerifiedPhone = normalizePhoneForComparison(bookingData.smsVerification.phone || '');
+    
+    if (normalizedSmsPhone.length >= 10 && normalizedVerifiedPhone.length >= 10 && normalizedSmsPhone !== normalizedVerifiedPhone) {
       setBookingData(prev => ({
         ...prev,
         smsVerification: {
