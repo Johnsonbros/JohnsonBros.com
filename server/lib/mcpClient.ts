@@ -1,6 +1,16 @@
+// @ts-ignore - SDK types not exported
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+// @ts-ignore - SDK types not exported
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { Logger } from '../src/logger';
+
+interface McpToolResult {
+  content: Array<{ text?: string; type?: string }> | string;
+}
+
+interface McpListToolsResult {
+  tools: any[];
+}
 
 const DEFAULT_MCP_BASE_URL = 'http://localhost:3001';
 const MCP_SERVER_URL = (() => {
@@ -104,12 +114,12 @@ export async function listMcpTools(): Promise<any[]> {
 
   try {
     const client = await connectMcpClient();
-    const { tools } = await withTimeout(
+    const response = await withTimeout(
       client.listTools(),
       TOOL_CALL_TIMEOUT_MS,
       'MCP listTools'
-    );
-    cachedTools = tools || [];
+    ) as McpListToolsResult;
+    cachedTools = response.tools || [];
     Logger.info(`[MCP] Loaded ${cachedTools.length} tools`);
     return cachedTools;
   } catch (error) {
@@ -131,10 +141,10 @@ export async function callMcpTool<T = unknown>(name: string, args: Record<string
       client.callTool({ name, arguments: args }),
       TOOL_CALL_TIMEOUT_MS,
       `MCP tool call: ${name}`
-    );
+    ) as McpToolResult;
 
     const content = Array.isArray(result.content)
-      ? result.content.map((c: any) => c.text || JSON.stringify(c)).join('\n')
+      ? result.content.map((c) => c.text || JSON.stringify(c)).join('\n')
       : typeof result.content === 'string'
         ? result.content
         : JSON.stringify(result.content);
