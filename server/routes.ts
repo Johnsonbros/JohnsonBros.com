@@ -3344,13 +3344,16 @@ Sitemap: ${siteUrl}/sitemap.xml
 
   // ========== MCP DISCOVERY ENDPOINTS ==========
   
-  // Serve .well-known/mcp.json directly (ensure it works in all environments)
+  // Serve .well-known/mcp.json directly (ensure it works in all environments and all domains)
   app.get('/.well-known/mcp.json', (req, res) => {
     try {
-      // Set proper headers for JSON content
+      // Set proper headers for JSON content with comprehensive CORS for cross-domain discovery
       res.setHeader('Content-Type', 'application/json');
       res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept');
       res.setHeader('Cache-Control', 'public, max-age=300'); // 5 minute cache
+      res.setHeader('X-Content-Type-Options', 'nosniff');
       
       const mcpDiscovery = {
         "name": "Johnson Bros. Plumbing MCP Server",
