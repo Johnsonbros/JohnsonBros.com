@@ -6,11 +6,6 @@
     "auditLog": "/home/runner/workspace/logs/.a6e38c51e634cc3e6a2cf000519642b53fa1ec1a-audit.json",
     "files": [
         {
-            "date": 1767381430242,
-            "name": "/home/runner/workspace/logs/application-2026-01-02.log",
-            "hash": "66109119f33b11af1ed0dc94f9425c4f508fb2515db79038a8efdf15dc745d06"
-        },
-        {
             "date": 1767463362855,
             "name": "/home/runner/workspace/logs/application-2026-01-03.log",
             "hash": "b35638dba20ad0b0c6b5b86d9b5f631d0b58742ba0c72e53b3359c585e9c5d4a"
@@ -74,6 +69,11 @@
             "date": 1768523418758,
             "name": "/home/runner/workspace/logs/application-2026-01-16.log",
             "hash": "e3c48fd600b1e6b830247350bdbe385e0f9112f839ef5614cf6b6a445ab36f1e"
+        },
+        {
+            "date": 1768614381345,
+            "name": "/home/runner/workspace/logs/application-2026-01-17.log",
+            "hash": "064131a566d98eba980207315bd03d70ad28f65669976ca073c2896b2fe1ea10"
         }
     ],
     "hashType": "sha256"
