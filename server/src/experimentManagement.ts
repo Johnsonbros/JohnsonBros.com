@@ -122,7 +122,7 @@ router.get('/api/v1/experiments', authenticate, async (req: Request, res: Respon
   try {
     const { status, startDate, endDate } = req.query;
 
-    let query = db
+    let query: any = db
       .select({
         test: abTests,
         variant: abTestVariants,
@@ -158,7 +158,7 @@ router.get('/api/v1/experiments', authenticate, async (req: Request, res: Respon
       if (!experiments.has(testId)) {
         experiments.set(testId, {
           ...row.test,
-          variants: [],
+          variants: [] as any[],
           totalImpressions: 0,
           totalConversions: 0,
           overallConversionRate: 0,
@@ -319,7 +319,7 @@ router.get('/api/v1/experiments/:testId', authenticate, async (req: Request, res
     // Build response
     const experiment = {
       ...testData[0].ab_tests,
-      variants: [],
+      variants: [] as any[],
       timeSeries: timeSeriesData,
       segments: segmentData
     };
@@ -526,7 +526,7 @@ router.get('/api/v1/experiments/:testId/export', authenticate, async (req: Reque
 // Get experiment recommendations
 router.get('/api/v1/experiments/recommendations', authenticate, async (req: Request, res: Response) => {
   try {
-    const recommendations = [];
+    const recommendations: any[] = []; // Explicitly type as any[]
 
     // Check for experiments running too long without significance
     const longRunning = await db
@@ -538,30 +538,30 @@ router.get('/api/v1/experiments/recommendations', authenticate, async (req: Requ
       ));
 
     for (const test of longRunning) {
-      const metrics = await db
-        .select()
-        .from(abTestMetrics)
-        .where(eq(abTestMetrics.testId, test.testId));
+      // Fetch variants and their metrics correctly
+      const variantsWithMetrics = await db
+        .select({
+          variant: abTestVariants,
+          metrics: abTestMetrics
+        })
+        .from(abTestVariants)
+        .leftJoin(abTestMetrics, and(
+          eq(abTestMetrics.testId, test.testId),
+          eq(abTestMetrics.variantId, abTestVariants.variantId)
+        ))
+        .where(eq(abTestVariants.testId, test.id));
 
       let hasSignificance = false;
-      const control = metrics.find(m => {
-        const variant = db
-          .select()
-          .from(abTestVariants)
-          .where(and(
-            eq(abTestVariants.variantId, m.variantId),
-            eq(abTestVariants.isControl, true)
-          ))
-          .limit(1);
-        return variant;
-      });
+      const controlData = variantsWithMetrics.find(r => r.variant.isControl);
 
-      if (control) {
-        for (const metric of metrics) {
-          const zScore = calculateZScore(control, metric);
-          if (calculateConfidenceLevel(zScore) >= 95) {
-            hasSignificance = true;
-            break;
+      if (controlData && controlData.metrics) {
+        for (const row of variantsWithMetrics) {
+          if (!row.variant.isControl && row.metrics) {
+            const zScore = calculateZScore(controlData.metrics, row.metrics);
+            if (calculateConfidenceLevel(zScore) >= 95) {
+              hasSignificance = true;
+              break;
+            }
           }
         }
       }

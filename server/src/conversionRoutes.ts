@@ -100,22 +100,21 @@ router.get('/api/v1/conversions/funnel/:funnelId', async (req: Request, res: Res
     const { funnelId } = req.params;
     const { startDate, endDate, source, medium, campaign } = req.query;
 
-    let query = db
+    let query: any = db
       .select({
         stage: conversionEvents.properties,
         count: sql<number>`count(distinct session_id)`,
         avgTimeInStage: sql<number>`avg(cast(properties->>'timeInStage' as float))`,
         conversionRate: sql<number>`0` // Will calculate below
       })
-      .from(conversionEvents)
-      .where(
-        and(
-          sql`properties->>'funnelId' = ${funnelId}`,
-          startDate ? gte(conversionEvents.createdAt, new Date(startDate as string)) : undefined,
-          endDate ? lte(conversionEvents.createdAt, new Date(endDate as string)) : undefined
-        )
-      )
-      .groupBy(sql`properties->>'stage'`);
+      .from(conversionEvents);
+
+    // Prepare where conditions
+    const whereConditions = [
+      sql`properties->>'funnelId' = ${funnelId}`,
+      startDate ? gte(conversionEvents.createdAt, new Date(startDate as string)) : undefined,
+      endDate ? lte(conversionEvents.createdAt, new Date(endDate as string)) : undefined
+    ];
 
     // Apply attribution filters if provided
     if (source || medium || campaign) {
@@ -123,22 +122,20 @@ router.get('/api/v1/conversions/funnel/:funnelId', async (req: Request, res: Res
         .leftJoin(
           attributionData,
           eq(conversionEvents.id, attributionData.conversionEventId)
-        )
-        .where(
-          and(
-            sql`properties->>'funnelId' = ${funnelId}`,
-            source ? eq(attributionData.source, source as string) : undefined,
-            medium ? eq(attributionData.medium, medium as string) : undefined,
-            campaign ? eq(attributionData.campaign, campaign as string) : undefined
-          )
-        );
+        ) as any; // Cast to any to avoid complex type mismatch during dynamic query building
+
+      if (source) whereConditions.push(eq(attributionData.source, source as string));
+      if (medium) whereConditions.push(eq(attributionData.medium, medium as string));
+      if (campaign) whereConditions.push(eq(attributionData.campaign, campaign as string));
     }
 
-    const results = await query;
+    const results = await query
+      .where(and(...whereConditions))
+      .groupBy(sql`properties->>'stage'`);
 
     // Calculate conversion rates between stages
-    const stages = results.map(r => ({
-      stage: r.stage?.stage || 'unknown',
+    const stages = results.map((r: any) => ({
+      stage: (r.stage as any)?.stage || 'unknown',
       visitors: r.count,
       avgTimeInStage: r.avgTimeInStage,
       conversionRate: 0
@@ -154,8 +151,8 @@ router.get('/api/v1/conversions/funnel/:funnelId', async (req: Request, res: Res
     res.json({
       funnelId,
       stages,
-      totalConversion: stages.length > 0 
-        ? (stages[stages.length - 1].visitors / stages[0].visitors) * 100 
+      totalConversion: stages.length > 0
+        ? (stages[stages.length - 1].visitors / stages[0].visitors) * 100
         : 0
     });
   } catch (error) {
@@ -171,11 +168,11 @@ router.get('/api/v1/conversions/attribution', async (req: Request, res: Response
 
     const metrics = await db
       .select({
-        dimension: groupBy === 'source' 
-          ? attributionData.source 
-          : groupBy === 'medium' 
-          ? attributionData.medium 
-          : attributionData.campaign,
+        dimension: groupBy === 'source'
+          ? attributionData.source
+          : groupBy === 'medium'
+            ? attributionData.medium
+            : attributionData.campaign,
         conversions: sql<number>`count(*)`,
         totalValue: sql<number>`sum(ce.event_value)`,
         avgValue: sql<number>`avg(ce.event_value)`,
@@ -193,11 +190,11 @@ router.get('/api/v1/conversions/attribution', async (req: Request, res: Response
         )
       )
       .groupBy(
-        groupBy === 'source' 
-          ? attributionData.source 
-          : groupBy === 'medium' 
-          ? attributionData.medium 
-          : attributionData.campaign
+        groupBy === 'source'
+          ? attributionData.source
+          : groupBy === 'medium'
+            ? attributionData.medium
+            : attributionData.campaign
       );
 
     res.json(metrics);
@@ -239,7 +236,7 @@ router.get('/api/v1/conversions/micro', async (req: Request, res: Response) => {
 // Get conversion rate optimization recommendations
 router.get('/api/v1/conversions/recommendations', async (req: Request, res: Response) => {
   try {
-    const recommendations = [];
+    const recommendations: any[] = [];
 
     // Check funnel drop-off points
     const funnelDropoffs = await db.execute(sql`

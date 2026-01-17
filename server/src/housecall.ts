@@ -47,7 +47,7 @@ export class HousecallProClient {
   private readonly CIRCUIT_BREAKER_THRESHOLD = 5;
   private readonly CIRCUIT_BREAKER_TIMEOUT = 60000; // 1 minute
 
-  private constructor() {}
+  private constructor() { }
 
   static getInstance(): HousecallProClient {
     if (!this.instance) {
@@ -137,7 +137,7 @@ export class HousecallProClient {
 
       try {
         const url = new URL(endpoint, HCP_API_BASE);
-        
+
         // For GET requests, add params to query string
         if (method === 'GET') {
           Object.keys(params).forEach(key => {
@@ -174,7 +174,7 @@ export class HousecallProClient {
           // Rate limit - extract retry-after header
           const retryAfter = response.headers.get('Retry-After');
           const retryDelay = retryAfter ? parseInt(retryAfter) * 1000 : delay;
-          
+
           Logger.warn(`Rate limited, retrying after ${retryDelay}ms`, {
             requestId,
             attempt,
@@ -244,7 +244,7 @@ export class HousecallProClient {
 
       } catch (error) {
         lastError = error as Error;
-        
+
         Logger.error(`API call failed (attempt ${attempt + 1}/${maxRetries + 1})`, {
           requestId,
           endpoint,
@@ -287,13 +287,13 @@ export class HousecallProClient {
     );
     Logger.debug(`[HousecallProClient] Booking windows response: ${JSON.stringify(data.booking_windows)}`);
     Logger.debug(`[HousecallProClient] First window available? ${data.booking_windows?.[0]?.available}`);
-    
+
     const windows = data.booking_windows || [];
-    
+
     // Log availability summary
     const availableCount = windows.filter(w => w.available).length;
     Logger.debug(`[HousecallProClient] ${availableCount} of ${windows.length} windows are available`);
-    
+
     // NO FAKE DATA - Return exactly what the API gives us
     return windows;
   }
@@ -312,9 +312,7 @@ export class HousecallProClient {
     return data.jobs || [];
   }
 
-  async getCustomer(customerId: string): Promise<any> {
-    return this.callAPI(`/customers/${customerId}`);
-  }
+
 
   async getEstimates(params: {
     scheduled_start_min?: string;
@@ -336,7 +334,7 @@ export class HousecallProClient {
   }): Promise<any[]> {
     try {
       Logger.debug(`[HousecallProClient] Searching for customer: ${JSON.stringify(searchParams)}`);
-      
+
       // Build search query using the 'q' parameter as per API docs
       // The 'q' parameter searches across name, email, mobile number and address
       // Try searching by phone first, as it's most unique
@@ -344,7 +342,7 @@ export class HousecallProClient {
         page_size: 50,
         page: 1,
       };
-      
+
       if (searchParams.phone) {
         // Search by phone - the API seems to work better with just the phone number
         const cleanPhone = searchParams.phone.replace(/\D/g, '');
@@ -358,39 +356,39 @@ export class HousecallProClient {
         params.q = searchParams.name;
         Logger.debug(`[HousecallProClient] Searching by name: "${searchParams.name}"`);
       }
-      
+
       const data = await this.callAPI<{ customers: any[] }>('/customers', params);
       const customers = data.customers || [];
-      
+
       Logger.debug(`[HousecallProClient] API returned ${customers.length} customers`);
-      
+
       // If we have both phone and name, filter results to ensure exact match
       if (searchParams.phone && searchParams.name && customers.length > 0) {
         const searchPhone = searchParams.phone.replace(/\D/g, '');
         const searchName = searchParams.name.toLowerCase().trim();
-        
+
         const exactMatches = customers.filter(customer => {
           const customerPhone = (customer.mobile_number || '').replace(/\D/g, '');
           const fullName = `${customer.first_name || ''} ${customer.last_name || ''}`.toLowerCase().trim();
-          
+
           const phoneMatch = customerPhone === searchPhone;
-          const nameMatch = fullName === searchName || 
-                           fullName.includes(searchName) || 
-                           searchName.includes(fullName);
-          
+          const nameMatch = fullName === searchName ||
+            fullName.includes(searchName) ||
+            searchName.includes(fullName);
+
           if (phoneMatch && nameMatch) {
             Logger.debug(`[HousecallProClient] Exact match found: ${customer.first_name} ${customer.last_name} (${customer.mobile_number})`);
           }
-          
+
           return phoneMatch && nameMatch;
         });
-        
+
         Logger.debug(`[HousecallProClient] Filtered to ${exactMatches.length} exact matches`);
         return exactMatches;
       }
-      
+
       return customers;
-      
+
     } catch (error) {
       console.error('[HousecallProClient] Customer search failed:', (error as Error).message);
       Logger.error('Customer search failed', { error: (error as Error).message, searchParams });
@@ -411,7 +409,7 @@ export class HousecallProClient {
         });
         const jobs = jobsData.jobs || [];
         Logger.debug(`[HousecallProClient] Fetched ${jobs.length} jobs from API`);
-        
+
         const lineItems = new Set();
         let jobsWithLineItems = 0;
         jobs.forEach(job => {
@@ -419,9 +417,9 @@ export class HousecallProClient {
             jobsWithLineItems++;
             job.line_items.forEach((item: any) => {
               // Accept any line item that looks like a service
-              const isService = item.type === 'service' || 
-                               item.kind === 'service' ||
-                               (item.description && !item.type); // Fallback if type missing
+              const isService = item.type === 'service' ||
+                item.kind === 'service' ||
+                (item.description && !item.type); // Fallback if type missing
               if (isService && (item.description || item.name)) {
                 lineItems.add(JSON.stringify({
                   id: item.id || `service_${(item.description || item.name).replace(/\s+/g, '_').toLowerCase()}`,
@@ -434,18 +432,18 @@ export class HousecallProClient {
             });
           }
         });
-        
+
         Logger.debug(`[HousecallProClient] Jobs with line_items: ${jobsWithLineItems}/${jobs.length}`);
         const uniqueServices = Array.from(lineItems).map(item => JSON.parse(item as string));
         Logger.debug(`[HousecallProClient] Extracted ${uniqueServices.length} unique services from jobs`);
-        
+
         if (uniqueServices.length > 0) {
           return uniqueServices;
         }
       } catch (error: any) {
         Logger.debug(`[HousecallProClient] Jobs extraction failed: ${error.message}`);
       }
-      
+
       // Fallback to common plumbing services - all use $99 service call fee
       Logger.debug('[HousecallProClient] Using fallback service definitions');
       const fallbackServices = [
@@ -498,7 +496,7 @@ export class HousecallProClient {
           description: 'Professional pipe repair service'
         }
       ];
-      
+
       return fallbackServices;
     } catch (error) {
       console.error('[HousecallProClient] Error fetching services:', error);
@@ -515,21 +513,21 @@ export class HousecallProClient {
 
   async uploadAttachment(jobId: string, fileData: { filename: string; mimeType: string; base64: string }): Promise<any> {
     Logger.debug(`[HousecallProClient] Uploading attachment to job ${jobId}: ${fileData.filename}`);
-    
+
     if (!API_KEY) {
       const errorMsg = 'CRITICAL: HousecallPro API key not configured for attachment upload';
       Logger.error(errorMsg);
       throw new Error(errorMsg);
     }
-    
+
     try {
       const buffer = Buffer.from(fileData.base64, 'base64');
       const FormData = (await import('undici')).FormData;
       const formData = new FormData();
-      
+
       const blob = new Blob([buffer], { type: fileData.mimeType });
       formData.append('file', blob, fileData.filename);
-      
+
       const authHeader = API_KEY.startsWith('Token ') ? API_KEY : `Bearer ${API_KEY}`;
       const url = `${HCP_API_BASE}/jobs/${jobId}/attachments`;
       const response = await fetch(url, {
@@ -539,12 +537,12 @@ export class HousecallProClient {
         },
         body: formData as any,
       });
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`Failed to upload attachment: ${response.status} ${errorText}`);
       }
-      
+
       const result = await response.json();
       Logger.debug(`[HousecallProClient] Attachment uploaded successfully: ${JSON.stringify(result)}`);
       return result;
@@ -614,7 +612,7 @@ export class HousecallProClient {
 
   async createLead(leadData: any): Promise<any> {
     Logger.debug(`[HousecallProClient] Creating lead: ${JSON.stringify(leadData, null, 2)}`);
-    
+
     try {
       const lead = await this.callAPI('/leads', {}, { method: 'POST', body: leadData });
       Logger.debug(`[HousecallProClient] Lead created: ${JSON.stringify(lead)}`);
@@ -631,7 +629,7 @@ export class HousecallProClient {
           }
         };
         delete leadDataWithoutSource.customer.lead_source;
-        
+
         const lead = await this.callAPI('/leads', {}, { method: 'POST', body: leadDataWithoutSource });
         Logger.debug(`[HousecallProClient] Lead created without lead_source: ${JSON.stringify(lead)}`);
         return lead;

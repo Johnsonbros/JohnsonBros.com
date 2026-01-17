@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { db } from '../db';
-import { 
+import {
   adminUsers, adminSessions, adminTasks, adminDocuments,
   aiChatSessions, aiChatMessages, googleAdsCampaigns,
   websiteAnalytics, dashboardWidgets, adminActivityLogs,
@@ -54,43 +54,43 @@ const registerSchema = z.object({
 router.post('/auth/login', async (req, res) => {
   try {
     const { email, password } = loginSchema.parse(req.body);
-    
+
     const [user] = await db.select()
       .from(adminUsers)
       .where(eq(adminUsers.email, email))
       .limit(1);
-    
+
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
-    
+
     // Check if account is locked
     if (await isAccountLocked(user.id)) {
-      return res.status(423).json({ 
-        error: 'Account is locked due to too many failed login attempts. Please try again in 30 minutes.' 
+      return res.status(423).json({
+        error: 'Account is locked due to too many failed login attempts. Please try again in 30 minutes.'
       });
     }
-    
+
     // Verify password
     const isValidPassword = await verifyPassword(password, user.passwordHash);
-    
+
     if (!isValidPassword) {
       // Record failed login attempt
       await recordFailedLogin(user.id);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
-    
+
     if (!user.isActive) {
       return res.status(403).json({ error: 'Account is disabled' });
     }
-    
+
     // Reset failed login attempts on successful login
     await resetFailedLogins(user.id);
-    
+
     const session = await createSession(user.id, req.ip, req.headers['user-agent']);
-    
+
     await logActivity(user.id, 'login', undefined, undefined, undefined, req.ip);
-    
+
     res.json({
       token: session.token,
       expiresAt: session.expiresAt,
@@ -112,21 +112,21 @@ router.post('/auth/login', async (req, res) => {
 router.post('/auth/logout', authenticate, async (req, res) => {
   try {
     const token = req.headers.authorization?.replace('Bearer ', '');
-    
+
     if (token) {
       // Find session and revoke it instead of deleting
       const [session] = await db.select()
         .from(adminSessions)
         .where(eq(adminSessions.sessionToken, token))
         .limit(1);
-      
+
       if (session) {
         await revokeSession(session.id, 'User logout');
       }
     }
-    
+
     await logActivity((req as any).user.id, 'logout', undefined, undefined, undefined, req.ip);
-    
+
     res.json({ success: true });
   } catch (error) {
     console.error('Logout error:', error);
@@ -138,7 +138,7 @@ router.post('/auth/logout', authenticate, async (req, res) => {
 router.get('/auth/me', authenticate, async (req, res) => {
   const user = (req as any).user;
   const permissions = (req as any).permissions;
-  
+
   res.json({
     user: {
       id: user.id,
@@ -159,7 +159,7 @@ router.get('/auth/me', authenticate, async (req, res) => {
 router.get('/auth/sessions', authenticate, async (req, res) => {
   try {
     const userId = (req as any).user.id;
-    
+
     const sessions = await db.select({
       id: adminSessions.id,
       ipAddress: adminSessions.ipAddress,
@@ -169,15 +169,15 @@ router.get('/auth/sessions', authenticate, async (req, res) => {
       expiresAt: adminSessions.expiresAt,
       isCurrent: sql<boolean>`${adminSessions.sessionToken} = ${req.headers.authorization?.replace('Bearer ', '')}`
     })
-    .from(adminSessions)
-    .where(
-      and(
-        eq(adminSessions.userId, userId),
-        isNull(adminSessions.revokedAt)
+      .from(adminSessions)
+      .where(
+        and(
+          eq(adminSessions.userId, userId),
+          isNull(adminSessions.revokedAt)
+        )
       )
-    )
-    .orderBy(desc(adminSessions.lastActivityAt));
-    
+      .orderBy(desc(adminSessions.lastActivityAt));
+
     res.json(sessions);
   } catch (error) {
     console.error('Get sessions error:', error);
@@ -190,7 +190,7 @@ router.delete('/auth/sessions/:sessionId', authenticate, async (req, res) => {
   try {
     const userId = (req as any).user.id;
     const sessionId = parseInt(req.params.sessionId);
-    
+
     // Verify session belongs to user
     const [session] = await db.select()
       .from(adminSessions)
@@ -201,15 +201,15 @@ router.delete('/auth/sessions/:sessionId', authenticate, async (req, res) => {
         )
       )
       .limit(1);
-    
+
     if (!session) {
       return res.status(404).json({ error: 'Session not found' });
     }
-    
+
     await revokeSession(sessionId, 'User revoked session');
-    
+
     await logActivity(userId, 'revoke_session', 'session', sessionId.toString(), undefined, req.ip);
-    
+
     res.json({ success: true });
   } catch (error) {
     console.error('Revoke session error:', error);
@@ -222,7 +222,7 @@ router.post('/auth/sessions/revoke-others', authenticate, async (req, res) => {
   try {
     const userId = (req as any).user.id;
     const currentToken = req.headers.authorization?.replace('Bearer ', '');
-    
+
     // Revoke all sessions except the current one
     await db.update(adminSessions)
       .set({
@@ -236,9 +236,9 @@ router.post('/auth/sessions/revoke-others', authenticate, async (req, res) => {
           isNull(adminSessions.revokedAt)
         )
       );
-    
+
     await logActivity(userId, 'revoke_all_sessions', undefined, undefined, undefined, req.ip);
-    
+
     res.json({ success: true });
   } catch (error) {
     console.error('Revoke all sessions error:', error);
@@ -261,11 +261,11 @@ router.get('/sessions', authenticate, requirePermission('settings.edit'), async 
       expiresAt: adminSessions.expiresAt,
       revokedAt: adminSessions.revokedAt
     })
-    .from(adminSessions)
-    .leftJoin(adminUsers, eq(adminSessions.userId, adminUsers.id))
-    .orderBy(desc(adminSessions.lastActivityAt))
-    .limit(100);
-    
+      .from(adminSessions)
+      .leftJoin(adminUsers, eq(adminSessions.userId, adminUsers.id))
+      .orderBy(desc(adminSessions.lastActivityAt))
+      .limit(100);
+
     res.json(sessions);
   } catch (error) {
     console.error('Get all sessions error:', error);
@@ -277,9 +277,9 @@ router.get('/sessions', authenticate, requirePermission('settings.edit'), async 
 router.delete('/sessions/:sessionId', authenticate, requirePermission('settings.edit'), async (req, res) => {
   try {
     const sessionId = parseInt(req.params.sessionId);
-    
+
     await revokeSession(sessionId, `Revoked by admin: ${(req as any).user.email}`);
-    
+
     await logActivity(
       (req as any).user.id,
       'admin_revoke_session',
@@ -288,7 +288,7 @@ router.delete('/sessions/:sessionId', authenticate, requirePermission('settings.
       undefined,
       req.ip
     );
-    
+
     res.json({ success: true });
   } catch (error) {
     console.error('Admin revoke session error:', error);
@@ -305,7 +305,7 @@ router.post('/users', authenticate, requirePermission('users.create'), async (re
   try {
     const data = registerSchema.parse(req.body);
     const hashedPassword = await hashPassword(data.password);
-    
+
     const [user] = await db.insert(adminUsers).values({
       email: data.email,
       passwordHash: hashedPassword,
@@ -314,7 +314,7 @@ router.post('/users', authenticate, requirePermission('users.create'), async (re
       role: data.role,
       isActive: true
     }).returning();
-    
+
     await logActivity(
       (req as any).user.id,
       'create_user',
@@ -323,7 +323,7 @@ router.post('/users', authenticate, requirePermission('users.create'), async (re
       { email: data.email, role: data.role },
       req.ip
     );
-    
+
     res.json({
       id: user.id,
       email: user.email,
@@ -350,9 +350,9 @@ router.get('/users', authenticate, requirePermission('users.view'), async (req, 
       lastLoginAt: adminUsers.lastLoginAt,
       createdAt: adminUsers.createdAt
     })
-    .from(adminUsers)
-    .orderBy(desc(adminUsers.createdAt));
-    
+      .from(adminUsers)
+      .orderBy(desc(adminUsers.createdAt));
+
     res.json(users);
   } catch (error) {
     console.error('List users error:', error);
@@ -371,34 +371,34 @@ router.get('/dashboard/operations', authenticate, requirePermission('dashboard.v
     const { CapacityCalculator } = await import('./capacity');
     const hcpClient = HousecallProClient.getInstance();
     const capacityCalc = CapacityCalculator.getInstance();
-    
+
     // Get today's date range
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
-    
+
     // Fetch all data in parallel
     const [jobs, estimates, employees, capacity, bookingWindows] = await Promise.all([
       hcpClient.getJobs({
         scheduled_start_min: today.toISOString(),
         scheduled_start_max: tomorrow.toISOString()
       }).catch(() => []),
-      
+
       hcpClient.getEstimates({
         scheduled_start_min: today.toISOString(),
         scheduled_start_max: tomorrow.toISOString()
       }).catch(() => []),
-      
+
       hcpClient.getEmployees().catch(() => []),
-      
+
       capacityCalc.calculateCapacity(),
-      
+
       hcpClient.getBookingWindows(
         today.toISOString().split('T')[0]
       ).catch(() => [])
     ]);
-    
+
     // Process jobs by time slot and status
     const jobsByTimeSlot = {
       morning: jobs.filter((j: any) => {
@@ -414,38 +414,38 @@ router.get('/dashboard/operations', authenticate, requirePermission('dashboard.v
         return hour >= 17;
       })
     };
-    
+
     // Calculate revenue metrics
     const completedRevenue = jobs
       .filter((j: any) => j.work_status === 'completed')
       .reduce((sum: number, job: any) => sum + (job.total_amount || 0), 0);
-    
+
     const scheduledRevenue = jobs
       .filter((j: any) => j.work_status === 'scheduled' || j.work_status === 'in_progress')
       .reduce((sum: number, job: any) => sum + (job.total_amount || 0), 0);
-    
+
     const dailyGoal = 5000; // Configure based on business targets
     const revenueProgress = Math.min(100, Math.round((completedRevenue / dailyGoal) * 100));
-    
+
     // Identify emergency or high-priority jobs
-    const emergencyJobs = jobs.filter((j: any) => 
-      j.tags?.includes('emergency') || 
+    const emergencyJobs = jobs.filter((j: any) =>
+      j.tags?.includes('emergency') ||
       j.tags?.includes('urgent') ||
       j.description?.toLowerCase().includes('emergency') ||
       j.description?.toLowerCase().includes('urgent')
     );
-    
+
     // Tech status with current assignments
     const techStatus = employees
       .filter((e: any) => e.is_active && e.role === 'technician')
       .map((tech: any) => {
-        const techJobs = jobs.filter((j: any) => 
+        const techJobs = jobs.filter((j: any) =>
           j.assigned_employees?.some((e: any) => e.id === tech.id)
         );
-        
+
         const currentJob = techJobs.find((j: any) => j.work_status === 'in_progress');
         const upcomingJobs = techJobs.filter((j: any) => j.work_status === 'scheduled');
-        
+
         return {
           id: tech.id,
           name: `${tech.first_name} ${tech.last_name}`,
@@ -460,20 +460,20 @@ router.get('/dashboard/operations', authenticate, requirePermission('dashboard.v
           completedToday: techJobs.filter((j: any) => j.work_status === 'completed').length
         };
       });
-    
+
     res.json({
       timestamp: new Date().toISOString(),
-      
+
       // Capacity overview
       capacity: {
         state: capacity.overall.state,
         score: capacity.overall.score,
         availableWindows: bookingWindows.filter((w: any) => w.available).length,
         totalWindows: bookingWindows.length,
-        utilizationRate: bookingWindows.length ? 
+        utilizationRate: bookingWindows.length ?
           Math.round((1 - bookingWindows.filter((w: any) => w.available).length / bookingWindows.length) * 100) : 0
       },
-      
+
       // Jobs overview
       jobs: {
         total: jobs.length,
@@ -490,7 +490,7 @@ router.get('/dashboard/operations', authenticate, requirePermission('dashboard.v
         },
         emergencyCount: emergencyJobs.length
       },
-      
+
       // Revenue tracking
       revenue: {
         completed: completedRevenue,
@@ -499,10 +499,10 @@ router.get('/dashboard/operations', authenticate, requirePermission('dashboard.v
         goal: dailyGoal,
         progress: revenueProgress
       },
-      
+
       // Technician status
       technicians: techStatus,
-      
+
       // Alerts
       alerts: [
         ...emergencyJobs.map((job: any) => ({
@@ -529,19 +529,19 @@ router.get('/dashboard/job-board', authenticate, requirePermission('dashboard.vi
   try {
     const { HousecallProClient } = await import('./housecall');
     const hcpClient = HousecallProClient.getInstance();
-    
+
     // Get today's date range
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
-    
+
     // Fetch jobs with details
     const jobs = await hcpClient.getJobs({
       scheduled_start_min: today.toISOString(),
       scheduled_start_max: tomorrow.toISOString()
     }).catch(() => []);
-    
+
     // Format jobs for the board
     const jobBoard = jobs.map((job: any) => ({
       id: job.id,
@@ -574,7 +574,7 @@ router.get('/dashboard/job-board', authenticate, requirePermission('dashboard.vi
       isPriority: job.tags?.includes('emergency') || job.tags?.includes('urgent'),
       notes: job.note
     }));
-    
+
     res.json({
       timestamp: new Date().toISOString(),
       date: today.toISOString().split('T')[0],
@@ -591,22 +591,22 @@ router.put('/dashboard/jobs/:id/assign', authenticate, requirePermission('jobs.e
   try {
     const { HousecallProClient } = await import('./housecall');
     const hcpClient = HousecallProClient.getInstance();
-    
+
     const jobId = req.params.id;
     const { technicianId, scheduledStart, scheduledEnd } = req.body;
-    
+
     // Update job assignment in HousecallPro
     // Note: Direct job update API not exposed, would need to implement in HousecallProClient
     // For now, log the intended update
     console.log(`Would update job ${jobId} with tech ${technicianId}`);
-    
+
     const updatedJob = {
       id: jobId,
       assigned_employee_ids: technicianId ? [technicianId] : [],
       scheduled_start: scheduledStart,
       scheduled_end: scheduledEnd
     };
-    
+
     // Log the activity
     await logActivity(
       (req as any).user.id,
@@ -616,7 +616,7 @@ router.put('/dashboard/jobs/:id/assign', authenticate, requirePermission('jobs.e
       JSON.stringify({ technicianId, scheduledStart }),
       req.ip
     );
-    
+
     res.json({
       success: true,
       job: updatedJob
@@ -632,32 +632,32 @@ router.get('/dashboard/housecall-metrics', authenticate, requirePermission('dash
   try {
     const { HousecallProClient } = await import('./housecall');
     const hcpClient = HousecallProClient.getInstance();
-    
+
     // Get date range from query params or default to today
     const date = req.query.date ? new Date(req.query.date as string) : new Date();
     date.setHours(0, 0, 0, 0);
     const nextDay = new Date(date);
     nextDay.setDate(nextDay.getDate() + 1);
-    
+
     // Fetch real-time metrics from HousecallPro
     const [jobs, estimates, employees, bookingWindows] = await Promise.all([
       hcpClient.getJobs({
         scheduled_start_min: date.toISOString(),
         scheduled_start_max: nextDay.toISOString()
       }).catch(() => []),
-      
+
       hcpClient.getEstimates({
         scheduled_start_min: date.toISOString(),
         scheduled_start_max: nextDay.toISOString()
       }).catch(() => []),
-      
+
       hcpClient.getEmployees().catch(() => []),
-      
+
       hcpClient.getBookingWindows(
         date.toISOString().split('T')[0]
       ).catch(() => [])
     ]);
-    
+
     // Calculate metrics
     const jobsByStatus = {
       scheduled: jobs.filter(j => j.work_status === 'scheduled').length,
@@ -665,14 +665,14 @@ router.get('/dashboard/housecall-metrics', authenticate, requirePermission('dash
       completed: jobs.filter(j => j.work_status === 'completed').length,
       cancelled: jobs.filter(j => j.work_status === 'cancelled').length
     };
-    
+
     const revenue = jobs
       .filter(j => j.work_status === 'completed')
       .reduce((sum, job) => sum + (job.total_amount || 0), 0);
-    
+
     const activeEmployees = employees.filter(e => e.is_active).length;
     const availableWindows = bookingWindows.filter(w => w.available).length;
-    
+
     res.json({
       date: date.toISOString(),
       jobs: {
@@ -691,7 +691,7 @@ router.get('/dashboard/housecall-metrics', authenticate, requirePermission('dash
       availability: {
         totalWindows: bookingWindows.length,
         availableWindows,
-        utilizationRate: bookingWindows.length ? 
+        utilizationRate: bookingWindows.length ?
           Math.round((1 - availableWindows / bookingWindows.length) * 100) : 0
       },
       timestamp: new Date().toISOString()
@@ -708,7 +708,7 @@ router.get('/dashboard/stats', authenticate, requirePermission('dashboard.view')
     // Import HousecallProClient
     const { HousecallProClient } = await import('./housecall');
     const hcpClient = HousecallProClient.getInstance();
-    
+
     // Get date ranges
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -720,43 +720,43 @@ router.get('/dashboard/stats', authenticate, requirePermission('dashboard.view')
     weekAgo.setDate(weekAgo.getDate() - 7);
     const monthAgo = new Date(today);
     monthAgo.setMonth(monthAgo.getMonth() - 1);
-    
+
     // Fetch real-time data from HousecallPro API
     let todayJobs: any[] = [];
     let weekJobs: any[] = [];
     let monthJobs: any[] = [];
     let recentCustomers: any[] = [];
-    
+
     try {
       // Fetch today's jobs from HousecallPro
       todayJobs = await hcpClient.getJobs({
         scheduled_start_min: today.toISOString(),
         scheduled_start_max: tomorrow.toISOString()
       });
-      
+
       // Fetch this week's jobs
       weekJobs = await hcpClient.getJobs({
         scheduled_start_min: weekAgo.toISOString(),
         scheduled_start_max: tomorrow.toISOString()
       });
-      
+
       // Fetch this month's jobs
       monthJobs = await hcpClient.getJobs({
         scheduled_start_min: monthAgo.toISOString(),
         scheduled_start_max: tomorrow.toISOString()
       });
-      
+
       // Fetch recent customers
       const customersResponse = await hcpClient.callAPI<{ customers: any[] }>('/customers', {
         page_size: 100,
         created_after: weekAgo.toISOString()
       });
       recentCustomers = customersResponse.customers || [];
-      
+
     } catch (error) {
       console.error('Error fetching real-time HousecallPro data:', error);
     }
-    
+
     // Calculate real-time stats from HousecallPro data
     const todayRevenue = todayJobs
       .filter(job => job.work_status === 'completed')
@@ -764,18 +764,18 @@ router.get('/dashboard/stats', authenticate, requirePermission('dashboard.view')
     const todayJobsCompleted = todayJobs.filter(job => job.work_status === 'completed').length;
     const todayJobsInProgress = todayJobs.filter(job => job.work_status === 'in_progress').length;
     const todayJobsScheduled = todayJobs.filter(job => job.work_status === 'scheduled').length;
-    
+
     const weekRevenue = weekJobs
       .filter(job => job.work_status === 'completed')
       .reduce((sum, job) => sum + (job.total_amount || 0), 0);
     const weekJobsCompleted = weekJobs.filter(job => job.work_status === 'completed').length;
     const weekNewCustomers = recentCustomers.length;
-    
+
     const monthRevenue = monthJobs
       .filter(job => job.work_status === 'completed')
       .reduce((sum, job) => sum + (job.total_amount || 0), 0);
     const monthJobsCompleted = monthJobs.filter(job => job.work_status === 'completed').length;
-    
+
     // Get webhook analytics for today (as fallback/additional data)
     const [todayAnalytics] = await db.select({
       totalRevenue: sql<number>`COALESCE(SUM(${webhookAnalytics.totalRevenue}), 0)`,
@@ -783,57 +783,59 @@ router.get('/dashboard/stats', authenticate, requirePermission('dashboard.view')
       newCustomers: sql<number>`COALESCE(SUM(${webhookAnalytics.newCustomers}), 0)`,
       estimatesSent: sql<number>`COALESCE(SUM(${webhookAnalytics.estimatesSent}), 0)`
     })
-    .from(webhookAnalytics)
-    .where(eq(webhookAnalytics.date, today));
-    
+      .from(webhookAnalytics)
+      .where(eq(webhookAnalytics.date, today));
+
     // Get week analytics
     const [weekAnalytics] = await db.select({
       totalRevenue: sql<number>`COALESCE(SUM(${webhookAnalytics.totalRevenue}), 0)`,
       jobsCompleted: sql<number>`COALESCE(SUM(${webhookAnalytics.jobsCompleted}), 0)`,
       newCustomers: sql<number>`COALESCE(SUM(${webhookAnalytics.newCustomers}), 0)`
     })
-    .from(webhookAnalytics)
-    .where(gte(webhookAnalytics.date, weekAgo));
-    
+      .from(webhookAnalytics)
+      .where(gte(webhookAnalytics.date, weekAgo));
+
     // Get pending tasks count
     const [taskStats] = await db.select({
       pendingTasks: sql<number>`COUNT(*)::int`
     })
-    .from(adminTasks)
-    .where(
-      and(
-        eq(adminTasks.status, 'pending'),
-        eq(adminTasks.assignedTo, (req as any).user.id)
-      )
-    );
-    
+      .from(adminTasks)
+      .where(
+        and(
+          eq(adminTasks.status, 'pending'),
+          eq(adminTasks.assignedTo, (req as any).user.id)
+        )
+      );
+
+
+
     // Get recent webhook events count
     const [eventStats] = await db.select({
       totalEvents: sql<number>`COUNT(*)::int`,
       failedEvents: sql<number>`COUNT(*) FILTER (WHERE ${webhookEvents.status} = 'failed')::int`
     })
-    .from(webhookEvents)
-    .where(gte(webhookEvents.receivedAt, today));
-    
+      .from(webhookEvents)
+      .where(gte(webhookEvents.receivedAt, today));
+
     // Get active customers count
     const [customerStats] = await db.select({
       totalCustomers: sql<number>`COUNT(DISTINCT ${customers.id})::int`
     })
-    .from(customers);
-    
+      .from(customers);
+
     // Get blog stats
     const [blogStats] = await db.select({
       totalPosts: sql<number>`COUNT(*)::int`,
       publishedPosts: sql<number>`COUNT(*) FILTER (WHERE ${blogPosts.status} = 'published')::int`
     })
-    .from(blogPosts);
-    
+      .from(blogPosts);
+
     // Get total customers from database (all time)
     const allCustomersResponse = await hcpClient.callAPI<{ customers: any[], total_items: number }>('/customers', {
       page_size: 1,
       page: 1
     }).catch(() => ({ customers: [], total_items: customerStats?.totalCustomers || 0 }));
-    
+
     res.json({
       today: {
         // Use real-time data from HousecallPro API, fallback to webhook analytics
@@ -889,7 +891,7 @@ router.get('/dashboard/widgets', authenticate, async (req, res) => {
       .from(dashboardWidgets)
       .where(eq(dashboardWidgets.userId, (req as any).user.id))
       .orderBy(dashboardWidgets.position);
-    
+
     // If no widgets exist, create default widgets
     if (widgets.length === 0) {
       const defaultWidgets = [
@@ -900,7 +902,7 @@ router.get('/dashboard/widgets', authenticate, async (req, res) => {
         { widgetType: 'recent_jobs', position: 4, gridLayout: { x: 0, y: 7, w: 6, h: 3 }, isVisible: true },
         { widgetType: 'stats_overview', position: 5, gridLayout: { x: 6, y: 7, w: 6, h: 3 }, isVisible: true }
       ];
-      
+
       const createdWidgets = await db.insert(dashboardWidgets).values(
         defaultWidgets.map(w => ({
           ...w,
@@ -908,7 +910,7 @@ router.get('/dashboard/widgets', authenticate, async (req, res) => {
           gridLayout: JSON.stringify(w.gridLayout)
         }))
       ).returning();
-      
+
       res.json(createdWidgets);
     } else {
       res.json(widgets);
@@ -924,7 +926,7 @@ router.put('/dashboard/widgets/layout', authenticate, async (req, res) => {
   try {
     const { layouts } = req.body;
     const userId = (req as any).user.id;
-    
+
     // Update each widget's position and grid layout
     for (const layout of layouts) {
       await db.update(dashboardWidgets)
@@ -938,7 +940,7 @@ router.put('/dashboard/widgets/layout', authenticate, async (req, res) => {
           eq(dashboardWidgets.widgetType, layout.widgetType)
         ));
     }
-    
+
     res.json({ success: true });
   } catch (error) {
     console.error('Update widget layout error:', error);
@@ -952,7 +954,7 @@ router.put('/dashboard/widgets/:widgetType/visibility', authenticate, async (req
     const { widgetType } = req.params;
     const { isVisible } = req.body;
     const userId = (req as any).user.id;
-    
+
     const [updated] = await db.update(dashboardWidgets)
       .set({
         isVisible,
@@ -963,7 +965,7 @@ router.put('/dashboard/widgets/:widgetType/visibility', authenticate, async (req
         eq(dashboardWidgets.widgetType, widgetType)
       ))
       .returning();
-    
+
     res.json(updated);
   } catch (error) {
     console.error('Update widget visibility error:', error);
@@ -975,11 +977,11 @@ router.put('/dashboard/widgets/:widgetType/visibility', authenticate, async (req
 router.post('/dashboard/widgets/reset', authenticate, async (req, res) => {
   try {
     const userId = (req as any).user.id;
-    
+
     // Delete existing widgets
     await db.delete(dashboardWidgets)
       .where(eq(dashboardWidgets.userId, userId));
-    
+
     // Create default widgets
     const defaultWidgets = [
       { widgetType: 'capacity_gauge', position: 0, gridLayout: { x: 0, y: 0, w: 6, h: 3 }, isVisible: true },
@@ -989,7 +991,7 @@ router.post('/dashboard/widgets/reset', authenticate, async (req, res) => {
       { widgetType: 'recent_jobs', position: 4, gridLayout: { x: 0, y: 7, w: 6, h: 3 }, isVisible: true },
       { widgetType: 'stats_overview', position: 5, gridLayout: { x: 6, y: 7, w: 6, h: 3 }, isVisible: true }
     ];
-    
+
     const createdWidgets = await db.insert(dashboardWidgets).values(
       defaultWidgets.map(w => ({
         ...w,
@@ -997,7 +999,7 @@ router.post('/dashboard/widgets/reset', authenticate, async (req, res) => {
         gridLayout: JSON.stringify(w.gridLayout)
       }))
     ).returning();
-    
+
     res.json(createdWidgets);
   } catch (error) {
     console.error('Reset widgets error:', error);
@@ -1099,7 +1101,7 @@ router.get('/customers', authenticate, requirePermission('customers.view'), asyn
       );
     }
 
-    let query = db.select()
+    let query: any = db.select()
       .from(customers)
       .orderBy(desc(customers.createdAt))
       .limit(Number.isNaN(limit) ? 25 : Math.min(Math.max(limit, 1), 100))
@@ -1113,7 +1115,7 @@ router.get('/customers', authenticate, requirePermission('customers.view'), asyn
 
     res.json({
       source: 'database',
-      customers: customersRows.map((customer) => ({
+      customers: customersRows.map((customer: any) => ({
         id: customer.id,
         firstName: customer.firstName,
         lastName: customer.lastName,
@@ -1146,7 +1148,7 @@ router.get('/google-ads/campaigns', authenticate, requirePermission('google_ads.
       conditions.push(eq(googleAdsCampaigns.status, status as string));
     }
 
-    let query = db.select()
+    let query: any = db.select()
       .from(googleAdsCampaigns)
       .orderBy(desc(googleAdsCampaigns.updatedAt));
 
@@ -1178,7 +1180,7 @@ router.get('/webhooks/events', authenticate, requirePermission('dashboard.view')
       conditions.push(eq(webhookEvents.eventType, eventType as string));
     }
 
-    let query = db.select({
+    let query: any = db.select({
       id: webhookEvents.id,
       eventType: webhookEvents.eventType,
       eventCategory: webhookEvents.eventCategory,
@@ -1211,11 +1213,11 @@ router.get('/webhooks/events', authenticate, requirePermission('dashboard.view')
 router.get('/tasks', authenticate, requirePermission('tasks.view'), async (req, res) => {
   try {
     const { status, assignedTo } = req.query;
-    
+
     let query = db.select()
       .from(adminTasks)
       .orderBy(desc(adminTasks.createdAt));
-    
+
     const conditions = [];
     if (status) {
       conditions.push(eq(adminTasks.status, status as string));
@@ -1223,11 +1225,11 @@ router.get('/tasks', authenticate, requirePermission('tasks.view'), async (req, 
     if (assignedTo) {
       conditions.push(eq(adminTasks.assignedTo, parseInt(assignedTo as string)));
     }
-    
+
     if (conditions.length > 0) {
       query = query.where(and(...conditions)) as any;
     }
-    
+
     const tasks = await query;
     res.json(tasks);
   } catch (error) {
@@ -1240,12 +1242,12 @@ router.get('/tasks', authenticate, requirePermission('tasks.view'), async (req, 
 router.post('/tasks', authenticate, requirePermission('tasks.create'), async (req, res) => {
   try {
     const data: InsertAdminTask = req.body;
-    
+
     const [task] = await db.insert(adminTasks).values({
       ...data,
       createdBy: (req as any).user.id
     }).returning();
-    
+
     await logActivity(
       (req as any).user.id,
       'create_task',
@@ -1254,7 +1256,7 @@ router.post('/tasks', authenticate, requirePermission('tasks.create'), async (re
       { title: data.title },
       req.ip
     );
-    
+
     res.json(task);
   } catch (error) {
     console.error('Create task error:', error);
@@ -1267,11 +1269,11 @@ router.put('/tasks/:id', authenticate, requirePermission('tasks.edit'), async (r
   try {
     const taskId = parseInt(req.params.id);
     const updates = req.body;
-    
+
     if (updates.status === 'completed') {
       updates.completedAt = new Date();
     }
-    
+
     const [task] = await db.update(adminTasks)
       .set({
         ...updates,
@@ -1279,7 +1281,7 @@ router.put('/tasks/:id', authenticate, requirePermission('tasks.edit'), async (r
       })
       .where(eq(adminTasks.id, taskId))
       .returning();
-    
+
     await logActivity(
       (req as any).user.id,
       'update_task',
@@ -1288,7 +1290,7 @@ router.put('/tasks/:id', authenticate, requirePermission('tasks.edit'), async (r
       updates,
       req.ip
     );
-    
+
     res.json(task);
   } catch (error) {
     console.error('Update task error:', error);
@@ -1307,7 +1309,7 @@ router.get('/ai/sessions', authenticate, requirePermission('ai.chat'), async (re
       .from(aiChatSessions)
       .where(eq(aiChatSessions.userId, (req as any).user.id))
       .orderBy(desc(aiChatSessions.updatedAt));
-    
+
     res.json(sessions);
   } catch (error) {
     console.error('Get AI sessions error:', error);
@@ -1319,13 +1321,13 @@ router.get('/ai/sessions', authenticate, requirePermission('ai.chat'), async (re
 router.post('/ai/sessions', authenticate, requirePermission('ai.chat'), async (req, res) => {
   try {
     const { title, context } = req.body;
-    
+
     const [session] = await db.insert(aiChatSessions).values({
       userId: (req as any).user.id,
       title,
       context
     }).returning();
-    
+
     res.json(session);
   } catch (error) {
     console.error('Create AI session error:', error);
@@ -1337,7 +1339,7 @@ router.post('/ai/sessions', authenticate, requirePermission('ai.chat'), async (r
 router.get('/ai/sessions/:sessionId/messages', authenticate, requirePermission('ai.chat'), async (req, res) => {
   try {
     const sessionId = parseInt(req.params.sessionId);
-    
+
     // Verify session belongs to user
     const [session] = await db.select()
       .from(aiChatSessions)
@@ -1348,16 +1350,16 @@ router.get('/ai/sessions/:sessionId/messages', authenticate, requirePermission('
         )
       )
       .limit(1);
-    
+
     if (!session) {
       return res.status(404).json({ error: 'Session not found' });
     }
-    
+
     const messages = await db.select()
       .from(aiChatMessages)
       .where(eq(aiChatMessages.sessionId, sessionId))
       .orderBy(aiChatMessages.createdAt);
-    
+
     res.json(messages);
   } catch (error) {
     console.error('Get AI messages error:', error);
@@ -1373,11 +1375,11 @@ router.get('/ai/sessions/:sessionId/messages', authenticate, requirePermission('
 router.get('/documents', authenticate, async (req, res) => {
   try {
     const { type, isTemplate } = req.query;
-    
+
     let query = db.select()
       .from(adminDocuments)
       .orderBy(desc(adminDocuments.createdAt));
-    
+
     const conditions = [];
     if (type) {
       conditions.push(eq(adminDocuments.type, type as string));
@@ -1385,11 +1387,11 @@ router.get('/documents', authenticate, async (req, res) => {
     if (isTemplate !== undefined) {
       conditions.push(eq(adminDocuments.isTemplate, isTemplate === 'true'));
     }
-    
+
     if (conditions.length > 0) {
       query = query.where(and(...conditions)) as any;
     }
-    
+
     const documents = await query;
     res.json(documents);
   } catch (error) {
@@ -1402,12 +1404,12 @@ router.get('/documents', authenticate, async (req, res) => {
 router.post('/documents', authenticate, requirePermission('ai.generate_documents'), async (req, res) => {
   try {
     const data: InsertAdminDocument = req.body;
-    
+
     const [document] = await db.insert(adminDocuments).values({
       ...data,
       createdBy: (req as any).user.id
     }).returning();
-    
+
     await logActivity(
       (req as any).user.id,
       'create_document',
@@ -1416,7 +1418,7 @@ router.post('/documents', authenticate, requirePermission('ai.generate_documents
       { title: data.title, type: data.type },
       req.ip
     );
-    
+
     res.json(document);
   } catch (error) {
     console.error('Create document error:', error);
@@ -1432,12 +1434,12 @@ router.post('/documents', authenticate, requirePermission('ai.generate_documents
 router.get('/activity-logs', authenticate, requirePermission('settings.view'), async (req, res) => {
   try {
     const { userId, action, limit = 100 } = req.query;
-    
+
     let query = db.select()
       .from(adminActivityLogs)
       .orderBy(desc(adminActivityLogs.createdAt))
       .limit(parseInt(limit as string));
-    
+
     const conditions = [];
     if (userId) {
       conditions.push(eq(adminActivityLogs.userId, parseInt(userId as string)));
@@ -1445,11 +1447,11 @@ router.get('/activity-logs', authenticate, requirePermission('settings.view'), a
     if (action) {
       conditions.push(eq(adminActivityLogs.action, action as string));
     }
-    
+
     if (conditions.length > 0) {
       query = query.where(and(...conditions)) as any;
     }
-    
+
     const logs = await query;
     res.json(logs);
   } catch (error) {
@@ -1463,9 +1465,9 @@ router.get('/activity-logs', authenticate, requirePermission('settings.view'), a
 // ============================================
 
 import { agentTracing } from '../lib/agentTracing';
-import { 
-  agentConversations, 
-  agentToolCalls, 
+import {
+  agentConversations,
+  agentToolCalls,
   agentFeedback,
   InsertAgentFeedback
 } from '@shared/schema';
@@ -1474,7 +1476,7 @@ import {
 router.get('/agent-tracing/conversations', authenticate, requirePermission('ai.view_chats'), async (req, res) => {
   try {
     const { channel, outcome, startDate, endDate, limit = 50, offset = 0 } = req.query;
-    
+
     const conversations = await agentTracing.getConversations({
       channel: channel as string,
       outcome: outcome as string,
@@ -1483,7 +1485,7 @@ router.get('/agent-tracing/conversations', authenticate, requirePermission('ai.v
       limit: parseInt(limit as string),
       offset: parseInt(offset as string),
     });
-    
+
     res.json(conversations);
   } catch (error) {
     console.error('Get conversations error:', error);
@@ -1495,15 +1497,15 @@ router.get('/agent-tracing/conversations', authenticate, requirePermission('ai.v
 router.get('/agent-tracing/conversations/:id', authenticate, requirePermission('ai.view_chats'), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    
+
     const conversation = await agentTracing.getConversation(id);
     if (!conversation) {
       return res.status(404).json({ error: 'Conversation not found' });
     }
-    
+
     const toolCalls = await agentTracing.getToolCalls(id);
     const feedback = await agentTracing.getFeedback(id);
-    
+
     res.json({
       conversation,
       toolCalls,
@@ -1519,7 +1521,7 @@ router.get('/agent-tracing/conversations/:id', authenticate, requirePermission('
 router.get('/agent-tracing/stats', authenticate, requirePermission('ai.view_chats'), async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
-    
+
     const [conversationStats, toolCallStats] = await Promise.all([
       agentTracing.getConversationStats(
         startDate ? new Date(startDate as string) : undefined,
@@ -1530,7 +1532,7 @@ router.get('/agent-tracing/stats', authenticate, requirePermission('ai.view_chat
         endDate ? new Date(endDate as string) : undefined
       ),
     ]);
-    
+
     res.json({
       conversations: conversationStats,
       toolCalls: toolCallStats,
@@ -1595,7 +1597,7 @@ router.post('/agent-tracing/conversations/:id/feedback', authenticate, requirePe
   try {
     const conversationId = parseInt(req.params.id);
     const { feedbackType, rating, correctedResponse, messageIndex, flagReason, annotation } = req.body;
-    
+
     const feedback = await agentTracing.addFeedback({
       conversationId,
       feedbackType,
@@ -1607,7 +1609,7 @@ router.post('/agent-tracing/conversations/:id/feedback', authenticate, requirePe
       reviewedBy: (req as any).user.email,
       reviewedAt: new Date(),
     });
-    
+
     await logActivity(
       (req as any).user.id,
       'add_feedback',
@@ -1616,7 +1618,7 @@ router.post('/agent-tracing/conversations/:id/feedback', authenticate, requirePe
       { feedbackType, rating },
       req.ip
     );
-    
+
     res.json(feedback);
   } catch (error) {
     console.error('Add feedback error:', error);
@@ -1629,7 +1631,7 @@ router.post('/agent-tracing/tool-calls/:id/review', authenticate, requirePermiss
   try {
     const toolCallId = parseInt(req.params.id);
     const { wasCorrectTool, correctToolSuggestion, flagReason, annotation } = req.body;
-    
+
     await agentTracing.flagToolCall(toolCallId, {
       wasCorrectTool,
       correctToolSuggestion,
@@ -1637,7 +1639,7 @@ router.post('/agent-tracing/tool-calls/:id/review', authenticate, requirePermiss
       annotation,
       reviewedBy: (req as any).user.email,
     });
-    
+
     await logActivity(
       (req as any).user.id,
       'review_tool_call',
@@ -1646,7 +1648,7 @@ router.post('/agent-tracing/tool-calls/:id/review', authenticate, requirePermiss
       { wasCorrectTool, correctToolSuggestion },
       req.ip
     );
-    
+
     res.json({ success: true });
   } catch (error) {
     console.error('Review tool call error:', error);
@@ -1669,16 +1671,16 @@ router.get('/agent-tracing/pending-reviews', authenticate, requirePermission('ai
 router.get('/agent-tracing/export/fine-tuning', authenticate, requirePermission('settings.edit'), async (req, res) => {
   try {
     const { minRating = 4, includeCorrections = 'true', excludeFlagged = 'true' } = req.query;
-    
+
     const examples = await agentTracing.exportForFineTuning({
       minRating: parseInt(minRating as string),
       includeCorrections: includeCorrections === 'true',
       excludeFlagged: excludeFlagged === 'true',
     });
-    
+
     // Convert to JSONL format
     const jsonl = examples.map(ex => JSON.stringify(ex)).join('\n');
-    
+
     await logActivity(
       (req as any).user.id,
       'export_fine_tuning',
@@ -1687,7 +1689,7 @@ router.get('/agent-tracing/export/fine-tuning', authenticate, requirePermission(
       { exampleCount: examples.length },
       req.ip
     );
-    
+
     res.setHeader('Content-Type', 'application/jsonl');
     res.setHeader('Content-Disposition', `attachment; filename="fine-tuning-${new Date().toISOString().split('T')[0]}.jsonl"`);
     res.send(jsonl);
@@ -1701,13 +1703,13 @@ router.get('/agent-tracing/export/fine-tuning', authenticate, requirePermission(
 router.get('/agent-tracing/export/preview', authenticate, requirePermission('ai.view_chats'), async (req, res) => {
   try {
     const { minRating = 4, includeCorrections = 'true', excludeFlagged = 'true', limit = 10 } = req.query;
-    
+
     const examples = await agentTracing.exportForFineTuning({
       minRating: parseInt(minRating as string),
       includeCorrections: includeCorrections === 'true',
       excludeFlagged: excludeFlagged === 'true',
     });
-    
+
     res.json({
       totalExamples: examples.length,
       preview: examples.slice(0, parseInt(limit as string)),

@@ -144,15 +144,15 @@ const serviceTestimonials: Record<string, ServiceTestimonial[]> = {
   ]
 };
 
-export function WhyChooseUs({ 
-  serviceName = 'general', 
+export function WhyChooseUs({
+  serviceName = 'general',
   showTestimonials = true,
-  showJobsCounter = true 
+  showJobsCounter = true
 }: WhyChooseUsProps) {
   const [jobsThisMonth, setJobsThisMonth] = useState(287);
-  
+
   // Fetch actual job count if available
-  const { data: jobStats } = useQuery({
+  const { data: jobStats } = useQuery<{ count: number }>({
     queryKey: ['/api/v1/stats/jobs-this-month'],
     enabled: showJobsCounter
   });
@@ -171,7 +171,7 @@ export function WhyChooseUs({
           return prev + increment * Math.ceil(Math.abs(targetJobs - prev) / 20);
         });
       }, 50);
-      
+
       return () => clearInterval(timer);
     }
   }, [jobStats, showJobsCounter]);
@@ -223,10 +223,10 @@ export function WhyChooseUs({
             Why Choose Johnson Bros?
           </h2>
           <p className="text-lg text-gray-600 max-w-3xl mx-auto mb-6">
-            With over 27 years of experience, we've built our reputation on quality work, 
+            With over 27 years of experience, we've built our reputation on quality work,
             honest pricing, and treating every home like our own.
           </p>
-          
+
           {/* Jobs Completed Counter */}
           {showJobsCounter && (
             <div className="inline-flex items-center gap-3 bg-white rounded-full px-6 py-3 shadow-lg border border-gray-200">
@@ -274,11 +274,10 @@ export function WhyChooseUs({
                           {[...Array(5)].map((_, i) => (
                             <Star
                               key={i}
-                              className={`h-4 w-4 ${
-                                i < testimonial.rating 
-                                  ? 'fill-yellow-400 text-yellow-400' 
+                              className={`h-4 w-4 ${i < testimonial.rating
+                                  ? 'fill-yellow-400 text-yellow-400'
                                   : 'text-gray-300'
-                              }`}
+                                }`}
                             />
                           ))}
                         </div>

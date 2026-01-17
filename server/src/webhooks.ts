@@ -1,20 +1,20 @@
 import { db } from '../db';
-import { 
-  webhookEvents, 
-  webhookEventTags, 
+import {
+  webhookEvents,
+  webhookEventTags,
   webhookProcessedData,
   webhookAnalytics,
   webhookSubscriptions,
   InsertWebhookEvent,
   InsertWebhookEventTag,
-  InsertWebhookProcessedData 
+  InsertWebhookProcessedData
 } from '@shared/schema';
 import { eq, and, desc, sql } from 'drizzle-orm';
 import crypto from 'crypto';
 import { heatMapService } from './heatmap';
 
 // Event type categories for organizing webhook events
-const EVENT_CATEGORIES = {
+const EVENT_CATEGORIES: Record<string, string> = {
   'customer.created': 'customer',
   'customer.updated': 'customer',
   'customer.deleted': 'customer',
@@ -52,16 +52,16 @@ export class WebhookProcessor {
     try {
       // Determine event category
       const eventCategory = EVENT_CATEGORIES[eventType] || 'unknown';
-      
+
       // Extract entity ID based on event type
       const entityId = this.extractEntityId(eventType, payload);
-      
+
       // Store the raw webhook event
       const [webhookEvent] = await db.insert(webhookEvents).values({
         eventId: payload.id || crypto.randomUUID(),
         eventType,
         eventCategory,
-        entityId,
+        entityId: entityId || undefined,
         companyId: payload.company_id || headers['x-company-id'],
         payload: JSON.stringify(payload),
         status: 'pending',
@@ -75,10 +75,10 @@ export class WebhookProcessor {
       return { success: true, eventId: webhookEvent.id };
     } catch (error) {
       console.error('Error processing webhook:', error);
-      return { 
-        success: false, 
-        eventId: null, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      return {
+        success: false,
+        eventId: null,
+        error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
   }
@@ -86,7 +86,7 @@ export class WebhookProcessor {
   // Extract entity ID from payload based on event type
   private extractEntityId(eventType: string, payload: any): string | null {
     const category = EVENT_CATEGORIES[eventType];
-    
+
     switch (category) {
       case 'customer':
         return payload.customer?.id || payload.id;
@@ -110,18 +110,18 @@ export class WebhookProcessor {
     try {
       // Parse and categorize the event data
       const processedData = await this.parseEventData(eventType, payload);
-      
+
       // Store processed data
       await db.insert(webhookProcessedData).values({
         eventId,
         ...processedData,
-      });
+      } as InsertWebhookProcessedData);
 
       // Generate and store tags
       const tags = this.generateEventTags(eventType, payload, processedData);
       if (tags.length > 0) {
         await db.insert(webhookEventTags).values(
-          tags.map(tag => ({ ...tag, eventId }))
+          tags.map(tag => ({ ...tag, eventId })) as any
         );
       }
 
@@ -140,7 +140,7 @@ export class WebhookProcessor {
 
       // Mark event as processed
       await db.update(webhookEvents)
-        .set({ 
+        .set({
           status: 'processed',
           processedAt: new Date(),
         })
@@ -148,10 +148,10 @@ export class WebhookProcessor {
 
     } catch (error) {
       console.error('Error processing event async:', error);
-      
+
       // Mark event as failed
       await db.update(webhookEvents)
-        .set({ 
+        .set({
           status: 'failed',
           error: error instanceof Error ? error.message : 'Unknown error',
         })
@@ -239,9 +239,9 @@ export class WebhookProcessor {
         };
 
       case 'lead':
-        const isReferral = payload.customer?.tags?.includes('referral-program') || 
-                          payload.tags?.includes('referral-program') ||
-                          payload.customer?.lead_source?.includes('Referral');
+        const isReferral = payload.customer?.tags?.includes('referral-program') ||
+          payload.tags?.includes('referral-program') ||
+          payload.customer?.lead_source?.includes('Referral');
         return {
           ...baseData,
           customerName: payload.customer?.name || `${payload.customer?.first_name || ''} ${payload.customer?.last_name || ''}`.trim(),
@@ -280,7 +280,7 @@ export class WebhookProcessor {
 
     // Service type tags
     if (processedData.serviceType) {
-      tags.push({ 
+      tags.push({
         tagName: processedData.serviceType.toLowerCase().replace(/\s+/g, '-'),
         tagCategory: 'service-type'
       });
@@ -288,7 +288,7 @@ export class WebhookProcessor {
 
     // Location tags
     if (processedData.addressCity) {
-      tags.push({ 
+      tags.push({
         tagName: processedData.addressCity.toLowerCase(),
         tagValue: processedData.addressState,
         tagCategory: 'location'
@@ -309,10 +309,10 @@ export class WebhookProcessor {
     // Time-based tags
     const now = new Date();
     const serviceDate = processedData.serviceDate ? new Date(processedData.serviceDate) : null;
-    
+
     if (serviceDate) {
       const daysDiff = Math.floor((serviceDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-      
+
       if (daysDiff === 0) {
         tags.push({ tagName: 'today', tagCategory: 'timing' });
       } else if (daysDiff === 1) {
@@ -343,7 +343,7 @@ export class WebhookProcessor {
       )
       .limit(1);
 
-    const updates: Partial<typeof webhookAnalytics.$inferInsert> = {
+    const updates: any = {
       totalEvents: sql`${webhookAnalytics.totalEvents} + 1`,
       processedEvents: sql`${webhookAnalytics.processedEvents} + 1`,
     };
@@ -442,14 +442,14 @@ export class WebhookProcessor {
       const notes = payload.customer?.notes || payload.notes || '';
       const referrerMatch = notes.match(/Referred by: ([^(]+)\(([^)]+)\)/);
       const customerIdMatch = notes.match(/Customer ID: (\S+)/);
-      
+
       const referredCustomer = processedData.customerName || 'Unknown';
       const referredPhone = processedData.customerPhone || 'N/A';
       const referredEmail = processedData.customerEmail || 'N/A';
       const referrerName = referrerMatch ? referrerMatch[1].trim() : 'Unknown';
       const referrerPhone = referrerMatch ? referrerMatch[2].trim() : 'N/A';
       const referrerCustomerId = customerIdMatch ? customerIdMatch[1] : 'N/A';
-      
+
       // Log prominently to console
       console.log('\n' + '='.repeat(80));
       console.log('🎉 NEW REFERRAL LEAD CREATED!');
@@ -467,24 +467,24 @@ export class WebhookProcessor {
       console.log(`💵 Credit: $50 will be issued to referrer when job completes`);
       console.log(`\n📋 Lead ID: ${payload.id}`);
       console.log('='.repeat(80) + '\n');
-      
+
       // Send SMS notification using Twilio
       const accountSid = process.env.TWILIO_ACCOUNT_SID;
       const authToken = process.env.TWILIO_AUTH_TOKEN;
       const fromNumber = process.env.TWILIO_PHONE_NUMBER;
       const toNumber = '+16174799911';
-      
+
       if (accountSid && authToken && fromNumber) {
         try {
           const twilio = (await import('twilio')).default;
           const client = twilio(accountSid, authToken);
-          
+
           const message = await client.messages.create({
             body: `🎉 NEW REFERRAL!\n\nReferred: ${referredCustomer}\nPhone: ${referredPhone}\n\nReferrer: ${referrerName}\nPhone: ${referrerPhone}\n\n$99 discount applied to new customer\n$50 credit pending for referrer`,
             from: fromNumber,
             to: toNumber,
           });
-          
+
           console.log(`✅ SMS notification sent successfully (SID: ${message.sid})`);
         } catch (smsError) {
           console.error('❌ Error sending SMS notification:', smsError);
@@ -492,7 +492,7 @@ export class WebhookProcessor {
       } else {
         console.warn('⚠️  Twilio credentials not configured - SMS notification skipped');
       }
-      
+
     } catch (error) {
       console.error('Error sending referral notification:', error);
     }
@@ -509,12 +509,12 @@ export class WebhookProcessor {
         .createHmac('sha256', secret)
         .update(payload)
         .digest('hex');
-      
+
       // Ensure both strings are the same length for timingSafeEqual
       if (signature.length !== expectedSignature.length) {
         return false;
       }
-      
+
       return crypto.timingSafeEqual(
         Buffer.from(signature, 'hex'),
         Buffer.from(expectedSignature, 'hex')

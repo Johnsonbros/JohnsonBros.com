@@ -34,9 +34,8 @@ export default function AdminHeatMap() {
   // Import historical data mutation
   const importMutation = useMutation({
     mutationFn: async (startDate: string) => {
-      return await apiRequest('/api/admin/heatmap/import', {
-        method: 'POST',
-        body: JSON.stringify({ startDate }),
+      return await apiRequest('POST', '/api/admin/heatmap/import', {
+        startDate
       });
     },
     onSuccess: () => {
@@ -61,10 +60,9 @@ export default function AdminHeatMap() {
     mutationFn: async () => {
       // Capture the map as an image (simplified - in production use html2canvas or similar)
       const imageUrl = `/assets/heatmap-snapshot-${Date.now()}.png`;
-      
-      return await apiRequest('/api/admin/heatmap/snapshot', {
-        method: 'POST',
-        body: JSON.stringify({ imageUrl }),
+
+      return await apiRequest('POST', '/api/admin/heatmap/snapshot', {
+        imageUrl
       });
     },
     onSuccess: () => {
@@ -85,9 +83,7 @@ export default function AdminHeatMap() {
   // Update intensities mutation
   const updateIntensitiesMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest('/api/admin/heatmap/update-intensities', {
-        method: 'POST',
-      });
+      return await apiRequest('POST', '/api/admin/heatmap/update-intensities');
     },
     onSuccess: () => {
       toast({
@@ -113,7 +109,7 @@ export default function AdminHeatMap() {
 
       try {
         const google = await loader.load();
-        
+
         // Create map
         const map = new google.maps.Map(mapRef.current!, {
           zoom: 10,
@@ -300,7 +296,7 @@ export default function AdminHeatMap() {
               data-testid="heatmap-container"
             />
           </div>
-          
+
           <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1">

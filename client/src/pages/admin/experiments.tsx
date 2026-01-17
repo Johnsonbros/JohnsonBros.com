@@ -116,45 +116,45 @@ export default function ExperimentsPage() {
   const [activeTab, setActiveTab] = useState('experiments');
 
   // Fetch experiments
-  const { data: experiments, isLoading: experimentsLoading } = useQuery({
+  const { data: experiments, isLoading: experimentsLoading } = useQuery<ABTest[]>({
     queryKey: ['/api/v1/experiments'],
     refetchInterval: 30000 // Refresh every 30 seconds
   });
 
   // Fetch conversion funnels
-  const { data: funnels, isLoading: funnelsLoading } = useQuery({
+  const { data: funnels, isLoading: funnelsLoading } = useQuery<ConversionFunnel>({
     queryKey: ['/api/v1/conversions/funnel/booking'],
-    queryFn: () => apiRequest('/api/v1/conversions/funnel/booking', 'GET')
+    queryFn: () => apiRequest('GET', '/api/v1/conversions/funnel/booking').then(res => res.json())
   });
 
   // Fetch attribution metrics
-  const { data: attribution, isLoading: attributionLoading } = useQuery({
+  const { data: attribution, isLoading: attributionLoading } = useQuery<AttributionMetric[]>({
     queryKey: ['/api/v1/conversions/attribution', dateRange],
-    queryFn: () => apiRequest(`/api/v1/conversions/attribution?startDate=${subDays(new Date(), dateRange === '7d' ? 7 : dateRange === '30d' ? 30 : 90).toISOString()}`, 'GET')
+    queryFn: () => apiRequest('GET', `/api/v1/conversions/attribution?startDate=${subDays(new Date(), dateRange === '7d' ? 7 : dateRange === '30d' ? 30 : 90).toISOString()}`).then(res => res.json())
   });
 
   // Fetch micro-conversions
-  const { data: microConversions } = useQuery({
+  const { data: microConversions } = useQuery<MicroConversionMetric[]>({
     queryKey: ['/api/v1/conversions/micro'],
-    queryFn: () => apiRequest('/api/v1/conversions/micro', 'GET')
+    queryFn: () => apiRequest('GET', '/api/v1/conversions/micro').then(res => res.json())
   });
 
   // Fetch recommendations
-  const { data: recommendations } = useQuery({
+  const { data: recommendations } = useQuery<{ recommendations: Recommendation[] }>({
     queryKey: ['/api/v1/conversions/recommendations'],
-    queryFn: () => apiRequest('/api/v1/conversions/recommendations', 'GET')
+    queryFn: () => apiRequest('GET', '/api/v1/conversions/recommendations').then(res => res.json())
   });
 
   // Fetch experiment recommendations
-  const { data: experimentRecommendations } = useQuery({
+  const { data: experimentRecommendations } = useQuery<{ recommendations: Recommendation[] }>({
     queryKey: ['/api/v1/experiments/recommendations'],
-    queryFn: () => apiRequest('/api/v1/experiments/recommendations', 'GET')
+    queryFn: () => apiRequest('GET', '/api/v1/experiments/recommendations').then(res => res.json())
   });
 
   // Start experiment mutation
   const startExperiment = useMutation({
-    mutationFn: (testId: string) => 
-      apiRequest(`/api/v1/experiments/${testId}/start`, 'POST'),
+    mutationFn: (testId: string) =>
+      apiRequest('POST', `/api/v1/experiments/${testId}/start`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/v1/experiments'] });
       toast({ title: 'Experiment started successfully' });
@@ -163,8 +163,8 @@ export default function ExperimentsPage() {
 
   // Pause experiment mutation
   const pauseExperiment = useMutation({
-    mutationFn: (testId: string) => 
-      apiRequest(`/api/v1/experiments/${testId}/pause`, 'POST'),
+    mutationFn: (testId: string) =>
+      apiRequest('POST', `/api/v1/experiments/${testId}/pause`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/v1/experiments'] });
       toast({ title: 'Experiment paused' });
@@ -173,8 +173,8 @@ export default function ExperimentsPage() {
 
   // Complete experiment mutation
   const completeExperiment = useMutation({
-    mutationFn: ({ testId, winnerVariantId }: { testId: string; winnerVariantId?: string }) => 
-      apiRequest(`/api/v1/experiments/${testId}/complete`, 'POST', { winnerVariantId }),
+    mutationFn: ({ testId, winnerVariantId }: { testId: string; winnerVariantId?: string }) =>
+      apiRequest('POST', `/api/v1/experiments/${testId}/complete`, { winnerVariantId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/v1/experiments'] });
       toast({ title: 'Experiment completed' });
@@ -183,8 +183,8 @@ export default function ExperimentsPage() {
 
   // Roll out winner mutation
   const rollOutWinner = useMutation({
-    mutationFn: (testId: string) => 
-      apiRequest(`/api/v1/experiments/${testId}/rollout`, 'POST'),
+    mutationFn: (testId: string) =>
+      apiRequest('POST', `/api/v1/experiments/${testId}/rollout`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/v1/experiments'] });
       toast({ title: 'Winner rolled out to 100% of traffic' });
@@ -308,7 +308,7 @@ export default function ExperimentsPage() {
                 </p>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium">Total Visitors</CardTitle>
@@ -329,7 +329,7 @@ export default function ExperimentsPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {experiments?.length > 0 
+                  {experiments?.length > 0
                     ? (experiments.reduce((sum: number, e: ABTest) => sum + e.overallConversionRate, 0) / experiments.length * 100).toFixed(2)
                     : 0}%
                 </div>
@@ -491,9 +491,8 @@ export default function ExperimentsPage() {
                         {experiment.variants.map((variant) => (
                           <div
                             key={variant.id}
-                            className={`border rounded-lg p-3 ${
-                              experiment.winnerVariantId === variant.variantId ? 'border-green-600 bg-green-50' : ''
-                            }`}
+                            className={`border rounded-lg p-3 ${experiment.winnerVariantId === variant.variantId ? 'border-green-600 bg-green-50' : ''
+                              }`}
                           >
                             <div className="flex items-center justify-between mb-2">
                               <div className="flex items-center gap-2">
@@ -509,7 +508,7 @@ export default function ExperimentsPage() {
                                 {variant.weight}%
                               </span>
                             </div>
-                            
+
                             {variant.metrics && (
                               <>
                                 <div className="space-y-1 text-sm">
@@ -743,10 +742,10 @@ export default function ExperimentsPage() {
                 <div className="text-2xl font-bold">
                   {experiments?.length > 0
                     ? experiments
-                        .flatMap((e: ABTest) => e.variants.filter(v => !v.isControl && v.lift))
-                        .reduce((sum: number, v: ABTestVariant, _, arr) => 
-                          sum + (v.lift || 0) / arr.length, 0)
-                        .toFixed(1)
+                      .flatMap((e: ABTest) => e.variants.filter(v => !v.isControl && v.lift))
+                      .reduce((sum: number, v: ABTestVariant, _, arr) =>
+                        sum + (v.lift || 0) / arr.length, 0)
+                      .toFixed(1)
                     : 0}%
                 </div>
                 <div className="flex items-center text-xs text-muted-foreground mt-1">
@@ -762,7 +761,7 @@ export default function ExperimentsPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {experiments?.filter((e: ABTest) => 
+                  {experiments?.filter((e: ABTest) =>
                     e.variants.some(v => !v.isControl && v.confidence && v.confidence >= 95)
                   ).length || 0}
                 </div>
@@ -779,7 +778,7 @@ export default function ExperimentsPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  ${experiments?.reduce((sum: number, e: ABTest) => 
+                  ${experiments?.reduce((sum: number, e: ABTest) =>
                     sum + (e.revenue || 0), 0).toLocaleString() || 0}
                 </div>
                 <div className="flex items-center text-xs text-muted-foreground mt-1">
@@ -813,18 +812,18 @@ export default function ExperimentsPage() {
                     <YAxis yAxisId="right" orientation="right" />
                     <Tooltip />
                     <Legend />
-                    <Line 
-                      yAxisId="left" 
-                      type="monotone" 
-                      dataKey="impressions" 
-                      stroke="#8884d8" 
+                    <Line
+                      yAxisId="left"
+                      type="monotone"
+                      dataKey="impressions"
+                      stroke="#8884d8"
                       name="Impressions"
                     />
-                    <Line 
-                      yAxisId="right" 
-                      type="monotone" 
-                      dataKey="conversionRate" 
-                      stroke="#82ca9d" 
+                    <Line
+                      yAxisId="right"
+                      type="monotone"
+                      dataKey="conversionRate"
+                      stroke="#82ca9d"
                       name="Conversion Rate (%)"
                     />
                   </LineChart>
@@ -846,35 +845,35 @@ export default function ExperimentsPage() {
             <CardContent>
               <div className="space-y-4">
                 {[
-                  { 
-                    name: 'AI Booking Assistant', 
-                    key: 'ai_booking', 
+                  {
+                    name: 'AI Booking Assistant',
+                    key: 'ai_booking',
                     description: 'Enable AI-powered booking assistant',
-                    enabled: true 
+                    enabled: true
                   },
-                  { 
-                    name: 'Express Booking', 
-                    key: 'express_booking', 
+                  {
+                    name: 'Express Booking',
+                    key: 'express_booking',
                     description: 'Quick booking flow for returning customers',
-                    enabled: true 
+                    enabled: true
                   },
-                  { 
-                    name: 'Live Chat', 
-                    key: 'live_chat', 
+                  {
+                    name: 'Live Chat',
+                    key: 'live_chat',
                     description: 'Real-time chat support',
-                    enabled: false 
+                    enabled: false
                   },
-                  { 
-                    name: 'Session Recording', 
-                    key: 'session_recording', 
+                  {
+                    name: 'Session Recording',
+                    key: 'session_recording',
                     description: 'Record user sessions for analysis',
-                    enabled: false 
+                    enabled: false
                   },
-                  { 
-                    name: 'Heatmap Tracking', 
-                    key: 'heatmap', 
+                  {
+                    name: 'Heatmap Tracking',
+                    key: 'heatmap',
                     description: 'Track click and scroll heatmaps',
-                    enabled: true 
+                    enabled: true
                   }
                 ].map(flag => (
                   <div key={flag.key} className="flex items-center justify-between p-4 border rounded-lg">
@@ -906,7 +905,7 @@ export default function ExperimentsPage() {
               Set up a new A/B test to optimize your conversion rates
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -918,7 +917,7 @@ export default function ExperimentsPage() {
                 <Input placeholder="e.g., homepage_cta_v2" />
               </div>
             </div>
-            
+
             <div>
               <Label>Description</Label>
               <Textarea placeholder="Describe what you're testing and why..." />
@@ -974,7 +973,7 @@ export default function ExperimentsPage() {
                 Detailed analysis and performance metrics
               </DialogDescription>
             </DialogHeader>
-            
+
             <div className="space-y-6">
               {/* Add detailed charts and metrics here */}
               <Alert>

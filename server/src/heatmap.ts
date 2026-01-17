@@ -1,7 +1,7 @@
 import { db } from '../db';
-import { 
-  jobLocations, 
-  checkIns, 
+import {
+  jobLocations,
+  checkIns,
   heatMapSnapshots,
   InsertJobLocation,
   InsertCheckIn,
@@ -20,7 +20,7 @@ export class HeatMapService {
     // Random offset between -OFFSET and +OFFSET
     const latOffset = (Math.random() - 0.5) * 2 * PRIVACY_OFFSET_LAT;
     const lngOffset = (Math.random() - 0.5) * 2 * PRIVACY_OFFSET_LNG;
-    
+
     return {
       displayLat: lat + latOffset,
       displayLng: lng + lngOffset
@@ -31,7 +31,7 @@ export class HeatMapService {
   private calculateIntensity(jobDate: Date): number {
     const now = new Date();
     const daysDiff = (now.getTime() - jobDate.getTime()) / (1000 * 60 * 60 * 24);
-    
+
     // Weight recent jobs more heavily
     if (daysDiff <= 7) return 1.0;
     if (daysDiff <= 30) return 0.8;
@@ -41,19 +41,19 @@ export class HeatMapService {
   }
 
   // Import historical jobs from Housecall Pro
-  async importHistoricalJobs(apiKey: string, startDate: string = '2022-01-01'): Promise<{ 
-    success: boolean; 
-    imported: number; 
+  async importHistoricalJobs(apiKey: string, startDate: string = '2022-01-01'): Promise<{
+    success: boolean;
+    imported: number;
     skipped: number;
-    error?: string 
+    error?: string
   }> {
     Logger.info('[HeatMap] Starting historical job import...');
-    
+
     let imported = 0;
     let skipped = 0;
     let page = 1;
     const pageSize = 100;
-    
+
     try {
       while (true) {
         // Fetch jobs from Housecall Pro API
@@ -62,7 +62,7 @@ export class HeatMapService {
         url.searchParams.append('page_size', pageSize.toString());
         url.searchParams.append('sort_direction', 'desc');
         url.searchParams.append('scheduled_start_min', startDate);
-        
+
         const response = await fetch(url.toString(), {
           headers: {
             'Authorization': `Bearer ${apiKey}`,
@@ -86,16 +86,16 @@ export class HeatMapService {
         for (const job of jobs) {
           try {
             // Check job completion status (API uses 'status' field, webhooks use 'work_status')
-            const status = (job.work_status ?? job.status ?? '').toLowerCase();
+            const status = (job.work_status ?? job.status ?? '').toLowerCase() as string;
             // Housecall Pro statuses: "complete rated", "complete unrated", "completed", "paid"
             const isCompleted = status.startsWith('complete') || status === 'paid' || job.completed_on;
-            
+
             if (!isCompleted) {
               skipped++;
               Logger.debug(`[HeatMap] Skipping job ${job.id}: not completed (status: ${job.status || job.work_status})`);
               continue;
             }
-            
+
             if (!job.address) {
               skipped++;
               Logger.debug(`[HeatMap] Skipping job ${job.id}: no address`);
@@ -155,7 +155,7 @@ export class HeatMapService {
               Logger.info(`[HeatMap] Imported ${imported} jobs so far...`);
             }
           } catch (error) {
-            Logger.error('[HeatMap] Error processing job:', error);
+            Logger.error('[HeatMap] Error processing job:', error as any);
             skipped++;
           }
         }
@@ -169,17 +169,17 @@ export class HeatMapService {
       }
 
       Logger.info(`[HeatMap] Import complete: ${imported} imported, ${skipped} skipped`);
-      
-      return { 
-        success: true, 
-        imported, 
-        skipped 
+
+      return {
+        success: true,
+        imported,
+        skipped
       };
     } catch (error) {
-      Logger.error('[HeatMap] Historical import failed:', error);
-      return { 
-        success: false, 
-        imported, 
+      Logger.error('[HeatMap] Historical import failed:', error as any);
+      return {
+        success: false,
+        imported,
         skipped,
         error: error instanceof Error ? error.message : 'Unknown error'
       };
@@ -214,7 +214,7 @@ export class HeatMapService {
 
       // Job just completed, so full intensity
       const jobDate = new Date(job.scheduled_end || job.scheduled_start || new Date());
-      
+
       // Insert job location
       const [jobLocation] = await db.insert(jobLocations).values({
         jobId: job.id,
@@ -249,7 +249,7 @@ export class HeatMapService {
 
       Logger.info(`[HeatMap] Added job location: ${job.id} in ${job.address.city}`);
     } catch (error) {
-      Logger.error('[HeatMap] Error processing job completion:', error);
+      Logger.error('[HeatMap] Error processing job completion:', error as any);
       throw error;
     }
   }
@@ -268,13 +268,13 @@ export class HeatMapService {
       displayLng: jobLocations.displayLng,
       intensity: jobLocations.intensity,
     })
-    .from(jobLocations)
-    .where(
-      and(
-        eq(jobLocations.isActive, true),
-        gte(jobLocations.jobDate, cutoffDate)
-      )
-    );
+      .from(jobLocations)
+      .where(
+        and(
+          eq(jobLocations.isActive, true),
+          gte(jobLocations.jobDate, cutoffDate)
+        )
+      );
 
     return locations.map(loc => ({
       lat: loc.displayLat,
@@ -297,14 +297,14 @@ export class HeatMapService {
   // Update job intensities based on age
   async updateIntensities(): Promise<void> {
     Logger.info('[HeatMap] Updating job intensities...');
-    
+
     const jobs = await db.select()
       .from(jobLocations)
       .where(eq(jobLocations.isActive, true));
 
     for (const job of jobs) {
       const newIntensity = this.calculateIntensity(job.jobDate);
-      
+
       if (Math.abs(newIntensity - job.intensity) > 0.05) {
         await db.update(jobLocations)
           .set({ intensity: newIntensity })
@@ -327,7 +327,7 @@ export class HeatMapService {
       const result = await db.select({ count: sql<number>`count(*)` })
         .from(jobLocations)
         .where(eq(jobLocations.isActive, true));
-      
+
       const dataPointCount = Number(result[0]?.count || 0);
 
       // Create new snapshot
@@ -345,7 +345,7 @@ export class HeatMapService {
 
       Logger.info(`[HeatMap] Snapshot saved: ${imageUrl} (${dataPointCount} data points)`);
     } catch (error) {
-      Logger.error('[HeatMap] Error saving snapshot:', error);
+      Logger.error('[HeatMap] Error saving snapshot:', error as any);
       throw error;
     }
   }
@@ -389,10 +389,10 @@ export class HeatMapService {
       .where(eq(jobLocations.isActive, true));
 
     return {
-      totalJobs: Number(totalResult.count || 0),
-      jobsLast30Days: Number(recentResult.count || 0),
-      citiesCovered: Number(citiesResult.count || 0),
-      activeDataPoints: Number(totalResult.count || 0),
+      totalJobs: Number(totalResult?.count || 0),
+      jobsLast30Days: Number(recentResult?.count || 0),
+      citiesCovered: Number(citiesResult?.count || 0),
+      activeDataPoints: Number(totalResult?.count || 0),
     };
   }
 }
