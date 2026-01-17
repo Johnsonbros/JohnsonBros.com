@@ -122,6 +122,7 @@ export const attributionData = pgTable('attribution_data', {
   sourceIdx: index('attribution_source_idx').on(table.source),
   mediumIdx: index('attribution_medium_idx').on(table.medium),
   campaignIdx: index('attribution_campaign_idx').on(table.campaign),
+  conversionEventIdx: index('attribution_data_conversion_event_idx').on(table.conversionEventId),
 }));
 
 // Leads table - stores landing page form submissions
@@ -265,7 +266,10 @@ export const sharedThreadMessages = pgTable('shared_thread_messages', {
   text: text('text').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   metadata: json('metadata'),
-});
+}, (table) => ({
+  threadIdIdx: index('shared_thread_messages_thread_id_idx').on(table.threadId),
+  threadCreatedIdx: index('shared_thread_messages_thread_created_idx').on(table.threadId, table.createdAt),
+}));
 
 export const sharedThreadPendingLinks = pgTable('shared_thread_pending_links', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -278,6 +282,7 @@ export const sharedThreadPendingLinks = pgTable('shared_thread_pending_links', {
 }, (table) => ({
   phoneIdx: index('shared_thread_pending_phone_idx').on(table.phoneE164),
   webUserIdx: index('shared_thread_pending_web_user_idx').on(table.webUserId),
+  rateLimitIdx: index('shared_thread_pending_links_rate_limit_idx').on(table.phoneE164, table.createdAt),
 }));
 export type InsertServiceArea = z.infer<typeof insertServiceAreaSchema>;
 
@@ -327,7 +332,11 @@ export const appointments = pgTable('appointments', {
   notes: text('notes'),
   status: text('status').default('scheduled'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
-});
+}, (table) => ({
+  customerIdIdx: index('appointments_customer_id_idx').on(table.customerId),
+  dateIdx: index('appointments_date_idx').on(table.date),
+  statusIdx: index('appointments_status_idx').on(table.status),
+}));
 
 // Insert schemas for booking system
 export const insertCustomerSchema = createInsertSchema(customers).omit({
@@ -703,6 +712,7 @@ export const webhookEvents = pgTable('webhook_events', {
   entityIdIdx: index('webhook_entity_id_idx').on(table.entityId),
   statusIdx: index('webhook_status_idx').on(table.status),
   receivedAtIdx: index('webhook_received_at_idx').on(table.receivedAt),
+  processingIdx: index('webhook_events_processing_idx').on(table.status, table.receivedAt),
 }));
 
 // Webhook Event Tags table - flexible tagging system for events
@@ -2242,6 +2252,7 @@ export const apiUsage = pgTable('api_usage', {
   createdAtIdx: index('api_usage_created_at_idx').on(table.createdAt),
   sessionIdIdx: index('api_usage_session_id_idx').on(table.sessionId),
   channelIdx: index('api_usage_channel_idx').on(table.channel),
+  analyticsIdx: index('api_usage_analytics_idx').on(table.createdAt, table.service, table.channel),
 }));
 
 export const insertApiUsageSchema = createInsertSchema(apiUsage).omit({
