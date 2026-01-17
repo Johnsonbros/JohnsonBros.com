@@ -1,0 +1,88 @@
+{
+  "_comment": "Permissions are pre-approved (no prompts). Patterns use glob syntax: 'command:*' means 'command followed by anything'",
+  "permissions": {
+    "allow": [
+      "Bash(aoa baseline:*)",
+      "Bash(aoa changes:*)",
+      "Bash(aoa egrep:*)",
+      "Bash(aoa files:*)",
+      "Bash(aoa find:*)",
+      "Bash(aoa focus:*)",
+      "Bash(aoa grep:*)",
+      "Bash(aoa head:*)",
+      "Bash(aoa health:*)",
+      "Bash(aoa help:*)",
+      "Bash(aoa hot:*)",
+      "Bash(aoa intent:*)",
+      "Bash(aoa lines:*)",
+      "Bash(aoa locate:*)",
+      "Bash(aoa metrics:*)",
+      "Bash(aoa multi:*)",
+      "Bash(aoa outline:*)",
+      "Bash(aoa pattern:*)",
+      "Bash(aoa predict:*)",
+      "Bash(aoa projects:*)",
+      "Bash(aoa search:*)",
+      "Bash(aoa services:*)",
+      "Bash(aoa tail:*)",
+      "Bash(aoa touched:*)",
+      "Bash(aoa tree:*)",
+      "Bash(curl:*)",
+      "Bash(docker build:*)",
+      "Bash(docker exec:*)",
+      "Bash(docker logs:*)",
+      "Bash(docker ps:*)",
+      "Bash(docker rm:*)",
+      "Bash(docker run:*)",
+      "Bash(docker stop:*)",
+      "Bash(docker-compose:*)",
+      "Bash(ls:*)"
+    ]
+  },
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/aoa-intent-summary.py\"",
+            "timeout": 2
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/aoa-predict-context.py\"",
+            "timeout": 3
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Read|Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/aoa-intent-prefetch.py\"",
+            "timeout": 2
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Read|Edit|Write|Bash|Grep|Glob",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/aoa-intent-capture.py\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/aoa-status-line.sh\""
+  }
+}

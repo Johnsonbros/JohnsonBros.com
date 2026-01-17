@@ -1,5 +1,5 @@
 import { logError } from './logger';
-import { getCapacityConfig } from './capacity';
+import { loadConfig } from './config.js';
 
 interface GeocodeResult {
   zipCode: string | null;
@@ -19,7 +19,7 @@ export async function geocodeAddress(address: string): Promise<GeocodeResult> {
   const apiKey = process.env.GOOGLE_MAPS_API_KEY;
 
   if (!apiKey) {
-    logError('GOOGLE_MAPS_API_KEY not configured');
+    logError('GOOGLE_MAPS_API_KEY not configured', new Error('Missing API Key'));
     return {
       zipCode: null,
       city: null,
@@ -112,7 +112,7 @@ export async function checkServiceArea(address: string): Promise<{
   }
 
   // Get service area ZIP codes from capacity config
-  const config = getCapacityConfig();
+  const config = loadConfig();
   const allZipCodes = config.geos || [];
   const tier1Zips = config.express_zones?.tier1 || [];
   const tier2Zips = config.express_zones?.tier2 || [];

@@ -22,7 +22,7 @@ process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
     reason: reason instanceof Error ? reason.message : String(reason),
     stack: reason instanceof Error ? reason.stack : undefined,
   });
-  
+
   // Exit process to prevent running in indeterminate state
   setTimeout(() => {
     process.exit(1);
@@ -36,7 +36,7 @@ process.on('uncaughtException', (error: Error) => {
     message: error.message,
     stack: error.stack,
   });
-  
+
   // Give time to log before exiting
   setTimeout(() => {
     process.exit(1);
@@ -76,16 +76,16 @@ app.use((req, res, next) => {
     '/api/mcp',               // MCP API endpoints
     '/health'                 // Health check
   ];
-  
+
   // Check for exact match or prefix match for webhook routes
-  const isExempt = exemptPaths.some(path => 
+  const isExempt = exemptPaths.some(path =>
     req.path === path || req.path.startsWith(path + '/')
   );
-  
+
   if (isExempt) {
     return next();
   }
-  
+
   // Apply CSRF protection to all other routes
   return csrfProtection()(req, res, next);
 });
@@ -95,12 +95,12 @@ app.use((req, res, next) => {
   // Add MCP discovery Link header to all HTML pages
   if (req.accepts('html') || req.path === '/' || !req.path.startsWith('/api')) {
     res.set('Link', '</.well-known/mcp.json>; rel="mcp"; type="application/json"');
-    
+
     // Add additional AI discovery headers
     res.set('X-MCP-Server', 'johnson-bros-plumbing');
     res.set('X-AI-Integration', 'mcp-enabled');
   }
-  
+
   next();
 });
 
@@ -143,7 +143,7 @@ app.use((req, res, next) => {
       const adsBridge = GoogleAdsBridge.getInstance();
       await adsBridge.applyCapacityRules();
       console.log('Initial capacity check and ads sync completed');
-      
+
       // Schedule periodic ads sync (every 5 minutes)
       const adsSyncInterval = setInterval(async () => {
         try {
@@ -152,14 +152,14 @@ app.use((req, res, next) => {
           console.error('Error applying ads rules:', error);
         }
       }, 5 * 60 * 1000);
-      
+
       // Store interval for potential cleanup
       (global as any).__adsSyncInterval = adsSyncInterval;
     } catch (error) {
       console.error('Error initializing capacity system:', error);
     }
   };
-  
+
   // Delay initialization to ensure server is ready
   setTimeout(initializeAdsBridge, 5000);
 
@@ -182,7 +182,7 @@ app.use((req, res, next) => {
     });
 
     // Send error response
-    res.status(status).json({ 
+    res.status(status).json({
       message,
       ...(app.get("env") === "development" && { stack: err.stack })
     });
@@ -205,7 +205,6 @@ app.use((req, res, next) => {
   server.listen({
     port,
     host: "0.0.0.0",
-    reusePort: true,
   }, () => {
     log(`serving on port ${port}`);
   });
@@ -216,7 +215,7 @@ app.use((req, res, next) => {
     const path = await import('path');
     const net = await import('net');
     const mcpPort = parseInt(process.env.MCP_PORT || '3001', 10);
-    
+
     // Check if port is already in use with a TCP connection test
     const isPortInUse = await new Promise<boolean>((resolve) => {
       const socket = new net.Socket();
@@ -244,11 +243,12 @@ app.use((req, res, next) => {
     // Port is not in use, start the MCP server
     const mcpServerPath = path.resolve(process.cwd(), 'src/mcp-http-server.ts');
     log(`Starting MCP server from: ${mcpServerPath}`);
-    
+
     const mcpServer = spawn('npx', ['tsx', mcpServerPath], {
       env: { ...process.env, MCP_PORT: String(mcpPort) },
       stdio: ['ignore', 'pipe', 'pipe'],
       detached: false,
+      shell: true,
       cwd: process.cwd()
     });
 
@@ -276,13 +276,13 @@ app.use((req, res, next) => {
         mcpServer.kill();
       }
     };
-    
+
     process.on('SIGTERM', cleanup);
     process.on('SIGINT', cleanup);
 
     log(`MCP server starting on port ${mcpPort}`);
   };
-  
+
   // Start MCP server with a small delay to ensure main server is ready
   setTimeout(startMcpServer, 2000);
 })();

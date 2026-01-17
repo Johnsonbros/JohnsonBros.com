@@ -12,6 +12,8 @@
     "test": "npm run test:unit && npm run test:integration",
     "test:unit": "vitest --config vitest.client.config.ts",
     "test:integration": "vitest --config vitest.config.ts",
+    "test:server:run": "vitest run --config vitest.config.ts",
+    "test:client:run": "vitest run --config vitest.client.config.ts",
     "test:e2e": "playwright test"
   },
   "dependencies": {

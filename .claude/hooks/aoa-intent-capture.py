@@ -6,14 +6,14 @@ Captures tool usage and records intent to aOa.
 Fire-and-forget, non-blocking, <10ms.
 """
 
-import json
-import os
-import re
 import sys
-from datetime import datetime
+import json
+import re
+import os
 from pathlib import Path
-from urllib.error import URLError
 from urllib.request import Request, urlopen
+from urllib.error import URLError
+from datetime import datetime
 
 AOA_URL = os.environ.get("AOA_URL", "http://localhost:8080")
 # Find AOA data directory
@@ -65,153 +65,6 @@ TOOL_TAGS = {
 }
 
 
-# ============================================================================
-# Pattern Library Loading (RAM-cached at import time for ultra-speed)
-# ============================================================================
-
-def _load_pattern_configs():
-    """Load pattern configs from universal-domains.json (v2 format).
-
-    GL-074: Migrated from legacy semantic-patterns.json + domain-patterns.json
-    to unified universal-domains.json with three-level hierarchy:
-    @domain -> semantic_term -> matches[]
-
-    Called once at import time. Returns optimized lookup structures.
-    """
-    semantic_patterns = {}  # semantic_term -> {patterns: set, tag: @domain, priority: int}
-    domain_keywords = {}    # match -> @domain
-    class_suffixes = {}     # suffix -> tag (kept for backwards compat)
-
-    # Find config directory
-    config_paths = [
-        HOOK_DIR.parent.parent / "config",  # project/config/
-        Path("/home") / os.environ.get("USER", "user") / ".aoa" / "config",  # ~/.aoa/config/
-        Path(__file__).parent.parent.parent / "config",  # aOa/config/
-    ]
-
-    universal_file = None
-    for config_dir in config_paths:
-        candidate = config_dir / "universal-domains.json"
-        if candidate.exists():
-            universal_file = candidate
-            break
-
-    if not universal_file:
-        return semantic_patterns, domain_keywords, class_suffixes
-
-    try:
-        data = json.loads(universal_file.read_text())
-        # Handle both array format (v2) and object format (with _meta)
-        domains = data if isinstance(data, list) else data.get("domains", [])
-
-        for domain in domains:
-            domain_name = domain.get("name", "")  # e.g., "@authentication"
-            terms = domain.get("terms", {})
-
-            # v2 format: terms is dict of semantic_term -> matches[]
-            if isinstance(terms, dict):
-                for semantic_term, matches in terms.items():
-                    # Build semantic patterns
-                    patterns = {m.lower() for m in matches}
-                    semantic_patterns[semantic_term] = {
-                        "patterns": patterns,
-                        "tag": domain_name,
-                        "priority": 3
-                    }
-
-                    # Build match -> domain lookup
-                    for match in matches:
-                        domain_keywords[match.lower()] = domain_name
-
-            # Flat format fallback
-            elif isinstance(terms, list):
-                for match in terms:
-                    domain_keywords[match.lower()] = domain_name
-
-    except (OSError, json.JSONDecodeError):
-        pass
-
-    return semantic_patterns, domain_keywords, class_suffixes
-
-
-# Load patterns at import time (RAM-cached, runs once)
-SEMANTIC_PATTERNS, DOMAIN_KEYWORDS, CLASS_SUFFIXES = _load_pattern_configs()
-
-
-def _tokenize(text: str) -> set:
-    """Tokenize a string into matchable parts.
-
-    Handles: camelCase, snake_case, kebab-case, path segments.
-    Returns lowercase tokens.
-    """
-    tokens = set()
-
-    # Split on common delimiters: /, _, -, .
-    parts = re.split(r'[/_\-.\s]+', text)
-
-    for part in parts:
-        if not part:
-            continue
-        part_lower = part.lower()
-        tokens.add(part_lower)
-
-        # Split camelCase: getUserById -> get, User, By, Id
-        camel_parts = re.findall(r'[A-Z]?[a-z]+|[A-Z]+(?=[A-Z][a-z]|\d|\W|$)|\d+', part)
-        for cp in camel_parts:
-            tokens.add(cp.lower())
-
-    return tokens
-
-
-def _match_semantic_tags(tokens: set) -> set:
-    """Match tokens against semantic patterns (action verbs, etc.)."""
-    tags = set()
-
-    # Priority 1 (CRUD) first, then 2 (auth, cache, etc.), then 3
-    for priority in [1, 2, 3]:
-        for _cat_name, cat_data in SEMANTIC_PATTERNS.items():
-            if cat_data["priority"] != priority:
-                continue
-            # Check if any token starts with any pattern
-            patterns = cat_data["patterns"]
-            for token in tokens:
-                for pattern in patterns:
-                    if token.startswith(pattern) or token == pattern:
-                        tags.add(cat_data["tag"])
-                        break
-
-    return tags
-
-
-def _match_domain_tags(tokens: set, full_text: str) -> set:
-    """Match tokens against domain keywords."""
-    tags = set()
-    full_lower = full_text.lower()
-
-    for keyword, tag in DOMAIN_KEYWORDS.items():
-        # Check token match or substring in full text
-        if keyword in tokens or keyword in full_lower:
-            tags.add(tag)
-
-    return tags
-
-
-def _match_class_suffix(filename: str) -> set:
-    """Match class/file suffixes (Service, Controller, etc.)."""
-    tags = set()
-
-    # Get basename without extension
-    basename = Path(filename).stem if '/' in filename else filename.split('.')[0]
-
-    for suffix, tag in CLASS_SUFFIXES.items():
-        # Case-insensitive suffix matching
-        if basename.lower().endswith(suffix.lower()):
-            tags.add(tag)
-            break  # Only one suffix match
-
-    return tags
-
-
 def extract_files(data: dict) -> tuple:
     """Extract file paths and search tags from tool input/output.
 
@@ -261,25 +114,6 @@ def extract_files(data: dict) -> tuple:
             aoa_cmd = match[0]  # grep, egrep, find, etc.
             aoa_flag = match[1] if match[1] else ""  # -a, -i, etc.
             aoa_term = (match[2] or "").strip().strip('"\'')[:40]  # Limit term length
-
-            # Determine specific search type for better attribution
-            # Parse from command flags and terms
-            if aoa_cmd == "grep":
-                if aoa_flag == "-a":
-                    search_type = "multi-and"
-                elif aoa_flag == "-E":
-                    search_type = "regex"
-                elif ' ' in aoa_term or '|' in aoa_term:
-                    search_type = "multi-or"
-                else:
-                    search_type = "indexed"
-            elif aoa_cmd == "egrep":
-                search_type = "regex"
-            elif aoa_cmd == "multi":
-                search_type = "multi-and"  # cmd_multi is alias for grep -a
-            else:
-                search_type = aoa_cmd
-
             # Build full command display: "aoa grep -a term"
             full_cmd = f"aoa {aoa_cmd}"
             if aoa_flag:
@@ -312,7 +146,7 @@ def extract_files(data: dict) -> tuple:
                         hits = pattern_match.group(1)
                         time_ms = pattern_match.group(2)
 
-            files.add(f"cmd:aoa:{search_type}:{full_cmd_safe}:{hits}:{time_ms}")
+            files.add(f"cmd:aoa:{aoa_cmd}:{full_cmd_safe}:{hits}:{time_ms}")
 
             # Extract result files from aOa output and associate with search intent
             # This creates meaningful file clusters for prediction
@@ -349,47 +183,60 @@ def extract_files(data: dict) -> tuple:
 
 
 def infer_tags(files: list, tool: str) -> list:
-    """Infer semantic intent tags from file paths and tool.
-
-    Uses pattern library (JSON configs) for intelligent tagging:
-    - Semantic patterns: action verbs (create, fetch, handle, validate, etc.)
-    - Domain keywords: auth, redis, stripe, kubernetes, etc.
-    - Class suffixes: Service, Controller, Repository, etc.
-    """
+    """Infer intent tags from file paths and tool."""
     tags = set()
 
     # Add tool action tag
     if tool in TOOL_TAGS:
         tags.add(TOOL_TAGS[tool])
 
-    # Collect all tokens from all files
-    all_tokens = set()
-    combined_text = ""
+    # Match files against patterns
+    combined = ' '.join(files).lower()
+    for pattern, pattern_tags in INTENT_PATTERNS:
+        if re.search(pattern, combined, re.IGNORECASE):
+            tags.update(pattern_tags)
 
+    # Language tags based on extension
     for f in files:
-        # Skip special entries
-        if f.startswith('pattern:') or f.startswith('cmd:'):
-            continue
+        if f.endswith('.py'):
+            tags.add('#python')
+        elif f.endswith(('.js', '.ts', '.tsx', '.jsx')):
+            tags.add('#javascript')
+        elif f.endswith('.go'):
+            tags.add('#go')
+        elif f.endswith('.rs'):
+            tags.add('#rust')
+        elif f.endswith(('.c', '.cpp', '.h')):
+            tags.add('#cpp')
+        elif f.endswith('.java'):
+            tags.add('#java')
+        elif f.endswith('.sh'):
+            tags.add('#shell')
+        elif f.endswith('.sql'):
+            tags.add('#sql')
+        elif f.endswith('.md'):
+            tags.add('#markdown')
 
-        combined_text += " " + f
-        tokens = _tokenize(f)
-        all_tokens.update(tokens)
-
-        # Match class/file suffixes (AuthService -> #service)
-        tags.update(_match_class_suffix(f))
-
-    # Match semantic patterns (action verbs like get, create, handle)
-    tags.update(_match_semantic_tags(all_tokens))
-
-    # Match domain keywords (auth, redis, stripe, etc.)
-    tags.update(_match_domain_tags(all_tokens, combined_text))
-
-    # Fallback: If no semantic tags found, use legacy patterns
-    if len(tags) <= 1:  # Only has tool tag
-        for pattern, pattern_tags in INTENT_PATTERNS:
-            if re.search(pattern, combined_text, re.IGNORECASE):
-                tags.update(pattern_tags)
-                break  # Only first match for fallback
+        # Path-based tags for common directories
+        f_lower = f.lower()
+        if '/cli/' in f_lower or f_lower.endswith('/cli') or '/bin/' in f_lower:
+            tags.add('#cli')
+        if '/hooks/' in f_lower:
+            tags.add('#hooks')
+        if '/services/' in f_lower or '/service/' in f_lower:
+            tags.add('#services')
+        if '/api/' in f_lower or '/endpoint' in f_lower:
+            tags.add('#api')
+        if '/index' in f_lower or 'indexer' in f_lower:
+            tags.add('#indexing')
+        if '.context/' in f_lower or '/context/' in f_lower:
+            tags.add('#context')
+        if '/agents/' in f_lower or '/agent/' in f_lower:
+            tags.add('#agents')
+        if '/skills/' in f_lower or '/skill/' in f_lower:
+            tags.add('#skills')
+        if '/plugin/' in f_lower or '/plugins/' in f_lower:
+            tags.add('#plugins')
 
     return list(tags)
 

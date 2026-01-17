@@ -7,11 +7,11 @@ import { adminUsers, adminSessions, adminPermissions, adminActivityLogs } from '
 import { eq, and, gt, isNull, ne } from 'drizzle-orm';
 
 // Session management
-const SESSION_DURATION = 24 * 60 * 60 * 1000; // 24 hours
-const SESSION_ROTATION_INTERVAL = 60 * 60 * 1000; // Rotate every hour
-const SESSION_ACTIVITY_EXTEND = 30 * 60 * 1000; // Extend by 30 minutes on activity
-const MAX_LOGIN_ATTEMPTS = 5; // Lock account after 5 failed attempts
-const LOCKOUT_DURATION = 30 * 60 * 1000; // 30 minutes lockout
+export const SESSION_DURATION = 24 * 60 * 60 * 1000; // 24 hours
+export const SESSION_ROTATION_INTERVAL = 60 * 60 * 1000; // Rotate every hour
+export const SESSION_ACTIVITY_EXTEND = 30 * 60 * 1000; // Extend by 30 minutes on activity
+export const MAX_LOGIN_ATTEMPTS = 5; // Lock account after 5 failed attempts
+export const LOCKOUT_DURATION = 30 * 60 * 1000; // 30 minutes lockout
 
 // Permission definitions by role
 const ROLE_PERMISSIONS: Record<string, string[]> = {
@@ -61,7 +61,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
 export async function initializePermissions() {
   for (const [role, permissions] of Object.entries(ROLE_PERMISSIONS)) {
     const existing = await db.select().from(adminPermissions).where(eq(adminPermissions.role, role)).limit(1);
-    
+
     if (existing.length === 0) {
       await db.insert(adminPermissions).values({
         role,
@@ -88,21 +88,21 @@ export async function isAccountLocked(userId: number): Promise<boolean> {
     .from(adminUsers)
     .where(eq(adminUsers.id, userId))
     .limit(1);
-  
+
   if (!user || !user.lockedUntil) return false;
-  
+
   // Check if lockout period has expired
   if (new Date() > user.lockedUntil) {
     // Reset lockout
     await db.update(adminUsers)
-      .set({ 
-        lockedUntil: null, 
-        failedLoginAttempts: 0 
+      .set({
+        lockedUntil: null,
+        failedLoginAttempts: 0
       })
       .where(eq(adminUsers.id, userId));
     return false;
   }
-  
+
   return true;
 }
 
@@ -112,15 +112,15 @@ export async function recordFailedLogin(userId: number): Promise<void> {
     .from(adminUsers)
     .where(eq(adminUsers.id, userId))
     .limit(1);
-  
+
   if (!user) return;
-  
+
   const newAttempts = (user.failedLoginAttempts || 0) + 1;
-  
+
   // Lock account if max attempts reached
   if (newAttempts >= MAX_LOGIN_ATTEMPTS) {
     await db.update(adminUsers)
-      .set({ 
+      .set({
         failedLoginAttempts: newAttempts,
         lockedUntil: new Date(Date.now() + LOCKOUT_DURATION)
       })
@@ -135,7 +135,7 @@ export async function recordFailedLogin(userId: number): Promise<void> {
 // Reset failed login attempts on successful login
 export async function resetFailedLogins(userId: number): Promise<void> {
   await db.update(adminUsers)
-    .set({ 
+    .set({
       failedLoginAttempts: 0,
       lockedUntil: null
     })
@@ -152,7 +152,7 @@ export async function createSession(userId: number, ipAddress?: string, userAgen
   const token = generateSessionToken();
   const expiresAt = new Date(Date.now() + SESSION_DURATION);
   const now = new Date();
-  
+
   await db.insert(adminSessions).values({
     userId,
     sessionToken: token,
@@ -162,12 +162,12 @@ export async function createSession(userId: number, ipAddress?: string, userAgen
     lastRotatedAt: now,
     lastActivityAt: now
   });
-  
+
   // Update last login
   await db.update(adminUsers)
     .set({ lastLoginAt: now })
     .where(eq(adminUsers.id, userId));
-  
+
   return { token, expiresAt };
 }
 
@@ -183,41 +183,41 @@ export async function validateSession(token: string, shouldExtend: boolean = tru
       )
     )
     .limit(1);
-  
+
   if (!session) return null;
-  
+
   const [user] = await db.select()
     .from(adminUsers)
     .where(eq(adminUsers.id, session.userId))
     .limit(1);
-  
+
   if (!user || !user.isActive) return null;
-  
+
   const [permissions] = await db.select()
     .from(adminPermissions)
     .where(eq(adminPermissions.role, user.role))
     .limit(1);
-  
+
   // Sliding expiration - extend session on activity
   if (shouldExtend) {
     const now = new Date();
     const timeSinceLastActivity = now.getTime() - session.lastActivityAt.getTime();
-    
+
     // Extend session if active within the last 30 minutes
     if (timeSinceLastActivity < SESSION_ACTIVITY_EXTEND) {
       const newExpiresAt = new Date(now.getTime() + SESSION_DURATION);
       await db.update(adminSessions)
-        .set({ 
+        .set({
           expiresAt: newExpiresAt,
           lastActivityAt: now
         })
         .where(eq(adminSessions.id, session.id));
-      
+
       session.expiresAt = newExpiresAt;
       session.lastActivityAt = now;
     }
   }
-  
+
   return {
     user,
     session,
@@ -228,22 +228,22 @@ export async function validateSession(token: string, shouldExtend: boolean = tru
 // Middleware: Authenticate user
 export async function authenticate(req: Request, res: Response, next: NextFunction) {
   const token = req.headers.authorization?.replace('Bearer ', '');
-  
+
   if (!token) {
     return res.status(401).json({ error: 'Authentication required' });
   }
-  
+
   const sessionData = await validateSession(token);
-  
+
   if (!sessionData) {
     return res.status(401).json({ error: 'Invalid or expired session' });
   }
-  
+
   // Add user data to request with proper typing
   const authReq = req as AuthenticatedRequest;
   authReq.user = sessionData.user;
   authReq.permissions = sessionData.permissions;
-  
+
   next();
 }
 
@@ -252,7 +252,7 @@ export function requirePermission(permission: string) {
   return async (req: Request, res: Response, next: NextFunction) => {
     const authReq = req as AuthenticatedRequest;
     const permissions = authReq.permissions || [];
-    
+
     if (!permissions.includes(permission)) {
       // Log unauthorized access attempt
       if (authReq.user) {
@@ -270,10 +270,10 @@ export function requirePermission(permission: string) {
           ipAddress: req.ip
         });
       }
-      
+
       return res.status(403).json({ error: 'Insufficient permissions' });
     }
-    
+
     next();
   };
 }
@@ -290,13 +290,13 @@ export async function rotateSession(sessionId: number): Promise<string | null> {
         )
       )
       .limit(1);
-    
+
     if (!session) return null;
-    
+
     // Generate new token
     const newToken = generateSessionToken();
     const now = new Date();
-    
+
     // Update session with new token
     await db.update(adminSessions)
       .set({
@@ -304,7 +304,7 @@ export async function rotateSession(sessionId: number): Promise<string | null> {
         lastRotatedAt: now
       })
       .where(eq(adminSessions.id, sessionId));
-    
+
     return newToken;
   } catch (error) {
     console.error('Session rotation error:', error);
@@ -379,7 +379,7 @@ export async function ensureSuperAdmin() {
     .from(adminUsers)
     .where(eq(adminUsers.role, 'super_admin'))
     .limit(1);
-  
+
   if (admins.length === 0) {
     console.warn('═══════════════════════════════════════════════════════════');
     console.warn('⚠️  NO SUPER ADMIN EXISTS - APPLICATION SECURITY AT RISK');
@@ -396,18 +396,18 @@ export async function ensureSuperAdmin() {
     console.warn('For backward compatibility, these are also checked:');
     console.warn('  ADMIN_EMAIL, ADMIN_DEFAULT_PASSWORD, ADMIN_FIRST_NAME, ADMIN_LAST_NAME');
     console.warn('═══════════════════════════════════════════════════════════');
-    
+
     // Check new environment variables first, then fall back to old ones
-    const adminEmail = process.env.SUPER_ADMIN_EMAIL || 
-                      process.env.ADMIN_EMAIL;
-    
-    const defaultPassword = process.env.SUPER_ADMIN_PASSWORD || 
-                           process.env.ADMIN_DEFAULT_PASSWORD;
-    
+    const adminEmail = process.env.SUPER_ADMIN_EMAIL ||
+      process.env.ADMIN_EMAIL;
+
+    const defaultPassword = process.env.SUPER_ADMIN_PASSWORD ||
+      process.env.ADMIN_DEFAULT_PASSWORD;
+
     // Parse name from SUPER_ADMIN_NAME or use individual name env vars
     let firstName = 'Admin';
     let lastName = 'User';
-    
+
     if (process.env.SUPER_ADMIN_NAME) {
       const nameParts = process.env.SUPER_ADMIN_NAME.split(' ');
       firstName = nameParts[0] || 'Admin';
@@ -416,17 +416,17 @@ export async function ensureSuperAdmin() {
       firstName = process.env.ADMIN_FIRST_NAME || 'Admin';
       lastName = process.env.ADMIN_LAST_NAME || 'User';
     }
-    
+
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (adminEmail && !emailRegex.test(adminEmail)) {
       console.error('❌ Invalid SUPER_ADMIN_EMAIL format');
       return;
     }
-    
+
     if (adminEmail && defaultPassword && defaultPassword.length >= 12) {
       const hashedPassword = await hashPassword(defaultPassword);
-      
+
       await db.insert(adminUsers).values({
         email: adminEmail,
         passwordHash: hashedPassword,
@@ -435,7 +435,7 @@ export async function ensureSuperAdmin() {
         role: 'super_admin',
         isActive: true
       });
-      
+
       console.log('✅ Super admin created automatically');
       console.log(`   Email: ${adminEmail}`);
       console.log(`   Name: ${firstName} ${lastName}`);

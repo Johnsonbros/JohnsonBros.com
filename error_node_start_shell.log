@@ -1,0 +1,571 @@
+{"timestamp":"2026-01-17T19:23:06.593Z","level":"warn","message":"MCP_PUBLIC_URL not set - using default. Set MCP_PUBLIC_URL for production."}
+{"timestamp":"2026-01-17T19:23:06.946Z","level":"error","message":"[ENV] Environment validation failed:"}
+{"timestamp":"2026-01-17T19:23:06.946Z","level":"error","message":"[ENV] Invalid value for INTERNAL_SECRET: \"your_internal_api_secret_here\" - Secret for internal server-to-server API calls"}
+{"timestamp":"2026-01-17T19:23:06.946Z","level":"error","message":"[ENV]   Example: INTERNAL_SECRET=minimum-32-character-secure-random-string"}
+{"timestamp":"2026-01-17T19:23:06.947Z","level":"warn","message":"[ENV] Continuing in development mode despite missing variables"}
+[Shutdown] Graceful shutdown handlers registered
+Seeding blog data...
+{"timestamp":"2026-01-17T19:23:06.985Z","level":"info","message":"[WebSocket] Media Stream WebSocket server initialized"}
+{"timestamp":"2026-01-17T19:23:06.990Z","level":"info","message":"[SMS Agent] Scheduled SMS processor started"}
+{"timestamp":"2026-01-17T19:23:07.384Z","level":"warn","message":"[MCP] Connection attempt 1/3 failed: fetch failed"}
+2:23:07 PM [express] serving on port 5000
+{"timestamp":"2026-01-17T19:23:08.399Z","level":"warn","message":"[MCP] Connection attempt 2/3 failed: fetch failed"}
+{"timestamp":"2026-01-17T19:23:09.130Z","level":"info","message":"[SMS Agent] Found 0 pending scheduled SMS to process"}
+2:23:09 PM [express] Starting MCP server from: C:\Users\Workstation\Desktop\Replit\thejohnsonbros\project\src\mcp-http-server.ts
+2:23:09 PM [express] MCP server starting on port 3001
+[Admin] Authentication initialized successfully
+{"timestamp":"2026-01-17T19:23:10.405Z","level":"warn","message":"[MCP] Connection attempt 3/3 failed: fetch failed"}
+{"timestamp":"2026-01-17T19:23:10.405Z","level":"error","message":"[MCP] Failed to list tools, resetting connection","error":"fetch failed"}
+{"timestamp":"2026-01-17T19:23:10.405Z","level":"warn","message":"[SMS Agent] MCP connection attempt 1 failed, retrying in 2000ms:","error":"fetch failed"}
+Blog data seeded successfully!
+2:23:11 PM [express] [MCP] {"level":30,"time":1768677791334,"pid":5664,"hostname":"Workstation","name":"jb-booker","msg":"Registered 9 ChatGPT widget templates and shared widget assets"}
+2:23:11 PM [express] [MCP] {"level":30,"time":1768677791340,"pid":5664,"hostname":"Workstation","name":"mcp-http-server","port":"3001","msg":"MCP HTTP server started successfully"}
+2:23:11 PM [express] [MCP] ╔════════════════════════════════════════════════════════════╗
+║  Johnson Bros. Plumbing MCP Server                         ║
+╟────────────────────────────────────────────────────────────╢
+║  Status: Running                                           ║
+║  Port: 3001                                               ║
+║  MCP Endpoint: http://localhost:3001/mcp                  ║
+║  Health Check: http://localhost:3001/health               ║
+╚════════════════════════════════════════════════════════════╝
+{"timestamp":"2026-01-17T19:23:11.956Z","level":"info","message":"Google Ads Bridge initialized in STUB mode (no credentials configured)"}
+{"timestamp":"2026-01-17T19:23:11.958Z","level":"info","message":"Calculating capacity","date":"2026-01-17T17:00:00.000Z"}
+[Config] Loaded capacity configuration
+{"timestamp":"2026-01-17T19:23:11.973Z","level":"debug","message":"[HousecallProClient] Getting booking windows for date: 2026-01-17"}
+{"timestamp":"2026-01-17T19:23:11.976Z","level":"info","message":"Running initial data sync on server start..."}
+2:23:12 PM [express] POST /api/admin/sync-customer-addresses 401 in 5ms :: {"error":"Authentication …
+{"timestamp":"2026-01-17T19:23:12.267Z","level":"info","message":"Initial sync completed"}
+2:23:12 PM [express] [MCP] {"level":30,"time":1768677792438,"pid":5664,"hostname":"Workstation","name":"mcp-http-server","method":"POST","path":"/mcp","ip":"::1","sessionId":"new","msg":"Received MCP request"}
+2:23:12 PM [express] [MCP] {"level":30,"time":1768677792438,"pid":5664,"hostname":"Workstation","name":"mcp-http-server","msg":"Connected MCP server to new transport"}
+{"level":30,"time":1768677792443,"pid":5664,"hostname":"Workstation","name":"mcp-http-server","sessionId":"420ca418-130b-4982-a733-2bf4a4b4abe7","msg":"Session initialized"}
+2:23:12 PM [express] [MCP] {"level":30,"time":1768677792466,"pid":5664,"hostname":"Workstation","name":"mcp-http-server","method":"POST","path":"/mcp","ip":"::1","sessionId":"420ca418-130b-4982-a733-2bf4a4b4abe7","msg":"Received MCP request"}
+{"timestamp":"2026-01-17T19:23:12.471Z","level":"info","message":"[MCP] Connected to MCP server at http://localhost:3001/mcp (attempt 1)"}
+2:23:12 PM [express] [MCP] {"level":30,"time":1768677792466,"pid":5664,"hostname":"Workstation","name":"mcp-http-server","sessionId":"420ca418-130b-4982-a733-2bf4a4b4abe7","msg":"Reusing existing transport"}
+{"level":30,"time":1768677792471,"pid":5664,"hostname":"Workstation","name":"mcp-http-server","method":"GET","path":"/mcp","ip":"::1","sessionId":"420ca418-130b-4982-a733-2bf4a4b4abe7","msg":"Received MCP request"}
+2:23:12 PM [express] [MCP] {"level":30,"time":1768677792471,"pid":5664,"hostname":"Workstation","name":"mcp-http-server","sessionId":"420ca418-130b-4982-a733-2bf4a4b4abe7","msg":"Reusing existing transport"}
+2:23:12 PM [express] [MCP] {"level":30,"time":1768677792474,"pid":5664,"hostname":"Workstation","name":"mcp-http-server","method":"POST","path":"/mcp","ip":"::1","sessionId":"420ca418-130b-4982-a733-2bf4a4b4abe7","msg":"Received MCP request"}
+{"timestamp":"2026-01-17T19:23:12.481Z","level":"info","message":"[MCP] Loaded 16 tools"}
+{"timestamp":"2026-01-17T19:23:12.481Z","level":"info","message":"[SMS Agent] MCP tools loaded successfully"}
+2:23:12 PM [express] [MCP] {"level":30,"time":1768677792474,"pid":5664,"hostname":"Workstation","name":"mcp-http-server","sessionId":"420ca418-130b-4982-a733-2bf4a4b4abe7","msg":"Reusing existing transport"}
+{"timestamp":"2026-01-17T19:23:14.085Z","level":"info","message":"API call successful","requestId":"req_1768677791971_1","endpoint":"/employees","method":"GET","latency":2112,"cacheHit":false}
+{"timestamp":"2026-01-17T19:23:14.159Z","level":"info","message":"API call successful","requestId":"req_1768677791973_2","endpoint":"/company/schedule_availability/booking_windows","method":"GET","latency":2185,"cacheHit":false}
+{"timestamp":"2026-01-17T19:23:14.159Z","level":"debug","message":"[HousecallProClient] Booking windows response: [{\"start_time\":\"2026-01-19T13:00:00.000Z\",\"end_time\":\"2026-01-19T13:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-19T13:30:00.000Z\",\"end_time\":\"2026-01-19T14:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-19T14:00:00.000Z\",\"end_time\":\"2026-01-19T14:30:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-19T14:30:00.000Z\",\"end_time\":\"2026-01-19T15:00:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-19T15:00:00.000Z\",\"end_time\":\"2026-01-19T15:30:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-19T15:30:00.000Z\",\"end_time\":\"2026-01-19T16:00:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-19T16:00:00.000Z\",\"end_time\":\"2026-01-19T16:30:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-19T16:30:00.000Z\",\"end_time\":\"2026-01-19T17:00:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-19T17:00:00.000Z\",\"end_time\":\"2026-01-19T17:30:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-19T17:30:00.000Z\",\"end_time\":\"2026-01-19T18:00:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-19T18:00:00.000Z\",\"end_time\":\"2026-01-19T18:30:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-19T18:30:00.000Z\",\"end_time\":\"2026-01-19T19:00:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-19T19:00:00.000Z\",\"end_time\":\"2026-01-19T19:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-19T19:30:00.000Z\",\"end_time\":\"2026-01-19T20:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-19T20:00:00.000Z\",\"end_time\":\"2026-01-19T20:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-19T20:30:00.000Z\",\"end_time\":\"2026-01-19T21:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-19T21:00:00.000Z\",\"end_time\":\"2026-01-19T21:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-19T21:30:00.000Z\",\"end_time\":\"2026-01-19T22:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T13:00:00.000Z\",\"end_time\":\"2026-01-20T13:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T13:30:00.000Z\",\"end_time\":\"2026-01-20T14:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T14:00:00.000Z\",\"end_time\":\"2026-01-20T14:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T14:30:00.000Z\",\"end_time\":\"2026-01-20T15:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T15:00:00.000Z\",\"end_time\":\"2026-01-20T15:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T15:30:00.000Z\",\"end_time\":\"2026-01-20T16:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T16:00:00.000Z\",\"end_time\":\"2026-01-20T16:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T16:30:00.000Z\",\"end_time\":\"2026-01-20T17:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T17:00:00.000Z\",\"end_time\":\"2026-01-20T17:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T17:30:00.000Z\",\"end_time\":\"2026-01-20T18:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T18:00:00.000Z\",\"end_time\":\"2026-01-20T18:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T18:30:00.000Z\",\"end_time\":\"2026-01-20T19:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T19:00:00.000Z\",\"end_time\":\"2026-01-20T19:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T19:30:00.000Z\",\"end_time\":\"2026-01-20T20:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T20:00:00.000Z\",\"end_time\":\"2026-01-20T20:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T20:30:00.000Z\",\"end_time\":\"2026-01-20T21:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T13:00:00.000Z\",\"end_time\":\"2026-01-21T13:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T13:30:00.000Z\",\"end_time\":\"2026-01-21T14:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T14:00:00.000Z\",\"end_time\":\"2026-01-21T14:30:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-21T14:30:00.000Z\",\"end_time\":\"2026-01-21T15:00:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-21T15:00:00.000Z\",\"end_time\":\"2026-01-21T15:30:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-21T15:30:00.000Z\",\"end_time\":\"2026-01-21T16:00:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-21T16:00:00.000Z\",\"end_time\":\"2026-01-21T16:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T16:30:00.000Z\",\"end_time\":\"2026-01-21T17:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T17:00:00.000Z\",\"end_time\":\"2026-01-21T17:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T17:30:00.000Z\",\"end_time\":\"2026-01-21T18:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T18:00:00.000Z\",\"end_time\":\"2026-01-21T18:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T18:30:00.000Z\",\"end_time\":\"2026-01-21T19:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T19:00:00.000Z\",\"end_time\":\"2026-01-21T19:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T19:30:00.000Z\",\"end_time\":\"2026-01-21T20:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T20:00:00.000Z\",\"end_time\":\"2026-01-21T20:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T20:30:00.000Z\",\"end_time\":\"2026-01-21T21:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T13:00:00.000Z\",\"end_time\":\"2026-01-22T13:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T13:30:00.000Z\",\"end_time\":\"2026-01-22T14:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T14:00:00.000Z\",\"end_time\":\"2026-01-22T14:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T14:30:00.000Z\",\"end_time\":\"2026-01-22T15:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T15:00:00.000Z\",\"end_time\":\"2026-01-22T15:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T15:30:00.000Z\",\"end_time\":\"2026-01-22T16:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T16:00:00.000Z\",\"end_time\":\"2026-01-22T16:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T16:30:00.000Z\",\"end_time\":\"2026-01-22T17:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T17:00:00.000Z\",\"end_time\":\"2026-01-22T17:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T17:30:00.000Z\",\"end_time\":\"2026-01-22T18:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T18:00:00.000Z\",\"end_time\":\"2026-01-22T18:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T18:30:00.000Z\",\"end_time\":\"2026-01-22T19:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T19:00:00.000Z\",\"end_time\":\"2026-01-22T19:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T19:30:00.000Z\",\"end_time\":\"2026-01-22T20:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T20:00:00.000Z\",\"end_time\":\"2026-01-22T20:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T20:30:00.000Z\",\"end_time\":\"2026-01-22T21:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T13:00:00.000Z\",\"end_time\":\"2026-01-23T13:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T13:30:00.000Z\",\"end_time\":\"2026-01-23T14:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T14:00:00.000Z\",\"end_time\":\"2026-01-23T14:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T14:30:00.000Z\",\"end_time\":\"2026-01-23T15:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T15:00:00.000Z\",\"end_time\":\"2026-01-23T15:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T15:30:00.000Z\",\"end_time\":\"2026-01-23T16:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T16:00:00.000Z\",\"end_time\":\"2026-01-23T16:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T16:30:00.000Z\",\"end_time\":\"2026-01-23T17:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T17:00:00.000Z\",\"end_time\":\"2026-01-23T17:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T17:30:00.000Z\",\"end_time\":\"2026-01-23T18:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T18:00:00.000Z\",\"end_time\":\"2026-01-23T18:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T18:30:00.000Z\",\"end_time\":\"2026-01-23T19:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T19:00:00.000Z\",\"end_time\":\"2026-01-23T19:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T19:30:00.000Z\",\"end_time\":\"2026-01-23T20:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T20:00:00.000Z\",\"end_time\":\"2026-01-23T20:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T20:30:00.000Z\",\"end_time\":\"2026-01-23T21:00:00.000Z\",\"available\":true}]"}
+{"timestamp":"2026-01-17T19:23:14.159Z","level":"debug","message":"[HousecallProClient] First window available? true"}
+{"timestamp":"2026-01-17T19:23:14.159Z","level":"debug","message":"[HousecallProClient] 68 of 82 windows are available"}
+{"timestamp":"2026-01-17T19:23:14.205Z","level":"info","message":"API call successful","requestId":"req_1768677791975_3","endpoint":"/estimates","method":"GET","latency":2229,"cacheHit":false}
+{"timestamp":"2026-01-17T19:23:14.205Z","level":"debug","message":"Using HCP booking windows as authoritative availability source"}
+{"timestamp":"2026-01-17T19:23:14.205Z","level":"debug","message":"Found 0 estimates for debugging purposes"}
+{"timestamp":"2026-01-17T19:23:14.205Z","level":"debug","message":"Using authoritative HCP booking windows - no manual override needed"}
+{"timestamp":"2026-01-17T19:23:14.205Z","level":"debug","message":"[Capacity] Booking windows received: 82"}
+{"timestamp":"2026-01-17T19:23:14.205Z","level":"debug","message":"[Capacity] REAL available windows today: 0"}
+{"timestamp":"2026-01-17T19:23:14.205Z","level":"debug","message":"[Capacity] Employee mapping:"}
+{"timestamp":"2026-01-17T19:23:14.205Z","level":"debug","message":"[Capacity]   jahz -> pro_b0a7d40a10dc4477908cc808f62054ff (Jahz Malary)"}
+{"timestamp":"2026-01-17T19:23:14.205Z","level":"debug","message":"[Capacity]   nick -> pro_784bb427ee27422f892b2db87dbdaf03 (Nick Johnson)"}
+{"timestamp":"2026-01-17T19:23:14.205Z","level":"debug","message":"[Capacity]   nate -> pro_19f45ddb23864f13ba5ffb20710e77e8 (Nate Johnson)"}
+{"timestamp":"2026-01-17T19:23:14.205Z","level":"debug","message":"[Capacity] calculateTechCapacities: 0 available windows for 2026-01-17"}
+{"timestamp":"2026-01-17T19:23:14.205Z","level":"debug","message":"[Capacity] No available windows for jahz on 2026-01-17"}
+{"timestamp":"2026-01-17T19:23:14.206Z","level":"debug","message":"[Capacity] No available windows for nick on 2026-01-17"}
+{"timestamp":"2026-01-17T19:23:14.206Z","level":"debug","message":"[Capacity] No available windows for nate on 2026-01-17"}
+{"timestamp":"2026-01-17T19:23:14.207Z","level":"debug","message":"[Capacity] Time check: 14:23 EST, Day: 6, State: NEXT_DAY"}
+{"timestamp":"2026-01-17T19:23:14.207Z","level":"debug","message":"[Express] Starting express windows filtering for 2026-01-17. RealBookingWindows count: 82"}
+{"timestamp":"2026-01-17T19:23:14.207Z","level":"debug","message":"[Express] Service window Morning has no available slots"}
+{"timestamp":"2026-01-17T19:23:14.207Z","level":"debug","message":"[Express] Service window Midday has no available slots"}
+{"timestamp":"2026-01-17T19:23:14.207Z","level":"debug","message":"[Express] Service window Afternoon has no available slots"}
+{"timestamp":"2026-01-17T19:23:14.207Z","level":"debug","message":"[Express] Consolidated service windows count: 0"}
+{"timestamp":"2026-01-17T19:23:14.207Z","level":"debug","message":"[Express] Unique express windows count: 0"}
+{"timestamp":"2026-01-17T19:23:14.208Z","level":"info","message":"Capacity state changed, applying ads rules","oldState":null,"newState":"NEXT_DAY","score":0}
+{"timestamp":"2026-01-17T19:23:14.208Z","level":"info","message":"=== GOOGLE ADS BRIDGE STUB ACTIONS ==="}
+{"timestamp":"2026-01-17T19:23:14.208Z","level":"info","message":"State: null"}
+{"timestamp":"2026-01-17T19:23:14.208Z","level":"info","message":"Timestamp: 2026-01-17T19:23:14.208Z"}
+{"timestamp":"2026-01-17T19:23:14.208Z","level":"info","message":"Actions that would be taken:"}
+{"timestamp":"2026-01-17T19:23:14.208Z","level":"info","message":"  ✗ DISABLE campaign: same_day_service"}
+{"timestamp":"2026-01-17T19:23:14.208Z","level":"info","message":"    Reason: No capacity today"}
+{"timestamp":"2026-01-17T19:23:14.208Z","level":"info","message":"  ✗ DISABLE campaign: emergency_plumbing"}
+{"timestamp":"2026-01-17T19:23:14.208Z","level":"info","message":"    Reason: No capacity today"}
+{"timestamp":"2026-01-17T19:23:14.208Z","level":"info","message":"  ✓ ENABLE campaign: next_day_booking"}
+{"timestamp":"2026-01-17T19:23:14.208Z","level":"info","message":"    Reason: Promoting tomorrow availability"}
+{"timestamp":"2026-01-17T19:23:14.208Z","level":"info","message":"  $ ADJUST BUDGET for campaign: next_day_booking"}
+{"timestamp":"2026-01-17T19:23:14.208Z","level":"info","message":"    Adjustment: -30%"}
+{"timestamp":"2026-01-17T19:23:14.208Z","level":"info","message":"    New budget: $17.5/day"}
+{"timestamp":"2026-01-17T19:23:14.208Z","level":"info","message":"  ✓ ENABLE campaign: brand_protection"}
+{"timestamp":"2026-01-17T19:23:14.208Z","level":"info","message":"    Reason: Brand always on"}
+{"timestamp":"2026-01-17T19:23:14.208Z","level":"info","message":"    Budget: $50/day"}
+{"timestamp":"2026-01-17T19:23:14.208Z","level":"info","message":"======================================"}
+Initial capacity check and ads sync completed
+2:23:30 PM [express] GET /api/v1/social-proof/recent-jobs 200 in 453ms :: [{"id":"job_9fa5fa77bbd540…
+{"timestamp":"2026-01-17T19:24:07.194Z","level":"info","message":"[SMS Agent] Found 0 pending scheduled SMS to process"}
+2:24:47 PM [express] GET /api/v1/social-proof/recent-jobs 304 in 452ms :: [{"id":"job_9fa5fa77bbd540…
+{"timestamp":"2026-01-17T19:25:07.178Z","level":"info","message":"[SMS Agent] Found 0 pending scheduled SMS to process"}
+2:25:16 PM [express] POST /api/admin/auth/login 401 in 284ms :: {"error":"Invalid credentials"}
+{"timestamp":"2026-01-17T19:26:08.605Z","level":"info","message":"[SMS Agent] Found 0 pending scheduled SMS to process"}
+{"timestamp":"2026-01-17T19:27:07.996Z","level":"info","message":"[SMS Agent] Found 0 pending scheduled SMS to process"}
+[ERROR] {
+  timestamp: '2026-01-17T19:27:37.412Z',
+  method: 'POST',
+  path: '/api/v1/analytics/web-vitals',
+  status: 400,
+  message: 'request aborted',
+  stack: 'BadRequestError: request aborted\n' +
+    '    at IncomingMessage.onAborted (C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\raw-body\\index.js:245:10)\n' +
+    '    at IncomingMessage.emit (node:events:519:28)\n' +
+    '    at IncomingMessage._destroy (node:_http_incoming:221:10)\n' +
+    '    at _destroy (node:internal/streams/destroy:122:10)\n' +
+    '    at IncomingMessage.destroy (node:internal/streams/destroy:84:5)\n' +
+    '    at abortIncoming (node:_http_server:825:9)\n' +
+    '    at socketOnClose (node:_http_server:819:3)\n' +
+    '    at Socket.emit (node:events:531:35)\n' +
+    '    at TCP.<anonymous> (node:net:346:12)'
+}
+2:27:54 PM [express] POST /api/admin/auth/login 200 in 508ms :: {"token":"ac8bda0c94ad3d87deef140149…
+2:27:54 PM [express] GET /api/admin/tasks 200 in 288ms :: []
+{"timestamp":"2026-01-17T19:28:07.315Z","level":"info","message":"[SMS Agent] Found 0 pending scheduled SMS to process"}
+{"timestamp":"2026-01-17T19:28:14.210Z","level":"info","message":"Calculating capacity","date":"2026-01-17T17:00:00.000Z"}
+{"timestamp":"2026-01-17T19:28:14.210Z","level":"debug","message":"Cache hit","endpoint":"/employees","cacheHit":true}
+{"timestamp":"2026-01-17T19:28:14.210Z","level":"debug","message":"[HousecallProClient] Getting booking windows for date: 2026-01-17"}
+{"timestamp":"2026-01-17T19:28:14.210Z","level":"debug","message":"Cache hit","endpoint":"/company/schedule_availability/booking_windows","cacheHit":true}
+{"timestamp":"2026-01-17T19:28:14.210Z","level":"debug","message":"Cache hit","endpoint":"/estimates","cacheHit":true}
+{"timestamp":"2026-01-17T19:28:14.210Z","level":"debug","message":"[HousecallProClient] Booking windows response: [{\"start_time\":\"2026-01-19T13:00:00.000Z\",\"end_time\":\"2026-01-19T13:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-19T13:30:00.000Z\",\"end_time\":\"2026-01-19T14:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-19T14:00:00.000Z\",\"end_time\":\"2026-01-19T14:30:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-19T14:30:00.000Z\",\"end_time\":\"2026-01-19T15:00:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-19T15:00:00.000Z\",\"end_time\":\"2026-01-19T15:30:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-19T15:30:00.000Z\",\"end_time\":\"2026-01-19T16:00:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-19T16:00:00.000Z\",\"end_time\":\"2026-01-19T16:30:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-19T16:30:00.000Z\",\"end_time\":\"2026-01-19T17:00:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-19T17:00:00.000Z\",\"end_time\":\"2026-01-19T17:30:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-19T17:30:00.000Z\",\"end_time\":\"2026-01-19T18:00:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-19T18:00:00.000Z\",\"end_time\":\"2026-01-19T18:30:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-19T18:30:00.000Z\",\"end_time\":\"2026-01-19T19:00:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-19T19:00:00.000Z\",\"end_time\":\"2026-01-19T19:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-19T19:30:00.000Z\",\"end_time\":\"2026-01-19T20:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-19T20:00:00.000Z\",\"end_time\":\"2026-01-19T20:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-19T20:30:00.000Z\",\"end_time\":\"2026-01-19T21:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-19T21:00:00.000Z\",\"end_time\":\"2026-01-19T21:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-19T21:30:00.000Z\",\"end_time\":\"2026-01-19T22:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T13:00:00.000Z\",\"end_time\":\"2026-01-20T13:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T13:30:00.000Z\",\"end_time\":\"2026-01-20T14:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T14:00:00.000Z\",\"end_time\":\"2026-01-20T14:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T14:30:00.000Z\",\"end_time\":\"2026-01-20T15:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T15:00:00.000Z\",\"end_time\":\"2026-01-20T15:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T15:30:00.000Z\",\"end_time\":\"2026-01-20T16:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T16:00:00.000Z\",\"end_time\":\"2026-01-20T16:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T16:30:00.000Z\",\"end_time\":\"2026-01-20T17:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T17:00:00.000Z\",\"end_time\":\"2026-01-20T17:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T17:30:00.000Z\",\"end_time\":\"2026-01-20T18:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T18:00:00.000Z\",\"end_time\":\"2026-01-20T18:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T18:30:00.000Z\",\"end_time\":\"2026-01-20T19:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T19:00:00.000Z\",\"end_time\":\"2026-01-20T19:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T19:30:00.000Z\",\"end_time\":\"2026-01-20T20:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T20:00:00.000Z\",\"end_time\":\"2026-01-20T20:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T20:30:00.000Z\",\"end_time\":\"2026-01-20T21:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T13:00:00.000Z\",\"end_time\":\"2026-01-21T13:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T13:30:00.000Z\",\"end_time\":\"2026-01-21T14:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T14:00:00.000Z\",\"end_time\":\"2026-01-21T14:30:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-21T14:30:00.000Z\",\"end_time\":\"2026-01-21T15:00:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-21T15:00:00.000Z\",\"end_time\":\"2026-01-21T15:30:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-21T15:30:00.000Z\",\"end_time\":\"2026-01-21T16:00:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-21T16:00:00.000Z\",\"end_time\":\"2026-01-21T16:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T16:30:00.000Z\",\"end_time\":\"2026-01-21T17:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T17:00:00.000Z\",\"end_time\":\"2026-01-21T17:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T17:30:00.000Z\",\"end_time\":\"2026-01-21T18:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T18:00:00.000Z\",\"end_time\":\"2026-01-21T18:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T18:30:00.000Z\",\"end_time\":\"2026-01-21T19:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T19:00:00.000Z\",\"end_time\":\"2026-01-21T19:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T19:30:00.000Z\",\"end_time\":\"2026-01-21T20:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T20:00:00.000Z\",\"end_time\":\"2026-01-21T20:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T20:30:00.000Z\",\"end_time\":\"2026-01-21T21:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T13:00:00.000Z\",\"end_time\":\"2026-01-22T13:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T13:30:00.000Z\",\"end_time\":\"2026-01-22T14:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T14:00:00.000Z\",\"end_time\":\"2026-01-22T14:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T14:30:00.000Z\",\"end_time\":\"2026-01-22T15:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T15:00:00.000Z\",\"end_time\":\"2026-01-22T15:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T15:30:00.000Z\",\"end_time\":\"2026-01-22T16:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T16:00:00.000Z\",\"end_time\":\"2026-01-22T16:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T16:30:00.000Z\",\"end_time\":\"2026-01-22T17:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T17:00:00.000Z\",\"end_time\":\"2026-01-22T17:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T17:30:00.000Z\",\"end_time\":\"2026-01-22T18:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T18:00:00.000Z\",\"end_time\":\"2026-01-22T18:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T18:30:00.000Z\",\"end_time\":\"2026-01-22T19:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T19:00:00.000Z\",\"end_time\":\"2026-01-22T19:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T19:30:00.000Z\",\"end_time\":\"2026-01-22T20:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T20:00:00.000Z\",\"end_time\":\"2026-01-22T20:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T20:30:00.000Z\",\"end_time\":\"2026-01-22T21:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T13:00:00.000Z\",\"end_time\":\"2026-01-23T13:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T13:30:00.000Z\",\"end_time\":\"2026-01-23T14:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T14:00:00.000Z\",\"end_time\":\"2026-01-23T14:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T14:30:00.000Z\",\"end_time\":\"2026-01-23T15:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T15:00:00.000Z\",\"end_time\":\"2026-01-23T15:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T15:30:00.000Z\",\"end_time\":\"2026-01-23T16:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T16:00:00.000Z\",\"end_time\":\"2026-01-23T16:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T16:30:00.000Z\",\"end_time\":\"2026-01-23T17:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T17:00:00.000Z\",\"end_time\":\"2026-01-23T17:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T17:30:00.000Z\",\"end_time\":\"2026-01-23T18:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T18:00:00.000Z\",\"end_time\":\"2026-01-23T18:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T18:30:00.000Z\",\"end_time\":\"2026-01-23T19:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T19:00:00.000Z\",\"end_time\":\"2026-01-23T19:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T19:30:00.000Z\",\"end_time\":\"2026-01-23T20:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T20:00:00.000Z\",\"end_time\":\"2026-01-23T20:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T20:30:00.000Z\",\"end_time\":\"2026-01-23T21:00:00.000Z\",\"available\":true}]"}
+{"timestamp":"2026-01-17T19:28:14.211Z","level":"debug","message":"[HousecallProClient] First window available? true"}
+{"timestamp":"2026-01-17T19:28:14.211Z","level":"debug","message":"[HousecallProClient] 68 of 82 windows are available"}
+{"timestamp":"2026-01-17T19:28:14.211Z","level":"debug","message":"Using HCP booking windows as authoritative availability source"}
+{"timestamp":"2026-01-17T19:28:14.211Z","level":"debug","message":"Found 0 estimates for debugging purposes"}
+{"timestamp":"2026-01-17T19:28:14.211Z","level":"debug","message":"Using authoritative HCP booking windows - no manual override needed"}
+{"timestamp":"2026-01-17T19:28:14.211Z","level":"debug","message":"[Capacity] Booking windows received: 82"}
+{"timestamp":"2026-01-17T19:28:14.211Z","level":"debug","message":"[Capacity] REAL available windows today: 0"}
+{"timestamp":"2026-01-17T19:28:14.211Z","level":"debug","message":"[Capacity] Employee mapping:"}
+{"timestamp":"2026-01-17T19:28:14.211Z","level":"debug","message":"[Capacity]   jahz -> pro_b0a7d40a10dc4477908cc808f62054ff (Jahz Malary)"}
+{"timestamp":"2026-01-17T19:28:14.211Z","level":"debug","message":"[Capacity]   nick -> pro_784bb427ee27422f892b2db87dbdaf03 (Nick Johnson)"}
+{"timestamp":"2026-01-17T19:28:14.211Z","level":"debug","message":"[Capacity]   nate -> pro_19f45ddb23864f13ba5ffb20710e77e8 (Nate Johnson)"}
+{"timestamp":"2026-01-17T19:28:14.211Z","level":"debug","message":"[Capacity] calculateTechCapacities: 0 available windows for 2026-01-17"}
+{"timestamp":"2026-01-17T19:28:14.211Z","level":"debug","message":"[Capacity] No available windows for jahz on 2026-01-17"}
+{"timestamp":"2026-01-17T19:28:14.211Z","level":"debug","message":"[Capacity] No available windows for nick on 2026-01-17"}
+{"timestamp":"2026-01-17T19:28:14.211Z","level":"debug","message":"[Capacity] No available windows for nate on 2026-01-17"}
+{"timestamp":"2026-01-17T19:28:14.212Z","level":"debug","message":"[Capacity] Time check: 14:28 EST, Day: 6, State: NEXT_DAY"}
+{"timestamp":"2026-01-17T19:28:14.212Z","level":"debug","message":"[Express] Starting express windows filtering for 2026-01-17. RealBookingWindows count: 82"}
+{"timestamp":"2026-01-17T19:28:14.212Z","level":"debug","message":"[Express] Service window Morning has no available slots"}
+{"timestamp":"2026-01-17T19:28:14.212Z","level":"debug","message":"[Express] Service window Midday has no available slots"}
+{"timestamp":"2026-01-17T19:28:14.212Z","level":"debug","message":"[Express] Service window Afternoon has no available slots"}
+{"timestamp":"2026-01-17T19:28:14.212Z","level":"debug","message":"[Express] Consolidated service windows count: 0"}
+{"timestamp":"2026-01-17T19:28:14.212Z","level":"debug","message":"[Express] Unique express windows count: 0"}
+{"timestamp":"2026-01-17T19:28:14.212Z","level":"debug","message":"Capacity state unchanged, skipping ads adjustment","state":"NEXT_DAY"}
+2:28:17 PM [express] [MCP] {"level":30,"time":1768678097057,"pid":5664,"hostname":"Workstation","name":"mcp-http-server","method":"GET","path":"/mcp","ip":"::1","sessionId":"420ca418-130b-4982-a733-2bf4a4b4abe7","msg":"Received MCP request"}
+2:28:17 PM [express] [MCP] {"level":30,"time":1768678097057,"pid":5664,"hostname":"Workstation","name":"mcp-http-server","sessionId":"420ca418-130b-4982-a733-2bf4a4b4abe7","msg":"Reusing existing transport"}
+2:28:55 PM [express] POST /api/admin/auth/login 200 in 763ms :: {"token":"54d55af600327590e30e82034f…
+2:28:55 PM [express] GET /api/admin/tasks 200 in 231ms :: []
+{"timestamp":"2026-01-17T19:29:07.343Z","level":"info","message":"[SMS Agent] Found 0 pending scheduled SMS to process"}
+[2m2:29:24 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mC:/Users/Workstation/Desktop/Replit/thejohnsonbros/project/.context/BOARD.md[22m
+[2m2:29:53 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mC:/Users/Workstation/Desktop/Replit/thejohnsonbros/project/.context/CURRENT.md[22m
+{"timestamp":"2026-01-17T19:30:07.264Z","level":"info","message":"[SMS Agent] Found 0 pending scheduled SMS to process"}
+{"timestamp":"2026-01-17T19:31:07.351Z","level":"info","message":"[SMS Agent] Found 0 pending scheduled SMS to process"}
+{"timestamp":"2026-01-17T19:32:07.369Z","level":"info","message":"[SMS Agent] Found 0 pending scheduled SMS to process"}
+{"timestamp":"2026-01-17T19:32:44.642Z","level":"debug","message":"Capacity cache hit","date":"2026-01-17T17:00:00.000Z","cacheHit":true}
+2:32:44 PM [express] GET /api/v1/capacity/today 200 in 1ms :: {"overall":{"score":0,"state":"NEXT_DA…
+{"timestamp":"2026-01-17T19:32:44.644Z","level":"info","message":"[Services API] Route handler called"}
+{"timestamp":"2026-01-17T19:32:44.645Z","level":"info","message":"[Services API] Starting services fetch..."}
+{"timestamp":"2026-01-17T19:32:44.645Z","level":"info","message":"[Services API] Got client instance"}
+{"timestamp":"2026-01-17T19:32:44.645Z","level":"debug","message":"[HousecallProClient] Trying to extract line items from recent jobs..."}
+{"timestamp":"2026-01-17T19:32:45.029Z","level":"info","message":"Calculating capacity","date":"2026-01-18T17:00:00.000Z"}
+{"timestamp":"2026-01-17T19:32:45.031Z","level":"debug","message":"[HousecallProClient] Getting booking windows for date: 2026-01-18"}
+2:32:45 PM [express] GET /api/v1/google-reviews 200 in 877ms :: {"reviews":[],"totalReviews":0,"aver…
+2:32:45 PM [express] GET /api/v1/social-proof/recent-jobs 200 in 925ms :: [{"id":"job_9fa5fa77bbd540…
+{"timestamp":"2026-01-17T19:32:45.716Z","level":"info","message":"API call successful","requestId":"req_1768678364645_4","endpoint":"/jobs","method":"GET","latency":1069,"cacheHit":false}
+{"timestamp":"2026-01-17T19:32:45.716Z","level":"debug","message":"[HousecallProClient] Fetched 20 jobs from API"}
+{"timestamp":"2026-01-17T19:32:45.716Z","level":"debug","message":"[HousecallProClient] Jobs with line_items: 0/20"}
+{"timestamp":"2026-01-17T19:32:45.716Z","level":"debug","message":"[HousecallProClient] Extracted 0 unique services from jobs"}
+{"timestamp":"2026-01-17T19:32:45.716Z","level":"debug","message":"[HousecallProClient] Using fallback service definitions"}
+{"timestamp":"2026-01-17T19:32:45.716Z","level":"info","message":"[Services API] Found 6 services"}
+{"timestamp":"2026-01-17T19:32:45.716Z","level":"info","message":"[Services API] Found Service Fee service: Service Fee (ID: service_fee) - Price: 99"}
+{"timestamp":"2026-01-17T19:32:45.716Z","level":"info","message":"[Services API] Service: Service Fee (ID: service_fee) - Price: 99"}
+{"timestamp":"2026-01-17T19:32:45.716Z","level":"info","message":"[Services API] Service: Service call (ID: service_call) - Price: 99"}
+{"timestamp":"2026-01-17T19:32:45.716Z","level":"info","message":"[Services API] Service: Drain Cleaning (ID: drain_cleaning) - Price: 99"}
+{"timestamp":"2026-01-17T19:32:45.716Z","level":"info","message":"[Services API] Service: Emergency Plumbing Repair (ID: emergency_repair) - Price: 99"}
+{"timestamp":"2026-01-17T19:32:45.716Z","level":"info","message":"[Services API] Service: Water Heater Service (ID: water_heater_service) - Price: 99"}
+{"timestamp":"2026-01-17T19:32:45.716Z","level":"info","message":"[Services API] Service: Pipe Repair (ID: pipe_repair) - Price: 99"}
+2:32:45 PM [express] GET /api/v1/services 200 in 1073ms :: {"services":[{"id":"service_fee","name":"…
+{"timestamp":"2026-01-17T19:32:45.764Z","level":"info","message":"API call successful","requestId":"req_1768678365030_5","endpoint":"/employees","method":"GET","latency":734,"cacheHit":false}
+{"timestamp":"2026-01-17T19:32:45.859Z","level":"info","message":"API call successful","requestId":"req_1768678365031_6","endpoint":"/company/schedule_availability/booking_windows","method":"GET","latency":827,"cacheHit":false}
+{"timestamp":"2026-01-17T19:32:45.859Z","level":"debug","message":"[HousecallProClient] Booking windows response: [{\"start_time\":\"2026-01-19T13:00:00.000Z\",\"end_time\":\"2026-01-19T13:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-19T13:30:00.000Z\",\"end_time\":\"2026-01-19T14:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-19T14:00:00.000Z\",\"end_time\":\"2026-01-19T14:30:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-19T14:30:00.000Z\",\"end_time\":\"2026-01-19T15:00:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-19T15:00:00.000Z\",\"end_time\":\"2026-01-19T15:30:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-19T15:30:00.000Z\",\"end_time\":\"2026-01-19T16:00:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-19T16:00:00.000Z\",\"end_time\":\"2026-01-19T16:30:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-19T16:30:00.000Z\",\"end_time\":\"2026-01-19T17:00:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-19T17:00:00.000Z\",\"end_time\":\"2026-01-19T17:30:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-19T17:30:00.000Z\",\"end_time\":\"2026-01-19T18:00:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-19T18:00:00.000Z\",\"end_time\":\"2026-01-19T18:30:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-19T18:30:00.000Z\",\"end_time\":\"2026-01-19T19:00:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-19T19:00:00.000Z\",\"end_time\":\"2026-01-19T19:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-19T19:30:00.000Z\",\"end_time\":\"2026-01-19T20:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-19T20:00:00.000Z\",\"end_time\":\"2026-01-19T20:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-19T20:30:00.000Z\",\"end_time\":\"2026-01-19T21:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-19T21:00:00.000Z\",\"end_time\":\"2026-01-19T21:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-19T21:30:00.000Z\",\"end_time\":\"2026-01-19T22:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T13:00:00.000Z\",\"end_time\":\"2026-01-20T13:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T13:30:00.000Z\",\"end_time\":\"2026-01-20T14:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T14:00:00.000Z\",\"end_time\":\"2026-01-20T14:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T14:30:00.000Z\",\"end_time\":\"2026-01-20T15:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T15:00:00.000Z\",\"end_time\":\"2026-01-20T15:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T15:30:00.000Z\",\"end_time\":\"2026-01-20T16:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T16:00:00.000Z\",\"end_time\":\"2026-01-20T16:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T16:30:00.000Z\",\"end_time\":\"2026-01-20T17:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T17:00:00.000Z\",\"end_time\":\"2026-01-20T17:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T17:30:00.000Z\",\"end_time\":\"2026-01-20T18:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T18:00:00.000Z\",\"end_time\":\"2026-01-20T18:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T18:30:00.000Z\",\"end_time\":\"2026-01-20T19:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T19:00:00.000Z\",\"end_time\":\"2026-01-20T19:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T19:30:00.000Z\",\"end_time\":\"2026-01-20T20:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T20:00:00.000Z\",\"end_time\":\"2026-01-20T20:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T20:30:00.000Z\",\"end_time\":\"2026-01-20T21:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T13:00:00.000Z\",\"end_time\":\"2026-01-21T13:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T13:30:00.000Z\",\"end_time\":\"2026-01-21T14:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T14:00:00.000Z\",\"end_time\":\"2026-01-21T14:30:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-21T14:30:00.000Z\",\"end_time\":\"2026-01-21T15:00:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-21T15:00:00.000Z\",\"end_time\":\"2026-01-21T15:30:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-21T15:30:00.000Z\",\"end_time\":\"2026-01-21T16:00:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-21T16:00:00.000Z\",\"end_time\":\"2026-01-21T16:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T16:30:00.000Z\",\"end_time\":\"2026-01-21T17:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T17:00:00.000Z\",\"end_time\":\"2026-01-21T17:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T17:30:00.000Z\",\"end_time\":\"2026-01-21T18:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T18:00:00.000Z\",\"end_time\":\"2026-01-21T18:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T18:30:00.000Z\",\"end_time\":\"2026-01-21T19:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T19:00:00.000Z\",\"end_time\":\"2026-01-21T19:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T19:30:00.000Z\",\"end_time\":\"2026-01-21T20:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T20:00:00.000Z\",\"end_time\":\"2026-01-21T20:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T20:30:00.000Z\",\"end_time\":\"2026-01-21T21:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T13:00:00.000Z\",\"end_time\":\"2026-01-22T13:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T13:30:00.000Z\",\"end_time\":\"2026-01-22T14:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T14:00:00.000Z\",\"end_time\":\"2026-01-22T14:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T14:30:00.000Z\",\"end_time\":\"2026-01-22T15:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T15:00:00.000Z\",\"end_time\":\"2026-01-22T15:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T15:30:00.000Z\",\"end_time\":\"2026-01-22T16:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T16:00:00.000Z\",\"end_time\":\"2026-01-22T16:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T16:30:00.000Z\",\"end_time\":\"2026-01-22T17:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T17:00:00.000Z\",\"end_time\":\"2026-01-22T17:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T17:30:00.000Z\",\"end_time\":\"2026-01-22T18:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T18:00:00.000Z\",\"end_time\":\"2026-01-22T18:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T18:30:00.000Z\",\"end_time\":\"2026-01-22T19:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T19:00:00.000Z\",\"end_time\":\"2026-01-22T19:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T19:30:00.000Z\",\"end_time\":\"2026-01-22T20:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T20:00:00.000Z\",\"end_time\":\"2026-01-22T20:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T20:30:00.000Z\",\"end_time\":\"2026-01-22T21:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T13:00:00.000Z\",\"end_time\":\"2026-01-23T13:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T13:30:00.000Z\",\"end_time\":\"2026-01-23T14:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T14:00:00.000Z\",\"end_time\":\"2026-01-23T14:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T14:30:00.000Z\",\"end_time\":\"2026-01-23T15:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T15:00:00.000Z\",\"end_time\":\"2026-01-23T15:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T15:30:00.000Z\",\"end_time\":\"2026-01-23T16:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T16:00:00.000Z\",\"end_time\":\"2026-01-23T16:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T16:30:00.000Z\",\"end_time\":\"2026-01-23T17:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T17:00:00.000Z\",\"end_time\":\"2026-01-23T17:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T17:30:00.000Z\",\"end_time\":\"2026-01-23T18:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T18:00:00.000Z\",\"end_time\":\"2026-01-23T18:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T18:30:00.000Z\",\"end_time\":\"2026-01-23T19:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T19:00:00.000Z\",\"end_time\":\"2026-01-23T19:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T19:30:00.000Z\",\"end_time\":\"2026-01-23T20:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T20:00:00.000Z\",\"end_time\":\"2026-01-23T20:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T20:30:00.000Z\",\"end_time\":\"2026-01-23T21:00:00.000Z\",\"available\":true}]"}
+{"timestamp":"2026-01-17T19:32:45.859Z","level":"debug","message":"[HousecallProClient] First window available? true"}
+{"timestamp":"2026-01-17T19:32:45.859Z","level":"debug","message":"[HousecallProClient] 68 of 82 windows are available"}
+{"timestamp":"2026-01-17T19:32:45.912Z","level":"info","message":"API call successful","requestId":"req_1768678365032_7","endpoint":"/estimates","method":"GET","latency":878,"cacheHit":false}
+{"timestamp":"2026-01-17T19:32:45.912Z","level":"debug","message":"Using HCP booking windows as authoritative availability source"}
+{"timestamp":"2026-01-17T19:32:45.912Z","level":"debug","message":"Found 0 estimates for debugging purposes"}
+{"timestamp":"2026-01-17T19:32:45.912Z","level":"debug","message":"Using authoritative HCP booking windows - no manual override needed"}
+{"timestamp":"2026-01-17T19:32:45.912Z","level":"debug","message":"[Capacity] Booking windows received: 82"}
+{"timestamp":"2026-01-17T19:32:45.912Z","level":"debug","message":"[Capacity] REAL available windows today: 0"}
+{"timestamp":"2026-01-17T19:32:45.912Z","level":"debug","message":"[Capacity] Employee mapping:"}
+{"timestamp":"2026-01-17T19:32:45.912Z","level":"debug","message":"[Capacity]   jahz -> pro_b0a7d40a10dc4477908cc808f62054ff (Jahz Malary)"}
+{"timestamp":"2026-01-17T19:32:45.912Z","level":"debug","message":"[Capacity]   nick -> pro_784bb427ee27422f892b2db87dbdaf03 (Nick Johnson)"}
+{"timestamp":"2026-01-17T19:32:45.912Z","level":"debug","message":"[Capacity]   nate -> pro_19f45ddb23864f13ba5ffb20710e77e8 (Nate Johnson)"}
+{"timestamp":"2026-01-17T19:32:45.912Z","level":"debug","message":"[Capacity] calculateTechCapacities: 0 available windows for 2026-01-18"}
+{"timestamp":"2026-01-17T19:32:45.912Z","level":"debug","message":"[Capacity] No available windows for jahz on 2026-01-18"}
+{"timestamp":"2026-01-17T19:32:45.912Z","level":"debug","message":"[Capacity] No available windows for nick on 2026-01-18"}
+{"timestamp":"2026-01-17T19:32:45.912Z","level":"debug","message":"[Capacity] No available windows for nate on 2026-01-18"}
+{"timestamp":"2026-01-17T19:32:45.913Z","level":"debug","message":"[Capacity] Time check: 14:32 EST, Day: 6, State: NEXT_DAY"}
+{"timestamp":"2026-01-17T19:32:45.913Z","level":"debug","message":"[Express] Starting express windows filtering for 2026-01-18. RealBookingWindows count: 82"}
+{"timestamp":"2026-01-17T19:32:45.913Z","level":"debug","message":"[Express] Service window Morning has no available slots"}
+{"timestamp":"2026-01-17T19:32:45.913Z","level":"debug","message":"[Express] Service window Midday has no available slots"}
+{"timestamp":"2026-01-17T19:32:45.913Z","level":"debug","message":"[Express] Service window Afternoon has no available slots"}
+{"timestamp":"2026-01-17T19:32:45.913Z","level":"debug","message":"[Express] Consolidated service windows count: 0"}
+{"timestamp":"2026-01-17T19:32:45.914Z","level":"debug","message":"[Express] Unique express windows count: 0"}
+2:32:45 PM [express] GET /api/v1/capacity/tomorrow 200 in 886ms :: {"overall":{"score":0,"state":"NE…
+[2m2:33:01 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mC:/Users/Workstation/Desktop/Replit/thejohnsonbros/project/package.json[22m
+{"timestamp":"2026-01-17T19:33:07.310Z","level":"info","message":"[SMS Agent] Found 0 pending scheduled SMS to process"}
+{"timestamp":"2026-01-17T19:33:14.209Z","level":"debug","message":"Capacity cache hit","date":"2026-01-17T17:00:00.000Z","cacheHit":true}
+{"timestamp":"2026-01-17T19:33:14.210Z","level":"debug","message":"Capacity state unchanged, skipping ads adjustment","state":"NEXT_DAY"}
+[2m2:33:15 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mC:/Users/Workstation/Desktop/Replit/thejohnsonbros/project/server/src/auth.ts[22m
+2:33:23 PM [express] [MCP] {"level":30,"time":1768678403139,"pid":5664,"hostname":"Workstation","name":"mcp-http-server","method":"GET","path":"/mcp","ip":"::1","sessionId":"420ca418-130b-4982-a733-2bf4a4b4abe7","msg":"Received MCP request"}
+2:33:23 PM [express] [MCP] {"level":30,"time":1768678403139,"pid":5664,"hostname":"Workstation","name":"mcp-http-server","sessionId":"420ca418-130b-4982-a733-2bf4a4b4abe7","msg":"Reusing existing transport"}
+2:33:27 PM [express] GET /api/v1/social-proof/recent-jobs 200 in 428ms :: [{"id":"job_9fa5fa77bbd540…
+[2m2:33:28 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mC:/Users/Workstation/Desktop/Replit/thejohnsonbros/project/vitest.config.ts[22m
+[2m2:33:31 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mC:/Users/Workstation/Desktop/Replit/thejohnsonbros/project/vitest.config.ts[22m
+[2m2:33:33 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mC:/Users/Workstation/Desktop/Replit/thejohnsonbros/project/server/src/__tests__/unit/auth.test.ts[22m
+{"timestamp":"2026-01-17T19:33:39.956Z","level":"info","message":"Calculating capacity","date":"2026-01-17T17:00:00.000Z"}
+{"timestamp":"2026-01-17T19:33:39.957Z","level":"debug","message":"Cache hit","endpoint":"/employees","cacheHit":true}
+{"timestamp":"2026-01-17T19:33:39.957Z","level":"debug","message":"[HousecallProClient] Getting booking windows for date: 2026-01-17"}
+{"timestamp":"2026-01-17T19:33:39.962Z","level":"info","message":"[Services API] Route handler called"}
+{"timestamp":"2026-01-17T19:33:39.963Z","level":"info","message":"[Services API] Starting services fetch..."}
+{"timestamp":"2026-01-17T19:33:39.963Z","level":"info","message":"[Services API] Got client instance"}
+{"timestamp":"2026-01-17T19:33:39.963Z","level":"debug","message":"[HousecallProClient] Trying to extract line items from recent jobs..."}
+{"timestamp":"2026-01-17T19:33:40.700Z","level":"info","message":"API call successful","requestId":"req_1768678419957_8","endpoint":"/company/schedule_availability/booking_windows","method":"GET","latency":742,"cacheHit":false}
+{"timestamp":"2026-01-17T19:33:40.700Z","level":"debug","message":"[HousecallProClient] Booking windows response: [{\"start_time\":\"2026-01-19T13:00:00.000Z\",\"end_time\":\"2026-01-19T13:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-19T13:30:00.000Z\",\"end_time\":\"2026-01-19T14:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-19T14:00:00.000Z\",\"end_time\":\"2026-01-19T14:30:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-19T14:30:00.000Z\",\"end_time\":\"2026-01-19T15:00:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-19T15:00:00.000Z\",\"end_time\":\"2026-01-19T15:30:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-19T15:30:00.000Z\",\"end_time\":\"2026-01-19T16:00:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-19T16:00:00.000Z\",\"end_time\":\"2026-01-19T16:30:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-19T16:30:00.000Z\",\"end_time\":\"2026-01-19T17:00:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-19T17:00:00.000Z\",\"end_time\":\"2026-01-19T17:30:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-19T17:30:00.000Z\",\"end_time\":\"2026-01-19T18:00:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-19T18:00:00.000Z\",\"end_time\":\"2026-01-19T18:30:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-19T18:30:00.000Z\",\"end_time\":\"2026-01-19T19:00:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-19T19:00:00.000Z\",\"end_time\":\"2026-01-19T19:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-19T19:30:00.000Z\",\"end_time\":\"2026-01-19T20:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-19T20:00:00.000Z\",\"end_time\":\"2026-01-19T20:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-19T20:30:00.000Z\",\"end_time\":\"2026-01-19T21:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-19T21:00:00.000Z\",\"end_time\":\"2026-01-19T21:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-19T21:30:00.000Z\",\"end_time\":\"2026-01-19T22:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T13:00:00.000Z\",\"end_time\":\"2026-01-20T13:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T13:30:00.000Z\",\"end_time\":\"2026-01-20T14:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T14:00:00.000Z\",\"end_time\":\"2026-01-20T14:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T14:30:00.000Z\",\"end_time\":\"2026-01-20T15:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T15:00:00.000Z\",\"end_time\":\"2026-01-20T15:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T15:30:00.000Z\",\"end_time\":\"2026-01-20T16:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T16:00:00.000Z\",\"end_time\":\"2026-01-20T16:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T16:30:00.000Z\",\"end_time\":\"2026-01-20T17:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T17:00:00.000Z\",\"end_time\":\"2026-01-20T17:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T17:30:00.000Z\",\"end_time\":\"2026-01-20T18:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T18:00:00.000Z\",\"end_time\":\"2026-01-20T18:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T18:30:00.000Z\",\"end_time\":\"2026-01-20T19:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T19:00:00.000Z\",\"end_time\":\"2026-01-20T19:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T19:30:00.000Z\",\"end_time\":\"2026-01-20T20:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T20:00:00.000Z\",\"end_time\":\"2026-01-20T20:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T20:30:00.000Z\",\"end_time\":\"2026-01-20T21:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T13:00:00.000Z\",\"end_time\":\"2026-01-21T13:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T13:30:00.000Z\",\"end_time\":\"2026-01-21T14:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T14:00:00.000Z\",\"end_time\":\"2026-01-21T14:30:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-21T14:30:00.000Z\",\"end_time\":\"2026-01-21T15:00:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-21T15:00:00.000Z\",\"end_time\":\"2026-01-21T15:30:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-21T15:30:00.000Z\",\"end_time\":\"2026-01-21T16:00:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-21T16:00:00.000Z\",\"end_time\":\"2026-01-21T16:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T16:30:00.000Z\",\"end_time\":\"2026-01-21T17:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T17:00:00.000Z\",\"end_time\":\"2026-01-21T17:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T17:30:00.000Z\",\"end_time\":\"2026-01-21T18:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T18:00:00.000Z\",\"end_time\":\"2026-01-21T18:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T18:30:00.000Z\",\"end_time\":\"2026-01-21T19:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T19:00:00.000Z\",\"end_time\":\"2026-01-21T19:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T19:30:00.000Z\",\"end_time\":\"2026-01-21T20:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T20:00:00.000Z\",\"end_time\":\"2026-01-21T20:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T20:30:00.000Z\",\"end_time\":\"2026-01-21T21:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T13:00:00.000Z\",\"end_time\":\"2026-01-22T13:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T13:30:00.000Z\",\"end_time\":\"2026-01-22T14:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T14:00:00.000Z\",\"end_time\":\"2026-01-22T14:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T14:30:00.000Z\",\"end_time\":\"2026-01-22T15:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T15:00:00.000Z\",\"end_time\":\"2026-01-22T15:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T15:30:00.000Z\",\"end_time\":\"2026-01-22T16:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T16:00:00.000Z\",\"end_time\":\"2026-01-22T16:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T16:30:00.000Z\",\"end_time\":\"2026-01-22T17:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T17:00:00.000Z\",\"end_time\":\"2026-01-22T17:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T17:30:00.000Z\",\"end_time\":\"2026-01-22T18:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T18:00:00.000Z\",\"end_time\":\"2026-01-22T18:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T18:30:00.000Z\",\"end_time\":\"2026-01-22T19:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T19:00:00.000Z\",\"end_time\":\"2026-01-22T19:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T19:30:00.000Z\",\"end_time\":\"2026-01-22T20:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T20:00:00.000Z\",\"end_time\":\"2026-01-22T20:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T20:30:00.000Z\",\"end_time\":\"2026-01-22T21:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T13:00:00.000Z\",\"end_time\":\"2026-01-23T13:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T13:30:00.000Z\",\"end_time\":\"2026-01-23T14:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T14:00:00.000Z\",\"end_time\":\"2026-01-23T14:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T14:30:00.000Z\",\"end_time\":\"2026-01-23T15:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T15:00:00.000Z\",\"end_time\":\"2026-01-23T15:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T15:30:00.000Z\",\"end_time\":\"2026-01-23T16:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T16:00:00.000Z\",\"end_time\":\"2026-01-23T16:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T16:30:00.000Z\",\"end_time\":\"2026-01-23T17:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T17:00:00.000Z\",\"end_time\":\"2026-01-23T17:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T17:30:00.000Z\",\"end_time\":\"2026-01-23T18:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T18:00:00.000Z\",\"end_time\":\"2026-01-23T18:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T18:30:00.000Z\",\"end_time\":\"2026-01-23T19:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T19:00:00.000Z\",\"end_time\":\"2026-01-23T19:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T19:30:00.000Z\",\"end_time\":\"2026-01-23T20:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T20:00:00.000Z\",\"end_time\":\"2026-01-23T20:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T20:30:00.000Z\",\"end_time\":\"2026-01-23T21:00:00.000Z\",\"available\":true}]"}
+{"timestamp":"2026-01-17T19:33:40.701Z","level":"debug","message":"[HousecallProClient] First window available? true"}
+{"timestamp":"2026-01-17T19:33:40.701Z","level":"debug","message":"[HousecallProClient] 68 of 82 windows are available"}
+2:33:40 PM [express] GET /api/v1/social-proof/recent-jobs 304 in 810ms :: [{"id":"job_9fa5fa77bbd540…
+{"timestamp":"2026-01-17T19:33:40.783Z","level":"info","message":"API call successful","requestId":"req_1768678419960_9","endpoint":"/estimates","method":"GET","latency":819,"cacheHit":false}
+{"timestamp":"2026-01-17T19:33:40.783Z","level":"debug","message":"Using HCP booking windows as authoritative availability source"}
+{"timestamp":"2026-01-17T19:33:40.783Z","level":"debug","message":"Found 0 estimates for debugging purposes"}
+{"timestamp":"2026-01-17T19:33:40.783Z","level":"debug","message":"Using authoritative HCP booking windows - no manual override needed"}
+{"timestamp":"2026-01-17T19:33:40.783Z","level":"debug","message":"[Capacity] Booking windows received: 82"}
+{"timestamp":"2026-01-17T19:33:40.783Z","level":"debug","message":"[Capacity] REAL available windows today: 0"}
+{"timestamp":"2026-01-17T19:33:40.783Z","level":"debug","message":"[Capacity] Employee mapping:"}
+{"timestamp":"2026-01-17T19:33:40.783Z","level":"debug","message":"[Capacity]   jahz -> pro_b0a7d40a10dc4477908cc808f62054ff (Jahz Malary)"}
+{"timestamp":"2026-01-17T19:33:40.783Z","level":"debug","message":"[Capacity]   nick -> pro_784bb427ee27422f892b2db87dbdaf03 (Nick Johnson)"}
+{"timestamp":"2026-01-17T19:33:40.783Z","level":"debug","message":"[Capacity]   nate -> pro_19f45ddb23864f13ba5ffb20710e77e8 (Nate Johnson)"}
+{"timestamp":"2026-01-17T19:33:40.784Z","level":"debug","message":"[Capacity] calculateTechCapacities: 0 available windows for 2026-01-17"}
+{"timestamp":"2026-01-17T19:33:40.784Z","level":"debug","message":"[Capacity] No available windows for jahz on 2026-01-17"}
+{"timestamp":"2026-01-17T19:33:40.784Z","level":"debug","message":"[Capacity] No available windows for nick on 2026-01-17"}
+{"timestamp":"2026-01-17T19:33:40.784Z","level":"debug","message":"[Capacity] No available windows for nate on 2026-01-17"}
+{"timestamp":"2026-01-17T19:33:40.785Z","level":"debug","message":"[Capacity] Time check: 14:33 EST, Day: 6, State: NEXT_DAY"}
+{"timestamp":"2026-01-17T19:33:40.786Z","level":"debug","message":"[Express] Starting express windows filtering for 2026-01-17. RealBookingWindows count: 82"}
+{"timestamp":"2026-01-17T19:33:40.786Z","level":"debug","message":"[Express] Service window Morning has no available slots"}
+{"timestamp":"2026-01-17T19:33:40.786Z","level":"debug","message":"[Express] Service window Midday has no available slots"}
+{"timestamp":"2026-01-17T19:33:40.786Z","level":"debug","message":"[Express] Service window Afternoon has no available slots"}
+{"timestamp":"2026-01-17T19:33:40.786Z","level":"debug","message":"[Express] Consolidated service windows count: 0"}
+{"timestamp":"2026-01-17T19:33:40.786Z","level":"debug","message":"[Express] Unique express windows count: 0"}
+2:33:40 PM [express] GET /api/v1/capacity/today 200 in 833ms :: {"overall":{"score":0,"state":"NEXT_…
+{"timestamp":"2026-01-17T19:33:40.819Z","level":"debug","message":"Capacity cache hit","date":"2026-01-18T17:00:00.000Z","cacheHit":true}
+2:33:40 PM [express] GET /api/v1/capacity/tomorrow 200 in 2ms :: {"overall":{"score":0,"state":"NEXT…
+{"timestamp":"2026-01-17T19:33:40.885Z","level":"info","message":"API call successful","requestId":"req_1768678419963_10","endpoint":"/jobs","method":"GET","latency":920,"cacheHit":false}
+{"timestamp":"2026-01-17T19:33:40.885Z","level":"debug","message":"[HousecallProClient] Fetched 20 jobs from API"}
+{"timestamp":"2026-01-17T19:33:40.885Z","level":"debug","message":"[HousecallProClient] Jobs with line_items: 0/20"}
+{"timestamp":"2026-01-17T19:33:40.885Z","level":"debug","message":"[HousecallProClient] Extracted 0 unique services from jobs"}
+{"timestamp":"2026-01-17T19:33:40.885Z","level":"debug","message":"[HousecallProClient] Using fallback service definitions"}
+{"timestamp":"2026-01-17T19:33:40.885Z","level":"info","message":"[Services API] Found 6 services"}
+{"timestamp":"2026-01-17T19:33:40.885Z","level":"info","message":"[Services API] Found Service Fee service: Service Fee (ID: service_fee) - Price: 99"}
+{"timestamp":"2026-01-17T19:33:40.885Z","level":"info","message":"[Services API] Service: Service Fee (ID: service_fee) - Price: 99"}
+{"timestamp":"2026-01-17T19:33:40.885Z","level":"info","message":"[Services API] Service: Service call (ID: service_call) - Price: 99"}
+{"timestamp":"2026-01-17T19:33:40.885Z","level":"info","message":"[Services API] Service: Drain Cleaning (ID: drain_cleaning) - Price: 99"}
+{"timestamp":"2026-01-17T19:33:40.885Z","level":"info","message":"[Services API] Service: Emergency Plumbing Repair (ID: emergency_repair) - Price: 99"}
+{"timestamp":"2026-01-17T19:33:40.885Z","level":"info","message":"[Services API] Service: Water Heater Service (ID: water_heater_service) - Price: 99"}
+{"timestamp":"2026-01-17T19:33:40.885Z","level":"info","message":"[Services API] Service: Pipe Repair (ID: pipe_repair) - Price: 99"}
+2:33:40 PM [express] GET /api/v1/services 200 in 924ms :: {"services":[{"id":"service_fee","name":"S…
+2:33:41 PM [express] GET /api/v1/google-reviews 200 in 1069ms :: {"reviews":[],"totalReviews":0,"ave…
+2:33:52 PM [express] GET /api/v1/social-proof/recent-jobs 304 in 498ms :: [{"id":"job_9fa5fa77bbd540…
+2:33:58 PM [express] GET /api/v1/google-reviews 304 in 159ms :: {"reviews":[],"totalReviews":0,"aver…
+{"timestamp":"2026-01-17T19:33:58.784Z","level":"debug","message":"Capacity cache hit","date":"2026-01-18T17:00:00.000Z","cacheHit":true}
+2:33:58 PM [express] GET /api/v1/capacity/tomorrow 304 in 2ms :: {"overall":{"score":0,"state":"NEXT…
+[2m2:33:58 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mC:/Users/Workstation/Desktop/Replit/thejohnsonbros/project/vitest.config.ts[22m
+2:33:59 PM [express] GET /api/v1/social-proof/recent-jobs 304 in 538ms :: [{"id":"job_9fa5fa77bbd540…
+{"timestamp":"2026-01-17T19:34:09.786Z","level":"info","message":"[SMS Agent] Found 0 pending scheduled SMS to process"}
+2:34:49 PM [express] GET /api/v1/social-proof/recent-jobs 304 in 3375ms :: [{"id":"job_9fa5fa77bbd54…
+{"timestamp":"2026-01-17T19:35:07.454Z","level":"info","message":"[SMS Agent] Found 0 pending scheduled SMS to process"}
+2:35:07 PM [express] GET /api/v1/social-proof/recent-jobs 304 in 815ms :: [{"id":"job_9fa5fa77bbd540…
+[2m2:35:57 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mC:/Users/Workstation/Desktop/Replit/thejohnsonbros/project/PRODUCTION_READINESS_CHECKLIST.md[22m
+2:36:04 PM [express] POST /api/admin/auth/login 401 in 1131ms :: {"error":"Invalid credentials"}
+{"timestamp":"2026-01-17T19:36:07.259Z","level":"info","message":"[SMS Agent] Found 0 pending scheduled SMS to process"}
+[2m2:36:46 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mC:/Users/Workstation/Desktop/Replit/thejohnsonbros/project/PRODUCTION_READINESS_CHECKLIST.md[22m
+[2m2:37:01 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mC:/Users/Workstation/Desktop/Replit/thejohnsonbros/project/attached_assets/branding-1767920904636.json[22m
+[2m2:37:01 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mC:/Users/Workstation/Desktop/Replit/thejohnsonbros/project/attached_assets/content-1761329549961.md[22m
+[2m2:37:01 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mC:/Users/Workstation/Desktop/Replit/thejohnsonbros/project/attached_assets/content-1763150712371.md[22m
+[2m2:37:01 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mC:/Users/Workstation/Desktop/Replit/thejohnsonbros/project/attached_assets/content-1763150732074.md[22m
+[2m2:37:01 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mC:/Users/Workstation/Desktop/Replit/thejohnsonbros/project/attached_assets/content-1767717370102.md[22m
+[2m2:37:01 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mC:/Users/Workstation/Desktop/Replit/thejohnsonbros/project/attached_assets/content-1768076541075.md[22m
+[2m2:37:01 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mC:/Users/Workstation/Desktop/Replit/thejohnsonbros/project/attached_assets/content-1768076550627.md[22m
+[2m2:37:01 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mC:/Users/Workstation/Desktop/Replit/thejohnsonbros/project/attached_assets/content-1768076563176.md[22m
+[2m2:37:01 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mC:/Users/Workstation/Desktop/Replit/thejohnsonbros/project/attached_assets/the-johnson-broscom-aisyncservice.replit.app_1767992970117.har[22m
+{"timestamp":"2026-01-17T19:37:08.674Z","level":"info","message":"[SMS Agent] Found 0 pending scheduled SMS to process"}
+[2m2:37:29 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mC:/Users/Workstation/Desktop/Replit/thejohnsonbros/project/PRODUCTION_READINESS_CHECKLIST.md[22m
+{"timestamp":"2026-01-17T19:38:07.289Z","level":"info","message":"[SMS Agent] Found 0 pending scheduled SMS to process"}
+{"timestamp":"2026-01-17T19:38:14.216Z","level":"debug","message":"Capacity cache hit","date":"2026-01-17T17:00:00.000Z","cacheHit":true}
+{"timestamp":"2026-01-17T19:38:14.216Z","level":"debug","message":"Capacity state unchanged, skipping ads adjustment","state":"NEXT_DAY"}
+2:38:27 PM [express] [MCP] {"level":30,"time":1768678707847,"pid":5664,"hostname":"Workstation","name":"mcp-http-server","method":"GET","path":"/mcp","ip":"::1","sessionId":"420ca418-130b-4982-a733-2bf4a4b4abe7","msg":"Received MCP request"}
+2:38:27 PM [express] [MCP] {"level":30,"time":1768678707847,"pid":5664,"hostname":"Workstation","name":"mcp-http-server","sessionId":"420ca418-130b-4982-a733-2bf4a4b4abe7","msg":"Reusing existing transport"}
+{"timestamp":"2026-01-17T19:39:07.313Z","level":"info","message":"[SMS Agent] Found 0 pending scheduled SMS to process"}
+{"timestamp":"2026-01-17T19:40:07.650Z","level":"info","message":"[SMS Agent] Found 0 pending scheduled SMS to process"}
+{"timestamp":"2026-01-17T19:41:07.729Z","level":"info","message":"[SMS Agent] Found 0 pending scheduled SMS to process"}
+[2m2:41:46 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mC:/Users/Workstation/Desktop/Replit/thejohnsonbros/project/.claude/hooks/aoa-status-line.sh[22m
+[2m2:41:48 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mC:/Users/Workstation/Desktop/Replit/thejohnsonbros/project/.claude/hooks/aoa-auto-outline.py[22m
+[2m2:41:48 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mC:/Users/Workstation/Desktop/Replit/thejohnsonbros/project/.claude/hooks/aoa-intent-capture.py[22m
+[2m2:41:48 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mC:/Users/Workstation/Desktop/Replit/thejohnsonbros/project/.claude/hooks/aoa-intent-prefetch.py[22m
+[2m2:41:48 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mC:/Users/Workstation/Desktop/Replit/thejohnsonbros/project/.claude/hooks/aoa-intent-summary.py[22m
+[2m2:41:48 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mC:/Users/Workstation/Desktop/Replit/thejohnsonbros/project/.claude/hooks/aoa-predict-context.py[22m
+[2m2:41:48 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mC:/Users/Workstation/Desktop/Replit/thejohnsonbros/project/.claude/hooks/aoa-status-line.sh[22m
+[2m2:41:48 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mC:/Users/Workstation/Desktop/Replit/thejohnsonbros/project/.claude/skills/aoa/SKILL.md[22m
+[2m2:41:48 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mC:/Users/Workstation/Desktop/Replit/thejohnsonbros/project/.claude/agents/aoa-outline.md[22m
+[2m2:41:48 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mC:/Users/Workstation/Desktop/Replit/thejohnsonbros/project/.aoa/home.json[22m
+[2m2:41:48 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mC:/Users/Workstation/Desktop/Replit/thejohnsonbros/project/.aoa/USAGE.md[22m
+[2m2:41:48 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mC:/Users/Workstation/Desktop/Replit/thejohnsonbros/project/.claude/settings.local.json[22m
+[ERROR] {
+  timestamp: '2026-01-17T19:41:58.852Z',
+  method: 'POST',
+  path: '/api/v1/analytics/web-vitals',
+  status: 400,
+  message: 'Bad control character in string literal in JSON at position 16 (line 1 column 17)',
+  stack: 'SyntaxError: Bad control character in string literal in JSON at position 16 (line 1 column 17)\n' +
+    '    at JSON.parse (<anonymous>)\n' +
+    '    at parse (C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\body-parser\\lib\\types\\json.js:92:19)\n' +
+    '    at C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\body-parser\\lib\\read.js:128:18\n' +
+    '    at AsyncResource.runInAsyncScope (node:async_hooks:214:14)\n' +
+    '    at invokeCallback (C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\raw-body\\index.js:238:16)\n' +
+    '    at done (C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\raw-body\\index.js:227:7)\n' +
+    '    at IncomingMessage.onEnd (C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\raw-body\\index.js:287:7)\n' +
+    '    at IncomingMessage.emit (node:events:519:28)\n' +
+    '    at endReadableNT (node:internal/streams/readable:1698:12)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)'
+}
+{"timestamp":"2026-01-17T19:42:07.459Z","level":"info","message":"[SMS Agent] Found 0 pending scheduled SMS to process"}
+[ERROR] {
+  timestamp: '2026-01-17T19:42:40.364Z',
+  method: 'POST',
+  path: '/api/v1/analytics/web-vitals',
+  status: 400,
+  message: 'Bad control character in string literal in JSON at position 16 (line 1 column 17)',
+  stack: 'SyntaxError: Bad control character in string literal in JSON at position 16 (line 1 column 17)\n' +
+    '    at JSON.parse (<anonymous>)\n' +
+    '    at parse (C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\body-parser\\lib\\types\\json.js:92:19)\n' +
+    '    at C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\body-parser\\lib\\read.js:128:18\n' +
+    '    at AsyncResource.runInAsyncScope (node:async_hooks:214:14)\n' +
+    '    at invokeCallback (C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\raw-body\\index.js:238:16)\n' +
+    '    at done (C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\raw-body\\index.js:227:7)\n' +
+    '    at IncomingMessage.onEnd (C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\raw-body\\index.js:287:7)\n' +
+    '    at IncomingMessage.emit (node:events:519:28)\n' +
+    '    at endReadableNT (node:internal/streams/readable:1698:12)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)'
+}
+[ERROR] {
+  timestamp: '2026-01-17T19:42:55.035Z',
+  method: 'POST',
+  path: '/api/v1/analytics/web-vitals',
+  status: 400,
+  message: 'Bad control character in string literal in JSON at position 16 (line 1 column 17)',
+  stack: 'SyntaxError: Bad control character in string literal in JSON at position 16 (line 1 column 17)\n' +
+    '    at JSON.parse (<anonymous>)\n' +
+    '    at parse (C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\body-parser\\lib\\types\\json.js:92:19)\n' +
+    '    at C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\body-parser\\lib\\read.js:128:18\n' +
+    '    at AsyncResource.runInAsyncScope (node:async_hooks:214:14)\n' +
+    '    at invokeCallback (C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\raw-body\\index.js:238:16)\n' +
+    '    at done (C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\raw-body\\index.js:227:7)\n' +
+    '    at IncomingMessage.onEnd (C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\raw-body\\index.js:287:7)\n' +
+    '    at IncomingMessage.emit (node:events:519:28)\n' +
+    '    at endReadableNT (node:internal/streams/readable:1698:12)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)'
+}
+{"timestamp":"2026-01-17T19:43:07.490Z","level":"info","message":"[SMS Agent] Found 0 pending scheduled SMS to process"}
+[ERROR] {
+  timestamp: '2026-01-17T19:43:11.598Z',
+  method: 'POST',
+  path: '/api/v1/analytics/web-vitals',
+  status: 400,
+  message: 'Bad control character in string literal in JSON at position 16 (line 1 column 17)',
+  stack: 'SyntaxError: Bad control character in string literal in JSON at position 16 (line 1 column 17)\n' +
+    '    at JSON.parse (<anonymous>)\n' +
+    '    at parse (C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\body-parser\\lib\\types\\json.js:92:19)\n' +
+    '    at C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\body-parser\\lib\\read.js:128:18\n' +
+    '    at AsyncResource.runInAsyncScope (node:async_hooks:214:14)\n' +
+    '    at invokeCallback (C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\raw-body\\index.js:238:16)\n' +
+    '    at done (C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\raw-body\\index.js:227:7)\n' +
+    '    at IncomingMessage.onEnd (C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\raw-body\\index.js:287:7)\n' +
+    '    at IncomingMessage.emit (node:events:519:28)\n' +
+    '    at endReadableNT (node:internal/streams/readable:1698:12)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)'
+}
+[ERROR] {
+  timestamp: '2026-01-17T19:43:12.379Z',
+  method: 'POST',
+  path: '/api/v1/analytics/web-vitals',
+  status: 400,
+  message: 'Bad control character in string literal in JSON at position 16 (line 1 column 17)',
+  stack: 'SyntaxError: Bad control character in string literal in JSON at position 16 (line 1 column 17)\n' +
+    '    at JSON.parse (<anonymous>)\n' +
+    '    at parse (C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\body-parser\\lib\\types\\json.js:92:19)\n' +
+    '    at C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\body-parser\\lib\\read.js:128:18\n' +
+    '    at AsyncResource.runInAsyncScope (node:async_hooks:214:14)\n' +
+    '    at invokeCallback (C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\raw-body\\index.js:238:16)\n' +
+    '    at done (C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\raw-body\\index.js:227:7)\n' +
+    '    at IncomingMessage.onEnd (C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\raw-body\\index.js:287:7)\n' +
+    '    at IncomingMessage.emit (node:events:519:28)\n' +
+    '    at endReadableNT (node:internal/streams/readable:1698:12)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)'
+}
+{"timestamp":"2026-01-17T19:43:14.216Z","level":"info","message":"Calculating capacity","date":"2026-01-17T17:00:00.000Z"}
+{"timestamp":"2026-01-17T19:43:14.218Z","level":"debug","message":"[HousecallProClient] Getting booking windows for date: 2026-01-17"}
+{"timestamp":"2026-01-17T19:43:15.095Z","level":"info","message":"API call successful","requestId":"req_1768678994218_12","endpoint":"/company/schedule_availability/booking_windows","method":"GET","latency":874,"cacheHit":false}
+{"timestamp":"2026-01-17T19:43:15.095Z","level":"debug","message":"[HousecallProClient] Booking windows response: [{\"start_time\":\"2026-01-19T13:00:00.000Z\",\"end_time\":\"2026-01-19T13:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-19T13:30:00.000Z\",\"end_time\":\"2026-01-19T14:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-19T14:00:00.000Z\",\"end_time\":\"2026-01-19T14:30:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-19T14:30:00.000Z\",\"end_time\":\"2026-01-19T15:00:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-19T15:00:00.000Z\",\"end_time\":\"2026-01-19T15:30:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-19T15:30:00.000Z\",\"end_time\":\"2026-01-19T16:00:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-19T16:00:00.000Z\",\"end_time\":\"2026-01-19T16:30:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-19T16:30:00.000Z\",\"end_time\":\"2026-01-19T17:00:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-19T17:00:00.000Z\",\"end_time\":\"2026-01-19T17:30:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-19T17:30:00.000Z\",\"end_time\":\"2026-01-19T18:00:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-19T18:00:00.000Z\",\"end_time\":\"2026-01-19T18:30:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-19T18:30:00.000Z\",\"end_time\":\"2026-01-19T19:00:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-19T19:00:00.000Z\",\"end_time\":\"2026-01-19T19:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-19T19:30:00.000Z\",\"end_time\":\"2026-01-19T20:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-19T20:00:00.000Z\",\"end_time\":\"2026-01-19T20:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-19T20:30:00.000Z\",\"end_time\":\"2026-01-19T21:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-19T21:00:00.000Z\",\"end_time\":\"2026-01-19T21:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-19T21:30:00.000Z\",\"end_time\":\"2026-01-19T22:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T13:00:00.000Z\",\"end_time\":\"2026-01-20T13:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T13:30:00.000Z\",\"end_time\":\"2026-01-20T14:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T14:00:00.000Z\",\"end_time\":\"2026-01-20T14:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T14:30:00.000Z\",\"end_time\":\"2026-01-20T15:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T15:00:00.000Z\",\"end_time\":\"2026-01-20T15:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T15:30:00.000Z\",\"end_time\":\"2026-01-20T16:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T16:00:00.000Z\",\"end_time\":\"2026-01-20T16:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T16:30:00.000Z\",\"end_time\":\"2026-01-20T17:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T17:00:00.000Z\",\"end_time\":\"2026-01-20T17:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T17:30:00.000Z\",\"end_time\":\"2026-01-20T18:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T18:00:00.000Z\",\"end_time\":\"2026-01-20T18:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T18:30:00.000Z\",\"end_time\":\"2026-01-20T19:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T19:00:00.000Z\",\"end_time\":\"2026-01-20T19:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T19:30:00.000Z\",\"end_time\":\"2026-01-20T20:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T20:00:00.000Z\",\"end_time\":\"2026-01-20T20:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-20T20:30:00.000Z\",\"end_time\":\"2026-01-20T21:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T13:00:00.000Z\",\"end_time\":\"2026-01-21T13:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T13:30:00.000Z\",\"end_time\":\"2026-01-21T14:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T14:00:00.000Z\",\"end_time\":\"2026-01-21T14:30:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-21T14:30:00.000Z\",\"end_time\":\"2026-01-21T15:00:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-21T15:00:00.000Z\",\"end_time\":\"2026-01-21T15:30:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-21T15:30:00.000Z\",\"end_time\":\"2026-01-21T16:00:00.000Z\",\"available\":false},{\"start_time\":\"2026-01-21T16:00:00.000Z\",\"end_time\":\"2026-01-21T16:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T16:30:00.000Z\",\"end_time\":\"2026-01-21T17:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T17:00:00.000Z\",\"end_time\":\"2026-01-21T17:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T17:30:00.000Z\",\"end_time\":\"2026-01-21T18:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T18:00:00.000Z\",\"end_time\":\"2026-01-21T18:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T18:30:00.000Z\",\"end_time\":\"2026-01-21T19:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T19:00:00.000Z\",\"end_time\":\"2026-01-21T19:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T19:30:00.000Z\",\"end_time\":\"2026-01-21T20:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T20:00:00.000Z\",\"end_time\":\"2026-01-21T20:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-21T20:30:00.000Z\",\"end_time\":\"2026-01-21T21:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T13:00:00.000Z\",\"end_time\":\"2026-01-22T13:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T13:30:00.000Z\",\"end_time\":\"2026-01-22T14:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T14:00:00.000Z\",\"end_time\":\"2026-01-22T14:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T14:30:00.000Z\",\"end_time\":\"2026-01-22T15:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T15:00:00.000Z\",\"end_time\":\"2026-01-22T15:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T15:30:00.000Z\",\"end_time\":\"2026-01-22T16:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T16:00:00.000Z\",\"end_time\":\"2026-01-22T16:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T16:30:00.000Z\",\"end_time\":\"2026-01-22T17:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T17:00:00.000Z\",\"end_time\":\"2026-01-22T17:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T17:30:00.000Z\",\"end_time\":\"2026-01-22T18:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T18:00:00.000Z\",\"end_time\":\"2026-01-22T18:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T18:30:00.000Z\",\"end_time\":\"2026-01-22T19:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T19:00:00.000Z\",\"end_time\":\"2026-01-22T19:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T19:30:00.000Z\",\"end_time\":\"2026-01-22T20:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T20:00:00.000Z\",\"end_time\":\"2026-01-22T20:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-22T20:30:00.000Z\",\"end_time\":\"2026-01-22T21:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T13:00:00.000Z\",\"end_time\":\"2026-01-23T13:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T13:30:00.000Z\",\"end_time\":\"2026-01-23T14:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T14:00:00.000Z\",\"end_time\":\"2026-01-23T14:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T14:30:00.000Z\",\"end_time\":\"2026-01-23T15:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T15:00:00.000Z\",\"end_time\":\"2026-01-23T15:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T15:30:00.000Z\",\"end_time\":\"2026-01-23T16:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T16:00:00.000Z\",\"end_time\":\"2026-01-23T16:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T16:30:00.000Z\",\"end_time\":\"2026-01-23T17:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T17:00:00.000Z\",\"end_time\":\"2026-01-23T17:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T17:30:00.000Z\",\"end_time\":\"2026-01-23T18:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T18:00:00.000Z\",\"end_time\":\"2026-01-23T18:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T18:30:00.000Z\",\"end_time\":\"2026-01-23T19:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T19:00:00.000Z\",\"end_time\":\"2026-01-23T19:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T19:30:00.000Z\",\"end_time\":\"2026-01-23T20:00:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T20:00:00.000Z\",\"end_time\":\"2026-01-23T20:30:00.000Z\",\"available\":true},{\"start_time\":\"2026-01-23T20:30:00.000Z\",\"end_time\":\"2026-01-23T21:00:00.000Z\",\"available\":true}]"}
+{"timestamp":"2026-01-17T19:43:15.096Z","level":"debug","message":"[HousecallProClient] First window available? true"}
+{"timestamp":"2026-01-17T19:43:15.096Z","level":"debug","message":"[HousecallProClient] 68 of 82 windows are available"}
+{"timestamp":"2026-01-17T19:43:15.150Z","level":"info","message":"API call successful","requestId":"req_1768678994217_11","endpoint":"/employees","method":"GET","latency":932,"cacheHit":false}
+[ERROR] {
+  timestamp: '2026-01-17T19:43:15.309Z',
+  method: 'POST',
+  path: '/api/v1/analytics/web-vitals',
+  status: 400,
+  message: 'Bad control character in string literal in JSON at position 16 (line 1 column 17)',
+  stack: 'SyntaxError: Bad control character in string literal in JSON at position 16 (line 1 column 17)\n' +
+    '    at JSON.parse (<anonymous>)\n' +
+    '    at parse (C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\body-parser\\lib\\types\\json.js:92:19)\n' +
+    '    at C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\body-parser\\lib\\read.js:128:18\n' +
+    '    at AsyncResource.runInAsyncScope (node:async_hooks:214:14)\n' +
+    '    at invokeCallback (C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\raw-body\\index.js:238:16)\n' +
+    '    at done (C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\raw-body\\index.js:227:7)\n' +
+    '    at IncomingMessage.onEnd (C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\raw-body\\index.js:287:7)\n' +
+    '    at IncomingMessage.emit (node:events:519:28)\n' +
+    '    at endReadableNT (node:internal/streams/readable:1698:12)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)'
+}
+{"timestamp":"2026-01-17T19:43:15.321Z","level":"info","message":"API call successful","requestId":"req_1768678994219_13","endpoint":"/estimates","method":"GET","latency":1101,"cacheHit":false}
+{"timestamp":"2026-01-17T19:43:15.321Z","level":"debug","message":"Using HCP booking windows as authoritative availability source"}
+{"timestamp":"2026-01-17T19:43:15.321Z","level":"debug","message":"Found 0 estimates for debugging purposes"}
+{"timestamp":"2026-01-17T19:43:15.321Z","level":"debug","message":"Using authoritative HCP booking windows - no manual override needed"}
+{"timestamp":"2026-01-17T19:43:15.321Z","level":"debug","message":"[Capacity] Booking windows received: 82"}
+{"timestamp":"2026-01-17T19:43:15.321Z","level":"debug","message":"[Capacity] REAL available windows today: 0"}
+{"timestamp":"2026-01-17T19:43:15.321Z","level":"debug","message":"[Capacity] Employee mapping:"}
+{"timestamp":"2026-01-17T19:43:15.321Z","level":"debug","message":"[Capacity]   jahz -> pro_b0a7d40a10dc4477908cc808f62054ff (Jahz Malary)"}
+{"timestamp":"2026-01-17T19:43:15.321Z","level":"debug","message":"[Capacity]   nick -> pro_784bb427ee27422f892b2db87dbdaf03 (Nick Johnson)"}
+{"timestamp":"2026-01-17T19:43:15.321Z","level":"debug","message":"[Capacity]   nate -> pro_19f45ddb23864f13ba5ffb20710e77e8 (Nate Johnson)"}
+{"timestamp":"2026-01-17T19:43:15.321Z","level":"debug","message":"[Capacity] calculateTechCapacities: 0 available windows for 2026-01-17"}
+{"timestamp":"2026-01-17T19:43:15.321Z","level":"debug","message":"[Capacity] No available windows for jahz on 2026-01-17"}
+{"timestamp":"2026-01-17T19:43:15.321Z","level":"debug","message":"[Capacity] No available windows for nick on 2026-01-17"}
+{"timestamp":"2026-01-17T19:43:15.322Z","level":"debug","message":"[Capacity] No available windows for nate on 2026-01-17"}
+{"timestamp":"2026-01-17T19:43:15.322Z","level":"debug","message":"[Capacity] Time check: 14:43 EST, Day: 6, State: NEXT_DAY"}
+{"timestamp":"2026-01-17T19:43:15.322Z","level":"debug","message":"[Express] Starting express windows filtering for 2026-01-17. RealBookingWindows count: 82"}
+{"timestamp":"2026-01-17T19:43:15.322Z","level":"debug","message":"[Express] Service window Morning has no available slots"}
+{"timestamp":"2026-01-17T19:43:15.323Z","level":"debug","message":"[Express] Service window Midday has no available slots"}
+{"timestamp":"2026-01-17T19:43:15.323Z","level":"debug","message":"[Express] Service window Afternoon has no available slots"}
+{"timestamp":"2026-01-17T19:43:15.323Z","level":"debug","message":"[Express] Consolidated service windows count: 0"}
+{"timestamp":"2026-01-17T19:43:15.323Z","level":"debug","message":"[Express] Unique express windows count: 0"}
+{"timestamp":"2026-01-17T19:43:15.323Z","level":"debug","message":"Capacity state unchanged, skipping ads adjustment","state":"NEXT_DAY"}
+[ERROR] {
+  timestamp: '2026-01-17T19:43:18.200Z',
+  method: 'POST',
+  path: '/api/v1/analytics/web-vitals',
+  status: 400,
+  message: 'Bad control character in string literal in JSON at position 16 (line 1 column 17)',
+  stack: 'SyntaxError: Bad control character in string literal in JSON at position 16 (line 1 column 17)\n' +
+    '    at JSON.parse (<anonymous>)\n' +
+    '    at parse (C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\body-parser\\lib\\types\\json.js:92:19)\n' +
+    '    at C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\body-parser\\lib\\read.js:128:18\n' +
+    '    at AsyncResource.runInAsyncScope (node:async_hooks:214:14)\n' +
+    '    at invokeCallback (C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\raw-body\\index.js:238:16)\n' +
+    '    at done (C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\raw-body\\index.js:227:7)\n' +
+    '    at IncomingMessage.onEnd (C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\raw-body\\index.js:287:7)\n' +
+    '    at IncomingMessage.emit (node:events:519:28)\n' +
+    '    at endReadableNT (node:internal/streams/readable:1698:12)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)'
+}
+[ERROR] {
+  timestamp: '2026-01-17T19:43:19.529Z',
+  method: 'POST',
+  path: '/api/v1/analytics/web-vitals',
+  status: 400,
+  message: 'Bad control character in string literal in JSON at position 16 (line 1 column 17)',
+  stack: 'SyntaxError: Bad control character in string literal in JSON at position 16 (line 1 column 17)\n' +
+    '    at JSON.parse (<anonymous>)\n' +
+    '    at parse (C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\body-parser\\lib\\types\\json.js:92:19)\n' +
+    '    at C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\body-parser\\lib\\read.js:128:18\n' +
+    '    at AsyncResource.runInAsyncScope (node:async_hooks:214:14)\n' +
+    '    at invokeCallback (C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\raw-body\\index.js:238:16)\n' +
+    '    at done (C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\raw-body\\index.js:227:7)\n' +
+    '    at IncomingMessage.onEnd (C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\raw-body\\index.js:287:7)\n' +
+    '    at IncomingMessage.emit (node:events:519:28)\n' +
+    '    at endReadableNT (node:internal/streams/readable:1698:12)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)'
+}
+[ERROR] {
+  timestamp: '2026-01-17T19:43:21.719Z',
+  method: 'POST',
+  path: '/api/v1/analytics/web-vitals',
+  status: 400,
+  message: 'Bad control character in string literal in JSON at position 16 (line 1 column 17)',
+  stack: 'SyntaxError: Bad control character in string literal in JSON at position 16 (line 1 column 17)\n' +
+    '    at JSON.parse (<anonymous>)\n' +
+    '    at parse (C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\body-parser\\lib\\types\\json.js:92:19)\n' +
+    '    at C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\body-parser\\lib\\read.js:128:18\n' +
+    '    at AsyncResource.runInAsyncScope (node:async_hooks:214:14)\n' +
+    '    at invokeCallback (C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\raw-body\\index.js:238:16)\n' +
+    '    at done (C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\raw-body\\index.js:227:7)\n' +
+    '    at IncomingMessage.onEnd (C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\raw-body\\index.js:287:7)\n' +
+    '    at IncomingMessage.emit (node:events:519:28)\n' +
+    '    at endReadableNT (node:internal/streams/readable:1698:12)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)'
+}
+2:43:32 PM [express] [MCP] {"level":30,"time":1768679012551,"pid":5664,"hostname":"Workstation","name":"mcp-http-server","method":"GET","path":"/mcp","ip":"::1","sessionId":"420ca418-130b-4982-a733-2bf4a4b4abe7","msg":"Received MCP request"}
+2:43:32 PM [express] [MCP] {"level":30,"time":1768679012551,"pid":5664,"hostname":"Workstation","name":"mcp-http-server","sessionId":"420ca418-130b-4982-a733-2bf4a4b4abe7","msg":"Reusing existing transport"}
+[ERROR] {
+  timestamp: '2026-01-17T19:44:00.618Z',
+  method: 'POST',
+  path: '/api/v1/analytics/web-vitals',
+  status: 400,
+  message: 'Bad control character in string literal in JSON at position 16 (line 1 column 17)',
+  stack: 'SyntaxError: Bad control character in string literal in JSON at position 16 (line 1 column 17)\n' +
+    '    at JSON.parse (<anonymous>)\n' +
+    '    at parse (C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\body-parser\\lib\\types\\json.js:92:19)\n' +
+    '    at C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\body-parser\\lib\\read.js:128:18\n' +
+    '    at AsyncResource.runInAsyncScope (node:async_hooks:214:14)\n' +
+    '    at invokeCallback (C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\raw-body\\index.js:238:16)\n' +
+    '    at done (C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\raw-body\\index.js:227:7)\n' +
+    '    at IncomingMessage.onEnd (C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\raw-body\\index.js:287:7)\n' +
+    '    at IncomingMessage.emit (node:events:519:28)\n' +
+    '    at endReadableNT (node:internal/streams/readable:1698:12)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)'
+}
+{"timestamp":"2026-01-17T19:44:07.415Z","level":"info","message":"[SMS Agent] Found 0 pending scheduled SMS to process"}
+[ERROR] {
+  timestamp: '2026-01-17T19:44:07.457Z',
+  method: 'POST',
+  path: '/api/v1/analytics/web-vitals',
+  status: 400,
+  message: 'Bad control character in string literal in JSON at position 16 (line 1 column 17)',
+  stack: 'SyntaxError: Bad control character in string literal in JSON at position 16 (line 1 column 17)\n' +
+    '    at JSON.parse (<anonymous>)\n' +
+    '    at parse (C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\body-parser\\lib\\types\\json.js:92:19)\n' +
+    '    at C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\body-parser\\lib\\read.js:128:18\n' +
+    '    at AsyncResource.runInAsyncScope (node:async_hooks:214:14)\n' +
+    '    at invokeCallback (C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\raw-body\\index.js:238:16)\n' +
+    '    at done (C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\raw-body\\index.js:227:7)\n' +
+    '    at IncomingMessage.onEnd (C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\raw-body\\index.js:287:7)\n' +
+    '    at IncomingMessage.emit (node:events:519:28)\n' +
+    '    at endReadableNT (node:internal/streams/readable:1698:12)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)'
+}
+[ERROR] {
+  timestamp: '2026-01-17T19:44:08.507Z',
+  method: 'POST',
+  path: '/api/v1/analytics/web-vitals',
+  status: 400,
+  message: 'Bad control character in string literal in JSON at position 16 (line 1 column 17)',
+  stack: 'SyntaxError: Bad control character in string literal in JSON at position 16 (line 1 column 17)\n' +
+    '    at JSON.parse (<anonymous>)\n' +
+    '    at parse (C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\body-parser\\lib\\types\\json.js:92:19)\n' +
+    '    at C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\body-parser\\lib\\read.js:128:18\n' +
+    '    at AsyncResource.runInAsyncScope (node:async_hooks:214:14)\n' +
+    '    at invokeCallback (C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\raw-body\\index.js:238:16)\n' +
+    '    at done (C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\raw-body\\index.js:227:7)\n' +
+    '    at IncomingMessage.onEnd (C:\\Users\\Workstation\\Desktop\\Replit\\thejohnsonbros\\project\\node_modules\\raw-body\\index.js:287:7)\n' +
+    '    at IncomingMessage.emit (node:events:519:28)\n' +
+    '    at endReadableNT (node:internal/streams/readable:1698:12)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)'
+}
+2:44:20 PM [express] GET /api/v1/google-reviews 304 in 150ms :: {"reviews":[],"totalReviews":0,"aver…
+2:44:22 PM [express] GET /api/v1/google-reviews 304 in 61ms :: {"reviews":[],"totalReviews":0,"avera…
+{"timestamp":"2026-01-17T19:45:07.345Z","level":"info","message":"[SMS Agent] Found 0 pending scheduled SMS to process"}
