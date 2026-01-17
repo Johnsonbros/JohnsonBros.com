@@ -1,6 +1,6 @@
 # CLAUDE.md - AI Assistant Development Guide
 
-**Last Updated**: 2026-01-12
+**Last Updated**: 2026-01-17
 **Repository**: JohnsonBros.com
 **Purpose**: Guide for AI assistants working with this codebase
 
@@ -45,6 +45,8 @@ Johnson Bros. Plumbing & Drain Cleaning is a family-owned plumbing business serv
 - **AI-powered booking agents** across multiple channels (web, SMS, voice)
 - **Unified customer identity** across all interaction channels
 - **Deep HousecallPro integration** for seamless business operations
+- **Comprehensive API cost tracking** across OpenAI, Twilio, and Google Maps
+- **Automated service area validation** using Google Maps geocoding
 
 ---
 
@@ -291,6 +293,25 @@ await db.update(customers)
   .where(eq(customers.id, customerId));
 ```
 
+#### API Usage Tracking Table
+```typescript
+import { apiUsage } from "@shared/schema";
+
+// The apiUsage table tracks all API costs with:
+// - service: 'openai' | 'twilio' | 'google_maps'
+// - operation: 'chat_completion' | 'sms_outbound' | 'geocode' | etc.
+// - model: e.g., 'gpt-4o', 'gpt-4o-mini' (for OpenAI)
+// - input_tokens, output_tokens: For OpenAI token counting
+// - units: Generic unit count (tokens, SMS segments, API calls)
+// - estimated_cost_cents: Cost in cents for precision
+// - session_id: Links to conversation/interaction
+// - channel: 'web_chat' | 'sms' | 'voice'
+// - metadata: JSON for additional context
+// - created_at: Timestamp for tracking and aggregation
+
+// Indexed on: service, created_at, session_id, channel for fast queries
+```
+
 ### 3. Error Handling
 
 #### Frontend Error Boundaries
@@ -387,6 +408,82 @@ await startIdentityLink(userId, phoneNumber); // Sends OTP
 await confirmIdentityLink(userId, otp);       // Merges identities
 ```
 
+#### API Cost Tracking Pattern
+```typescript
+// Track OpenAI usage
+import { trackOpenAIUsage } from "@/lib/usageTracker";
+
+const response = await openai.chat.completions.create({...});
+await trackOpenAIUsage(response, sessionId, 'web_chat', {
+  operation: 'chat_completion'
+});
+
+// Track Twilio SMS (with segment counting)
+import { trackTwilioSMS } from "@/lib/usageTracker";
+
+const message = await sendSMS(to, body);
+await trackTwilioSMS('outbound', message.numSegments, sessionId);
+
+// Track Twilio Voice (with duration in seconds)
+await trackTwilioVoice(durationSeconds, sessionId, 'voice', { callSid });
+
+// Track Google Maps operations
+import { trackGoogleMaps } from "@/lib/usageTracker";
+
+const result = await geocodeAddress(address);
+await trackGoogleMaps('geocode', 1, sessionId);
+```
+
+**Key Features:**
+- All costs stored in cents for precision arithmetic
+- Session-based tracking links costs to conversations
+- Channel attribution (web_chat, sms, voice) for ROI analysis
+- Metadata support for additional context
+- Graceful error handling with fallbacks
+
+**Pricing Constants (Updated 2024):**
+```typescript
+// OpenAI
+gpt-4o: $2.50/$10.00 per 1M tokens (input/output)
+gpt-4o-mini: $0.15/$0.60 per 1M tokens
+
+// Twilio
+SMS: $0.0079 outbound, $0.0075 inbound (per segment)
+Voice: $0.0085 per minute
+
+// Google Maps
+Geocoding: $5.00 per 1K requests
+Directions: $5.00 per 1K requests
+```
+
+#### Service Area Validation Pattern
+```typescript
+// Check if address is in service area
+import { checkServiceArea } from "@/src/geocoding";
+
+const result = await checkServiceArea(userAddress);
+
+if (result.inServiceArea) {
+  // Address is valid, proceed with booking
+  console.log(`Service tier: ${result.tier}`); // tier1, tier2, or tier3
+  console.log(`ZIP: ${result.zipCode}`);
+} else {
+  // Outside service area
+  console.log(result.message); // User-friendly message
+}
+
+// Geocode address for coordinates
+import { geocodeAddress } from "@/src/geocoding";
+
+const geocoded = await geocodeAddress("123 Main St, Quincy MA");
+// Returns: { zipCode, city, state, formattedAddress, latitude, longitude }
+```
+
+**Integration with config/capacity.yml:**
+- Reads `geos` array for all service ZIP codes
+- Reads `express_zones` (tier1, tier2, tier3) for service tiers
+- Automatic tier detection for express service pricing
+
 ### 6. Security Patterns
 
 #### CSRF Protection
@@ -474,6 +571,8 @@ if (!cachedCapacity || Date.now() - cachedCapacity.timestamp > 30000) {
 | `server/src/capacity.ts` | Capacity calculations | ~500 |
 | `server/src/housecall.ts` | HousecallPro client with circuit breaker | ~800 |
 | `server/src/googleAds.ts` | Automated ad management | ~300 |
+| `server/lib/usageTracker.ts` | Unified API cost tracking (OpenAI, Twilio, Google Maps) | ~310 |
+| `server/src/geocoding.ts` | Google Maps geocoding & service area validation | ~150 |
 
 ### Agent Systems
 
@@ -501,6 +600,47 @@ if (!cachedCapacity || Date.now() - cachedCapacity.timestamp > 30000) {
 | `server/routes/actions.ts` | Card action dispatcher |
 | `server/src/webhooks.ts` | HousecallPro webhooks |
 
+**Admin API Endpoints - Usage Tracking:**
+```typescript
+// GET /api/admin/usage/summary
+// Query: startDate (ISO string), endDate (ISO string)
+// Returns: {
+//   grandTotalCents: number,
+//   grandTotalDollars: string,
+//   byService: [{
+//     service: string,
+//     totalCents: number,
+//     totalDollars: string,
+//     requestCount: number
+//   }]
+// }
+
+// GET /api/admin/usage/daily
+// Query: startDate, endDate
+// Returns: [{
+//   date: string,
+//   openai: number,
+//   twilio: number,
+//   google_maps: number
+// }]
+
+// GET /api/admin/usage/by-channel
+// Query: startDate, endDate
+// Returns: {
+//   byChannel: [{
+//     channel: 'web_chat' | 'sms' | 'voice',
+//     totalCents: number,
+//     totalDollars: string,
+//     requestCount: number
+//   }],
+//   channelTotals: {
+//     web_chat: number,
+//     sms: number,
+//     voice: number
+//   }
+// }
+```
+
 ### Frontend Entry Points
 
 | File | Purpose |
@@ -509,6 +649,7 @@ if (!cachedCapacity || Date.now() - cachedCapacity.timestamp > 30000) {
 | `client/src/main.tsx` | React render entry |
 | `client/src/pages/Home.tsx` | Homepage |
 | `client/src/components/BookingModal.tsx` | Primary booking UI |
+| `client/src/pages/admin/api-usage.tsx` | API usage analytics dashboard (~450 lines) |
 
 ### Configuration Files
 
@@ -686,6 +827,91 @@ npm test -- server/tests/sharedThread.test.ts
 
 # Run with coverage (if configured)
 npm test -- --coverage
+```
+
+### Tracking API Usage and Costs
+
+```typescript
+// 1. Usage is automatically tracked when using these services:
+// - OpenAI chat completions (server/lib/aiChat.ts)
+// - OpenAI memory compression (server/lib/sharedThread.ts)
+// - Twilio SMS send (server/lib/twilio.ts)
+// - Twilio SMS/voice webhooks (server/lib/twilioWebhooks.ts)
+// - Google Maps geocoding (server/src/geocoding.ts)
+
+// 2. To manually track usage:
+import {
+  trackOpenAIUsage,
+  trackTwilioSMS,
+  trackTwilioVoice,
+  trackGoogleMaps
+} from "@/lib/usageTracker";
+
+// After an OpenAI call
+const completion = await openai.chat.completions.create({...});
+await trackOpenAIUsage(completion, sessionId, 'web_chat');
+
+// After sending SMS
+await trackTwilioSMS('outbound', numSegments, sessionId);
+
+// After voice call completes
+await trackTwilioVoice(durationInSeconds, sessionId, 'voice');
+
+// After geocoding
+await trackGoogleMaps('geocode', 1, sessionId);
+
+// 3. View usage in admin dashboard:
+// Navigate to /admin/api-usage
+// - Total spend across all services
+// - Daily spending trends
+// - Per-service breakdown
+// - Channel attribution (web, SMS, voice)
+// - Date range filtering (7d, 30d, 90d)
+
+// 4. API endpoints for custom analytics:
+GET /api/admin/usage/summary?startDate=2026-01-01&endDate=2026-01-31
+GET /api/admin/usage/daily?startDate=2026-01-01&endDate=2026-01-31
+GET /api/admin/usage/by-channel?startDate=2026-01-01&endDate=2026-01-31
+```
+
+### Validating Service Area
+
+```typescript
+// 1. Check if an address is in the service area
+import { checkServiceArea } from "@/src/geocoding";
+
+const result = await checkServiceArea("123 Main St, Quincy MA 02169");
+// Returns: { inServiceArea: boolean, message: string, zipCode: string | null, tier?: string }
+
+if (result.inServiceArea) {
+  console.log(`Valid address in ${result.zipCode}`);
+  if (result.tier) {
+    console.log(`Express service tier: ${result.tier}`);
+  }
+} else {
+  console.log(`Outside service area: ${result.message}`);
+}
+
+// 2. Geocode an address to get coordinates
+import { geocodeAddress } from "@/src/geocoding";
+
+const geocoded = await geocodeAddress("123 Main St, Quincy MA");
+// Returns: {
+//   zipCode: string | null,
+//   city: string | null,
+//   state: string | null,
+//   formattedAddress: string,
+//   latitude: number,
+//   longitude: number
+// }
+
+// 3. Frontend integration (already wired up)
+// POST /api/v1/check-service-area
+// Body: { address: string }
+// Response: { inServiceArea: boolean, message: string, zipCode: string | null }
+
+// 4. Usage automatically tracked
+// Each geocoding call is tracked in apiUsage table with cost attribution
 ```
 
 ### Debugging Common Issues
@@ -1039,6 +1265,7 @@ When asking for help or working with AI assistants:
 
 | Date | Change | Author |
 |------|--------|--------|
+| 2026-01-17 | Added API cost tracking system, Google Maps geocoding, service area validation, admin dashboard analytics, and apiUsage table documentation | AI Assistant |
 | 2026-01-12 | Initial creation of CLAUDE.md | AI Assistant |
 
 ---
