@@ -3,12 +3,12 @@ import { useLocation, Link } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
+import { Tabs, TabsContent } from '@/components/ui/tabs';
+import {
   BarChart3, Users, FileText, Settings, LogOut, 
   Home, DollarSign, CheckCircle,
   Clock, Activity, Brain, Target, Bell, ListTodo, Menu, X, RefreshCw,
-  Loader2, Zap
+  Loader2, Zap, Radar, Cpu, MapPin, ShieldCheck
 } from 'lucide-react';
 import { authenticatedFetch, logout, getAdminUser, isAuthenticated } from '@/lib/auth';
 import { cn } from '@/lib/utils';
@@ -24,6 +24,7 @@ import {
   WebhooksPanel,
   SettingsPanel,
 } from './dashboard-panels';
+import { Badge } from '@/components/ui/badge';
 
 interface DashboardStats {
   today: {
@@ -87,6 +88,14 @@ export default function AdminDashboard() {
     refetchIntervalInBackground: false, // Don't poll when tab is inactive
   });
 
+  const { data: aiSessions } = useQuery<{ id: number }[]>({
+    queryKey: ['/api/admin/ai/sessions'],
+    queryFn: () => authenticatedFetch('/api/admin/ai/sessions'),
+    enabled: isAuthenticated(),
+    refetchInterval: 300000,
+    staleTime: 120000,
+  });
+
   if (!user) {
     return null;
   }
@@ -101,6 +110,7 @@ export default function AdminDashboard() {
   };
 
   const sidebarItems = [
+    { id: 'command-center', label: 'Command Center', icon: Radar },
     { id: 'overview', label: 'Overview', icon: Home },
     { id: 'operations', label: 'Operations', icon: Zap },
     { id: 'customizable', label: 'Customizable', icon: BarChart3 },
@@ -177,8 +187,8 @@ export default function AdminDashboard() {
         {/* Main Content */}
         <main className="flex-1 p-6">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsContent value="overview">
-              <div className="space-y-6">
+          <TabsContent value="overview">
+            <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <h2 className="text-2xl font-bold text-gray-900">Dashboard Overview</h2>
                   <div className="flex items-center space-x-2">
@@ -420,8 +430,174 @@ export default function AdminDashboard() {
                     </CardContent>
                   </Card>
                 </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="command-center">
+            <div className="space-y-6">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">Central Nervous System</h2>
+                  <p className="text-sm text-gray-600">
+                    A unified view that connects operations, intelligence, coverage, AI learning, and cost control.
+                  </p>
+                </div>
+                <Badge variant="outline" className="text-xs">
+                  {stats?.realTimeData ? `Live · ${stats.realTimeData.source}` : 'Awaiting live data'}
+                </Badge>
               </div>
-            </TabsContent>
+
+              <div className="grid gap-4 lg:grid-cols-3">
+                <Card className="border-l-4 border-l-johnson-orange">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Zap className="h-4 w-4" /> Operations Pulse
+                    </CardTitle>
+                    <CardDescription>Live workload, capacity, and active jobs.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Jobs in progress</span>
+                      <span className="font-semibold">{stats?.today.jobsInProgress ?? '—'}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Jobs scheduled</span>
+                      <span className="font-semibold">{stats?.today.jobsScheduled ?? '—'}</span>
+                    </div>
+                    <Button size="sm" variant="outline" onClick={() => setActiveTab('operations')}>
+                      View Operations
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-l-4 border-l-blue-500">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Cpu className="h-4 w-4" /> Business Cortex
+                    </CardTitle>
+                    <CardDescription>Revenue, demand, and customer growth signals.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Today revenue</span>
+                      <span className="font-semibold">{formatCurrency(stats?.today.revenue ?? 0)}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">New customers</span>
+                      <span className="font-semibold">{stats?.today.newCustomers ?? '—'}</span>
+                    </div>
+                    <Button size="sm" variant="outline" onClick={() => setActiveTab('analytics')}>
+                      View Analytics
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-l-4 border-l-emerald-500">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <MapPin className="h-4 w-4" /> Service Intelligence
+                    </CardTitle>
+                    <CardDescription>Coverage density and service demand by area.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Recent customers</span>
+                      <span className="font-semibold">{stats?.customers.recentCount ?? '—'}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Total customers</span>
+                      <span className="font-semibold">{stats?.customers.total ?? '—'}</span>
+                    </div>
+                    <Button size="sm" variant="outline" asChild>
+                      <Link href="/admin/heatmap">View Heat Map</Link>
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="grid gap-4 lg:grid-cols-2">
+                <Card className="border-l-4 border-l-purple-500">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Brain className="h-4 w-4" /> AI Learning Loop
+                    </CardTitle>
+                    <CardDescription>Quality feedback and agent performance tuning.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">AI sessions</span>
+                      <span className="font-semibold">{aiSessions?.length ?? '—'}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Pending tasks</span>
+                      <span className="font-semibold">{stats?.tasks.pending ?? '—'}</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button size="sm" variant="outline" onClick={() => setActiveTab('ai-agent')}>
+                        Review Sessions
+                      </Button>
+                      <Button size="sm" variant="outline" asChild>
+                        <Link href="/admin/agent-tracing">Agent Tracing</Link>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-l-4 border-l-slate-500">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <ShieldCheck className="h-4 w-4" /> Cost & Reliability Guardrails
+                    </CardTitle>
+                    <CardDescription>Watch spend, errors, and automation health.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Webhook events</span>
+                      <span className="font-semibold">{stats?.events.total ?? '—'}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Failed events</span>
+                      <span className="font-semibold">{stats?.events.failed ?? '—'}</span>
+                    </div>
+                    <Button size="sm" variant="outline" asChild>
+                      <Link href="/admin/api-usage">View API Usage</Link>
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Signal Flow</CardTitle>
+                  <CardDescription>How the command center connects every team decision.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ol className="grid gap-3 text-sm text-gray-700 sm:grid-cols-2">
+                    <li className="flex items-start gap-2">
+                      <span className="mt-1 h-2 w-2 rounded-full bg-johnson-orange" />
+                      Operations pulse feeds live staffing and dispatch decisions.
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="mt-1 h-2 w-2 rounded-full bg-blue-500" />
+                      Business cortex connects demand, revenue, and customer growth.
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="mt-1 h-2 w-2 rounded-full bg-emerald-500" />
+                      Service intelligence aligns coverage with high-demand zones.
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="mt-1 h-2 w-2 rounded-full bg-purple-500" />
+                      AI learning loop improves conversions and quality automatically.
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="mt-1 h-2 w-2 rounded-full bg-slate-500" />
+                      Guardrails keep spend and reliability aligned with ROI targets.
+                    </li>
+                  </ol>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
 
             <TabsContent value="operations">
               <OperationsDashboard />
