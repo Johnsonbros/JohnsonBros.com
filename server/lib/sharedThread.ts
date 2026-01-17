@@ -12,6 +12,7 @@ import {
   sharedThreadThreads,
 } from '@shared/schema';
 import { Logger } from '../src/logger';
+import { trackOpenAIUsage } from './usageTracker';
 
 export type IdentityType = 'web_user_id' | 'phone';
 export type ChannelType = 'web' | 'sms' | 'voice';
@@ -220,6 +221,9 @@ export async function memoryCompression(customerId: string, threadId: string, fo
       ],
       max_tokens: 200,
     });
+
+    // Track OpenAI usage for cost monitoring
+    trackOpenAIUsage(response, customerId, undefined, { operation: 'memory_compression' });
 
     const content = response.choices[0].message.content || '';
     const parsed = safeParseSummary(content);

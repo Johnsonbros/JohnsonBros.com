@@ -6,6 +6,7 @@ import { Logger } from '../src/logger';
 import { processChat, clearSession } from './aiChat';
 import { createOutboundCall, generateTwiML, generateVoiceTwiML, getTwilioPhoneNumber } from './twilio';
 import { agentTracing } from './agentTracing';
+import { trackTwilioSMS, trackTwilioVoice } from './usageTracker';
 import crypto from 'crypto';
 
 const router = Router();
@@ -65,19 +66,25 @@ function validateTwilioSignature(req: Request): boolean {
 // SMS Webhook - Receives incoming SMS messages
 router.post('/sms', async (req: Request, res: Response) => {
   try {
-    const { From, Body, MessageSid } = req.body;
-    
+    const { From, Body, MessageSid, NumSegments } = req.body;
+
     if (!From || !Body) {
       Logger.warn('[Twilio SMS] Missing From or Body in request');
       res.type('text/xml').send(generateTwiML('Sorry, there was an error processing your message.'));
       return;
     }
-    
+
     Logger.info(`[Twilio SMS] Received message from ${From}: ${Body.substring(0, 50)}...`);
-    
+
     // Use phone number as session ID for SMS continuity
     const sessionId = `sms_${From.replace(/\D/g, '')}`;
-    
+
+    // Track inbound SMS usage
+    trackTwilioSMS('inbound', NumSegments ? parseInt(NumSegments) : 1, sessionId, {
+      messageSid: MessageSid,
+      from: From
+    });
+
     // Process through AI chat with SMS channel
     const response = await processChat(sessionId, Body, 'sms');
     
@@ -214,7 +221,19 @@ router.post('/voice/status', async (req: Request, res: Response) => {
     // End conversation on completion
     if (CallStatus === 'completed' || CallStatus === 'failed' || CallStatus === 'no-answer') {
       voiceSessions.delete(sessionId);
-      
+
+      // Track voice usage if call was completed and has duration
+      if (CallStatus === 'completed' && Duration) {
+        const durationSeconds = parseInt(Duration);
+        if (!isNaN(durationSeconds) && durationSeconds > 0) {
+          trackTwilioVoice(durationSeconds, sessionId, {
+            callSid: CallSid,
+            from: From,
+            status: CallStatus
+          });
+        }
+      }
+
       // Mark conversation as ended
       try {
         const outcome = CallStatus === 'completed' ? 'completed' : 'abandoned';
@@ -222,7 +241,7 @@ router.post('/voice/status', async (req: Request, res: Response) => {
       } catch (e) {
         Logger.warn('[Twilio Voice] Error ending conversation tracing:', { error: e instanceof Error ? e.message : 'Unknown error' });
       }
-      
+
       clearSession(sessionId);
     }
     

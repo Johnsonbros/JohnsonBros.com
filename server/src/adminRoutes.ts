@@ -6,6 +6,7 @@ import {
   aiChatSessions, aiChatMessages, googleAdsCampaigns,
   websiteAnalytics, dashboardWidgets, adminActivityLogs,
   webhookEvents, webhookAnalytics, customers, blogPosts,
+  apiUsage,
   InsertAdminTask, InsertAdminDocument, InsertAiChatMessage
 } from '@shared/schema';
 import { eq, desc, and, gte, lte, sql, or, like, inArray, isNull, ne } from 'drizzle-orm';
@@ -1717,6 +1718,205 @@ router.get('/agent-tracing/export/preview', authenticate, requirePermission('ai.
   } catch (error) {
     console.error('Export preview error:', error);
     res.status(500).json({ error: 'Failed to generate preview' });
+  }
+});
+
+// ============================================
+// API USAGE TRACKING ENDPOINTS
+// ============================================
+
+/**
+ * GET /api/admin/usage/summary
+ *
+ * Get total API costs by service for a date range
+ * Query params:
+ *   - startDate (ISO string, default: 30 days ago)
+ *   - endDate (ISO string, default: now)
+ */
+router.get('/usage/summary', authenticate, requirePermission('reports:view'), async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+
+    // Default to last 30 days if no date range provided
+    const start = startDate
+      ? new Date(startDate as string)
+      : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const end = endDate
+      ? new Date(endDate as string)
+      : new Date();
+
+    // Get total costs by service
+    const summaryByService = await db
+      .select({
+        service: apiUsage.service,
+        totalCostCents: sql<number>`SUM(${apiUsage.estimatedCostCents})`.as('totalCostCents'),
+        totalUnits: sql<number>`SUM(${apiUsage.units})`.as('totalUnits'),
+        requestCount: sql<number>`COUNT(*)`.as('requestCount'),
+      })
+      .from(apiUsage)
+      .where(
+        and(
+          gte(apiUsage.createdAt, start),
+          lte(apiUsage.createdAt, end)
+        )
+      )
+      .groupBy(apiUsage.service);
+
+    // Calculate grand total
+    const grandTotal = summaryByService.reduce((sum, item) => sum + Number(item.totalCostCents), 0);
+
+    // Format the response
+    const formattedSummary = summaryByService.map(item => ({
+      service: item.service,
+      totalCostDollars: Number(item.totalCostCents) / 100,
+      totalCostCents: Number(item.totalCostCents),
+      totalUnits: Number(item.totalUnits),
+      requestCount: Number(item.requestCount),
+    }));
+
+    res.json({
+      startDate: start.toISOString(),
+      endDate: end.toISOString(),
+      grandTotalCents: grandTotal,
+      grandTotalDollars: grandTotal / 100,
+      byService: formattedSummary,
+    });
+  } catch (error) {
+    console.error('Usage summary error:', error);
+    res.status(500).json({ error: 'Failed to fetch usage summary' });
+  }
+});
+
+/**
+ * GET /api/admin/usage/daily
+ *
+ * Get daily breakdown of API costs for charts
+ * Query params:
+ *   - startDate (ISO string, default: 30 days ago)
+ *   - endDate (ISO string, default: now)
+ */
+router.get('/usage/daily', authenticate, requirePermission('reports:view'), async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+
+    const start = startDate
+      ? new Date(startDate as string)
+      : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const end = endDate
+      ? new Date(endDate as string)
+      : new Date();
+
+    // Get daily costs by service
+    const dailyData = await db
+      .select({
+        date: sql<string>`DATE(${apiUsage.createdAt})`.as('date'),
+        service: apiUsage.service,
+        totalCostCents: sql<number>`SUM(${apiUsage.estimatedCostCents})`.as('totalCostCents'),
+        requestCount: sql<number>`COUNT(*)`.as('requestCount'),
+      })
+      .from(apiUsage)
+      .where(
+        and(
+          gte(apiUsage.createdAt, start),
+          lte(apiUsage.createdAt, end)
+        )
+      )
+      .groupBy(sql`DATE(${apiUsage.createdAt})`, apiUsage.service)
+      .orderBy(sql`DATE(${apiUsage.createdAt})`);
+
+    // Format for charting libraries
+    const formattedDaily = dailyData.map(item => ({
+      date: item.date,
+      service: item.service,
+      totalCostDollars: Number(item.totalCostCents) / 100,
+      totalCostCents: Number(item.totalCostCents),
+      requestCount: Number(item.requestCount),
+    }));
+
+    res.json({
+      startDate: start.toISOString(),
+      endDate: end.toISOString(),
+      daily: formattedDaily,
+    });
+  } catch (error) {
+    console.error('Daily usage error:', error);
+    res.status(500).json({ error: 'Failed to fetch daily usage' });
+  }
+});
+
+/**
+ * GET /api/admin/usage/by-channel
+ *
+ * Get API costs broken down by channel (web_chat, sms, voice)
+ * Query params:
+ *   - startDate (ISO string, default: 30 days ago)
+ *   - endDate (ISO string, default: now)
+ */
+router.get('/usage/by-channel', authenticate, requirePermission('reports:view'), async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+
+    const start = startDate
+      ? new Date(startDate as string)
+      : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const end = endDate
+      ? new Date(endDate as string)
+      : new Date();
+
+    // Get costs by channel
+    const channelData = await db
+      .select({
+        channel: apiUsage.channel,
+        service: apiUsage.service,
+        totalCostCents: sql<number>`SUM(${apiUsage.estimatedCostCents})`.as('totalCostCents'),
+        totalUnits: sql<number>`SUM(${apiUsage.units})`.as('totalUnits'),
+        requestCount: sql<number>`COUNT(*)`.as('requestCount'),
+      })
+      .from(apiUsage)
+      .where(
+        and(
+          gte(apiUsage.createdAt, start),
+          lte(apiUsage.createdAt, end)
+        )
+      )
+      .groupBy(apiUsage.channel, apiUsage.service);
+
+    // Format the response
+    const formattedChannelData = channelData.map(item => ({
+      channel: item.channel || 'unknown',
+      service: item.service,
+      totalCostDollars: Number(item.totalCostCents) / 100,
+      totalCostCents: Number(item.totalCostCents),
+      totalUnits: Number(item.totalUnits),
+      requestCount: Number(item.requestCount),
+    }));
+
+    // Calculate totals by channel
+    const channelTotals = formattedChannelData.reduce((acc, item) => {
+      const channel = item.channel;
+      if (!acc[channel]) {
+        acc[channel] = {
+          channel,
+          totalCostCents: 0,
+          totalCostDollars: 0,
+          requestCount: 0,
+        };
+      }
+      acc[channel].totalCostCents += item.totalCostCents;
+      acc[channel].totalCostDollars += item.totalCostDollars;
+      acc[channel].requestCount += item.requestCount;
+      return acc;
+    }, {} as Record<string, any>);
+
+    res.json({
+      startDate: start.toISOString(),
+      endDate: end.toISOString(),
+      byChannel: formattedChannelData,
+      channelTotals: Object.values(channelTotals),
+    });
+  } catch (error) {
+    console.error('Channel usage error:', error);
+    res.status(500).json({ error: 'Failed to fetch channel usage' });
   }
 });
 

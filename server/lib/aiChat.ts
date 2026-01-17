@@ -5,6 +5,7 @@
 import OpenAI from 'openai';
 import { Logger } from '../src/logger';
 import { agentTracing } from './agentTracing';
+import { trackOpenAIUsage } from './usageTracker';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
@@ -386,7 +387,14 @@ export async function processChat(
     
     // Store response ID for conversation continuity
     sessionData.previousResponseId = response.id;
-    
+
+    // Track OpenAI usage for cost monitoring
+    const usageChannel = channel === 'web' ? 'web_chat' : channel;
+    trackOpenAIUsage(response, sessionId, usageChannel, {
+      operation: 'chat_completion',
+      api: 'responses'
+    });
+
     // Process output items to extract the assistant message and track tool calls
     let assistantMessage = '';
     
