@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { authenticatedFetch } from '@/lib/auth';
-import { apiRequest } from '@/lib/queryClient';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -176,7 +175,10 @@ export default function TaskBoard() {
 
     const updateStatusMutation = useMutation({
         mutationFn: async ({ id, status }: { id: number; status: string }) => {
-            return apiRequest(`/api/admin/tasks/${id}`, 'PUT', { status });
+            return authenticatedFetch(`/api/admin/tasks/${id}`, {
+                method: 'PUT',
+                body: JSON.stringify({ status }),
+            });
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['/api/admin/tasks'] });
@@ -189,10 +191,13 @@ export default function TaskBoard() {
 
     const createTaskMutation = useMutation({
         mutationFn: async (title: string) => {
-            return apiRequest('/api/admin/tasks', 'POST', {
-                title,
-                status: 'pending',
-                priority: 'medium',
+            return authenticatedFetch('/api/admin/tasks', {
+                method: 'POST',
+                body: JSON.stringify({
+                    title,
+                    status: 'pending',
+                    priority: 'medium',
+                }),
             });
         },
         onSuccess: () => {
