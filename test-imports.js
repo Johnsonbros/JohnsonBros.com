@@ -1,0 +1,15 @@
+import express from "express";
+console.log("imported express");
+import compression from "compression";
+console.log("imported compression");
+import cookieParser from "cookie-parser";
+console.log("imported cookieParser");
+import { registerRoutes } from "./server/routes.js";
+console.log("imported registerRoutes");
+import { setupVite, serveStatic, log } from "./server/vite.js";
+console.log("imported vite utilities");
+import { configureSecurityMiddleware, getCsrfToken, csrfProtection } from "./server/src/security.js";
+console.log("imported security utilities");
+import { EnvValidator } from "./server/src/envValidator.js";
+console.log("imported envValidator");
+console.log("All project-specific imports worked");

@@ -125,6 +125,6 @@ Understand the architecture before adding features.
 ## Resume Command
 
 ```bash
-cd /home/corey/projects/JohnsonBros && npm run dev
+cd c:\Users\Workstation\Desktop\Replit\thejohnsonbros\project && npm run dev
 # Then open http://localhost:5000
 ```

@@ -50,12 +50,22 @@
 
 ---
 
+## Current Phase: Setup & Verification
+
+| Task | Status | Confidence | Blockers |
+|------|--------|------------|----------|
+| Initialize Beacon context | [/] | 🟢 | None |
+| Fix .aoa/home.json paths | [ ] | 🟡 | Need to find aoa binary |
+| Verify Docker Setup | [ ] | 🟡 | Daemon initializing |
+
+---
+
 ## Active Work
 
 | # | Task | Status | Confidence |
 |---|------|--------|------------|
 | **Phase 2** | **Feature Implementation** | | |
-| P2-001 | Create a board (Clarify requirements) | 🟡 IN PROGRESS | � |
+| P2-001 | Create a board (Clarify requirements) | 🟡 IN PROGRESS |  |
 
 **Next Phase**: Phase 3 - Production Hardening
 
@@ -120,12 +130,12 @@
 
 ## Environment Configuration
 
-### Current .env (MVP)
-
-```bash
-DATABASE_URL=postgresql://johnsonbros:johnsonbros@localhost:5433/johnsonbros
+- **OS**: Windows
+- **Project Root**: `c:\Users\Workstation\Desktop\Replit\thejohnsonbros\project`
+- **MCP Server**: Port 3001
+- **Main App**: Port 5000
+- **Database**: PostgreSQL (Neon)
 SESSION_SECRET=dev-session-secret-minimum-32-characters-long
-```
 
 ### Docker Database
 
