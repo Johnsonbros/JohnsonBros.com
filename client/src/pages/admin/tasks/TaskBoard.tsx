@@ -174,6 +174,7 @@ export default function TaskBoard() {
         queryFn: () => authenticatedFetch('/api/admin/tasks'),
     });
 
+    // ADMIN-TODO-003: Add task status transition rules, assignee notifications, and bulk updates.
     const updateStatusMutation = useMutation({
         mutationFn: async ({ id, status }: { id: number; status: string }) => {
             return apiRequest(`/api/admin/tasks/${id}`, 'PUT', { status });

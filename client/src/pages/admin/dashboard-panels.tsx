@@ -1123,6 +1123,7 @@ export function SettingsPanel() {
     enabled: isAuthenticated(),
   });
 
+  // ADMIN-TODO-005: Add advanced filters and saved views for activity logs.
   const { data: activityLogs, isLoading } = useQuery<ActivityLog[]>({
     queryKey: ['/api/admin/activity-logs'],
     queryFn: () => authenticatedFetch('/api/admin/activity-logs?limit=8'),
