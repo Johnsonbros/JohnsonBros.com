@@ -167,7 +167,7 @@ router.get('/auth/sessions', authenticate, async (req, res) => {
       createdAt: adminSessions.createdAt,
       lastActivityAt: adminSessions.lastActivityAt,
       expiresAt: adminSessions.expiresAt,
-      isCurrent: sql<boolean>`${adminSessions.sessionToken} = ${req.headers.authorization?.replace('Bearer ', '')}`
+      isCurrent: sql<boolean>`${adminSessions.sessionToken} = ${req.headers.authorization?.replace('Bearer ', '') || ''}`
     })
       .from(adminSessions)
       .where(
@@ -221,7 +221,7 @@ router.delete('/auth/sessions/:sessionId', authenticate, async (req, res) => {
 router.post('/auth/sessions/revoke-others', authenticate, async (req, res) => {
   try {
     const userId = (req as any).user.id;
-    const currentToken = req.headers.authorization?.replace('Bearer ', '');
+    const currentToken = req.headers.authorization?.replace('Bearer ', '') || '';
 
     // Revoke all sessions except the current one
     await db.update(adminSessions)

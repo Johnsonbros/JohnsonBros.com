@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { parsePhoneNumberFromString } from 'libphonenumber-js';
+import { parsePhoneNumberFromString, type CountryCode } from 'libphonenumber-js';
 import bcrypt from 'bcryptjs';
 import OpenAI from 'openai';
 import { and, desc, eq, gte, sql } from 'drizzle-orm';
@@ -18,7 +18,7 @@ export type ChannelType = 'web' | 'sms' | 'voice';
 export type DirectionType = 'in' | 'out';
 
 const DEFAULT_THREAD_KEY = 'default';
-const DEFAULT_REGION = process.env.DEFAULT_REGION || 'US';
+const DEFAULT_REGION = (process.env.DEFAULT_REGION || 'US') as CountryCode;
 const OTP_EXPIRY_MINUTES = 10;
 const OTP_MAX_ATTEMPTS = 5;
 const OTP_MAX_PER_HOUR = 5;
