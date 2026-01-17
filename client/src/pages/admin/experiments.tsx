@@ -246,7 +246,7 @@ export default function ExperimentsPage() {
       </div>
 
       {/* Recommendations Alert */}
-      {(recommendations?.recommendations?.length > 0 || experimentRecommendations?.recommendations?.length > 0) && (
+      {((recommendations?.recommendations?.length ?? 0) > 0 || (experimentRecommendations?.recommendations?.length ?? 0) > 0) && (
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
@@ -329,8 +329,8 @@ export default function ExperimentsPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {experiments?.length > 0
-                    ? (experiments.reduce((sum: number, e: ABTest) => sum + e.overallConversionRate, 0) / experiments.length * 100).toFixed(2)
+                  {(experiments?.length ?? 0) > 0
+                    ? (experiments!.reduce((sum: number, e: ABTest) => sum + e.overallConversionRate, 0) / experiments!.length * 100).toFixed(2)
                     : 0}%
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
@@ -740,8 +740,8 @@ export default function ExperimentsPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {experiments?.length > 0
-                    ? experiments
+                  {(experiments?.length ?? 0) > 0
+                    ? experiments!
                       .flatMap((e: ABTest) => e.variants.filter(v => !v.isControl && v.lift))
                       .reduce((sum: number, v: ABTestVariant, _, arr) =>
                         sum + (v.lift || 0) / arr.length, 0)

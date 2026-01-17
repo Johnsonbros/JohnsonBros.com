@@ -1,12 +1,12 @@
 import { Request, Response, Router } from 'express';
 import { db } from '../db';
-import { 
-  abTests, 
-  abTestVariants, 
-  abTestAssignments, 
-  abTestEvents, 
+import {
+  abTests,
+  abTestVariants,
+  abTestAssignments,
+  abTestEvents,
   abTestMetrics,
-  insertAbTestEventSchema 
+  insertAbTestEventSchema
 } from '@shared/schema';
 import { eq, and, sql } from 'drizzle-orm';
 import { enhancedLogger as logger } from './monitoring/logger';
@@ -27,14 +27,14 @@ router.get('/api/v1/ab-tests/active', async (req: Request, res: Response) => {
     activeTests.forEach(row => {
       const test = row.ab_tests;
       const variant = row.ab_test_variants;
-      
+
       if (!testsMap.has(test.testId)) {
         testsMap.set(test.testId, {
           ...test,
           variants: []
         });
       }
-      
+
       if (variant) {
         testsMap.get(test.testId).variants.push(variant);
       }
@@ -84,12 +84,12 @@ router.post('/api/v1/ab-tests/assignment', async (req: Request, res: Response) =
 router.post('/api/v1/ab-tests/event', async (req: Request, res: Response) => {
   try {
     const eventData = insertAbTestEventSchema.parse(req.body);
-    
+
     await db.insert(abTestEvents).values(eventData);
-    
+
     // Update metrics in real-time
     await updateMetrics(eventData.testId, eventData.variantId, eventData.eventType);
-    
+
     res.json({ success: true });
   } catch (error) {
     logger.error('Error tracking AB test event', error);
@@ -101,7 +101,7 @@ router.post('/api/v1/ab-tests/event', async (req: Request, res: Response) => {
 router.post('/api/v1/ab-tests/events/batch', async (req: Request, res: Response) => {
   try {
     const { events } = req.body;
-    
+
     if (!Array.isArray(events)) {
       return res.status(400).json({ error: 'Events must be an array' });
     }
@@ -133,7 +133,7 @@ router.post('/api/v1/ab-tests/events/batch', async (req: Request, res: Response)
 router.get('/api/v1/ab-tests/:testId/metrics', async (req: Request, res: Response) => {
   try {
     const { testId } = req.params;
-    
+
     const metrics = await db
       .select()
       .from(abTestMetrics)
@@ -160,14 +160,14 @@ router.patch('/api/v1/ab-tests/:testId/status', async (req: Request, res: Respon
   try {
     const { testId } = req.params;
     const { status } = req.body;
-    
+
     if (!['draft', 'active', 'paused', 'completed'].includes(status)) {
       return res.status(400).json({ error: 'Invalid status' });
     }
 
     await db
       .update(abTests)
-      .set({ 
+      .set({
         status,
         updatedAt: new Date(),
         ...(status === 'active' ? { startDate: new Date() } : {}),
@@ -301,7 +301,7 @@ async function calculateStatisticalSignificance(testId: string, variantId: strin
     }
 
     const control = controlMetrics[0].ab_test_metrics;
-    const test = testMetrics[0].ab_test_metrics;
+    const test = testMetrics[0];
 
     // Simple Z-score calculation for conversion rate difference
     const p1 = control.conversionRate;
@@ -314,14 +314,14 @@ async function calculateStatisticalSignificance(testId: string, variantId: strin
     }
 
     const pooledProp = ((p1 * n1) + (p2 * n2)) / (n1 + n2);
-    const se = Math.sqrt(pooledProp * (1 - pooledProp) * ((1/n1) + (1/n2)));
-    
+    const se = Math.sqrt(pooledProp * (1 - pooledProp) * ((1 / n1) + (1 / n2)));
+
     if (se === 0) {
       return 0;
     }
 
     const z = (p2 - p1) / se;
-    
+
     // Convert Z-score to confidence level
     // Z = 1.645 -> 90% confidence
     // Z = 1.96 -> 95% confidence
@@ -330,7 +330,7 @@ async function calculateStatisticalSignificance(testId: string, variantId: strin
     if (absZ >= 2.576) return 99;
     if (absZ >= 1.96) return 95;
     if (absZ >= 1.645) return 90;
-    
+
     return Math.min(Math.floor(absZ * 50), 89); // Scale to percentage
   } catch (error) {
     logger.error('Error calculating statistical significance', error);

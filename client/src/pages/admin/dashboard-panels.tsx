@@ -386,7 +386,12 @@ export function CustomersPanel() {
   );
 }
 
+import TaskBoard from './tasks/TaskBoard';
+import { LayoutList, KanbanSquare } from 'lucide-react';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+
 export function TasksPanel() {
+  const [viewMode, setViewMode] = useState<'list' | 'board'>('list');
   const { data, isLoading } = useQuery<TaskRecord[]>({
     queryKey: ['/api/admin/tasks'],
     queryFn: () => authenticatedFetch('/api/admin/tasks'),
@@ -395,6 +400,31 @@ export function TasksPanel() {
 
   const latestTasks = (data || []).slice(0, 8);
 
+  if (viewMode === 'board') {
+    return (
+      <div className="space-y-6 h-[600px]">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Task Board</h2>
+            <p className="text-sm text-gray-600">Drag and drop to manage workflow.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v as any)}>
+              <ToggleGroupItem value="list" aria-label="List view">
+                <LayoutList className="h-4 w-4" />
+              </ToggleGroupItem>
+              <ToggleGroupItem value="board" aria-label="Board view">
+                <KanbanSquare className="h-4 w-4" />
+              </ToggleGroupItem>
+            </ToggleGroup>
+            <Badge variant="outline" className="text-xs">{data?.length ?? 0} tasks</Badge>
+          </div>
+        </div>
+        <TaskBoard />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -402,7 +432,17 @@ export function TasksPanel() {
           <h2 className="text-2xl font-bold text-gray-900">Task Management</h2>
           <p className="text-sm text-gray-600">Track operational tasks assigned across teams.</p>
         </div>
-        <Badge variant="outline" className="text-xs">{data?.length ?? 0} tasks</Badge>
+        <div className="flex items-center gap-2">
+          <ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v as any)}>
+            <ToggleGroupItem value="list" aria-label="List view">
+              <LayoutList className="h-4 w-4" />
+            </ToggleGroupItem>
+            <ToggleGroupItem value="board" aria-label="Board view">
+              <KanbanSquare className="h-4 w-4" />
+            </ToggleGroupItem>
+          </ToggleGroup>
+          <Badge variant="outline" className="text-xs">{data?.length ?? 0} tasks</Badge>
+        </div>
       </div>
 
       <Card>
@@ -673,8 +713,8 @@ export function BlogPanel() {
                         post.status === 'published'
                           ? 'bg-green-100 text-green-700'
                           : post.status === 'review'
-                          ? 'bg-yellow-100 text-yellow-700'
-                          : 'bg-gray-100 text-gray-700'
+                            ? 'bg-yellow-100 text-yellow-700'
+                            : 'bg-gray-100 text-gray-700'
                       )}
                     >
                       {post.status}
@@ -1090,7 +1130,7 @@ export function SettingsPanel() {
   });
 
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-  
+
   const webhookUrls = {
     sms: `${baseUrl}/api/v1/twilio/sms`,
     voice: `${baseUrl}/api/v1/twilio/voice`,

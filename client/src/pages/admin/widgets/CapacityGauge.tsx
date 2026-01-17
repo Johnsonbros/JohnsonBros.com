@@ -2,12 +2,19 @@ import { useQuery } from '@tanstack/react-query';
 import { Gauge, TrendingUp, TrendingDown, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+interface CapacityData {
+  overall: {
+    score: number;
+    state: string;
+  };
+}
+
 export default function CapacityGauge() {
-  const { data: capacity, isLoading } = useQuery({
+  const { data: capacity, isLoading } = useQuery<CapacityData>({
     queryKey: ['/api/v1/capacity/today'],
-    refetchInterval: 120000, // Refresh every 2 minutes
-    staleTime: 60000, // Consider data stale after 1 minute
-    refetchIntervalInBackground: false, // Don't poll when tab is inactive
+    refetchInterval: 120000,
+    staleTime: 60000,
+    refetchIntervalInBackground: false,
   });
 
   if (isLoading) {
@@ -61,11 +68,11 @@ export default function CapacityGauge() {
           </div>
         </div>
       </div>
-      
+
       <div className={cn('text-sm font-medium', getStateColor())}>
         {state.replace(/_/g, ' ')}
       </div>
-      
+
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
         <Clock className="h-3 w-3" />
         <span>Updates every 2 min</span>

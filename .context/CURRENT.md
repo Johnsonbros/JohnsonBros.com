@@ -1,7 +1,16 @@
 # JohnsonBros - Current Session
 
-> **Session**: 02 | **Date**: 2026-01-16
-> **Phase**: 1 - MVP Local Launch | **Status**: COMPLETE | **Confidence**: 🟢
+> **Session**: 03 | **Date**: 2026-01-16
+> **Phase**: 2 - Feature Implementation | **Status**: IN PROGRESS | **Confidence**: 🟡
+
+---
+
+## Now
+
+**Working on P2-001: Create a board**
+- Analyzing "Job Board" widget (`JobBoard.tsx`)
+- Analyzing "Tasks" panel (`TasksPanel` in `dashboard-panels.tsx`)
+- Need to clarify if user wants Job Board or Task Board
 
 ---
 
