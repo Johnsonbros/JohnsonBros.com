@@ -77,6 +77,7 @@ export default function AdminDashboard() {
     }
   }, [setLocation]);
 
+  // ADMIN-TODO-001: Add per-panel loading/error empty states and show last refresh metadata here.
   // Fetch dashboard stats
   const { data: stats, isLoading: statsLoading, refetch, isRefetching } = useQuery<DashboardStats>({
     queryKey: ['/api/v1/admin/dashboard/stats'],
@@ -100,6 +101,7 @@ export default function AdminDashboard() {
     }).format(amount);
   };
 
+  // ADMIN-TODO-002: Gate navigation items by role and surface a permissions matrix.
   const sidebarItems = [
     { id: 'overview', label: 'Overview', icon: Home },
     { id: 'operations', label: 'Operations', icon: Zap },

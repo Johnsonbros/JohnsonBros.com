@@ -19,6 +19,8 @@ import {
 
 const router = Router();
 
+// ADMIN-TODO-006: Standardize admin API error responses and validate audit event schema.
+
 // Initialize authentication (with error handling to prevent startup crashes)
 (async () => {
   try {

@@ -82,6 +82,7 @@ const CHANNEL_COLORS = {
 } as const;
 
 export default function ApiUsageDashboard() {
+  // ADMIN-TODO-004: Add exportable reports and a unified date-range picker.
   const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d'>('30d');
 
   const getDates = () => {
