@@ -1,5 +1,6 @@
 // Twilio integration using Replit's connector system
 import twilio from 'twilio';
+import { trackTwilioSMS } from './usageTracker';
 
 interface TwilioCredentials {
   accountSid: string;
@@ -80,19 +81,28 @@ export async function getTwilioPhoneNumber(): Promise<string> {
   return phoneNumber;
 }
 
-export async function sendSMS(to: string, body: string): Promise<any> {
+export async function sendSMS(to: string, body: string, sessionId?: string): Promise<any> {
   const client = await getTwilioClient();
   const from = await getTwilioPhoneNumber();
-  
+
   if (!from) {
     throw new Error('No Twilio phone number configured');
   }
 
-  return client.messages.create({
+  const message = await client.messages.create({
     body,
     from,
     to
   });
+
+  // Track outbound SMS usage (Twilio counts segments automatically)
+  trackTwilioSMS('outbound', message.numSegments ? parseInt(message.numSegments) : 1, sessionId, {
+    messageSid: message.sid,
+    to,
+    from
+  });
+
+  return message;
 }
 
 export async function createOutboundCall(options: {

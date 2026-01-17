@@ -2219,3 +2219,35 @@ export const insertFineTuningTrainingDataSchema = createInsertSchema(fineTuningT
 
 export type FineTuningTrainingData = typeof fineTuningTrainingData.$inferSelect;
 export type InsertFineTuningTrainingData = z.infer<typeof insertFineTuningTrainingDataSchema>;
+
+// ============================================
+// API USAGE TRACKING (Cost Monitoring)
+// ============================================
+
+export const apiUsage = pgTable('api_usage', {
+  id: serial('id').primaryKey(),
+  service: text('service').notNull(), // 'openai', 'twilio', 'google_maps'
+  operation: text('operation').notNull(), // e.g., 'chat_completion', 'sms_send', 'geocode'
+  model: text('model'), // for OpenAI: 'gpt-4o', 'gpt-4o-mini', etc.
+  inputTokens: integer('input_tokens'), // OpenAI input tokens
+  outputTokens: integer('output_tokens'), // OpenAI output tokens
+  units: integer('units').notNull(), // generic unit count (SMS count, API calls, voice seconds)
+  estimatedCostCents: integer('estimated_cost_cents').notNull(), // cost in cents for easy math
+  sessionId: text('session_id'), // link to conversation/session
+  channel: text('channel'), // 'web_chat', 'sms', 'voice'
+  metadata: json('metadata'), // extra context
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  serviceIdx: index('api_usage_service_idx').on(table.service),
+  createdAtIdx: index('api_usage_created_at_idx').on(table.createdAt),
+  sessionIdIdx: index('api_usage_session_id_idx').on(table.sessionId),
+  channelIdx: index('api_usage_channel_idx').on(table.channel),
+}));
+
+export const insertApiUsageSchema = createInsertSchema(apiUsage).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type ApiUsage = typeof apiUsage.$inferSelect;
+export type InsertApiUsage = z.infer<typeof insertApiUsageSchema>;
