@@ -2,12 +2,22 @@ import { useQuery } from '@tanstack/react-query';
 import { CheckCircle, Clock, AlertCircle, XCircle, Circle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+interface Job {
+  id: number;
+  jobSummary?: string;
+  serviceType?: string;
+  city?: string;
+  state?: string;
+  completedAt?: string;
+  status?: string;
+}
+
 export default function RecentJobs() {
-  const { data: jobs, isLoading } = useQuery({
+  const { data: jobs, isLoading } = useQuery<Job[]>({
     queryKey: ['/api/v1/social-proof/recent-jobs'],
-    refetchInterval: 180000, // Refresh every 3 minutes
-    staleTime: 120000, // Consider data stale after 2 minutes
-    refetchIntervalInBackground: false, // Don't poll when tab is inactive
+    refetchInterval: 180000,
+    staleTime: 120000,
+    refetchIntervalInBackground: false,
   });
 
   if (isLoading) {
@@ -36,7 +46,7 @@ export default function RecentJobs() {
     const date = new Date(dateString);
     const now = new Date();
     const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / 60000);
-    
+
     if (diffInMinutes < 60) {
       return `${diffInMinutes}m ago`;
     } else if (diffInMinutes < 1440) {
@@ -56,7 +66,7 @@ export default function RecentJobs() {
 
   return (
     <div className="space-y-2">
-      {displayJobs.map((job: any) => (
+      {displayJobs.map((job: Job) => (
         <div
           key={job.id}
           className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-900 rounded-lg"
