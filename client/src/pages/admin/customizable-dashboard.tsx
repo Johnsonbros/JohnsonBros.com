@@ -128,8 +128,8 @@ export default function CustomizableDashboard() {
     if (widgets) {
       const gridLayouts = widgets.map((widget: WidgetConfig) => ({
         i: widget.widgetType,
-        ...((typeof widget.gridLayout === 'string' 
-          ? JSON.parse(widget.gridLayout) 
+        ...((typeof widget.gridLayout === 'string'
+          ? JSON.parse(widget.gridLayout)
           : widget.gridLayout) || { x: 0, y: 0, w: 6, h: 3 }),
       }));
       setLayouts(gridLayouts);
@@ -229,7 +229,7 @@ export default function CustomizableDashboard() {
         isDraggable={editMode}
         isResizable={editMode}
         onLayoutChange={handleLayoutChange}
-        compactionType="vertical"
+        compactType="vertical"
         preventCollision={false}
       >
         {layouts.map((layout) => {

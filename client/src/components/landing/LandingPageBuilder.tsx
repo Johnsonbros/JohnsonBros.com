@@ -30,35 +30,35 @@ export interface LandingPageConfig {
   title: string;
   description: string;
   keywords?: string[];
-  
+
   // Hero Configuration
   hero: {
     type: HeroType;
     props?: any;
   };
-  
+
   // Trust Building Modules (order matters)
   trustModules?: Array<{
     type: TrustModule;
     props?: any;
   }>;
-  
+
   // Conversion Modules
   conversionModules?: Array<{
     type: ConversionModule;
     props?: any;
   }>;
-  
+
   // Additional Sections
   sections?: Array<
-    'services' | 
-    'reviews' | 
-    'serviceAreas' | 
+    'services' |
+    'reviews' |
+    'serviceAreas' |
     'testimonials' |
     'faq' |
     'blog'
   >;
-  
+
   // A/B Testing
   variant?: 'A' | 'B';
   featureFlags?: {
@@ -67,7 +67,7 @@ export interface LandingPageConfig {
     showUrgencyIndicators?: boolean;
     autoOpenBookingDelay?: number;
   };
-  
+
   // Analytics
   trackingId?: string;
   conversionGoal?: string;
@@ -78,7 +78,7 @@ interface LandingPageBuilderProps {
   onBookService?: () => void;
 }
 
-export function LandingPageBuilder({ 
+export function LandingPageBuilder({
   config,
   onBookService: customBookHandler
 }: LandingPageBuilderProps) {
@@ -126,7 +126,7 @@ export function LandingPageBuilder({
   // Render Hero based on type
   const renderHero = () => {
     const { type, props = {} } = config.hero;
-    
+
     switch (type) {
       case 'emergency':
         return <EmergencyHero onBookService={handleBookService} {...props} />;
@@ -147,7 +147,7 @@ export function LandingPageBuilder({
 
     return config.trustModules.map((module, index) => {
       const { type, props = {} } = module;
-      
+
       switch (type) {
         case 'badges':
           return <TrustBadges key={`trust-${index}`} {...props} />;
@@ -169,7 +169,7 @@ export function LandingPageBuilder({
 
     return config.conversionModules.map((module, index) => {
       const { type, props = {} } = module;
-      
+
       switch (type) {
         case 'floatingCTA':
           return featureFlags.showFloatingCTA ? (
@@ -230,37 +230,37 @@ export function LandingPageBuilder({
 
   return (
     <>
-      <SEO 
+      <SEO
         title={config.title}
         description={config.description}
-        keywords={config.keywords?.join(', ')}
+        keywords={config.keywords}
       />
-      
+
       <div className="min-h-screen flex flex-col">
         <Header />
-        
+
         {/* Social Proof Bar - Top */}
         {config.trustModules?.some(m => m.type === 'socialProof' && m.props?.position === 'top') && (
           <SocialProofBar position="top" />
         )}
-        
+
         {/* Main Content */}
         <main className="flex-1">
           {/* Hero Section */}
           {renderHero()}
-          
+
           {/* Urgency Indicator - After Hero */}
           {featureFlags.showUrgencyIndicators && config.conversionModules?.some(m => m.type === 'urgency' && m.props?.position === 'banner') && (
             <UrgencyIndicator type="combined" position="banner" />
           )}
-          
+
           {/* Trust Building Modules */}
           {renderTrustModules()}
-          
+
           {/* Conversion Modules (non-floating) */}
           {config.conversionModules?.filter(m => m.type !== 'floatingCTA' && m.type !== 'exitIntent').map((module, index) => {
             const { type, props = {} } = module;
-            
+
             if (type === 'limitedTime') {
               return <LimitedTimeOffer key={`conv-inline-${index}`} onBookService={handleBookService} {...props} />;
             }
@@ -276,23 +276,23 @@ export function LandingPageBuilder({
             }
             return null;
           })}
-          
+
           {/* Additional Sections */}
           {renderSections()}
         </main>
-        
+
         <Footer />
-        
+
         {/* Floating Conversion Modules */}
         {renderConversionModules()}
-        
+
         {/* Booking Modal */}
         <BookingModal
           isOpen={isBookingModalOpen}
           onClose={() => setIsBookingModalOpen(false)}
         />
       </div>
-      
+
       {/* A/B Testing Tracking */}
       {config.variant && (
         <script

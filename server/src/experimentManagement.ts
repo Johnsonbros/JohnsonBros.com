@@ -27,8 +27,8 @@ function calculateZScore(control: any, variant: any): number {
   if (n1 === 0 || n2 === 0) return 0;
 
   const pooledProp = ((p1 * n1) + (p2 * n2)) / (n1 + n2);
-  const se = Math.sqrt(pooledProp * (1 - pooledProp) * ((1/n1) + (1/n2)));
-  
+  const se = Math.sqrt(pooledProp * (1 - pooledProp) * ((1 / n1) + (1 / n2)));
+
   if (se === 0) return 0;
 
   return (p2 - p1) / se;
@@ -51,12 +51,12 @@ function calculateSampleSize(
   const p1 = baselineRate;
   const p2 = baselineRate * (1 + mde);
   const pooledP = (p1 + p2) / 2;
-  
+
   const za = 1.96; // Z-score for 95% confidence (two-tailed)
   const zb = 0.84; // Z-score for 80% power
-  
+
   const n = 2 * pooledP * (1 - pooledP) * Math.pow((za + zb), 2) / Math.pow((p2 - p1), 2);
-  
+
   return Math.ceil(n);
 }
 
@@ -67,7 +67,7 @@ router.post('/api/v1/experiments', authenticate, async (req: Request, res: Respo
 
     // Validate test data
     const testData = insertAbTestSchema.parse(test);
-    
+
     // Insert test
     const [insertedTest] = await db.insert(abTests).values({
       ...testData,
@@ -151,10 +151,10 @@ router.get('/api/v1/experiments', authenticate, async (req: Request, res: Respon
 
     // Group by test and calculate additional metrics
     const experiments = new Map();
-    
+
     for (const row of results) {
       const testId = row.test.testId;
-      
+
       if (!experiments.has(testId)) {
         experiments.set(testId, {
           ...row.test,
@@ -167,7 +167,7 @@ router.get('/api/v1/experiments', authenticate, async (req: Request, res: Respon
       }
 
       const experiment = experiments.get(testId);
-      
+
       if (row.variant) {
         const variantData = {
           ...row.variant,
@@ -182,7 +182,7 @@ router.get('/api/v1/experiments', authenticate, async (req: Request, res: Respon
         };
 
         experiment.variants.push(variantData);
-        
+
         if (row.metrics) {
           experiment.totalImpressions += row.metrics.impressions;
           experiment.totalConversions += row.metrics.conversions;
@@ -197,7 +197,7 @@ router.get('/api/v1/experiments', authenticate, async (req: Request, res: Respon
       }
 
       const control = experiment.variants.find((v: any) => v.isControl);
-      
+
       if (control && control.metrics) {
         for (const variant of experiment.variants) {
           if (!variant.isControl && variant.metrics) {
@@ -217,7 +217,7 @@ router.get('/api/v1/experiments', authenticate, async (req: Request, res: Respon
       if (experiment.status === 'completed' && !experiment.winnerVariantId) {
         let winner = null;
         let maxConversionRate = 0;
-        
+
         for (const variant of experiment.variants) {
           if (variant.metrics && variant.metrics.conversionRate > maxConversionRate && variant.confidence >= 95) {
             winner = variant;
@@ -325,11 +325,11 @@ router.get('/api/v1/experiments/:testId', authenticate, async (req: Request, res
     };
 
     const variantsMap = new Map();
-    
+
     for (const row of testData) {
       if (row.ab_test_variants) {
         const variantId = row.ab_test_variants.variantId;
-        
+
         if (!variantsMap.has(variantId)) {
           variantsMap.set(variantId, {
             ...row.ab_test_variants,
@@ -348,13 +348,13 @@ router.get('/api/v1/experiments/:testId', authenticate, async (req: Request, res
 
     // Add statistical analysis
     const control = experiment.variants.find((v: any) => v.isControl);
-    
+
     if (control) {
       for (const variant of experiment.variants) {
         if (!variant.isControl) {
           const zScore = calculateZScore(control.metrics, variant.metrics);
           variant.confidence = calculateConfidenceLevel(zScore);
-          
+
           if (control.metrics.conversionRate > 0) {
             variant.lift = ((variant.metrics.conversionRate - control.metrics.conversionRate) / control.metrics.conversionRate) * 100;
           }
@@ -506,7 +506,7 @@ router.get('/api/v1/experiments/:testId/export', authenticate, async (req: Reque
     if (format === 'csv') {
       const csv = [
         'Timestamp,Visitor ID,Variant ID,Event Type,Event Action,Event Value',
-        ...events.map(e => 
+        ...events.map(e =>
           `${e.createdAt},${e.visitorId},${e.variantId},${e.eventType},${e.eventAction || ''},${e.eventValue || ''}`
         )
       ].join('\n');
@@ -534,7 +534,7 @@ router.get('/api/v1/experiments/recommendations', authenticate, async (req: Requ
       .from(abTests)
       .where(and(
         eq(abTests.status, 'active'),
-        lte(abTests.startDate, new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)) // 30 days ago
+        lte(abTests.startDate as any, new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)) // 30 days ago
       ));
 
     for (const test of longRunning) {

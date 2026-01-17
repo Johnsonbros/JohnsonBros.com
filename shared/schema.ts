@@ -727,7 +727,7 @@ export const webhookProcessedData = pgTable('webhook_processed_data', {
   dataType: text('data_type').notNull(), // 'customer', 'job', 'estimate', 'invoice', 'appointment'
   dataCategory: text('data_category'), // 'service-completed', 'payment-received', 'estimate-sent'
   entityData: text('entity_data').notNull(), // JSON string of parsed entity data
-  
+
   // Denormalized fields for quick access and filtering
   customerName: text('customer_name'),
   customerEmail: text('customer_email'),
@@ -741,13 +741,14 @@ export const webhookProcessedData = pgTable('webhook_processed_data', {
   employeeName: text('employee_name'),
   addressCity: text('address_city'),
   addressState: text('address_state'),
-  
+  notes: text('notes'),
+
   // Metrics for dashboard widgets
   isHighValue: boolean('is_high_value').default(false), // Amount > $500
   isEmergency: boolean('is_emergency').default(false),
   isRepeatCustomer: boolean('is_repeat_customer').default(false),
   isNewCustomer: boolean('is_new_customer').default(false),
-  
+
   processedAt: timestamp('processed_at').defaultNow().notNull(),
 }, (table) => ({
   eventIdIdx: index('processed_event_id_idx').on(table.eventId),
@@ -782,18 +783,18 @@ export const webhookAnalytics = pgTable('webhook_analytics', {
   totalEvents: integer('total_events').default(0),
   processedEvents: integer('processed_events').default(0),
   failedEvents: integer('failed_events').default(0),
-  
+
   // Business metrics
   newCustomers: integer('new_customers').default(0),
   jobsCompleted: integer('jobs_completed').default(0),
   estimatesSent: integer('estimates_sent').default(0),
   invoicesCreated: integer('invoices_created').default(0),
   totalRevenue: real('total_revenue').default(0),
-  
+
   // Performance metrics
   avgProcessingTime: integer('avg_processing_time'), // in milliseconds
   successRate: real('success_rate'), // percentage
-  
+
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => ({

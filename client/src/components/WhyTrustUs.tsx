@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, RefObject } from "react";
 import { Shield, Clock, Users, Wrench, Star, Home, TrendingUp, Award } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -21,33 +21,33 @@ interface AnimatedCounterProps {
 
 function AnimatedCounter({ end, duration = 2000, suffix = "", className = "" }: AnimatedCounterProps) {
   const [count, setCount] = useState(0);
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, amount: 0.5 });
-  
+  const ref = useRef<HTMLSpanElement>(null);
+  const isInView = useInView(ref as RefObject<Element>, { once: true, amount: 0.5 });
+
   useEffect(() => {
     if (!isInView) return;
-    
+
     let startTime: number | null = null;
     const startValue = 0;
-    
+
     const animate = (currentTime: number) => {
       if (!startTime) startTime = currentTime;
       const progress = Math.min((currentTime - startTime) / duration, 1);
-      
+
       // Easing function for smooth animation
       const easeOutQuad = progress * (2 - progress);
       const currentValue = Math.floor(startValue + (end - startValue) * easeOutQuad);
-      
+
       setCount(currentValue);
-      
+
       if (progress < 1) {
         requestAnimationFrame(animate);
       }
     };
-    
+
     requestAnimationFrame(animate);
   }, [end, duration, isInView]);
-  
+
   return (
     <span ref={ref} className={className}>
       {count.toLocaleString()}{suffix}
@@ -129,7 +129,7 @@ export function WhyTrustUs() {
         {/* Animated Counters Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
           {counters.map((counter, index) => (
-            <Card 
+            <Card
               key={index}
               className="text-center hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 bg-white"
             >
@@ -138,8 +138,8 @@ export function WhyTrustUs() {
                   {counter.icon}
                 </div>
                 <div className="text-4xl font-bold text-gray-900 mb-2">
-                  <AnimatedCounter 
-                    end={counter.value} 
+                  <AnimatedCounter
+                    end={counter.value}
                     suffix={counter.suffix}
                   />
                 </div>
@@ -158,7 +158,7 @@ export function WhyTrustUs() {
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {trustPoints.map((point, index) => (
-              <div 
+              <div
                 key={index}
                 className="flex items-start gap-4 p-4 rounded-lg hover:bg-gray-50 transition-colors"
               >
@@ -182,7 +182,7 @@ export function WhyTrustUs() {
               Our Iron-Clad Guarantee
             </h3>
             <p className="text-lg mb-6 text-blue-100">
-              We stand behind every job with our 100% satisfaction guarantee. If you're not completely satisfied, 
+              We stand behind every job with our 100% satisfaction guarantee. If you're not completely satisfied,
               we'll make it right or refund your service fee - no questions asked.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-6 text-sm">

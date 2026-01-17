@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useABTesting } from '@/contexts/ABTestingContext';
 import { ABTestVariant } from '@/lib/abTesting';
 
@@ -73,16 +73,16 @@ interface ABTestButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement
   onConversion?: () => void;
 }
 
-export function ABTestButton({ 
-  testId, 
-  defaultText, 
-  variants = {}, 
+export function ABTestButton({
+  testId,
+  defaultText,
+  variants = {},
   onConversion,
   onClick,
-  ...props 
+  ...props
 }: ABTestButtonProps) {
   const { variant, trackClick, trackConversion } = useABTest(testId);
-  
+
   const buttonText = variant?.changes?.buttonText || variants[variant?.id || ''] || defaultText;
 
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -107,19 +107,19 @@ interface ABTestTextProps {
   testId: string;
   field: string;
   defaultValue: string;
-  as?: keyof JSX.IntrinsicElements;
+  as?: React.ElementType;
   className?: string;
 }
 
-export function ABTestText({ 
-  testId, 
-  field, 
-  defaultValue, 
+export function ABTestText({
+  testId,
+  field,
+  defaultValue,
   as: Component = 'span',
   className
 }: ABTestTextProps) {
   const { changes } = useABTest(testId);
   const text = changes[field] || defaultValue;
-  
+
   return <Component className={className}>{text}</Component>;
 }

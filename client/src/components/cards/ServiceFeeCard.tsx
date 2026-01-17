@@ -119,7 +119,7 @@ export function ServiceFeeCard({ card, onAction, onDismiss }: ServiceFeeCardProp
               'w-full',
               isFeeWaived ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-blue-600 hover:bg-blue-700'
             )}
-            onClick={() => onAction(card.cta.action, card.cta.payload)}
+            onClick={() => onAction(card.cta!.action, card.cta!.payload)}
           >
             {card.cta.label}
           </Button>

@@ -11,8 +11,8 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "
 import { getTimeSlots, createBooking, getServices } from "@/lib/housecallApi";
 import { createCustomer, lookupCustomer } from "@/lib/customerApi";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  Calendar, X, User, UserPlus, Clock, DollarSign, ChevronLeft, ChevronRight, 
+import {
+  Calendar, X, User, UserPlus, Clock, DollarSign, ChevronLeft, ChevronRight,
   ClipboardList, Gift, Info, Upload, Image as ImageIcon, AlertTriangle,
   Droplets, Flame, Wrench, Settings, Home, Camera, Trash2, CheckCircle,
   AlertCircle, MapPin, FileText
@@ -258,10 +258,10 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
   useEffect(() => {
     if (timeSlots && timeSlots.length > 0 && bookingData.selectedDate && !bookingData.selectedTimeSlot) {
       const bookingTimeSlot = sessionStorage.getItem('booking_time_slot') || localStorage.getItem('booking_time_slot');
-      
+
       if (bookingTimeSlot) {
         const [startTime, endTime] = bookingTimeSlot.split(' - ');
-        
+
         // Find the matching slot from the API by comparing formatted times
         const matchingSlot = timeSlots.find((slot: AvailableTimeSlot) => {
           const slotStartTime = new Date(slot.startTime).toLocaleTimeString('en-US', {
@@ -276,10 +276,10 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
             hour: '2-digit',
             minute: '2-digit'
           });
-          
+
           return slotStartTime === startTime && slotEndTime === endTime;
         });
-        
+
         if (matchingSlot) {
           setBookingData(prev => ({ ...prev, selectedTimeSlot: matchingSlot }));
         }
@@ -359,10 +359,10 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
     if (isOpen) {
       // Check if this is an express booking - also check localStorage as fallback
       const bookingType = sessionStorage.getItem('booking_type') || localStorage.getItem('booking_type');
-      const expressFeeWaived = sessionStorage.getItem('express_fee_waived') === 'true' || 
-                               localStorage.getItem('express_fee_waived') === 'true';
+      const expressFeeWaived = sessionStorage.getItem('express_fee_waived') === 'true' ||
+        localStorage.getItem('express_fee_waived') === 'true';
       const bookingTimeSlot = sessionStorage.getItem('booking_time_slot') || localStorage.getItem('booking_time_slot');
-      
+
       if (bookingType === 'express') {
         setIsExpressBooking(true);
         setIsFeeWaived(expressFeeWaived);
@@ -373,9 +373,9 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
         estDate.setHours(0, 0, 0, 0);
         const today = estDate.toISOString().split('T')[0];
         setBookingData(prev => ({ ...prev, selectedDate: today }));
-        
+
         // Time slot will be auto-selected when slots load (see useEffect below)
-        
+
         // Store in localStorage as backup
         localStorage.setItem('booking_type', 'express');
         localStorage.setItem('express_fee_waived', expressFeeWaived.toString());
@@ -392,9 +392,9 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
         estDate.setHours(0, 0, 0, 0);
         const tomorrow = estDate.toISOString().split('T')[0];
         setBookingData(prev => ({ ...prev, selectedDate: tomorrow }));
-        
+
         // Time slot will be auto-selected when slots load (see useEffect below)
-        
+
         // Store in localStorage as backup
         localStorage.setItem('booking_type', 'next_day');
         localStorage.setItem('express_fee_waived', 'true');
@@ -476,7 +476,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
       reader.onload = (e) => {
         const base64 = e.target?.result as string;
         const base64Data = base64.split(',')[1];
-        
+
         setPhotos(prev => [...prev, {
           id: `photo-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           filename: file.name,
@@ -514,7 +514,14 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
   };
 
   const handleReturningCustomerSubmit = (data: ReturningCustomerFormValues) => {
-    lookupCustomerMutation.mutate(data);
+    const nameParts = data.name.trim().split(' ');
+    const firstName = nameParts[0];
+    const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+    lookupCustomerMutation.mutate({
+      firstName,
+      lastName,
+      phone: data.phone
+    });
   };
 
   const handleFinalBookingSubmit = async () => {
@@ -526,7 +533,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
       const slotStillAvailable = currentSlots.some(
         (slot: AvailableTimeSlot) => slot.id === bookingData.selectedTimeSlot?.id && slot.isAvailable
       );
-      
+
       if (!slotStillAvailable) {
         toast({
           title: "Time Slot No Longer Available",
@@ -588,25 +595,25 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
     const now = new Date();
     const estString = now.toLocaleString('en-US', { timeZone: 'America/New_York' });
     const estDate = new Date(estString);
-    
+
     // Create a date object for today at midnight EST
     const todayEST = new Date(estDate);
     todayEST.setHours(0, 0, 0, 0);
     const todayESTStr = todayEST.toISOString().split('T')[0];
-    
+
     // Calculate the month to display
     const displayMonth = new Date(todayEST);
     displayMonth.setMonth(displayMonth.getMonth() + monthOffset);
-    
+
     // Get first day of the display month
     const firstDayOfMonth = new Date(displayMonth.getFullYear(), displayMonth.getMonth(), 1);
     const lastDayOfMonth = new Date(displayMonth.getFullYear(), displayMonth.getMonth() + 1, 0);
-    
+
     // Get the day of week for the first date (0 = Sunday, 6 = Saturday)
     const firstDayOfWeek = firstDayOfMonth.getDay();
-    
+
     const days = [];
-    
+
     // Add empty cells for proper alignment
     for (let i = 0; i < firstDayOfWeek; i++) {
       days.push({
@@ -620,21 +627,21 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
         isSelectable: false,
       });
     }
-    
+
     // Calculate the 30-day booking window end date
     const maxBookingDate = new Date(todayEST);
     maxBookingDate.setDate(maxBookingDate.getDate() + 29); // 30 days from today (0-indexed)
-    
+
     // Add actual dates for the month
     for (let day = 1; day <= lastDayOfMonth.getDate(); day++) {
       const date = new Date(displayMonth.getFullYear(), displayMonth.getMonth(), day);
       const dateStr = date.toISOString().split('T')[0];
       const dayOfWeek = date.toLocaleDateString('en-US', { weekday: 'short' });
       const month = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-      
+
       // Check if this date is within the 30-day booking window
       const isSelectable = date >= todayEST && date <= maxBookingDate;
-      
+
       days.push({
         date: dateStr,
         dayOfWeek,
@@ -646,7 +653,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
         isSelectable,
       });
     }
-    
+
     return days;
   };
 
@@ -660,18 +667,18 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
   };
 
   const canGoToPreviousMonth = () => currentMonth > 0;
-  
+
   const canGoToNextMonth = () => {
     const now = new Date();
     const estString = now.toLocaleString('en-US', { timeZone: 'America/New_York' });
     const estDate = new Date(estString);
     const nextMonth = new Date(estDate);
     nextMonth.setMonth(nextMonth.getMonth() + currentMonth + 1);
-    
+
     // Check if next month contains any dates within 30-day window
     const maxBookingDate = new Date(estDate);
     maxBookingDate.setDate(maxBookingDate.getDate() + 29);
-    
+
     const firstDayOfNextMonth = new Date(nextMonth.getFullYear(), nextMonth.getMonth(), 1);
     return firstDayOfNextMonth <= maxBookingDate;
   };
@@ -704,7 +711,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                   )}
                 </p>
               </div>
-              
+
               {/* HUGE Prominent Service Fee Waived Banner */}
               {isFeeWaived && (
                 <div className="mt-3 sm:mt-4 animate-pulse">
@@ -745,22 +752,19 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
           <div className="flex justify-between items-center">
             {progressSteps.map((step, index) => (
               <div key={step.number} className="flex items-center flex-1">
-                <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold transition-colors ${
-                  step.completed ? 'bg-green-500 text-white' :
-                  step.active ? 'bg-johnson-blue text-white' : 
-                  'bg-gray-300 text-gray-500'
-                }`}>
+                <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold transition-colors ${step.completed ? 'bg-green-500 text-white' :
+                  step.active ? 'bg-johnson-blue text-white' :
+                    'bg-gray-300 text-gray-500'
+                  }`}>
                   {step.number}
                 </div>
-                <span className={`ml-1 text-[10px] sm:text-sm font-medium ${
-                  step.active ? 'text-johnson-blue' : 'text-gray-500'
-                } ${index === 0 || index === 3 ? 'inline' : 'hidden sm:inline'}`}>
+                <span className={`ml-1 text-[10px] sm:text-sm font-medium ${step.active ? 'text-johnson-blue' : 'text-gray-500'
+                  } ${index === 0 || index === 3 ? 'inline' : 'hidden sm:inline'}`}>
                   {step.label}
                 </span>
                 {index < progressSteps.length - 1 && (
-                  <div className={`flex-1 h-[2px] mx-1 sm:mx-2 ${
-                    step.completed ? 'bg-green-500' : 'bg-gray-300'
-                  }`} />
+                  <div className={`flex-1 h-[2px] mx-1 sm:mx-2 ${step.completed ? 'bg-green-500' : 'bg-gray-300'
+                    }`} />
                 )}
               </div>
             ))}
@@ -777,7 +781,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                   <ClipboardList className="h-5 w-5 sm:h-6 sm:w-6 text-johnson-blue" />
                   <h4 className="text-base sm:text-xl font-bold text-gray-900">What plumbing issue are you experiencing?</h4>
                 </div>
-                
+
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4 mb-4">
                   <p className="text-sm text-gray-700">
                     Please describe your plumbing problem in detail. This helps our technicians arrive prepared with the right tools and parts.
@@ -793,8 +797,8 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                         <FormItem>
                           <FormLabel className="text-sm sm:text-base">Problem Description *</FormLabel>
                           <FormControl>
-                            <Textarea 
-                              {...field} 
+                            <Textarea
+                              {...field}
                               placeholder="Example: My kitchen sink is draining very slowly and makes gurgling sounds. It started about a week ago and has been getting worse..."
                               rows={6}
                               className="text-sm sm:text-base resize-none"
@@ -819,8 +823,8 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                       <div className="space-y-3">
                         {/* Upload Button */}
                         {photos.length < 5 && (
-                          <label 
-                            htmlFor="photo-upload" 
+                          <label
+                            htmlFor="photo-upload"
                             className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-johnson-blue hover:bg-blue-50 transition-colors"
                             data-testid="photo-upload-button"
                           >
@@ -841,8 +845,8 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                         {photos.length > 0 && (
                           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                             {photos.map((photo, index) => (
-                              <div 
-                                key={index} 
+                              <div
+                                key={index}
                                 className="relative group rounded-lg overflow-hidden border border-gray-200"
                                 data-testid={`photo-preview-${index}`}
                               >
@@ -880,7 +884,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                   <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-johnson-blue" />
                   <h4 className="text-base sm:text-xl font-bold text-gray-900">When would you like service?</h4>
                 </div>
-                
+
                 <div className="space-y-4">
                   {/* Date Selection */}
                   <div>
@@ -892,35 +896,33 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                           type="button"
                           onClick={() => setCurrentMonth(currentMonth - 1)}
                           disabled={!canGoToPreviousMonth()}
-                          className={`p-2 rounded-lg transition-colors ${
-                            canGoToPreviousMonth()
-                              ? 'hover:bg-gray-200 text-gray-700'
-                              : 'text-gray-300 cursor-not-allowed'
-                          }`}
+                          className={`p-2 rounded-lg transition-colors ${canGoToPreviousMonth()
+                            ? 'hover:bg-gray-200 text-gray-700'
+                            : 'text-gray-300 cursor-not-allowed'
+                            }`}
                           data-testid="prev-month-button"
                         >
                           <ChevronLeft className="h-5 w-5" />
                         </button>
-                        
+
                         <h6 className="text-center text-base sm:text-lg font-bold text-gray-700">
                           {getMonthInfo(currentMonth)}
                         </h6>
-                        
+
                         <button
                           type="button"
                           onClick={() => setCurrentMonth(currentMonth + 1)}
                           disabled={!canGoToNextMonth()}
-                          className={`p-2 rounded-lg transition-colors ${
-                            canGoToNextMonth()
-                              ? 'hover:bg-gray-200 text-gray-700'
-                              : 'text-gray-300 cursor-not-allowed'
-                          }`}
+                          className={`p-2 rounded-lg transition-colors ${canGoToNextMonth()
+                            ? 'hover:bg-gray-200 text-gray-700'
+                            : 'text-gray-300 cursor-not-allowed'
+                            }`}
                           data-testid="next-month-button"
                         >
                           <ChevronRight className="h-5 w-5" />
                         </button>
                       </div>
-                      
+
                       <div className="grid grid-cols-7 gap-1 mb-2">
                         {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
                           <div key={`weekday-${index}`} className="text-center text-[10px] sm:text-sm font-medium text-gray-500 py-1">
@@ -938,15 +940,14 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                               type="button"
                               onClick={() => day.isSelectable && handleDateSelect(day.date)}
                               disabled={!day.isSelectable}
-                              className={`text-center py-2 sm:py-3 rounded transition-colors text-xs sm:text-base ${
-                                !day.isSelectable
-                                  ? 'text-gray-300 cursor-not-allowed'
-                                  : bookingData.selectedDate === day.date
+                              className={`text-center py-2 sm:py-3 rounded transition-colors text-xs sm:text-base ${!day.isSelectable
+                                ? 'text-gray-300 cursor-not-allowed'
+                                : bookingData.selectedDate === day.date
                                   ? 'bg-johnson-blue text-white'
                                   : day.isWeekend
-                                  ? 'text-gray-400 hover:bg-gray-200'
-                                  : 'hover:bg-johnson-blue hover:text-white'
-                              } ${day.isToday ? 'font-bold ring-2 ring-johnson-orange' : ''}`}
+                                    ? 'text-gray-400 hover:bg-gray-200'
+                                    : 'hover:bg-johnson-blue hover:text-white'
+                                } ${day.isToday ? 'font-bold ring-2 ring-johnson-orange' : ''}`}
                               data-testid={`calendar-day-${day.date}`}
                             >
                               {day.dayOfMonth}
@@ -982,17 +983,16 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                         ) : timeSlots && timeSlots.length > 0 ? (
                           timeSlots.map((slot: AvailableTimeSlot) => {
                             const isSelected = bookingData.selectedTimeSlot?.id === slot.id;
-                            
+
                             return (
                               <button
                                 key={slot.id}
                                 type="button"
                                 onClick={() => handleTimeSelect(slot)}
-                                className={`w-full border rounded-lg p-3 transition-all text-left ${
-                                  isSelected 
-                                    ? 'border-johnson-blue bg-blue-50 shadow-md' 
-                                    : 'border-gray-200 hover:border-johnson-blue hover:shadow-sm'
-                                }`}
+                                className={`w-full border rounded-lg p-3 transition-all text-left ${isSelected
+                                  ? 'border-johnson-blue bg-blue-50 shadow-md'
+                                  : 'border-gray-200 hover:border-johnson-blue hover:shadow-sm'
+                                  }`}
                                 data-testid={`time-slot-${slot.startTime}`}
                               >
                                 <div className="flex justify-between items-center">
@@ -1029,7 +1029,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
             {currentStep === 3 && !customerType && (
               <div className="step-transition-enter">
                 <h4 className="text-base sm:text-xl font-bold text-gray-900 mb-4">Are you a new or returning customer?</h4>
-                
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <button
                     type="button"
@@ -1068,7 +1068,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
             {currentStep === 3 && customerType === "new" && (
               <div className="step-transition-enter">
                 <h4 className="text-base sm:text-xl font-bold text-gray-900 mb-4">Create Your Account</h4>
-                
+
                 <Form {...newCustomerForm}>
                   <form onSubmit={newCustomerForm.handleSubmit(handleNewCustomerSubmit)} className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1079,8 +1079,8 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                           <FormItem>
                             <FormLabel className="text-sm">First Name *</FormLabel>
                             <FormControl>
-                              <Input 
-                                {...field} 
+                              <Input
+                                {...field}
                                 placeholder="John"
                                 className="h-11"
                                 data-testid="new-customer-first-name"
@@ -1097,8 +1097,8 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                           <FormItem>
                             <FormLabel className="text-sm">Last Name *</FormLabel>
                             <FormControl>
-                              <Input 
-                                {...field} 
+                              <Input
+                                {...field}
                                 placeholder="Doe"
                                 className="h-11"
                                 data-testid="new-customer-last-name"
@@ -1117,8 +1117,8 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                         <FormItem>
                           <FormLabel className="text-sm">Email *</FormLabel>
                           <FormControl>
-                            <Input 
-                              {...field} 
+                            <Input
+                              {...field}
                               type="email"
                               placeholder="john@example.com"
                               className="h-11"
@@ -1137,8 +1137,8 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                         <FormItem>
                           <FormLabel className="text-sm">Phone Number *</FormLabel>
                           <FormControl>
-                            <Input 
-                              {...field} 
+                            <Input
+                              {...field}
                               type="tel"
                               placeholder="(617) 555-0123"
                               className="h-11"
@@ -1157,8 +1157,8 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                         <FormItem>
                           <FormLabel className="text-sm">Service Address *</FormLabel>
                           <FormControl>
-                            <Input 
-                              {...field} 
+                            <Input
+                              {...field}
                               placeholder="123 Main St, Quincy, MA 02169"
                               className="h-11"
                               data-testid="new-customer-address"
@@ -1177,7 +1177,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
             {currentStep === 3 && customerType === "returning" && (
               <div className="step-transition-enter">
                 <h4 className="text-base sm:text-xl font-bold text-gray-900 mb-4">Look Up Your Account</h4>
-                
+
                 <Form {...returningCustomerForm}>
                   <form onSubmit={returningCustomerForm.handleSubmit(handleReturningCustomerSubmit)} className="space-y-4">
                     <FormField
@@ -1187,8 +1187,8 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                         <FormItem>
                           <FormLabel className="text-sm">Your Name *</FormLabel>
                           <FormControl>
-                            <Input 
-                              {...field} 
+                            <Input
+                              {...field}
                               placeholder="John Doe"
                               className="h-11"
                               data-testid="returning-customer-name"
@@ -1206,8 +1206,8 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
                         <FormItem>
                           <FormLabel className="text-sm">Phone Number *</FormLabel>
                           <FormControl>
-                            <Input 
-                              {...field} 
+                            <Input
+                              {...field}
                               type="tel"
                               placeholder="(617) 555-0123"
                               className="h-11"
@@ -1227,7 +1227,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
             {currentStep === 4 && customer && (
               <div className="step-transition-enter">
                 <h4 className="text-base sm:text-xl font-bold text-gray-900 mb-4">Review & Confirm Your Service Appointment</h4>
-                
+
                 {/* Booking Summary */}
                 <div className="space-y-4">
                   {/* Problem Description */}
@@ -1320,7 +1320,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
               </Button>
             </>
           )}
-          
+
           {currentStep === 2 && (
             <>
               <Button
@@ -1342,7 +1342,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
               </Button>
             </>
           )}
-          
+
           {currentStep === 3 && !customerType && (
             <>
               <Button
@@ -1357,7 +1357,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
               <div className="flex-1"></div>
             </>
           )}
-          
+
           {currentStep === 3 && customerType === "new" && (
             <>
               <Button
@@ -1380,7 +1380,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
               </Button>
             </>
           )}
-          
+
           {currentStep === 3 && customerType === "returning" && (
             <>
               <Button
@@ -1403,7 +1403,7 @@ export default function BookingModal({ isOpen, onClose, preSelectedService }: Bo
               </Button>
             </>
           )}
-          
+
           {currentStep === 4 && (
             <>
               <Button

@@ -1,0 +1,175 @@
+﻿
+> rest-express@1.0.0 check
+> tsc
+
+client/src/components/BookingModal.tsx(517,35): error TS2345: Argument of type '{ name: string; phone: string; }' is not assignable to parameter of type 'LookupCustomerData'.
+  Type '{ name: string; phone: string; }' is missing the following properties from type 'LookupCustomerData': firstName, lastName
+client/src/components/cards/ServiceFeeCard.tsx(122,37): error TS18048: 'card.cta' is possibly 'undefined'.
+client/src/components/cards/ServiceFeeCard.tsx(122,54): error TS18048: 'card.cta' is possibly 'undefined'.
+client/src/components/landing/LandingPageBuilder.tsx(236,9): error TS2322: Type 'string | undefined' is not assignable to type 'string[] | undefined'.
+  Type 'string' is not assignable to type 'string[]'.
+client/src/components/landing/SocialProofBar.tsx(98,11): error TS2322: Type 'unknown' is not assignable to type 'ReactNode'.
+client/src/components/landing/SocialProofBar.tsx(133,24): error TS2339: Property 'totalJobsCompleted' does not exist on type '{}'.
+client/src/components/ReviewsSection.tsx(14,57): error TS2345: Argument of type 'number' is not assignable to parameter of type 'string'.
+client/src/components/ReviewsSection.tsx(96,78): error TS2345: Argument of type 'number' is not assignable to parameter of type 'string'.
+client/src/components/ReviewsSection.tsx(103,28): error TS2339: Property 'comment' does not exist on type 'Review'.
+client/src/components/ReviewsSection.tsx(107,29): error TS2339: Property 'serviceName' does not exist on type 'Review'.
+client/src/components/ReviewsSection.tsx(110,43): error TS2339: Property 'createdAt' does not exist on type 'Review'.
+client/src/components/WhyChooseUs.tsx(163,36): error TS2339: Property 'count' does not exist on type '{}'.
+client/src/components/WhyTrustUs.tsx(25,30): error TS2345: Argument of type 'RefObject<null>' is not assignable to parameter of type 'RefObject<Element>'.
+  Type 'null' is not assignable to type 'Element'.
+client/src/hooks/use-abtest.tsx(110,14): error TS2503: Cannot find namespace 'JSX'.
+client/src/hooks/use-abtest.tsx(124,11): error TS2604: JSX element type 'Component' does not have any construct or call signatures.
+client/src/hooks/use-abtest.tsx(124,11): error TS2786: 'Component' cannot be used as a JSX component.
+  Its type 'string | number | symbol' is not a valid JSX element type.
+    Type 'number' is not assignable to type 'ElementType'.
+client/src/pages/admin/customizable-dashboard.tsx(232,9): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: ReactGridLayoutProps): ReactGridLayout', gave the following error.
+    Type '{ children: (Element | null)[]; className: string; layout: any[]; cols: number; rowHeight: number; width: number; isDraggable: boolean; isResizable: boolean; onLayoutChange: (layout: any[]) => void; compactionType: string; preventCollision: false; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<ReactGridLayout> & Readonly<ReactGridLayoutProps>'.
+      Property 'compactionType' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<ReactGridLayout> & Readonly<ReactGridLayoutProps>'. Did you mean 'compactType'?
+  Overload 2 of 2, '(props: ReactGridLayoutProps, context: any): ReactGridLayout', gave the following error.
+    Type '{ children: (Element | null)[]; className: string; layout: any[]; cols: number; rowHeight: number; width: number; isDraggable: boolean; isResizable: boolean; onLayoutChange: (layout: any[]) => void; compactionType: string; preventCollision: false; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<ReactGridLayout> & Readonly<ReactGridLayoutProps>'.
+      Property 'compactionType' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<ReactGridLayout> & Readonly<ReactGridLayoutProps>'. Did you mean 'compactType'?
+client/src/pages/admin/experiments.tsx(249,26): error TS2339: Property 'recommendations' does not exist on type 'Response'.
+client/src/pages/admin/experiments.tsx(249,84): error TS2339: Property 'recommendations' does not exist on type 'Response'.
+client/src/pages/admin/experiments.tsx(254,38): error TS2339: Property 'recommendations' does not exist on type 'Response'.
+client/src/pages/admin/experiments.tsx(254,93): error TS2339: Property 'recommendations' does not exist on type 'Response'.
+client/src/pages/admin/experiments.tsx(304,33): error TS2339: Property 'filter' does not exist on type '{}'.
+client/src/pages/admin/experiments.tsx(318,33): error TS2339: Property 'reduce' does not exist on type '{}'.
+client/src/pages/admin/experiments.tsx(332,33): error TS2339: Property 'length' does not exist on type '{}'.
+client/src/pages/admin/experiments.tsx(333,24): error TS18046: 'experiments' is of type 'unknown'.
+client/src/pages/admin/experiments.tsx(333,107): error TS18046: 'experiments' is of type 'unknown'.
+client/src/pages/admin/experiments.tsx(348,33): error TS2339: Property 'filter' does not exist on type '{}'.
+client/src/pages/admin/experiments.tsx(371,34): error TS2339: Property 'length' does not exist on type '{}'.
+client/src/pages/admin/experiments.tsx(380,32): error TS2339: Property 'map' does not exist on type '{}'.
+client/src/pages/admin/experiments.tsx(577,45): error TS2339: Property 'stages' does not exist on type 'Response'.
+client/src/pages/admin/experiments.tsx(583,34): error TS2339: Property 'stages' does not exist on type 'Response'.
+client/src/pages/admin/experiments.tsx(591,30): error TS2339: Property 'stages' does not exist on type 'Response'.
+client/src/pages/admin/experiments.tsx(609,72): error TS2339: Property 'totalConversion' does not exist on type 'Response'.
+client/src/pages/admin/experiments.tsx(626,43): error TS2339: Property 'length' does not exist on type 'Response'.
+client/src/pages/admin/experiments.tsx(631,25): error TS2740: Type 'Response' is missing the following properties from type 'any[]': length, pop, push, concat, and 35 more.
+client/src/pages/admin/experiments.tsx(640,38): error TS2339: Property 'map' does not exist on type 'Response'.
+client/src/pages/admin/experiments.tsx(649,34): error TS2339: Property 'map' does not exist on type 'Response'.
+client/src/pages/admin/experiments.tsx(681,53): error TS2339: Property 'length' does not exist on type 'Response'.
+client/src/pages/admin/experiments.tsx(683,37): error TS2339: Property 'map' does not exist on type 'Response'.
+client/src/pages/admin/experiments.tsx(730,67): error TS2339: Property 'length' does not exist on type '{}'.
+client/src/pages/admin/experiments.tsx(744,33): error TS2339: Property 'length' does not exist on type '{}'.
+client/src/pages/admin/experiments.tsx(745,23): error TS18046: 'experiments' is of type 'unknown'.
+client/src/pages/admin/experiments.tsx(747,65): error TS7006: Parameter '_' implicitly has an 'any' type.
+client/src/pages/admin/experiments.tsx(747,68): error TS7006: Parameter 'arr' implicitly has an 'any' type.
+client/src/pages/admin/experiments.tsx(765,33): error TS2339: Property 'filter' does not exist on type '{}'.
+client/src/pages/admin/experiments.tsx(782,34): error TS2339: Property 'reduce' does not exist on type '{}'.
+client/src/pages/admin/experiments.tsx(802,15): error TS2322: Type 'unknown' is not assignable to type 'ReactNode'.
+client/src/pages/admin/experiments.tsx(802,43): error TS2339: Property 'length' does not exist on type '{}'.
+client/src/pages/admin/experiments.tsx(804,48): error TS2339: Property 'map' does not exist on type '{}'.
+client/src/pages/admin/heatmap.tsx(37,60): error TS2345: Argument of type '{ method: string; body: string; }' is not assignable to parameter of type 'string'.
+client/src/pages/admin/heatmap.tsx(65,62): error TS2345: Argument of type '{ method: string; body: string; }' is not assignable to parameter of type 'string'.
+client/src/pages/admin/heatmap.tsx(88,72): error TS2345: Argument of type '{ method: string; }' is not assignable to parameter of type 'string'.
+client/src/pages/admin/widgets/CapacityGauge.tsx(17,27): error TS2339: Property 'overall' does not exist on type '{}'.
+client/src/pages/admin/widgets/CapacityGauge.tsx(18,27): error TS2339: Property 'overall' does not exist on type '{}'.
+client/src/pages/admin/widgets/RecentJobs.tsx(18,34): error TS2339: Property 'slice' does not exist on type '{}'.
+client/src/pages/ai-booking.tsx(43,33): error TS2503: Cannot find namespace 'JSX'.
+client/src/pages/ai-booking.tsx(58,9): error TS2503: Cannot find namespace 'JSX'.
+client/src/pages/ai-booking.tsx(321,15): error TS2322: Type '{ children: Element; key: number; initial: { opacity: number; y: number; }; animate: { opacity: number; y: number; }; exit: { opacity: number; }; className: string; }' is not assignable to type 'IntrinsicAttributes & HTMLAttributesWithoutMotionProps<unknown, unknown> & MotionProps & RefAttributes<unknown>'.
+  Property 'className' does not exist on type 'IntrinsicAttributes & HTMLAttributesWithoutMotionProps<unknown, unknown> & MotionProps & RefAttributes<unknown>'.
+client/src/pages/ai-booking.tsx(429,13): error TS2322: Type '{ children: (false | Element)[]; key: number; initial: { opacity: number; y: number; }; animate: { opacity: number; y: number; scale: number; }; transition: { delay: number; }; className: string; }' is not assignable to type 'IntrinsicAttributes & HTMLAttributesWithoutMotionProps<unknown, unknown> & MotionProps & RefAttributes<unknown>'.
+  Property 'className' does not exist on type 'IntrinsicAttributes & HTMLAttributesWithoutMotionProps<unknown, unknown> & MotionProps & RefAttributes<unknown>'.
+client/src/pages/ai-booking.tsx(443,17): error TS2322: Type '{ children: Element; animate: { rotate: number; }; transition: { duration: number; }; className: string; }' is not assignable to type 'IntrinsicAttributes & HTMLAttributesWithoutMotionProps<unknown, unknown> & MotionProps & RefAttributes<unknown>'.
+  Property 'className' does not exist on type 'IntrinsicAttributes & HTMLAttributesWithoutMotionProps<unknown, unknown> & MotionProps & RefAttributes<unknown>'.
+client/src/pages/ai-booking.tsx(539,13): error TS2322: Type '{ children: Element[]; initial: { opacity: number; y: number; }; animate: { opacity: number; y: number; }; className: string; }' is not assignable to type 'IntrinsicAttributes & HTMLAttributesWithoutMotionProps<unknown, unknown> & MotionProps & RefAttributes<unknown>'.
+  Property 'className' does not exist on type 'IntrinsicAttributes & HTMLAttributesWithoutMotionProps<unknown, unknown> & MotionProps & RefAttributes<unknown>'.
+client/src/pages/ai-booking.tsx(545,15): error TS2322: Type '{ children: Element[]; initial: { scale: number; }; animate: { scale: number; }; transition: { type: "spring"; duration: number; }; className: string; }' is not assignable to type 'IntrinsicAttributes & HTMLAttributesWithoutMotionProps<unknown, unknown> & MotionProps & RefAttributes<unknown>'.
+  Property 'className' does not exist on type 'IntrinsicAttributes & HTMLAttributesWithoutMotionProps<unknown, unknown> & MotionProps & RefAttributes<unknown>'.
+client/src/pages/ai-booking.tsx(589,17): error TS2322: Type '{ children: Element; animate: { y: [number, number, number]; rotate: [number, number, number]; }; transition: { repeat: number; duration: number; }; className: string; }' is not assignable to type 'IntrinsicAttributes & HTMLAttributesWithoutMotionProps<unknown, unknown> & MotionProps & RefAttributes<unknown>'.
+  Property 'className' does not exist on type 'IntrinsicAttributes & HTMLAttributesWithoutMotionProps<unknown, unknown> & MotionProps & RefAttributes<unknown>'.
+client/src/pages/ai-booking.tsx(601,17): error TS2322: Type '{ children: Element; animate: { y: [number, number, number]; rotate: [number, number, number]; }; transition: { repeat: number; duration: number; delay: number; }; className: string; }' is not assignable to type 'IntrinsicAttributes & HTMLAttributesWithoutMotionProps<unknown, unknown> & MotionProps & RefAttributes<unknown>'.
+  Property 'className' does not exist on type 'IntrinsicAttributes & HTMLAttributesWithoutMotionProps<unknown, unknown> & MotionProps & RefAttributes<unknown>'.
+client/src/pages/ai-booking.tsx(613,17): error TS2322: Type '{ children: Element; animate: { y: [number, number, number]; rotate: [number, number, number]; }; transition: { repeat: number; duration: number; delay: number; }; className: string; }' is not assignable to type 'IntrinsicAttributes & HTMLAttributesWithoutMotionProps<unknown, unknown> & MotionProps & RefAttributes<unknown>'.
+  Property 'className' does not exist on type 'IntrinsicAttributes & HTMLAttributesWithoutMotionProps<unknown, unknown> & MotionProps & RefAttributes<unknown>'.
+client/src/pages/ai-booking.tsx(630,15): error TS2322: Type '{ children: Element[]; initial: { opacity: number; }; whileInView: { opacity: number; }; viewport: { once: true; }; className: string; }' is not assignable to type 'IntrinsicAttributes & HTMLAttributesWithoutMotionProps<unknown, unknown> & MotionProps & RefAttributes<unknown>'.
+  Property 'className' does not exist on type 'IntrinsicAttributes & HTMLAttributesWithoutMotionProps<unknown, unknown> & MotionProps & RefAttributes<unknown>'.
+client/src/pages/ai-booking.tsx(647,15): error TS2322: Type '{ children: Element[]; initial: { opacity: number; }; whileInView: { opacity: number; }; viewport: { once: true; }; className: string; }' is not assignable to type 'IntrinsicAttributes & HTMLAttributesWithoutMotionProps<unknown, unknown> & MotionProps & RefAttributes<unknown>'.
+  Property 'className' does not exist on type 'IntrinsicAttributes & HTMLAttributesWithoutMotionProps<unknown, unknown> & MotionProps & RefAttributes<unknown>'.
+client/src/pages/ai-booking.tsx(727,15): error TS2322: Type '{ children: Element[]; initial: { opacity: number; }; whileInView: { opacity: number; }; viewport: { once: true; }; className: string; }' is not assignable to type 'IntrinsicAttributes & HTMLAttributesWithoutMotionProps<unknown, unknown> & MotionProps & RefAttributes<unknown>'.
+  Property 'className' does not exist on type 'IntrinsicAttributes & HTMLAttributesWithoutMotionProps<unknown, unknown> & MotionProps & RefAttributes<unknown>'.
+client/src/pages/ai-booking.tsx(773,19): error TS2322: Type '{ children: Element[]; key: number; initial: { opacity: number; y: number; }; whileInView: { opacity: number; y: number; }; transition: { delay: number; }; viewport: { once: true; }; whileHover: { scale: number; }; className: string; }' is not assignable to type 'IntrinsicAttributes & HTMLAttributesWithoutMotionProps<unknown, unknown> & MotionProps & RefAttributes<unknown>'.
+  Property 'className' does not exist on type 'IntrinsicAttributes & HTMLAttributesWithoutMotionProps<unknown, unknown> & MotionProps & RefAttributes<unknown>'.
+client/src/pages/ai-booking.tsx(793,15): error TS2322: Type '{ children: Element[]; initial: { opacity: number; }; whileInView: { opacity: number; }; viewport: { once: true; }; className: string; }' is not assignable to type 'IntrinsicAttributes & HTMLAttributesWithoutMotionProps<unknown, unknown> & MotionProps & RefAttributes<unknown>'.
+  Property 'className' does not exist on type 'IntrinsicAttributes & HTMLAttributesWithoutMotionProps<unknown, unknown> & MotionProps & RefAttributes<unknown>'.
+client/src/pages/ai-booking.tsx(866,21): error TS2322: Type '{ children: Element[]; key: number; whileHover: { scale: number; }; className: string; }' is not assignable to type 'IntrinsicAttributes & HTMLAttributesWithoutMotionProps<unknown, unknown> & MotionProps & RefAttributes<unknown>'.
+  Property 'className' does not exist on type 'IntrinsicAttributes & HTMLAttributesWithoutMotionProps<unknown, unknown> & MotionProps & RefAttributes<unknown>'.
+client/src/pages/ai-booking.tsx(886,15): error TS2322: Type '{ children: Element[]; initial: { opacity: number; }; whileInView: { opacity: number; }; viewport: { once: true; }; className: string; }' is not assignable to type 'IntrinsicAttributes & HTMLAttributesWithoutMotionProps<unknown, unknown> & MotionProps & RefAttributes<unknown>'.
+  Property 'className' does not exist on type 'IntrinsicAttributes & HTMLAttributesWithoutMotionProps<unknown, unknown> & MotionProps & RefAttributes<unknown>'.
+server/lib/sharedThread.ts(34,54): error TS2345: Argument of type 'string' is not assignable to parameter of type 'CountryCode | { defaultCountry?: CountryCode | undefined; defaultCallingCode?: string | undefined; extract?: boolean | undefined; } | undefined'.
+server/src/abTestingRoutes.ts(304,33): error TS2339: Property 'ab_test_metrics' does not exist on type '{ id: number; testId: string; variantId: string; impressions: number; conversions: number; conversionRate: number; bounceRate: number; avgTimeOnPage: number | null; revenue: number; statisticalSignificance: number | null; updatedAt: Date; }'.
+server/src/adminRoutes.ts(235,11): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(left: PgColumn<{ name: "session_token"; tableName: "admin_sessions"; dataType: "string"; columnType: "PgText"; data: string; driverParam: string; notNull: true; hasDefault: false; isPrimaryKey: false; ... 5 more ...; generated: undefined; }, {}, {}>, right: string | SQLWrapper): SQL<...>', gave the following error.
+    Argument of type 'string | undefined' is not assignable to parameter of type 'string | SQLWrapper'.
+      Type 'undefined' is not assignable to type 'string | SQLWrapper'.
+  Overload 2 of 3, '(left: Aliased<string | undefined>, right: string | SQLWrapper | undefined): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "session_token"; tableName: "admin_sessions"; dataType: "string"; columnType: "PgText"; data: string; driverParam: string; notNull: true; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is not assignable to parameter of type 'Aliased<string | undefined>'.
+      Type 'PgColumn<{ name: "session_token"; tableName: "admin_sessions"; dataType: "string"; columnType: "PgText"; data: string; driverParam: string; notNull: true; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is missing the following properties from type 'Aliased<string | undefined>': sql, fieldAlias
+  Overload 3 of 3, '(left: never, right: unknown): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "session_token"; tableName: "admin_sessions"; dataType: "string"; columnType: "PgText"; data: string; driverParam: string; notNull: true; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is not assignable to parameter of type 'never'.
+server/src/conversionRoutes.ts(127,10): error TS2339: Property 'where' does not exist on type 'Omit<PgSelectBase<"conversion_events", { stage: PgColumn<{ name: "properties"; tableName: "conversion_events"; dataType: "json"; columnType: "PgJson"; data: unknown; driverParam: unknown; notNull: false; hasDefault: false; isPrimaryKey: false; ... 5 more ...; generated: undefined; }, {}, {}>; count: SQL<...>; avgTim...'.
+server/src/conversionRoutes.ts(141,23): error TS2339: Property 'stage' does not exist on type '{}'.
+server/src/conversionRoutes.ts(242,11): error TS7034: Variable 'recommendations' implicitly has type 'any[]' in some locations where its type cannot be determined.
+server/src/conversionRoutes.ts(366,16): error TS7005: Variable 'recommendations' implicitly has an 'any[]' type.
+server/src/experimentManagement.ts(139,7): error TS2741: Property 'where' is missing in type 'Omit<import("C:/Users/Workstation/Desktop/Replit/thejohnsonbros/project/node_modules/drizzle-orm/pg-core/query-builders/select").PgSelectBase<"ab_tests", { test: import("C:/Users/Workstation/Desktop/Replit/thejohnsonbros/project/node_modules/drizzle-orm/pg-core/table").PgTableWithColumns<{ name: "ab_tests"; schema: ...' but required in type 'Omit<import("C:/Users/Workstation/Desktop/Replit/thejohnsonbros/project/node_modules/drizzle-orm/pg-core/query-builders/select").PgSelectBase<"ab_tests", { test: import("C:/Users/Workstation/Desktop/Replit/thejohnsonbros/project/node_modules/drizzle-orm/pg-core/table").PgTableWithColumns<{ name: "ab_tests"; schema: ...'.
+server/src/experimentManagement.ts(143,7): error TS2741: Property 'where' is missing in type 'Omit<import("C:/Users/Workstation/Desktop/Replit/thejohnsonbros/project/node_modules/drizzle-orm/pg-core/query-builders/select").PgSelectBase<"ab_tests", { test: import("C:/Users/Workstation/Desktop/Replit/thejohnsonbros/project/node_modules/drizzle-orm/pg-core/table").PgTableWithColumns<{ name: "ab_tests"; schema: ...' but required in type 'Omit<import("C:/Users/Workstation/Desktop/Replit/thejohnsonbros/project/node_modules/drizzle-orm/pg-core/query-builders/select").PgSelectBase<"ab_tests", { test: import("C:/Users/Workstation/Desktop/Replit/thejohnsonbros/project/node_modules/drizzle-orm/pg-core/table").PgTableWithColumns<{ name: "ab_tests"; schema: ...'.
+server/src/experimentManagement.ts(147,7): error TS2741: Property 'where' is missing in type 'Omit<import("C:/Users/Workstation/Desktop/Replit/thejohnsonbros/project/node_modules/drizzle-orm/pg-core/query-builders/select").PgSelectBase<"ab_tests", { test: import("C:/Users/Workstation/Desktop/Replit/thejohnsonbros/project/node_modules/drizzle-orm/pg-core/table").PgTableWithColumns<{ name: "ab_tests"; schema: ...' but required in type 'Omit<import("C:/Users/Workstation/Desktop/Replit/thejohnsonbros/project/node_modules/drizzle-orm/pg-core/query-builders/select").PgSelectBase<"ab_tests", { test: import("C:/Users/Workstation/Desktop/Replit/thejohnsonbros/project/node_modules/drizzle-orm/pg-core/table").PgTableWithColumns<{ name: "ab_tests"; schema: ...'.
+server/src/experimentManagement.ts(347,5): error TS2322: Type 'any[]' is not assignable to type 'never[]'.
+  Type 'any' is not assignable to type 'never'.
+server/src/experimentManagement.ts(354,22): error TS2339: Property 'isControl' does not exist on type 'never'.
+server/src/experimentManagement.ts(355,50): error TS2339: Property 'metrics' does not exist on type 'never'.
+server/src/experimentManagement.ts(355,67): error TS2339: Property 'metrics' does not exist on type 'never'.
+server/src/experimentManagement.ts(356,19): error TS2339: Property 'confidence' does not exist on type 'never'.
+server/src/experimentManagement.ts(358,23): error TS2339: Property 'metrics' does not exist on type 'never'.
+server/src/experimentManagement.ts(359,21): error TS2339: Property 'lift' does not exist on type 'never'.
+server/src/experimentManagement.ts(359,38): error TS2339: Property 'metrics' does not exist on type 'never'.
+server/src/experimentManagement.ts(359,71): error TS2339: Property 'metrics' does not exist on type 'never'.
+server/src/experimentManagement.ts(359,105): error TS2339: Property 'metrics' does not exist on type 'never'.
+server/src/experimentManagement.ts(363,19): error TS2339: Property 'requiredSampleSize' does not exist on type 'never'.
+server/src/experimentManagement.ts(364,21): error TS2339: Property 'metrics' does not exist on type 'never'.
+server/src/heatmap.ts(158,61): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'LogContext | undefined'.
+server/src/heatmap.ts(179,59): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'LogContext | undefined'.
+server/src/heatmap.ts(252,66): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'LogContext | undefined'.
+server/src/heatmap.ts(348,56): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'LogContext | undefined'.
+server/src/housecall.ts(315,9): error TS2393: Duplicate function implementation.
+server/src/housecall.ts(579,9): error TS2393: Duplicate function implementation.
+server/src/webhooks.ts(54,29): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ 'customer.created': string; 'customer.updated': string; 'customer.deleted': string; 'job.created': string; 'job.scheduled': string; 'job.started': string; 'job.completed': string; 'job.cancelled': string; ... 16 more ...; 'lead.lost': string; }'.
+  No index signature with a parameter of type 'string' was found on type '{ 'customer.created': string; 'customer.updated': string; 'customer.deleted': string; 'job.created': string; 'job.scheduled': string; 'job.started': string; 'job.completed': string; 'job.cancelled': string; ... 16 more ...; 'lead.lost': string; }'.
+server/src/webhooks.ts(88,22): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ 'customer.created': string; 'customer.updated': string; 'customer.deleted': string; 'job.created': string; 'job.scheduled': string; 'job.started': string; 'job.completed': string; 'job.cancelled': string; ... 16 more ...; 'lead.lost': string; }'.
+  No index signature with a parameter of type 'string' was found on type '{ 'customer.created': string; 'customer.updated': string; 'customer.deleted': string; 'job.created': string; 'job.scheduled': string; 'job.started': string; 'job.completed': string; 'job.cancelled': string; ... 16 more ...; 'lead.lost': string; }'.
+server/src/webhooks.ts(115,52): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(value: { dataType: string | SQL<unknown> | Placeholder<string, any>; eventId: number | SQL<unknown> | Placeholder<string, any>; entityData: string | SQL<unknown> | Placeholder<...>; ... 18 more ...; isNewCustomer?: boolean | ... 3 more ... | undefined; }): PgInsertBase<...>', gave the following error.
+    Argument of type '{ dataType?: string | undefined; eventId: number; entityData?: string | undefined; customerName?: string | null | undefined; serviceType?: string | null | undefined; dataCategory?: string | null | undefined; ... 13 more ...; isNewCustomer?: boolean | ... 1 more ... | undefined; }' is not assignable to parameter of type '{ dataType: string | SQL<unknown> | Placeholder<string, any>; eventId: number | SQL<unknown> | Placeholder<string, any>; entityData: string | SQL<unknown> | Placeholder<...>; ... 18 more ...; isNewCustomer?: boolean | ... 3 more ... | undefined; }'.
+      Types of property 'dataType' are incompatible.
+        Type 'string | undefined' is not assignable to type 'string | SQL<unknown> | Placeholder<string, any>'.
+          Type 'undefined' is not assignable to type 'string | SQL<unknown> | Placeholder<string, any>'.
+  Overload 2 of 2, '(values: { dataType: string | SQL<unknown> | Placeholder<string, any>; eventId: number | SQL<unknown> | Placeholder<string, any>; entityData: string | SQL<unknown> | Placeholder<...>; ... 18 more ...; isNewCustomer?: boolean | ... 3 more ... | undefined; }[]): PgInsertBase<...>', gave the following error.
+    Argument of type '{ dataType?: string | undefined; eventId: number; entityData?: string | undefined; customerName?: string | null | undefined; serviceType?: string | null | undefined; dataCategory?: string | null | undefined; ... 13 more ...; isNewCustomer?: boolean | ... 1 more ... | undefined; }' is not assignable to parameter of type '{ dataType: string | SQL<unknown> | Placeholder<string, any>; eventId: number | SQL<unknown> | Placeholder<string, any>; entityData: string | SQL<unknown> | Placeholder<...>; ... 18 more ...; isNewCustomer?: boolean | ... 3 more ... | undefined; }[]'.
+      Type '{ dataType?: string | undefined; eventId: number; entityData?: string | undefined; customerName?: string | null | undefined; serviceType?: string | null | undefined; dataCategory?: string | null | undefined; ... 13 more ...; isNewCustomer?: boolean | ... 1 more ... | undefined; }' is missing the following properties from type '{ dataType: string | SQL<unknown> | Placeholder<string, any>; eventId: number | SQL<unknown> | Placeholder<string, any>; entityData: string | SQL<unknown> | Placeholder<...>; ... 18 more ...; isNewCustomer?: boolean | ... 3 more ... | undefined; }[]': length, pop, push, concat, and 35 more.
+server/src/webhooks.ts(124,11): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(value: { eventId: number | SQL<unknown> | Placeholder<string, any>; tagName: string | SQL<unknown> | Placeholder<string, any>; id?: number | SQL<unknown> | Placeholder<...> | undefined; createdAt?: Date | ... 2 more ... | undefined; tagValue?: string | ... 3 more ... | undefined; tagCategory?: string | ... 3 more ... | undefined; }): PgInsertBase<...>', gave the following error.
+    Argument of type '{ eventId: number; tagName?: string | undefined; tagValue?: string | null | undefined; tagCategory?: string | null | undefined; }[]' is not assignable to parameter of type '{ eventId: number | SQL<unknown> | Placeholder<string, any>; tagName: string | SQL<unknown> | Placeholder<string, any>; id?: number | SQL<unknown> | Placeholder<string, any> | undefined; createdAt?: Date | ... 2 more ... | undefined; tagValue?: string | ... 3 more ... | undefined; tagCategory?: string | ... 3 more ....'.
+      Type '{ eventId: number; tagName?: string | undefined; tagValue?: string | null | undefined; tagCategory?: string | null | undefined; }[]' is missing the following properties from type '{ eventId: number | SQL<unknown> | Placeholder<string, any>; tagName: string | SQL<unknown> | Placeholder<string, any>; id?: number | SQL<unknown> | Placeholder<string, any> | undefined; createdAt?: Date | ... 2 more ... | undefined; tagValue?: string | ... 3 more ... | undefined; tagCategory?: string | ... 3 more ....': eventId, tagName
+  Overload 2 of 2, '(values: { eventId: number | SQL<unknown> | Placeholder<string, any>; tagName: string | SQL<unknown> | Placeholder<string, any>; id?: number | SQL<unknown> | Placeholder<...> | undefined; createdAt?: Date | ... 2 more ... | undefined; tagValue?: string | ... 3 more ... | undefined; tagCategory?: string | ... 3 more ... | undefined; }[]): PgInsertBase<...>', gave the following error.
+    Argument of type '{ eventId: number; tagName?: string | undefined; tagValue?: string | null | undefined; tagCategory?: string | null | undefined; }[]' is not assignable to parameter of type '{ eventId: number | SQL<unknown> | Placeholder<string, any>; tagName: string | SQL<unknown> | Placeholder<string, any>; id?: number | SQL<unknown> | Placeholder<string, any> | undefined; createdAt?: Date | ... 2 more ... | undefined; tagValue?: string | ... 3 more ... | undefined; tagCategory?: string | ... 3 more ....'.
+      Type '{ eventId: number; tagName?: string | undefined; tagValue?: string | null | undefined; tagCategory?: string | null | undefined; }' is not assignable to type '{ eventId: number | SQL<unknown> | Placeholder<string, any>; tagName: string | SQL<unknown> | Placeholder<string, any>; id?: number | SQL<unknown> | Placeholder<string, any> | undefined; createdAt?: Date | ... 2 more ... | undefined; tagValue?: string | ... 3 more ... | undefined; tagCategory?: string | ... 3 more ....'.
+        Types of property 'tagName' are incompatible.
+          Type 'string | undefined' is not assignable to type 'string | SQL<unknown> | Placeholder<string, any>'.
+            Type 'undefined' is not assignable to type 'string | SQL<unknown> | Placeholder<string, any>'.
+server/src/webhooks.ts(132,57): error TS2339: Property 'notes' does not exist on type 'Partial<{ dataType: string; eventId: number; entityData: string; customerName?: string | null | undefined; serviceType?: string | null | undefined; dataCategory?: string | null | undefined; ... 13 more ...; isNewCustomer?: boolean | ... 1 more ... | undefined; }>'.
+server/src/webhooks.ts(164,22): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ 'customer.created': string; 'customer.updated': string; 'customer.deleted': string; 'job.created': string; 'job.scheduled': string; 'job.started': string; 'job.completed': string; 'job.cancelled': string; ... 16 more ...; 'lead.lost': string; }'.
+  No index signature with a parameter of type 'string' was found on type '{ 'customer.created': string; 'customer.updated': string; 'customer.deleted': string; 'job.created': string; 'job.scheduled': string; 'job.started': string; 'job.completed': string; 'job.cancelled': string; ... 16 more ...; 'lead.lost': string; }'.
+server/src/webhooks.ts(253,11): error TS2353: Object literal may only specify known properties, and 'notes' does not exist in type 'Partial<{ dataType: string; eventId: number; entityData: string; customerName?: string | null | undefined; serviceType?: string | null | undefined; dataCategory?: string | null | undefined; ... 13 more ...; isNewCustomer?: boolean | ... 1 more ... | undefined; }>'.
+server/src/webhooks.ts(333,22): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ 'customer.created': string; 'customer.updated': string; 'customer.deleted': string; 'job.created': string; 'job.scheduled': string; 'job.started': string; 'job.completed': string; 'job.cancelled': string; ... 16 more ...; 'lead.lost': string; }'.
+  No index signature with a parameter of type 'string' was found on type '{ 'customer.created': string; 'customer.updated': string; 'customer.deleted': string; 'job.created': string; 'job.scheduled': string; 'job.started': string; 'job.completed': string; 'job.cancelled': string; ... 16 more ...; 'lead.lost': string; }'.
+server/src/webhooks.ts(347,7): error TS2322: Type 'SQL<unknown>' is not assignable to type 'number'.
+server/src/webhooks.ts(348,7): error TS2322: Type 'SQL<unknown>' is not assignable to type 'number'.
+server/src/webhooks.ts(353,7): error TS2322: Type 'SQL<unknown>' is not assignable to type 'number'.
+server/src/webhooks.ts(356,7): error TS2322: Type 'SQL<unknown>' is not assignable to type 'number'.
+server/src/webhooks.ts(358,9): error TS2322: Type 'SQL<unknown>' is not assignable to type 'number'.
+server/src/webhooks.ts(362,7): error TS2322: Type 'SQL<unknown>' is not assignable to type 'number'.
+server/src/webhooks.ts(365,7): error TS2322: Type 'SQL<unknown>' is not assignable to type 'number'.

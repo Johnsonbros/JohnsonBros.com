@@ -41,7 +41,7 @@ export function SocialProofBar({
   });
 
   // Fetch stats
-  const { data: stats } = useQuery({
+  const { data: stats } = useQuery<{ totalJobsCompleted: number }>({
     queryKey: ['/api/v1/social-proof/stats']
   });
 
@@ -61,19 +61,19 @@ export function SocialProofBar({
   // Rotate through recent jobs
   useEffect(() => {
     if (!animateJobs || recentJobs.length === 0) return;
-    
+
     const interval = setInterval(() => {
       setJobIndex((prev) => (prev + 1) % recentJobs.length);
     }, 4000);
-    
+
     return () => clearInterval(interval);
   }, [recentJobs, animateJobs]);
 
-  const containerClass = position === 'top' 
+  const containerClass = position === 'top'
     ? 'fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-johnson-blue to-johnson-teal text-white shadow-lg'
     : position === 'bottom'
-    ? 'fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-r from-johnson-blue to-johnson-teal text-white shadow-lg'
-    : 'bg-gradient-to-r from-johnson-blue/10 to-johnson-orange/10 rounded-lg';
+      ? 'fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-r from-johnson-blue to-johnson-teal text-white shadow-lg'
+      : 'bg-gradient-to-r from-johnson-blue/10 to-johnson-orange/10 rounded-lg';
 
   const textColorClass = position === 'inline' ? 'text-gray-700' : 'text-white';
   const badgeVariant = position === 'inline' ? 'secondary' : 'default';
@@ -101,12 +101,12 @@ export function SocialProofBar({
               <div className="flex items-center gap-2">
                 <Activity className={`h-4 w-4 ${position === 'inline' ? 'text-johnson-blue' : 'text-yellow-400'}`} />
                 <div ref={scrollRef} className="overflow-hidden flex-1">
-                  <div 
+                  <div
                     className="transition-transform duration-500 ease-in-out"
                     style={{ transform: `translateY(-${jobIndex * 24}px)` }}
                   >
                     {recentJobs.map((job, index) => (
-                      <div 
+                      <div
                         key={job.id}
                         className={`text-sm ${textColorClass} h-6 flex items-center`}
                       >

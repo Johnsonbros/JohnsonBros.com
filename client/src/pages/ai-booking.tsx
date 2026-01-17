@@ -1,13 +1,14 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Bot, 
-  MessageSquare, 
-  Clock, 
-  CheckCircle, 
-  Sparkles, 
-  Brain, 
-  Shield, 
+const MotionDiv = motion.div as any;
+import {
+  Bot,
+  MessageSquare,
+  Clock,
+  CheckCircle,
+  Sparkles,
+  Brain,
+  Shield,
   Zap,
   Building,
   Home,
@@ -40,7 +41,7 @@ import BookingModalEnhanced from "@/components/BookingModalEnhanced";
 
 // AI Platform Icons Component
 const AIIcon = ({ platform }: { platform: string }) => {
-  const icons: { [key: string]: JSX.Element } = {
+  const icons: { [key: string]: React.JSX.Element } = {
     chatgpt: <span className="text-2xl">🤖</span>,
     claude: <span className="text-2xl">🧠</span>,
     gemini: <span className="text-2xl">✨</span>,
@@ -55,7 +56,7 @@ type ChatCard = {
   title: string;
   description: string;
   action: string;
-  icon: JSX.Element;
+  icon: React.JSX.Element;
   badge?: string;
   meta?: { label: string; value: string }[];
   footnote?: string;
@@ -72,15 +73,15 @@ type ChatMessage = {
 const ChatSimulator = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [currentScenario, setCurrentScenario] = useState(0);
-  
+
   const scenarios = [
     {
       name: "Returning Customer",
       messages: [
         { role: "user", content: "I'm a past customer. Can you book Johnson Bros for a leaky faucet again?" },
         { role: "assistant", content: "Absolutely. I’ll look up your past service history and saved address." },
-        { 
-          role: "assistant", 
+        {
+          role: "assistant",
           content: "Found your profile. Tap a card to confirm:",
           cards: [
             {
@@ -132,8 +133,8 @@ const ChatSimulator = () => {
       messages: [
         { role: "user", content: "My bathroom drain is really slow. Can you schedule Johnson Bros to fix it?" },
         { role: "assistant", content: "I'll schedule Johnson Bros Plumbing for your drain cleaning. Let me find the best available time..." },
-        { 
-          role: "assistant", 
+        {
+          role: "assistant",
           content: "Quick form cards make this easy:",
           cards: [
             {
@@ -197,8 +198,8 @@ const ChatSimulator = () => {
       messages: [
         { role: "user", content: "I'm not getting hot water. Can Johnson Bros check my water heater?" },
         { role: "assistant", content: "I'll help you book Johnson Bros for water heater diagnostics. Let me access their scheduling system..." },
-        { 
-          role: "assistant", 
+        {
+          role: "assistant",
           content: "Prefer cards over typing? Fill these:",
           cards: [
             {
@@ -262,19 +263,19 @@ const ChatSimulator = () => {
   useEffect(() => {
     const scenario = scenarios[currentScenario];
     setMessages([]);
-    
+
     let messageIndex = 0;
     const interval = setInterval(() => {
       if (messageIndex < scenario.messages.length) {
         const msg = scenario.messages[messageIndex];
-        
+
         // Show typing indicator
         setMessages(prev => [...prev.filter(m => !m.typing), { ...msg, typing: true }]);
-        
+
         setTimeout(() => {
           setMessages(prev => [...prev.filter(m => !m.typing), msg]);
         }, 500);
-        
+
         messageIndex++;
       } else {
         // Reset after scenario completes
@@ -298,22 +299,21 @@ const ChatSimulator = () => {
           {scenarios.map((_, index) => (
             <div
               key={index}
-              className={`w-2 h-2 rounded-full transition-all ${
-                index === currentScenario ? "bg-blue-400 w-6" : "bg-gray-600"
-              }`}
+              className={`w-2 h-2 rounded-full transition-all ${index === currentScenario ? "bg-blue-400 w-6" : "bg-gray-600"
+                }`}
             />
           ))}
         </div>
       </div>
-      
+
       <div className="text-sm text-gray-400 mb-3">
         Scenario: {scenarios[currentScenario].name}
       </div>
-      
+
       <div className="flex-1 overflow-y-auto space-y-3 scrollbar-thin scrollbar-thumb-gray-700">
         <AnimatePresence mode="popLayout">
           {messages.map((msg, index) => (
-            <motion.div
+            <MotionDiv
               key={index}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -322,11 +322,10 @@ const ChatSimulator = () => {
             >
               <div className="max-w-[90%] sm:max-w-[80%] space-y-3">
                 <div
-                  className={`rounded-lg px-4 py-2 ${
-                    msg.role === "user"
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-800 text-gray-100"
-                  } ${msg.typing ? "opacity-70" : ""}`}
+                  className={`rounded-lg px-4 py-2 ${msg.role === "user"
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-800 text-gray-100"
+                    } ${msg.typing ? "opacity-70" : ""}`}
                 >
                   {msg.typing ? (
                     <div className="flex gap-1">
@@ -387,7 +386,7 @@ const ChatSimulator = () => {
                   </div>
                 )}
               </div>
-            </motion.div>
+            </MotionDiv>
           ))}
         </AnimatePresence>
       </div>
@@ -398,7 +397,7 @@ const ChatSimulator = () => {
 // Animated Workflow Diagram Component
 const WorkflowDiagram = () => {
   const [activeStep, setActiveStep] = useState(0);
-  
+
   const steps = [
     { icon: <MessageSquare />, title: "Open AI Assistant", desc: "ChatGPT, Claude, or any AI" },
     { icon: <Mic />, title: "Describe Problem", desc: "Natural conversation" },
@@ -417,11 +416,11 @@ const WorkflowDiagram = () => {
     <div className="relative">
       <div className="grid gap-4 md:grid-cols-4 md:gap-6">
         {steps.map((step, index) => (
-          <motion.div
+          <MotionDiv
             key={index}
             initial={{ opacity: 0, y: 20 }}
-            animate={{ 
-              opacity: 1, 
+            animate={{
+              opacity: 1,
               y: 0,
               scale: activeStep === index ? 1.05 : 1
             }}
@@ -429,38 +428,35 @@ const WorkflowDiagram = () => {
             className="relative"
           >
             <div
-              className={`bg-white rounded-xl p-6 border-2 transition-all ${
-                activeStep === index
-                  ? "border-blue-500 shadow-xl shadow-blue-500/20"
-                  : "border-gray-200"
-              }`}
+              className={`bg-white rounded-xl p-6 border-2 transition-all ${activeStep === index
+                ? "border-blue-500 shadow-xl shadow-blue-500/20"
+                : "border-gray-200"
+                }`}
             >
-              <motion.div
+              <MotionDiv
                 animate={{
                   rotate: activeStep === index ? 360 : 0,
                 }}
                 transition={{ duration: 0.5 }}
-                className={`inline-flex p-3 rounded-lg mb-4 ${
-                  activeStep === index
-                    ? "bg-blue-500 text-white"
-                    : "bg-gray-100 text-gray-600"
-                }`}
+                className={`inline-flex p-3 rounded-lg mb-4 ${activeStep === index
+                  ? "bg-blue-500 text-white"
+                  : "bg-gray-100 text-gray-600"
+                  }`}
               >
                 {step.icon}
-              </motion.div>
+              </MotionDiv>
               <h4 className="font-semibold mb-2">{step.title}</h4>
               <p className="text-sm text-gray-600">{step.desc}</p>
             </div>
             {index < steps.length - 1 && (
               <div className="hidden md:block absolute top-1/2 -right-3 transform -translate-y-1/2">
-                <ChevronRight 
-                  className={`h-6 w-6 transition-colors ${
-                    activeStep > index ? "text-blue-500" : "text-gray-300"
-                  }`}
+                <ChevronRight
+                  className={`h-6 w-6 transition-colors ${activeStep > index ? "text-blue-500" : "text-gray-300"
+                    }`}
                 />
               </div>
             )}
-          </motion.div>
+          </MotionDiv>
         ))}
       </div>
     </div>
@@ -478,11 +474,11 @@ const StatsCounter = ({ end, label }: { end: number; label: string }) => {
       ([entry]) => setIsVisible(entry.isIntersecting),
       { threshold: 0.1 }
     );
-    
+
     if (countRef.current) {
       observer.observe(countRef.current);
     }
-    
+
     return () => observer.disconnect();
   }, []);
 
@@ -491,7 +487,7 @@ const StatsCounter = ({ end, label }: { end: number; label: string }) => {
       const duration = 2000;
       const increment = end / (duration / 16);
       let current = 0;
-      
+
       const timer = setInterval(() => {
         current += increment;
         if (current >= end) {
@@ -501,7 +497,7 @@ const StatsCounter = ({ end, label }: { end: number; label: string }) => {
           setCount(Math.floor(current));
         }
       }, 16);
-      
+
       return () => clearInterval(timer);
     }
   }, [isVisible, end]);
@@ -526,19 +522,19 @@ export default function AIBooking() {
         url="/ai-booking"
         type="website"
       />
-      
+
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
         <Header onBookService={() => setIsBookingModalOpen(true)} />
-        
+
         {/* Hero Section */}
         <section className="relative pt-20 pb-16 px-4 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 to-purple-600/5" />
-          <motion.div 
+          <MotionDiv
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="max-w-6xl mx-auto text-center relative z-10"
           >
-            <motion.div
+            <MotionDiv
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ type: "spring", duration: 0.5 }}
@@ -546,19 +542,19 @@ export default function AIBooking() {
             >
               <Sparkles className="h-4 w-4" />
               <span className="text-xs sm:text-sm font-medium">Industry First: AI-Native Plumbing Service</span>
-            </motion.div>
-            
+            </MotionDiv>
+
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-5 bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
               Book Plumbing Services Through{" "}
               <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text">
                 Any AI Assistant
               </span>
             </h1>
-            
+
             <p className="text-lg sm:text-xl md:text-2xl text-gray-600 mb-7 max-w-3xl mx-auto">
               First plumbing company with native AI integration - Use ChatGPT, Claude, or any AI to book our services instantly
             </p>
-            
+
             <div className="flex flex-col sm:flex-row flex-wrap gap-3 justify-center mb-10">
               <Button
                 size="lg"
@@ -577,11 +573,11 @@ export default function AIBooking() {
                 Traditional Booking
               </Button>
             </div>
-            
+
             {/* Floating AI Icons */}
             <div className="relative h-24 sm:h-32">
-              <motion.div
-                animate={{ 
+              <MotionDiv
+                animate={{
                   y: [0, -10, 0],
                   rotate: [0, 5, 0]
                 }}
@@ -591,9 +587,9 @@ export default function AIBooking() {
                 <div className="bg-white shadow-lg rounded-xl p-3">
                   <AIIcon platform="chatgpt" />
                 </div>
-              </motion.div>
-              <motion.div
-                animate={{ 
+              </MotionDiv>
+              <MotionDiv
+                animate={{
                   y: [0, 10, 0],
                   rotate: [0, -5, 0]
                 }}
@@ -603,9 +599,9 @@ export default function AIBooking() {
                 <div className="bg-white shadow-lg rounded-xl p-3">
                   <AIIcon platform="claude" />
                 </div>
-              </motion.div>
-              <motion.div
-                animate={{ 
+              </MotionDiv>
+              <MotionDiv
+                animate={{
                   y: [0, -15, 0],
                   rotate: [0, 3, 0]
                 }}
@@ -615,15 +611,15 @@ export default function AIBooking() {
                 <div className="bg-white shadow-lg rounded-xl p-3">
                   <AIIcon platform="gemini" />
                 </div>
-              </motion.div>
+              </MotionDiv>
             </div>
-          </motion.div>
+          </MotionDiv>
         </section>
 
         {/* How It Works Section */}
         <section className="py-12 md:py-16 px-4 bg-gray-50">
           <div className="max-w-6xl mx-auto">
-            <motion.div
+            <MotionDiv
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
@@ -631,8 +627,8 @@ export default function AIBooking() {
             >
               <h2 className="text-3xl md:text-4xl font-bold mb-3">How It Works</h2>
               <p className="text-lg md:text-xl text-gray-600">Four simple steps to book plumbing services with AI</p>
-            </motion.div>
-            
+            </MotionDiv>
+
             <WorkflowDiagram />
           </div>
         </section>
@@ -640,7 +636,7 @@ export default function AIBooking() {
         {/* Live Demo Section */}
         <section className="py-12 md:py-16 px-4">
           <div className="max-w-6xl mx-auto">
-            <motion.div
+            <MotionDiv
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
@@ -648,11 +644,11 @@ export default function AIBooking() {
             >
               <h2 className="text-3xl md:text-4xl font-bold mb-3">Demo Experience</h2>
               <p className="text-lg md:text-xl text-gray-600">Watch AI look up past customers and book a job through chat</p>
-            </motion.div>
-            
+            </MotionDiv>
+
             <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
               <ChatSimulator />
-              
+
               <div className="space-y-4">
                 <Card className="p-5">
                   <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
@@ -720,7 +716,7 @@ export default function AIBooking() {
         {/* Benefits Section */}
         <section className="py-12 md:py-16 px-4 bg-gradient-to-br from-blue-50 to-purple-50">
           <div className="max-w-6xl mx-auto">
-            <motion.div
+            <MotionDiv
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
@@ -728,8 +724,8 @@ export default function AIBooking() {
             >
               <h2 className="text-3xl md:text-4xl font-bold mb-3">Revolutionary Benefits</h2>
               <p className="text-lg md:text-xl text-gray-600">Why AI booking is changing the game</p>
-            </motion.div>
-            
+            </MotionDiv>
+
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {[
                 {
@@ -763,7 +759,7 @@ export default function AIBooking() {
                   description: "Enterprise-grade security with full data encryption."
                 }
               ].map((benefit, index) => (
-                <motion.div
+                <MotionDiv
                   key={index}
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
@@ -777,7 +773,7 @@ export default function AIBooking() {
                   </div>
                   <h3 className="text-xl font-semibold mb-2">{benefit.title}</h3>
                   <p className="text-gray-600">{benefit.description}</p>
-                </motion.div>
+                </MotionDiv>
               ))}
             </div>
           </div>
@@ -786,7 +782,7 @@ export default function AIBooking() {
         {/* Technical Innovation Section */}
         <section className="py-12 md:py-16 px-4">
           <div className="max-w-6xl mx-auto">
-            <motion.div
+            <MotionDiv
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
@@ -794,8 +790,8 @@ export default function AIBooking() {
             >
               <h2 className="text-3xl md:text-4xl font-bold mb-3">Technical Excellence</h2>
               <p className="text-lg md:text-xl text-gray-600">Built on cutting-edge Model Context Protocol (MCP)</p>
-            </motion.div>
-            
+            </MotionDiv>
+
             <div className="grid gap-6 md:grid-cols-2 mb-10">
               <Card className="p-6">
                 <h3 className="text-2xl font-semibold mb-6 flex items-center gap-2">
@@ -803,7 +799,7 @@ export default function AIBooking() {
                   MCP Integration
                 </h3>
                 <p className="text-gray-600 mb-6">
-                  We've implemented the Model Context Protocol (MCP) to provide seamless integration with AI assistants. 
+                  We've implemented the Model Context Protocol (MCP) to provide seamless integration with AI assistants.
                   This allows any AI to access our booking system, check availability, and complete bookings in real-time.
                 </p>
                 <div className="space-y-4">
@@ -821,7 +817,7 @@ export default function AIBooking() {
                   </div>
                 </div>
               </Card>
-              
+
               <Card className="p-6">
                 <h3 className="text-2xl font-semibold mb-6 flex items-center gap-2">
                   <Activity className="h-6 w-6 text-purple-500" />
@@ -848,7 +844,7 @@ export default function AIBooking() {
                 </div>
               </Card>
             </div>
-            
+
             <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-2xl p-6 md:p-8 text-white">
               <h3 className="text-2xl font-semibold mb-6">Supported AI Platforms</h3>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -860,7 +856,7 @@ export default function AIBooking() {
                   { name: "Siri", icon: "siri" },
                   { name: "Google", icon: "assistant" }
                 ].map((platform, index) => (
-                  <motion.div
+                  <MotionDiv
                     key={index}
                     whileHover={{ scale: 1.1 }}
                     className="text-center"
@@ -869,7 +865,7 @@ export default function AIBooking() {
                       <AIIcon platform={platform.icon} />
                     </div>
                     <span className="text-sm">{platform.name}</span>
-                  </motion.div>
+                  </MotionDiv>
                 ))}
               </div>
             </div>
@@ -879,7 +875,7 @@ export default function AIBooking() {
         {/* Use Cases Section */}
         <section className="py-12 md:py-16 px-4 bg-gray-50">
           <div className="max-w-6xl mx-auto">
-            <motion.div
+            <MotionDiv
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
@@ -887,8 +883,8 @@ export default function AIBooking() {
             >
               <h2 className="text-3xl md:text-4xl font-bold mb-3">Perfect For Every Situation</h2>
               <p className="text-lg md:text-xl text-gray-600">See how different customers benefit from AI booking</p>
-            </motion.div>
-            
+            </MotionDiv>
+
             <Tabs defaultValue="property" className="w-full">
               <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
                 <TabsTrigger value="property">Property Managers</TabsTrigger>
@@ -896,7 +892,7 @@ export default function AIBooking() {
                 <TabsTrigger value="elderly">Seniors</TabsTrigger>
                 <TabsTrigger value="smart">Smart Homes</TabsTrigger>
               </TabsList>
-              
+
               <TabsContent value="property" className="mt-6">
                 <Card className="p-6">
                   <div className="flex flex-col md:flex-row gap-8">
@@ -904,7 +900,7 @@ export default function AIBooking() {
                       <Building className="h-12 w-12 text-blue-500 mb-4" />
                       <h3 className="text-2xl font-semibold mb-4">Property Management Revolution</h3>
                       <p className="text-gray-600 mb-6">
-                        Manage maintenance for multiple properties effortlessly. AI can handle bookings for different addresses, 
+                        Manage maintenance for multiple properties effortlessly. AI can handle bookings for different addresses,
                         track service history, and coordinate multiple appointments simultaneously.
                       </p>
                       <ul className="space-y-3">
@@ -929,7 +925,7 @@ export default function AIBooking() {
                   </div>
                 </Card>
               </TabsContent>
-              
+
               <TabsContent value="professional" className="mt-6">
                 <Card className="p-6">
                   <div className="flex flex-col md:flex-row gap-8">
@@ -937,7 +933,7 @@ export default function AIBooking() {
                       <Headphones className="h-12 w-12 text-purple-500 mb-4" />
                       <h3 className="text-2xl font-semibold mb-4">Voice-First for Busy Professionals</h3>
                       <p className="text-gray-600 mb-6">
-                        Book services while driving, cooking, or working. Just tell your voice assistant about 
+                        Book services while driving, cooking, or working. Just tell your voice assistant about
                         your plumbing needs and let AI handle the rest.
                       </p>
                       <ul className="space-y-3">
@@ -962,7 +958,7 @@ export default function AIBooking() {
                   </div>
                 </Card>
               </TabsContent>
-              
+
               <TabsContent value="elderly" className="mt-6">
                 <Card className="p-6">
                   <div className="flex flex-col md:flex-row gap-8">
@@ -970,7 +966,7 @@ export default function AIBooking() {
                       <Users className="h-12 w-12 text-green-500 mb-4" />
                       <h3 className="text-2xl font-semibold mb-4">Simplified for Seniors</h3>
                       <p className="text-gray-600 mb-6">
-                        No complicated forms or confusing websites. Just have a natural conversation with 
+                        No complicated forms or confusing websites. Just have a natural conversation with
                         an AI assistant that understands and helps every step of the way.
                       </p>
                       <ul className="space-y-3">
@@ -995,7 +991,7 @@ export default function AIBooking() {
                   </div>
                 </Card>
               </TabsContent>
-              
+
               <TabsContent value="smart" className="mt-6">
                 <Card className="p-6">
                   <div className="flex flex-col md:flex-row gap-8">
@@ -1003,7 +999,7 @@ export default function AIBooking() {
                       <Home className="h-12 w-12 text-orange-500 mb-4" />
                       <h3 className="text-2xl font-semibold mb-4">Smart Home Integration</h3>
                       <p className="text-gray-600 mb-6">
-                        Your smart home can detect issues and automatically schedule repairs. Water leak 
+                        Your smart home can detect issues and automatically schedule repairs. Water leak
                         sensors, smart water heaters, and home assistants work together seamlessly.
                       </p>
                       <ul className="space-y-3">
@@ -1035,7 +1031,7 @@ export default function AIBooking() {
         {/* Call to Action Section */}
         <section className="py-12 md:py-16 px-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
           <div className="max-w-4xl mx-auto text-center">
-            <motion.div
+            <MotionDiv
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -1046,7 +1042,7 @@ export default function AIBooking() {
               <p className="text-lg md:text-xl mb-8 opacity-90">
                 Join thousands who've already discovered the easiest way to book plumbing services
               </p>
-              
+
               <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
                 <Button
                   size="lg"
@@ -1060,7 +1056,7 @@ export default function AIBooking() {
                   Try It Now with ChatGPT
                   <ExternalLink className="ml-2 h-4 w-4" />
                 </Button>
-                
+
                 <Button
                   size="lg"
                   variant="outline"
@@ -1071,7 +1067,7 @@ export default function AIBooking() {
                   Traditional Booking
                 </Button>
               </div>
-              
+
               <Card className="bg-white/10 backdrop-blur border-white/20 p-6 md:p-8">
                 <h3 className="text-2xl font-semibold mb-3">For Developers & Partners</h3>
                 <p className="mb-6 opacity-90">
@@ -1095,14 +1091,14 @@ export default function AIBooking() {
                   </Button>
                 </div>
               </Card>
-            </motion.div>
+            </MotionDiv>
           </div>
         </section>
 
         <Footer onBookService={() => setIsBookingModalOpen(true)} />
       </div>
-      
-      <BookingModalEnhanced 
+
+      <BookingModalEnhanced
         isOpen={isBookingModalOpen}
         onClose={() => setIsBookingModalOpen(false)}
       />
