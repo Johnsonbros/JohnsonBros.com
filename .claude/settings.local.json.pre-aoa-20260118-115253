@@ -21,9 +21,7 @@
       "Bash(aoa status:*)",
       "Bash(aoa --help:*)",
       "Bash(aoa outline:*)",
-      "Bash(aoa projects:*)",
-      "Bash(aoa info:*)",
-      "Bash(ls:*)"
+      "Bash(aoa projects:*)"
     ],
     "deny": [],
     "ask": []

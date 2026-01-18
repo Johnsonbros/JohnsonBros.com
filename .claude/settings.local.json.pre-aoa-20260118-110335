@@ -14,16 +14,7 @@
       "Bash(python:*)",
       "Bash(docker exec:*)",
       "Bash(docker restart:*)",
-      "Bash(aoa remove:*)",
-      "Bash(cat:*)",
-      "Bash(docker logs:*)",
-      "Bash(curl:*)",
-      "Bash(aoa status:*)",
-      "Bash(aoa --help:*)",
-      "Bash(aoa outline:*)",
-      "Bash(aoa projects:*)",
-      "Bash(aoa info:*)",
-      "Bash(ls:*)"
+      "Bash(aoa remove:*)"
     ],
     "deny": [],
     "ask": []
