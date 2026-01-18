@@ -16,6 +16,11 @@ from pathlib import Path
 from urllib.error import URLError
 from urllib.request import Request, urlopen
 
+# Fix Windows encoding for Unicode output (emojis, etc.)
+if sys.platform == 'win32':
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+
 AOA_URL = os.environ.get("AOA_URL", "http://localhost:8080")
 
 # Get project ID from .aoa/home.json
@@ -124,8 +129,9 @@ def get_recent_files(records: list) -> list:
     files = set()
     for record in records[:10]:
         for f in record.get('files', []):
-            # Must be absolute path, not a pattern, and have a file extension
-            if (f.startswith('/') and
+            # Must be absolute path (Unix / or Windows C:/), not a pattern, and have a file extension
+            is_absolute = f.startswith('/') or (len(f) > 2 and f[1] == ':')
+            if (is_absolute and
                 not f.startswith('pattern:') and
                 '.' in os.path.basename(f)):  # Has extension = is a file
                 files.add(f)

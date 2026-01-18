@@ -46,7 +46,14 @@
       "Bash(docker restart:*)",
       "Bash(ls:*)",
       "Bash(python:*)",
-      "Read(//c/Users/Workstation/**)"
+      "Read(//c/Users/Workstation/**)",
+      "Bash(docker-compose down:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(python3:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(AOA_DEBUG=1 echo:*)",
+      "Bash(docker-compose build:*)"
     ],
     "deny": [],
     "ask": []

@@ -15,6 +15,11 @@ from pathlib import Path
 from urllib.error import URLError
 from urllib.request import Request, urlopen
 
+# Fix Windows encoding for Unicode output
+if sys.platform == 'win32':
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+
 AOA_URL = os.environ.get("AOA_URL", "http://localhost:8080")
 # Find AOA data directory
 # Option 1: Check for .aoa/home.json in project root (created by aoa init)
@@ -428,11 +433,20 @@ def get_file_sizes(files: list) -> dict:
         # Skip patterns and non-file paths
         if file_path.startswith('pattern:') or file_path.startswith('cmd:'):
             continue
-        if not file_path.startswith('/'):
+        # Accept both Unix (/) and Windows (C:/) absolute paths
+        if not (file_path.startswith('/') or (len(file_path) > 2 and file_path[1] == ':')):
             continue
 
         # Strip line range suffix if present (e.g., /path/file.py:100-120)
-        actual_path = file_path.split(':')[0] if ':' in file_path else file_path
+        # Handle Windows paths (C:/path/file.py:100-120) - only strip after position 2
+        if len(file_path) > 2 and file_path[1] == ':' and ':' in file_path[2:]:
+            # Windows path with line range - split after drive letter
+            actual_path = file_path[:2] + file_path[2:].split(':')[0]
+        elif ':' in file_path and not (len(file_path) > 1 and file_path[1] == ':'):
+            # Unix path with line range
+            actual_path = file_path.split(':')[0]
+        else:
+            actual_path = file_path
 
         try:
             stat_result = os.stat(actual_path)
@@ -513,7 +527,9 @@ def send_intent(tool: str, files: list, tags: list, session_id: str,
     score_tags = [t.lstrip('#') for t in tags]
     for file_path in files:
         # Skip pattern entries and non-file paths
-        if file_path.startswith('pattern:') or not file_path.startswith('/'):
+        # Accept both Unix (/) and Windows (C:/) absolute paths
+        is_absolute = file_path.startswith('/') or (len(file_path) > 2 and file_path[1] == ':')
+        if file_path.startswith('pattern:') or not is_absolute:
             continue
         try:
             score_payload = json.dumps({

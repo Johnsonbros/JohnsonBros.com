@@ -1,93 +1,81 @@
 # JohnsonBros - Current Session
 
-> **Session**: 02 | **Date**: 2026-01-16
-> **Phase**: 1 - MVP Local Launch | **Status**: COMPLETE | **Confidence**: 🟢
+> **Session**: 03 | **Date**: 2026-01-18
+> **Phase**: 2 - Feature Verification | **Status**: READY | **Confidence**: 🟢
 
 ---
 
-## System Status
+## Now
 
-**MVP IS RUNNING LOCALLY**
+Session handoff from Linux to Windows workstation. Ready to continue from Phase 1 completion.
 
-| Component | URL/Port | Status |
-|-----------|----------|--------|
-| Web Server | localhost:5000 | **RUNNING** |
-| MCP Server | localhost:3001 | **RUNNING** |
-| Database | localhost:5433 | **RUNNING** (Docker) |
-| Health Check | /health | **PASSING** |
+## Active
 
----
+| # | Task | Solution Pattern | C | R |
+|---|------|------------------|---|---|
+| P2-000 | Verify environment on Windows | Check npm, node, docker status | 🟢 | - |
 
-## Running in Degraded Mode
+## Blocked
 
-The app runs but these integrations are not configured:
+- None
 
-| Integration | Feature Impact |
-|-------------|----------------|
-| HousecallPro | No real bookings, capacity sync |
-| OpenAI | AI chat/agents disabled |
-| Google Maps | No maps, geocoding |
-| Twilio | No SMS/voice |
+## Next
 
-This is expected for local development without API keys.
+1. Verify local environment works on Windows
+2. Start dev server and confirm health check
+3. Begin Phase 2: Feature Verification
 
 ---
 
-## Session Summary
+## Previous Session Summary (Session 02)
 
-### Completed This Session
+**Completed on 2026-01-16 (Linux)**:
+- Installed 1090 npm packages
+- Set up PostgreSQL via Docker (port 5433)
+- Pushed Drizzle schema (25+ tables)
+- Started dev server on port 5000
+- Verified health endpoint and frontend rendering
+- Upgraded .gitignore (6 -> 140 lines)
 
-| # | Task | Result |
-|---|------|--------|
-| P1-001 | Install dependencies | 1090 packages |
-| P1-002 | Create .env file | DATABASE_URL set |
-| P1-003 | Set up PostgreSQL | Docker on port 5433 |
-| P1-004 | Push Drizzle schema | 25+ tables created |
-| P1-005 | Verify tables | Confirmed in DB |
-| P1-006 | Start dev server | Running on :5000 |
-| P1-007 | Test health endpoint | {"status":"ok"} |
-| P1-009 | Frontend loads | Homepage renders |
-| Bonus | Upgrade .gitignore | 6 -> 140 lines |
+**System was running in degraded mode** (no API keys configured).
 
 ---
 
-## Quick Commands
+## Environment Notes
 
-```bash
-# Start the app (if not running)
-cd /home/corey/projects/JohnsonBros && npm run dev
+| Item | Linux (Previous) | Windows (Current) |
+|------|------------------|-------------------|
+| Working Dir | `/home/corey/projects/JohnsonBros` | `C:\Users\Workstation\Desktop\Replit\Github_TheJohnsonBros_cursor\JohnsonBros.com` |
+| Node.js | Required | Verify installed |
+| Docker | johnsonbros-db on :5433 | Need to verify/start |
+| npm packages | 1090 installed | May need reinstall |
+
+---
+
+## Quick Commands (Windows)
+
+```powershell
+# Check Node.js
+node --version
+
+# Check npm
+npm --version
+
+# Install dependencies (if needed)
+npm install
+
+# Check Docker
+docker ps
+
+# Start database (if Docker available)
+docker run --name johnsonbros-db -e POSTGRES_USER=johnsonbros -e POSTGRES_PASSWORD=johnsonbros -e POSTGRES_DB=johnsonbros -p 5433:5432 -d postgres:15
+
+# Start dev server
+npm run dev
 
 # Check health
-curl localhost:5000/health
-
-# View Docker database
-docker ps | grep johnsonbros-db
-
-# Connect to database
-psql postgresql://johnsonbros:johnsonbros@localhost:5433/johnsonbros
+curl http://localhost:5000/health
 ```
-
----
-
-## Next Phase Options
-
-When ready to continue, choose a path:
-
-### Option A: Feature Verification (Phase 2)
-Test what works without full integrations:
-- Blog system
-- Admin panel (if accessible)
-- Static pages
-- Form submissions
-
-### Option B: Add Integrations
-Configure real API keys:
-- HousecallPro (for bookings)
-- OpenAI (for AI features)
-- Google Maps (for location)
-
-### Option C: Explore Codebase
-Understand the architecture before adding features.
 
 ---
 
@@ -95,11 +83,12 @@ Understand the architecture before adding features.
 
 | Purpose | Path |
 |---------|------|
-| Schema | `shared/schema.ts` (2150+ lines) |
+| Schema | `shared/schema.ts` |
 | Server entry | `server/index.ts` |
 | Frontend entry | `client/src/App.tsx` |
 | DB config | `drizzle.config.ts` |
 | Env template | `.env.example` |
+| Project docs | `CLAUDE.md` |
 
 ---
 
@@ -115,7 +104,8 @@ Understand the architecture before adding features.
 
 ## Resume Command
 
-```bash
-cd /home/corey/projects/JohnsonBros && npm run dev
+```powershell
+cd C:\Users\Workstation\Desktop\Replit\Github_TheJohnsonBros_cursor\JohnsonBros.com
+npm run dev
 # Then open http://localhost:5000
 ```

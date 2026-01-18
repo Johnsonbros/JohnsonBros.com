@@ -1,8 +1,22 @@
 # CLAUDE.md - AI Assistant Development Guide
 
-**Last Updated**: 2026-01-17
+**Last Updated**: 2026-01-18
 **Repository**: JohnsonBros.com
 **Purpose**: Guide for AI assistants working with this codebase
+
+---
+
+## MANDATORY: aOa Search
+
+> **STOP! Before using Grep or Glob, use aOa instead.**
+>
+> ```bash
+> aoa grep <term>        # Use this, NOT Grep tool
+> aoa grep "a b c"       # Multi-term OR search
+> aoa grep -a a,b,c      # Multi-term AND search
+> ```
+>
+> aOa is 10-100x faster and provides semantic search. See [aOa Integration](#aoa-integration) for full details.
 
 ---
 
@@ -1311,10 +1325,13 @@ Once done, I'll find code by meaning, not just keywords.
 | `aoa outline <file>` | See file structure without reading it all |
 | `aoa intent` | Track what's being worked on |
 
-## Rules
+## Rules (MANDATORY)
 
-- ✅ ALWAYS use `aoa grep` instead of Grep/Glob
+- **✅ ALWAYS use `aoa grep` instead of Grep/Glob tool** - This is non-negotiable
+- **✅ ALWAYS use `aoa find` instead of Glob tool for file discovery**
 - ✅ Read specific line ranges from aOa results (not whole files)
+- ❌ DO NOT use the Grep tool directly - use `aoa grep` via Bash
+- ❌ DO NOT use the Glob tool directly - use `aoa find` via Bash
 - ❌ DO NOT use subagents for codebase exploration (hooks don't work in subagents)
 
 ## Hook Integration

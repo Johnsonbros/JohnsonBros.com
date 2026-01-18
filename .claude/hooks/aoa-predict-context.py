@@ -22,6 +22,11 @@ from pathlib import Path
 from urllib.error import URLError
 from urllib.request import Request, urlopen
 
+# Fix Windows encoding for Unicode output (emojis, etc.)
+if sys.platform == 'win32':
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+
 AOA_URL = os.environ.get("AOA_URL", "http://localhost:8080")
 MIN_INTENTS = 5  # Don't predict until we have enough data (lower for active projects)
 MAX_SNIPPET_LINES = 15  # Lines per file snippet

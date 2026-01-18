@@ -1,45 +1,111 @@
+
 # Work Board
 
-> **Updated**: 2026-01-16 | **Phase**: 1 - MVP Local Launch | **Status**: COMPLETE
+> **Updated**: 2026-01-18 | **Phase**: 2 - Feature Verification | **Status**: READY
 
 ---
 
-## Traffic Light System
+## Confidence Legend
 
-| Signal | Meaning | Action |
-|--------|---------|--------|
-| 🟢 | **Confident** - Clear path, similar to existing code | Proceed freely |
-| 🟡 | **Uncertain** - Some unknowns, may need quick research | Try first, then research |
-| 🔴 | **Lost** - Significant unknowns, needs research first | STOP. Ask: "Should we use 131?" |
+| Indicator | Meaning | Action |
+|-----------|---------|--------|
+| 🟢 | Confident - clear path, similar to existing code | Proceed freely |
+| 🟡 | Uncertain - some unknowns, may need quick research | Try first, then research |
+| 🔴 | Lost - significant unknowns, needs research first | Research before starting |
 
-| Research Agent | When to Use |
-|----------------|-------------|
-| **131** | Problem decomposition, understanding behavior |
-| **GH** | Architecture decisions, best practices |
-| **Beacon** | Project continuity, session handoffs |
+| Research | Agent | When to Use |
+|----------|-------|-------------|
+| 131 | 1-3-1 Pattern | Problem decomposition, understanding behavior |
+| GH | Growth Hacker | Architecture decisions, best practices |
+| - | None | Straightforward implementation |
 
 ---
 
-## Related Documentation
+## Active
 
-| Document | Path | Summary |
-|----------|------|---------|
-| Project Analysis | `details/2026-01-16-project-analysis.md` | Full codebase breakdown, tech stack, features |
-| Security Audit | `details/2026-01-16-security-audit.md` | Secrets scan - CLEAN, one minor .gitignore note |
+| # | Task | Expected Output | Solution Pattern | Status | C | R |
+|---|------|-----------------|------------------|--------|---|---|
+| P2-000 | Verify Windows environment | Node, npm, Docker confirmed | Check versions, start containers | Queued | 🟢 | - |
+
+---
+
+## Phase 2: Feature Verification
+
+Test what works without full integrations. Focus on features that don't require API keys.
+
+### Tier 1: Environment Setup (Windows)
+
+| # | Task | Expected Output | Solution Pattern | Deps | Status | C | R |
+|---|------|-----------------|------------------|------|--------|---|---|
+| P2-001 | Verify Node.js installed | `node --version` returns 18+ | Check installed version | - | Queued | 🟢 | - |
+| P2-002 | Verify npm installed | `npm --version` returns version | Check installed version | - | Queued | 🟢 | - |
+| P2-003 | Install dependencies | `node_modules/` populated | `npm install` | P2-001 | Queued | 🟢 | - |
+| P2-004 | Start/verify PostgreSQL | Database accessible on port | Docker or local postgres | P2-003 | Queued | 🟡 | - |
+| P2-005 | Create/verify .env | .env file with DATABASE_URL | Copy from .env.example | P2-003 | Queued | 🟢 | - |
+| P2-006 | Push database schema | Tables created in database | `npm run db:push` | P2-004, P2-005 | Queued | 🟢 | - |
+
+### Tier 2: Server Verification
+
+| # | Task | Expected Output | Solution Pattern | Deps | Status | C | R |
+|---|------|-----------------|------------------|------|--------|---|---|
+| P2-007 | Start dev server | Server running on :5000 | `npm run dev` | P2-006 | Queued | 🟢 | - |
+| P2-008 | Verify health endpoint | `{"status":"ok"}` | `curl localhost:5000/health` | P2-007 | Queued | 🟢 | - |
+| P2-009 | Verify MCP server | Port 3001 responding | Check child process started | P2-007 | Queued | 🟢 | - |
+
+### Tier 3: Frontend Verification
+
+| # | Task | Expected Output | Solution Pattern | Deps | Status | C | R |
+|---|------|-----------------|------------------|------|--------|---|---|
+| P2-010 | Homepage loads | Johnson Bros. homepage renders | Open localhost:5000 | P2-007 | Queued | 🟢 | - |
+| P2-011 | Check console for errors | No critical errors | Browser DevTools | P2-010 | Queued | 🟡 | - |
+| P2-012 | Test routing | Pages navigate correctly | Click through nav | P2-010 | Queued | 🟢 | - |
+
+### Tier 4: Feature Testing (No API Keys)
+
+| # | Task | Expected Output | Solution Pattern | Deps | Status | C | R |
+|---|------|-----------------|------------------|------|--------|---|---|
+| P2-013 | Test blog system | Blog posts display | Navigate to /blog | P2-010 | Queued | 🟡 | - |
+| P2-014 | Test admin login | Admin panel accessible | Navigate to /admin | P2-010 | Queued | 🟡 | - |
+| P2-015 | Test static pages | About, Services render | Navigate pages | P2-010 | Queued | 🟢 | - |
+| P2-016 | Test form rendering | Forms display correctly | View booking/contact | P2-010 | Queued | 🟢 | - |
+
+---
+
+## Phase 3: Integration Setup (Future)
+
+| # | Task | Expected Output | Solution Pattern | Deps | Status | C | R |
+|---|------|-----------------|------------------|------|--------|---|---|
+| P3-001 | Configure HousecallPro | API key in .env | Get key from HCP dashboard | P2 complete | Backlog | 🟡 | GH |
+| P3-002 | Configure OpenAI | API key in .env | Get key from OpenAI | P2 complete | Backlog | 🟢 | - |
+| P3-003 | Configure Google Maps | API key in .env | Get key from GCP | P2 complete | Backlog | 🟡 | - |
+| P3-004 | Configure Twilio | API keys in .env | Get keys from Twilio | P2 complete | Backlog | 🟡 | - |
+| P3-005 | Test AI chat | Chat responds | Verify OpenAI integration | P3-002 | Backlog | 🟡 | - |
+| P3-006 | Test booking flow | Booking creates job in HCP | Full integration test | P3-001 | Backlog | 🟡 | 131 |
+
+---
+
+## Phases Overview
+
+| Phase | Focus | Status | Blocked By |
+|-------|-------|--------|------------|
+| 0 | Setup & Analysis | Done | - |
+| 1 | MVP Local Launch | Done | - |
+| 2 | Feature Verification | **Active** | Environment setup |
+| 3 | Integration Setup | Backlog | Phase 2 completion |
+| 4 | Production Hardening | Backlog | Phase 3 completion |
 
 ---
 
 ## Current System State
 
-| Component | Status | Details |
-|-----------|--------|---------|
-| Server | **RUNNING** | localhost:5000 |
-| MCP Server | **RUNNING** | localhost:3001 (child process) |
-| Database | **RUNNING** | Docker postgres on localhost:5433 |
-| Frontend | **RUNNING** | React app at localhost:5000 |
-| Health Check | **PASSING** | Returns `{"status":"ok"}` |
+| Component | Previous (Linux) | Current (Windows) |
+|-----------|------------------|-------------------|
+| Server | Running :5000 | Needs verification |
+| MCP Server | Running :3001 | Needs verification |
+| Database | Docker :5433 | Needs setup |
+| Frontend | Running | Needs verification |
 
-### Degraded Mode (Missing Integrations)
+### Degraded Mode (No API Keys)
 
 | Integration | Status | Impact |
 |-------------|--------|--------|
@@ -47,104 +113,6 @@
 | OpenAI | Not configured | AI chat disabled |
 | Google Maps | Not configured | No maps, geocoding |
 | Twilio | Not configured | No SMS/voice |
-
----
-
-## Active Work
-
-| # | Task | Status | Confidence |
-|---|------|--------|------------|
-| **Phase 1** | MVP Local Launch | ✅ COMPLETE | 🟢 |
-
-**Next Phase**: Phase 2 - Feature Verification (when ready)
-
----
-
-## Phase 1: MVP Local Launch - COMPLETE
-
-### Tier 1: Foundation (Dependencies + Environment) ✅
-
-| # | Task | Command/Action | Expected Output | Status | Confidence |
-|---|------|----------------|-----------------|--------|------------|
-| P1-001 | Install dependencies | `npm install` | 1090 packages installed | ✅ Done | 🟢 |
-| P1-002 | Create .env file | Copy .env.example, set DATABASE_URL | .env with postgres connection | ✅ Done | 🟢 |
-| P1-003 | Set up PostgreSQL | Docker container on port 5433 | johnsonbros-db running | ✅ Done | 🟢 |
-
----
-
-### Tier 2: Database (Drizzle Schema -> PostgreSQL) ✅
-
-| # | Task | Command/Action | Expected Output | Status | Confidence |
-|---|------|----------------|-----------------|--------|------------|
-| P1-004 | Push schema to database | `npm run db:push` | All tables created | ✅ Done | 🟢 |
-| P1-005 | Verify tables exist | Query information_schema | 25+ tables confirmed | ✅ Done | 🟢 |
-
----
-
-### Tier 3: Backend (Express Server) ✅
-
-| # | Task | Command/Action | Expected Output | Status | Confidence |
-|---|------|----------------|-----------------|--------|------------|
-| P1-006 | Start dev server | `npm run dev` | Server on :5000, MCP on :3001 | ✅ Done | 🟢 |
-| P1-007 | Test health endpoint | `curl localhost:5000/health` | `{"status":"ok"}` | ✅ Done | 🟢 |
-| P1-008 | Test API connectivity | `curl localhost:5000/api/services` | - | Skipped | 🟡 |
-
----
-
-### Tier 4: Frontend (React + Vite) ✅
-
-| # | Task | Command/Action | Expected Output | Status | Confidence |
-|---|------|----------------|-----------------|--------|------------|
-| P1-009 | Verify homepage loads | Open `http://localhost:5000` | Johnson Bros homepage renders | ✅ Done | 🟢 |
-| P1-010 | Check DevTools | Open browser console | - | Not checked | 🟡 |
-
----
-
-## MVP Complete Criteria
-
-- [x] `npm run dev` starts without errors
-- [x] `curl localhost:5000/health` returns 200
-- [x] Homepage renders in browser at :5000
-- [ ] No critical console errors (not verified)
-
----
-
-## Bonus Improvements This Session
-
-| Item | Before | After | Impact |
-|------|--------|-------|--------|
-| .gitignore | 6 lines | 140 lines | Security hardening, proper ignores |
-
----
-
-## Environment Configuration
-
-### Current .env (MVP)
-
-```bash
-DATABASE_URL=postgresql://johnsonbros:johnsonbros@localhost:5433/johnsonbros
-SESSION_SECRET=dev-session-secret-minimum-32-characters-long
-```
-
-### Docker Database
-
-```bash
-# Container: johnsonbros-db
-# Port: 5433 (mapped to container's 5432)
-# Credentials: johnsonbros/johnsonbros
-docker ps | grep johnsonbros-db
-```
-
----
-
-## Phases Overview
-
-| Phase | Focus | Status |
-|-------|-------|--------|
-| 0 | Setup & Analysis | ✅ Done |
-| 1 | MVP Local Launch | ✅ Done |
-| 2 | Feature Verification | ⏸️ Pending |
-| 3 | Production Hardening | ⏸️ Pending |
 
 ---
 
@@ -164,3 +132,13 @@ docker ps | grep johnsonbros-db
 | P1-007 | Test health endpoint | Returns {"status":"ok"} | 2026-01-16 |
 | P1-009 | Frontend loads | Homepage renders at localhost:5000 | 2026-01-16 |
 | Bonus | Upgrade .gitignore | 6 -> 140 lines (security) | 2026-01-16 |
+
+---
+
+## Related Documentation
+
+| Document | Path | Summary |
+|----------|------|---------|
+| Project Analysis | `details/2026-01-16-project-analysis.md` | Full codebase breakdown, tech stack, features |
+| Security Audit | `details/2026-01-16-security-audit.md` | Secrets scan - CLEAN |
+| CLAUDE.md | `CLAUDE.md` | AI assistant development guide |
