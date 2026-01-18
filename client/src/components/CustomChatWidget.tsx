@@ -213,26 +213,33 @@ function LeadCard({ onSubmit, isLoading, prefill }: LeadCardProps) {
               className="min-h-[70px] text-sm"
             />
           </div>
-          <div className="flex items-start gap-3 pt-1">
-            <input
-              type="checkbox"
-              id="marketing-opt-in"
-              checked={marketingOptIn}
-              onChange={(e) => setMarketingOptIn(e.target.checked)}
+          <label className="flex items-start gap-3 pt-1 cursor-pointer">
+            <div 
+              onClick={() => setMarketingOptIn(!marketingOptIn)}
               style={{
-                width: '20px',
-                height: '20px',
-                minWidth: '20px',
-                accentColor: '#f97316',
-                cursor: 'pointer',
+                width: '22px',
+                height: '22px',
+                minWidth: '22px',
                 border: '2px solid #f97316',
                 borderRadius: '4px',
+                backgroundColor: marketingOptIn ? '#f97316' : '#ffffff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                flexShrink: 0,
               }}
-            />
-            <label htmlFor="marketing-opt-in" className="text-xs text-gray-600 dark:text-gray-400 cursor-pointer">
+            >
+              {marketingOptIn && (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              )}
+            </div>
+            <span className="text-xs text-gray-600 dark:text-gray-400">
               I agree to receive text messages about my quote and special offers. Message & data rates may apply.
-            </label>
-          </div>
+            </span>
+          </label>
           <Button
             type="submit"
             disabled={!canSubmit || isLoading}
