@@ -63,8 +63,22 @@ function validateTwilioSignature(req: Request): boolean {
   return twilioSignature === expectedSignature;
 }
 
+// Test endpoint to verify webhook is reachable
+router.get('/test', (req: Request, res: Response) => {
+  Logger.info('[Twilio] Test endpoint hit');
+  res.json({ status: 'ok', timestamp: new Date().toISOString(), message: 'Twilio webhook endpoint is reachable' });
+});
+
 // SMS Webhook - Receives incoming SMS messages
 router.post('/sms', async (req: Request, res: Response) => {
+  // Log immediately at the very start
+  console.log('[TWILIO SMS WEBHOOK] POST /sms received at', new Date().toISOString());
+  Logger.info('[Twilio SMS] Webhook POST received', { 
+    headers: JSON.stringify(req.headers),
+    body: JSON.stringify(req.body),
+    ip: req.ip
+  });
+  
   try {
     const { From, Body, MessageSid, NumSegments } = req.body;
 
