@@ -487,9 +487,21 @@ def get_output_size(data: dict) -> int:
 
 def send_intent(tool: str, files: list, tags: list, session_id: str,
                 tool_use_id: str = None, output_size: int = 0):
-    """Send intent to aOa (fire-and-forget)."""
+    """Send intent to aOa (fire-and-forget) and local store."""
     if not files and not tags:
         return  # Only skip if BOTH are empty
+
+    # LOCAL STORAGE WORKAROUND - aOa's intent endpoint is broken
+    # Store locally first (reliable), then try aOa (unreliable)
+    try:
+        import importlib.util
+        store_path = HOOK_DIR / "local_intent_store.py"
+        spec = importlib.util.spec_from_file_location("local_intent_store", store_path)
+        local_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(local_module)
+        local_module.store_intent(tool=tool, files=files, tags=tags, session_id=session_id)
+    except Exception as e:
+        pass  # Local store failed, continue with aOa
 
     # Check if this file was predicted (QW-3: Phase 2 hit/miss tracking)
     # Only check for Read operations - those are what we're trying to predict
