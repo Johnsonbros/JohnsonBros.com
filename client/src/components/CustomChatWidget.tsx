@@ -213,15 +213,23 @@ function LeadCard({ onSubmit, isLoading, prefill }: LeadCardProps) {
               className="min-h-[70px] text-sm"
             />
           </div>
-          <div className="flex items-start gap-2 pt-1">
+          <div className="flex items-start gap-3 pt-1">
             <input
               type="checkbox"
               id="marketing-opt-in"
               checked={marketingOptIn}
               onChange={(e) => setMarketingOptIn(e.target.checked)}
-              className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              style={{
+                width: '20px',
+                height: '20px',
+                minWidth: '20px',
+                accentColor: '#f97316',
+                cursor: 'pointer',
+                border: '2px solid #f97316',
+                borderRadius: '4px',
+              }}
             />
-            <label htmlFor="marketing-opt-in" className="text-xs text-gray-600 dark:text-gray-400">
+            <label htmlFor="marketing-opt-in" className="text-xs text-gray-600 dark:text-gray-400 cursor-pointer">
               I agree to receive text messages about my quote and special offers. Message & data rates may apply.
             </label>
           </div>

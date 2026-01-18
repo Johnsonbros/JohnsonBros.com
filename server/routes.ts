@@ -1199,7 +1199,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const housecallClient = HousecallProClient.getInstance();
       const leadTags = customer.tags || ["Website Lead"];
 
-      // Create lead in HousecallPro with address
+      // Create lead in HousecallPro with address and summary
+      const leadSummary = customer.notes 
+        ? customer.notes.substring(0, 100) 
+        : `Quote request from ${customer.first_name} ${customer.last_name}`;
+      
       const leadData = {
         customer: {
           first_name: customer.first_name,
@@ -1216,6 +1220,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             type: "service"
           }]
         },
+        summary: leadSummary,
         notes: customer.notes
           ? `Address: ${customer.address}\n\n${customer.notes}${isEmergencyLead ? `\n\nEMERGENCY REQUEST: YES${capacityState ? `\nCAPACITY STATE: ${capacityState}` : ""}` : ""}`
           : `Address: ${customer.address}\n\nNew lead from website contact form${isEmergencyLead ? `\n\nEMERGENCY REQUEST: YES${capacityState ? `\nCAPACITY STATE: ${capacityState}` : ""}` : ""}`
