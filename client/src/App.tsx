@@ -10,6 +10,7 @@ import { CardStoreProvider, useCardStore } from "@/stores/useCardStore";
 import { CardSurface } from "@/components/cards/CardSurface";
 import { dispatchCardAction } from "@/lib/dispatchCardAction";
 import { lazy, Suspense, useState, useEffect, useCallback } from "react";
+import { WidgetStateProvider, useWidgetState } from "@/contexts/WidgetStateContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import MobileMoreMenu from "@/components/MobileMoreMenu";
@@ -225,21 +226,21 @@ function CardSurfaceLayer() {
   );
 }
 
-function App() {
+function AppContent() {
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
   const isMobile = useIsMobile();
+  const { setBookingOpen } = useWidgetState();
 
   const openBookingModal = () => setIsBookingModalOpen(true);
   const closeBookingModal = () => setIsBookingModalOpen(false);
 
+  useEffect(() => {
+    setBookingOpen(isBookingModalOpen);
+  }, [isBookingModalOpen, setBookingOpen]);
+
   return (
-    <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <HelmetProvider>
-          <ABTestingProvider>
-            <CardStoreProvider>
-            <TooltipProvider>
+    <>
         <Toaster />
         <Router />
           <JobCompletionNotifications />
@@ -337,7 +338,22 @@ function App() {
           </div>
           
           <CardSurfaceLayer />
-            </TooltipProvider>
+    </>
+  );
+}
+
+function App() {
+  return (
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <HelmetProvider>
+          <ABTestingProvider>
+            <CardStoreProvider>
+              <WidgetStateProvider>
+                <TooltipProvider>
+                  <AppContent />
+                </TooltipProvider>
+              </WidgetStateProvider>
             </CardStoreProvider>
           </ABTestingProvider>
         </HelmetProvider>

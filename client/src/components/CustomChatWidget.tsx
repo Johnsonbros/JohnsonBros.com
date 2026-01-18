@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useWidgetState } from '@/contexts/WidgetStateContext';
 import { 
   Send, 
   X,
@@ -922,6 +923,11 @@ interface CustomChatWidgetProps {
 
 export function CustomChatWidget({ className }: CustomChatWidgetProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const { setChatOpen } = useWidgetState();
+
+  useEffect(() => {
+    setChatOpen(isOpen);
+  }, [isOpen, setChatOpen]);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
