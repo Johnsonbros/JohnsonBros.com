@@ -1462,12 +1462,15 @@ $50 REFERRAL CREDIT APPLIES - New customer receives $50 credit toward any servic
 
   // Start SMS verification
   app.post("/api/v1/sms-verification/start", publicWriteLimiter, async (req, res) => {
+    Logger.info('[SMS Verification] Endpoint called', { body: req.body });
     try {
       const schema = z.object({
         phone: z.string().min(10)
       });
       const { phone } = schema.parse(req.body);
+      Logger.info('[SMS Verification] Phone parsed', { phone });
       const normalizedPhone = normalizePhone(phone);
+      Logger.info('[SMS Verification] Phone normalized', { normalizedPhone });
       const code = Math.floor(100000 + Math.random() * 900000).toString();
       const expiresAt = Date.now() + SMS_VERIFICATION_TTL_MS;
 
