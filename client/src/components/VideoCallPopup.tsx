@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
+import { useWidgetState } from "@/contexts/WidgetStateContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Video, PhoneCall, CheckCircle, Clock, Sparkles } from "lucide-react";
@@ -6,6 +7,7 @@ import { Video, PhoneCall, CheckCircle, Clock, Sparkles } from "lucide-react";
 export function VideoCallPopup() {
   const [isOpen, setIsOpen] = useState(false);
   const [hasShown, setHasShown] = useState(false);
+  const { isAnyWidgetOpen } = useWidgetState();
 
   useEffect(() => {
     // Check if user is on iPhone/iOS
@@ -28,6 +30,11 @@ export function VideoCallPopup() {
     // Check if popup has already been shown this session
     const popupShown = sessionStorage.getItem('video-call-popup-shown');
     
+    // Never show if booking widget or chat is open
+    if (isAnyWidgetOpen) {
+      return;
+    }
+    
     if (testMode && !hasShown) {
       // Test mode: show immediately
       setIsOpen(true);
@@ -35,6 +42,7 @@ export function VideoCallPopup() {
     } else if (!popupShown && isIOS() && !hasShown) {
       // Production mode: Set timer for 38 seconds for iOS users
       const timer = setTimeout(() => {
+        // Double-check widget state before showing (in case it changed during the timeout)
         setIsOpen(true);
         setHasShown(true);
         sessionStorage.setItem('video-call-popup-shown', 'true');
@@ -42,7 +50,14 @@ export function VideoCallPopup() {
 
       return () => clearTimeout(timer);
     }
-  }, [hasShown]);
+  }, [hasShown, isAnyWidgetOpen]);
+
+  // Close popup immediately if a widget opens while popup is showing
+  useEffect(() => {
+    if (isAnyWidgetOpen && isOpen) {
+      setIsOpen(false);
+    }
+  }, [isAnyWidgetOpen, isOpen]);
 
   const handleStartVideoCall = () => {
     // Try FaceTime first for iOS devices
