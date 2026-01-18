@@ -695,21 +695,59 @@ function CustomerLookupCard({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 pt-0">
-          <div className="flex justify-center">
-            <InputOTP
-              maxLength={6}
-              value={verificationCode}
-              onChange={(value) => setVerificationCode(value)}
-            >
-              <InputOTPGroup>
-                <InputOTPSlot index={0} />
-                <InputOTPSlot index={1} />
-                <InputOTPSlot index={2} />
-                <InputOTPSlot index={3} />
-                <InputOTPSlot index={4} />
-                <InputOTPSlot index={5} />
-              </InputOTPGroup>
-            </InputOTP>
+          <div className="flex justify-center gap-2">
+            {[0, 1, 2, 3, 4, 5].map((index) => (
+              <input
+                key={index}
+                id={`otp-${index}`}
+                type="text"
+                inputMode="numeric"
+                maxLength={1}
+                value={verificationCode[index] || ''}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, '');
+                  if (val.length <= 1) {
+                    const newCode = verificationCode.split('');
+                    newCode[index] = val;
+                    setVerificationCode(newCode.join(''));
+                    if (val && index < 5) {
+                      document.getElementById(`otp-${index + 1}`)?.focus();
+                    }
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Backspace' && !verificationCode[index] && index > 0) {
+                    document.getElementById(`otp-${index - 1}`)?.focus();
+                  }
+                }}
+                onPaste={(e) => {
+                  e.preventDefault();
+                  const paste = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+                  setVerificationCode(paste);
+                }}
+                style={{
+                  width: '44px',
+                  height: '52px',
+                  fontSize: '24px',
+                  fontWeight: 'bold',
+                  textAlign: 'center',
+                  border: verificationCode[index] ? '3px solid #f97316' : '3px solid #9ca3af',
+                  borderRadius: '12px',
+                  backgroundColor: verificationCode[index] ? '#fff7ed' : '#ffffff',
+                  color: '#1f2937',
+                  outline: 'none',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                }}
+                onFocus={(e) => {
+                  e.target.style.border = '3px solid #f97316';
+                  e.target.style.boxShadow = '0 0 0 3px rgba(249, 115, 22, 0.3)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.border = verificationCode[index] ? '3px solid #f97316' : '3px solid #9ca3af';
+                  e.target.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                }}
+              />
+            ))}
           </div>
           {verificationError && (
             <div className="space-y-2">
