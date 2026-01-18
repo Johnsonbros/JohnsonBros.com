@@ -57,12 +57,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/aoa-intent-summary.py\"",
+            "command": "python3 \"C:/Users/Workstation/Desktop/Replit/Github_TheJohnsonBros_cursor/JohnsonBros.com/.claude/hooks/aoa-intent-summary.py\"",
             "timeout": 2
           },
           {
             "type": "command",
-            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/aoa-predict-context.py\"",
+            "command": "python3 \"C:/Users/Workstation/Desktop/Replit/Github_TheJohnsonBros_cursor/JohnsonBros.com/.claude/hooks/aoa-predict-context.py\"",
             "timeout": 3
           }
         ]
@@ -74,7 +74,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/aoa-intent-prefetch.py\"",
+            "command": "python3 \"C:/Users/Workstation/Desktop/Replit/Github_TheJohnsonBros_cursor/JohnsonBros.com/.claude/hooks/aoa-intent-prefetch.py\"",
             "timeout": 2
           }
         ]
@@ -86,7 +86,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/aoa-intent-capture.py\"",
+            "command": "python3 \"C:/Users/Workstation/Desktop/Replit/Github_TheJohnsonBros_cursor/JohnsonBros.com/.claude/hooks/aoa-intent-capture.py\"",
             "timeout": 5
           }
         ]
@@ -95,6 +95,6 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/aoa-status-line.sh\""
+    "command": "bash \"C:/Users/Workstation/Desktop/Replit/Github_TheJohnsonBros_cursor/JohnsonBros.com/.claude/hooks/aoa-status-line.sh\""
   }
 }
