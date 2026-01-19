@@ -512,6 +512,9 @@ export const interactionLogs = pgTable('interaction_logs', {
   sentiment: text('sentiment'),
   resolutionStatus: text('resolution_status').default('pending').notNull(), // resolved, escalated, pending
   metadata: json('metadata').default({}).notNull(),
+  promptTokens: integer('prompt_tokens').default(0).notNull(),
+  completionTokens: integer('completion_tokens').default(0).notNull(),
+  totalTokens: integer('total_tokens').default(0).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 }, (table) => ({
   sessionIdx: index('interaction_session_idx').on(table.sessionId),

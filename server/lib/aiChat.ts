@@ -4,8 +4,7 @@
 
 import OpenAI from 'openai';
 import { Logger } from '../src/logger';
-import { agentTracing } from './agentTracing';
-import { trackOpenAIUsage } from './usageTracker';
+import { logInteraction } from './memory';
 import { generateZekePrompt } from './zekePrompt';
 
 const openai = new OpenAI({
@@ -13,7 +12,6 @@ const openai = new OpenAI({
 });
 
 // Get the public MCP server URL for OpenAI Responses API
-// The MCP server at /mcp proxies to the internal MCP server on port 3001
 function getMcpServerUrl(): string {
   if (process.env.MCP_PUBLIC_URL) {
     return process.env.MCP_PUBLIC_URL;
@@ -46,49 +44,7 @@ const ALLOWED_MCP_TOOLS = [
   'request_cancellation_callback'
 ];
 
-// Session storage for Responses API
-interface ResponsesSessionData {
-  previousResponseId?: string;
-  lastUsed: number;
-}
-
-const responsesSessionData: Map<string, ResponsesSessionData> = new Map();
-const SESSION_TTL = 60 * 60 * 1000; // 1 hour
-
-// Clean up expired sessions
-function cleanupExpiredSessions(): void {
-  const now = Date.now();
-  const expired: string[] = [];
-  
-  for (const [sessionId, data] of responsesSessionData.entries()) {
-    if (now - data.lastUsed > SESSION_TTL) {
-      expired.push(sessionId);
-    }
-  }
-  
-  for (const sessionId of expired) {
-    responsesSessionData.delete(sessionId);
-    Logger.debug(`Cleaned up expired session: ${sessionId}`);
-  }
-  
-  if (expired.length > 0) {
-    Logger.info(`Cleaned up ${expired.length} expired sessions`);
-  }
-}
-
-let sessionCleanupInterval: NodeJS.Timeout | null = null;
-sessionCleanupInterval = setInterval(cleanupExpiredSessions, 15 * 60 * 1000);
-
-export function stopMcpSessionCleanup(): void {
-  if (sessionCleanupInterval) {
-    clearInterval(sessionCleanupInterval);
-    sessionCleanupInterval = null;
-    Logger.info('Session cleanup stopped');
-  }
-}
-
 export function clearSession(sessionId: string): void {
-  responsesSessionData.delete(sessionId);
   Logger.info(`Cleared session: ${sessionId}`);
 }
 
@@ -101,6 +57,31 @@ const SYSTEM_PROMPT = generateZekePrompt('sms');
 export { SYSTEM_PROMPT, openai, ALLOWED_MCP_TOOLS, MCP_PUBLIC_URL };
 
 export async function processChat(sessionId: string, message: string) {
-  // Logic to process chat
-  return { message: "ZEKE is processing your request." };
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [{ role: "system", content: SYSTEM_PROMPT }, { role: "user", content: message }],
+    });
+
+    const usage = response.usage ? {
+      prompt_tokens: response.usage.prompt_tokens,
+      completion_tokens: response.usage.completion_tokens,
+      total_tokens: response.usage.total_tokens
+    } : undefined;
+
+    const reply = response.choices[0].message.content || "";
+
+    await logInteraction({
+      sessionId,
+      channel: 'chat',
+      direction: 'outbound',
+      content: reply,
+      usage
+    });
+
+    return { message: reply };
+  } catch (error: any) {
+    Logger.error('[ZEKE] Chat processing failed:', error.message);
+    throw error;
+  }
 }

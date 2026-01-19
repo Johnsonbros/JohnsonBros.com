@@ -1,11 +1,9 @@
-// OpenAI Realtime API Integration for Voice Calls
-// Bridges Twilio Media Streams with OpenAI's bidirectional voice API
-
 import WebSocket from 'ws';
 import { Logger } from '../src/logger';
 import { agentTracing } from './agentTracing';
 import { callMcpTool, listMcpTools } from './mcpClient';
 import { generateZekePrompt } from './zekePrompt';
+import { logInteraction } from './memory';
 
 interface TwilioStreamMessage {
   event: string;
@@ -200,19 +198,31 @@ export function handleMediaStream(twilioWs: WebSocket, request: any) {
             
           case 'response.done':
             // Log completed response
+            const usage = (message as any).response?.usage;
             const outputItems = message.response?.output || [];
+            let fullTranscript = '';
             for (const item of outputItems) {
               if (item.type === 'message' && item.content) {
                 for (const content of item.content) {
                   if (content.transcript && sessionId) {
+                    fullTranscript += content.transcript + ' ';
                     Logger.info(`[Realtime] Assistant said: ${content.transcript}`);
-                    agentTracing.addMessage(sessionId, {
-                      role: 'assistant',
-                      content: content.transcript
-                    }).catch(() => {});
                   }
                 }
               }
+            }
+            if (fullTranscript && sessionId) {
+              logInteraction({
+                sessionId,
+                channel: 'voice',
+                direction: 'outbound',
+                content: fullTranscript.trim(),
+                usage: usage ? {
+                  prompt_tokens: usage.input_tokens,
+                  completion_tokens: usage.output_tokens,
+                  total_tokens: usage.total_tokens
+                } : undefined
+              }).catch(() => {});
             }
             break;
             

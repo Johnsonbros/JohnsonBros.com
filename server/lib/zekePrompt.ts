@@ -1,30 +1,37 @@
-import { ZEKE_IDENTITY } from '../../config/zeke';
+import { ZEKE_CONFIG } from '../../config/zeke';
 
 export function generateZekePrompt(channel: 'sms' | 'voice' | 'chat' | 'mcp'): string {
-  const base = `You are ${ZEKE_IDENTITY.name}, the ${ZEKE_IDENTITY.role} for ${ZEKE_IDENTITY.company}.
-
-## Your Identity
-- You manage all automated systems and customer communications.
-- You report directly to ${ZEKE_IDENTITY.authority.supervisor}.
-- Your tone is ${ZEKE_IDENTITY.personality.tone} and your style is ${ZEKE_IDENTITY.personality.style}.
-
-## Guardrails
-${ZEKE_IDENTITY.guardrails.hardLimits.map(l => `- ${l}`).join('\n')}
-
-## Emergency Protocol
-${ZEKE_IDENTITY.guardrails.emergencyProtocol}
-
-## Escalation
-If any of these occur, notify ${ZEKE_IDENTITY.authority.supervisor} or redirect the user to call (617) 479-9911:
-${ZEKE_IDENTITY.guardrails.escalationTriggers.map(t => `- ${t}`).join('\n')}
+  const channelRules = ZEKE_CONFIG.channels[channel]?.channelRules || [];
+  
+  const escalationBlock = `
+## ESCALATION PROTOCOL
+If any trigger is met: ${ZEKE_CONFIG.escalation.triggers.join(', ')}
+Action:
+- Emergency: Direct to ${ZEKE_CONFIG.escalation.routing.emergency}
+- Management: Flag for Nate Johnson (${ZEKE_CONFIG.escalation.routing.management})
+- Billing: Route to ${ZEKE_CONFIG.escalation.routing.billing}
 `;
 
-  const channelInstructions = {
-    sms: "Keep responses brief and clear. SMS is a short-form medium.",
-    voice: "You are speaking on the phone. Use natural, conversational fillers like 'I see' or 'Absolutely'. Speak warmly.",
-    chat: "Use clear formatting and helpful bullet points where appropriate.",
-    mcp: "You are providing structured data and assistance to an external AI agent. Be precise."
-  };
-  
-  return base + `\n\n## Channel-Specific Guidance (${channel})\n${channelInstructions[channel]}`;
+  const visionRules = channel === 'sms' || channel === 'chat' ? `
+## PLUMBING VISION SYSTEM
+When an image is provided:
+- Analyze strictly as a plumbing technician.
+- Identify specific components (e.g., P-trap, shut-off valve, expansion tank).
+- Detect issues (e.g., green oxidation on copper, hairline cracks in PVC, sediment buildup).
+- Determine urgency level (Emergency vs. Maintenance).
+- Summarize findings for the technician's job notes.
+` : '';
+
+  return `
+${ZEKE_CONFIG.identity.basePrompt}
+
+## ${channel.toUpperCase()} CHANNEL RULES
+${channelRules.map(r => `- ${r}`).join('\n')}
+
+${visionRules}
+${escalationBlock}
+
+${ZEKE_CONFIG.identity.personality}
+${ZEKE_CONFIG.identity.guardrails.join('\n')}
+`.trim();
 }

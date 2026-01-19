@@ -40,6 +40,11 @@ export async function logInteraction(data: {
   toolsUsed?: string[];
   sentiment?: string;
   metadata?: any;
+  usage?: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+  };
 }) {
   try {
     await db.insert(interactionLogs).values({
@@ -51,6 +56,9 @@ export async function logInteraction(data: {
       toolsUsed: data.toolsUsed || [],
       sentiment: data.sentiment,
       metadata: data.metadata || {},
+      promptTokens: data.usage?.prompt_tokens || 0,
+      completionTokens: data.usage?.completion_tokens || 0,
+      totalTokens: data.usage?.total_tokens || 0,
     });
   } catch (error: any) {
     Logger.error('[ZEKE] Failed to log interaction:', { error: error.message });
