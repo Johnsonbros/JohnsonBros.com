@@ -500,16 +500,58 @@ export type AbTestAssignment = typeof abTestAssignments.$inferSelect;
 export type AbTestEvent = typeof abTestEvents.$inferSelect;
 export type AbTestMetric = typeof abTestMetrics.$inferSelect;
 
-// Review type for testimonials
-export type Review = {
-  id: string;
-  customerName: string;
-  rating: number;
-  text: string;
-  serviceType: string;
-  date: string;
-  verified?: boolean;
-};
+// ZEKE Interaction Logging & Metrics
+export const interactionLogs = pgTable('interaction_logs', {
+  id: serial('id').primaryKey(),
+  customerId: integer('customer_id').references(() => customers.id),
+  sessionId: text('session_id').notNull(),
+  channel: text('channel').notNull(), // 'sms', 'voice', 'chat'
+  direction: text('direction').notNull(), // 'inbound', 'outbound'
+  content: text('content').notNull(),
+  toolsUsed: json('tools_used').default([]).notNull(),
+  sentiment: text('sentiment'),
+  resolutionStatus: text('resolution_status').default('pending').notNull(), // resolved, escalated, pending
+  metadata: json('metadata').default({}).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  sessionIdx: index('interaction_session_idx').on(table.sessionId),
+  customerIdx: index('interaction_customer_idx').on(table.customerId),
+  createdAtIdx: index('interaction_created_at_idx').on(table.createdAt),
+}));
+
+export const zekeKPIs = pgTable('zeke_kpis', {
+  id: serial('id').primaryKey(),
+  date: timestamp('date').notNull().unique(),
+  totalInteractions: integer('total_interactions').default(0).notNull(),
+  resolutionRate: real('resolution_rate').default(0).notNull(),
+  bookingConversion: real('booking_conversion').default(0).notNull(),
+  avgResponseTime: real('avg_response_time').default(0).notNull(),
+  revenueAttributed: real('revenue_attributed').default(0).notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Relations
+export const interactionLogsRelations = relations(interactionLogs, ({ one }) => ({
+  customer: one(customers, {
+    fields: [interactionLogs.customerId],
+    references: [customers.id],
+  }),
+}));
+
+// Insert schemas
+export const insertInteractionLogSchema = createInsertSchema(interactionLogs).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertZekeKPISchema = createInsertSchema(zekeKPIs).omit({
+  id: true,
+  updatedAt: true,
+});
+
+// Types
+export type InteractionLog = typeof interactionLogs.$inferSelect;
+export type ZekeKPI = typeof zekeKPIs.$inferSelect;
 
 // BookingFormData type
 export type BookingFormData = {

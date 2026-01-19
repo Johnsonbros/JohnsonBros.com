@@ -2,6 +2,7 @@ import { Logger } from '../src/logger';
 import { sendSMS } from './twilio';
 import { db } from '../db';
 import os from 'os';
+import { ZEKE_IDENTITY } from '../../config/zeke';
 
 const ADMIN_PHONE = process.env.ADMIN_PHONE_NUMBER;
 
@@ -15,7 +16,11 @@ export function isAdminPhone(phone: string): boolean {
   const isMatch = normalizedIncoming === normalizedAdmin || 
          normalizedIncoming.endsWith(normalizedAdmin) ||
          normalizedAdmin.endsWith(normalizedIncoming);
-  Logger.info(`[Admin SMS] Phone check: incoming="${normalizedIncoming}" admin="${normalizedAdmin}" match=${isMatch}`);
+  
+  if (isMatch) {
+    Logger.info(`[ZEKE] Supervisor ${ZEKE_IDENTITY.authority.supervisor} recognized`);
+  }
+  
   return isMatch;
 }
 
