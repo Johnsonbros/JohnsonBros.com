@@ -9,8 +9,10 @@ import {
   insertBlogPostSchema, insertKeywordSchema, insertPostKeywordSchema,
   type BlogPost, type Keyword, type PostKeyword, type KeywordRanking,
   checkIns, jobLocations,
-  insertLeadSchema, smsVerificationFailures
+  insertLeadSchema, smsVerificationFailures,
+  housecallWebhooks
 } from "@shared/schema";
+import { ZekeProactiveService } from "./lib/zekeProactive";
 import { z } from "zod";
 import { db } from "./db";
 import { eq, sql, and, gte, desc } from "drizzle-orm";
@@ -359,7 +361,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           title: `New Job: ${job.name || job.id}`,
           content: `Customer: ${job.customer?.first_name} ${job.customer?.last_name}\nAddress: ${job.address?.street}\nScheduled: ${job.schedule?.scheduled_start}`,
           metadata: { jobId: job.id, type: payload.type }
-        }).catch(err => Logger.error('[HCP Webhook] Failed to notify ZEKE:', err));
+        }).catch((err: any) => Logger.error('[HCP Webhook] Failed to notify ZEKE:', err));
       }
 
       // Mark as processed
