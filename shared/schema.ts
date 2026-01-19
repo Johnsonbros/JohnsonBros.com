@@ -344,6 +344,28 @@ export const insertEscalationEventSchema = createInsertSchema(escalationEvents).
 export type ProactiveUpdate = typeof proactiveUpdates.$inferSelect;
 export type EscalationEvent = typeof escalationEvents.$inferSelect;
 
+// Housecall Pro Webhook Logs
+export const housecallWebhooks = pgTable('housecall_webhooks', {
+  id: serial('id').primaryKey(),
+  eventId: text('event_id').notNull().unique(),
+  eventType: text('event_type').notNull(),
+  payload: json('payload').notNull(),
+  processed: boolean('processed').default(false).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  processedAt: timestamp('processed_at'),
+}, (table) => ({
+  eventIdIdx: uniqueIndex('hcp_event_id_idx').on(table.eventId),
+  eventTypeIdx: index('hcp_event_type_idx').on(table.eventType),
+}));
+
+export const insertHousecallWebhookSchema = createInsertSchema(housecallWebhooks).omit({
+  id: true,
+  createdAt: true,
+  processedAt: true,
+});
+
+export type HousecallWebhook = typeof housecallWebhooks.$inferSelect;
+
 // Customer table for booking system
 export const customers = pgTable('customers', {
   id: serial('id').primaryKey(),

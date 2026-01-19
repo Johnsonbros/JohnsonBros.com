@@ -335,6 +335,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Card action dispatch routes
   app.use('/api/actions', actionsRoutes);
 
+  // Housecall Pro Webhooks
+  app.post('/api/v1/webhooks/housecall', webhookLimiter, async (req, res) => {
+    try {
+      const payload = req.body;
+      const signature = req.headers['x-hcp-signature'];
+      
+      // Log the webhook first for safety
+      const [log] = await db.insert(housecallWebhooks).values({
+        eventId: payload.id || `hcp_${Date.now()}`,
+        eventType: payload.type || 'unknown',
+        payload: payload,
+      }).returning();
+
+      Logger.info(`[HCP Webhook] Received ${payload.type}`, { eventId: log.eventId });
+
+      // Trigger ZEKE for proactive processing
+      if (payload.type === 'job.created' || payload.type === 'job.scheduled') {
+        const job = payload.data;
+        await ZekeProactiveService.queueUpdate({
+          severity: 'medium',
+          category: 'ops',
+          title: `New Job: ${job.name || job.id}`,
+          content: `Customer: ${job.customer?.first_name} ${job.customer?.last_name}\nAddress: ${job.address?.street}\nScheduled: ${job.schedule?.scheduled_start}`,
+          metadata: { jobId: job.id, type: payload.type }
+        }).catch(err => Logger.error('[HCP Webhook] Failed to notify ZEKE:', err));
+      }
+
+      // Mark as processed
+      await db.update(housecallWebhooks)
+        .set({ processed: true, processedAt: new Date() })
+        .where(eq(housecallWebhooks.id, log.id));
+
+      res.status(200).json({ status: 'received' });
+    } catch (error) {
+      logError('Housecall Pro Webhook Error:', error);
+      res.status(500).json({ error: 'Webhook processing failed' });
+    }
+  });
+
   // Seed blog data on startup (only in development)
   if (process.env.NODE_ENV === 'development') {
     import('./seed-blog').then(module => {
