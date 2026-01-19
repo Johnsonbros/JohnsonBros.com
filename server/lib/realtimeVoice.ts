@@ -41,11 +41,8 @@ interface OpenAIRealtimeMessage {
 
 const OPENAI_REALTIME_URL = 'wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-12-17';
 
-import { generateZekePrompt } from './zekePrompt';
-
 // System instructions for voice assistant
 const VOICE_SYSTEM_INSTRUCTIONS = generateZekePrompt('voice');
-
 
 export function handleMediaStream(twilioWs: WebSocket, request: any) {
   let openaiWs: WebSocket | null = null;
@@ -150,7 +147,7 @@ export function handleMediaStream(twilioWs: WebSocket, request: any) {
           type: 'response.create',
           response: {
             modalities: ['audio', 'text'],
-            instructions: 'Greet the caller warmly. Say: "Thanks for calling Johnson Bros. Plumbing! I\'m Jenny, your AI assistant. How can I help you today?"'
+            instructions: `Greet the caller warmly as ZEKE. Say: "Thanks for calling Johnson Bros. Plumbing! I'm ZEKE, the AI supervisor. How can I help you today?"`
           }
         };
         openaiWs!.send(JSON.stringify(greetingEvent));
@@ -292,7 +289,7 @@ export function handleMediaStream(twilioWs: WebSocket, request: any) {
         case 'connected':
           Logger.info('[Realtime] Twilio stream connected');
           break;
-          
+        
         case 'start':
           streamSid = message.start?.streamSid || null;
           callSid = message.start?.callSid || null;
