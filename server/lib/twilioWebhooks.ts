@@ -7,6 +7,7 @@ import { processChat, clearSession } from './aiChat';
 import { createOutboundCall, generateTwiML, generateVoiceTwiML, getTwilioPhoneNumber } from './twilio';
 import { agentTracing } from './agentTracing';
 import { trackTwilioSMS, trackTwilioVoice } from './usageTracker';
+import { isAdminPhone, processAdminMessage } from './adminSms';
 import crypto from 'crypto';
 
 const router = Router();
@@ -98,6 +99,15 @@ router.post('/sms', async (req: Request, res: Response) => {
       messageSid: MessageSid,
       from: From
     });
+
+    // Check if this is an admin message
+    if (isAdminPhone(From)) {
+      Logger.info(`[Twilio SMS] Admin message detected from ${From}`);
+      const adminResponse = await processAdminMessage(Body);
+      Logger.info(`[Twilio SMS] Admin response: ${adminResponse.substring(0, 50)}...`);
+      res.type('text/xml').send(generateTwiML(adminResponse));
+      return;
+    }
 
     // Process through AI chat with SMS channel
     const response = await processChat(sessionId, Body, 'sms');
