@@ -6,12 +6,17 @@ import os from 'os';
 const ADMIN_PHONE = process.env.ADMIN_PHONE_NUMBER;
 
 export function isAdminPhone(phone: string): boolean {
-  if (!ADMIN_PHONE) return false;
+  if (!ADMIN_PHONE) {
+    Logger.debug('[Admin SMS] No ADMIN_PHONE_NUMBER configured');
+    return false;
+  }
   const normalizedIncoming = phone.replace(/\D/g, '');
   const normalizedAdmin = ADMIN_PHONE.replace(/\D/g, '');
-  return normalizedIncoming === normalizedAdmin || 
+  const isMatch = normalizedIncoming === normalizedAdmin || 
          normalizedIncoming.endsWith(normalizedAdmin) ||
          normalizedAdmin.endsWith(normalizedIncoming);
+  Logger.info(`[Admin SMS] Phone check: incoming="${normalizedIncoming}" admin="${normalizedAdmin}" match=${isMatch}`);
+  return isMatch;
 }
 
 interface AdminCommandResult {
