@@ -1,5 +1,5 @@
 import { db } from '../db';
-import { zekeKpis, interactionLogs } from '@shared/schema';
+import { zekeKPIs, interactionLogs } from '@shared/schema';
 import { sql, eq, and, gte, lte } from 'drizzle-orm';
 import { Logger } from '../src/logger';
 
@@ -11,7 +11,7 @@ export async function updateZekeKpis() {
     // Calculate total interactions today
     const [counts] = await db.select({
       total: sql<number>`count(*)`,
-      byChannel: sql<Record<string, number>>`jsonb_object_agg(channel, count)`,
+      byChannel: sql<any>`jsonb_object_agg(channel, count)`,
     }).from(
       db.select({
         channel: interactionLogs.channel,
@@ -29,21 +29,17 @@ export async function updateZekeKpis() {
     // Average sentiment (placeholder)
     const sentiment = 0.85;
 
-    await db.insert(zekeKpis).values({
+    await db.insert(zekeKPIs).values({
       date: today,
       totalInteractions: Number(counts?.total || 0),
-      bookingsCount: bookings,
-      conversionRate: bookings > 0 ? (bookings / Number(counts?.total)) * 100 : 0,
-      avgSentiment: sentiment.toString(),
-      topTools: [],
-      metadata: counts?.byChannel || {}
+      bookingConversion: bookings,
+      updatedAt: new Date()
     }).onConflictDoUpdate({
-      target: [zekeKpis.date],
+      target: [zekeKPIs.date],
       set: {
         totalInteractions: Number(counts?.total || 0),
-        bookingsCount: bookings,
-        conversionRate: bookings > 0 ? (bookings / Number(counts?.total)) * 100 : 0,
-        metadata: counts?.byChannel || {}
+        bookingConversion: bookings,
+        updatedAt: new Date()
       }
     });
 

@@ -296,7 +296,12 @@ const blogLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+import zekeAdminRouter from "./routes/zekeAdmin";
+
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Register ZEKE Admin routes
+  app.use('/api/v1/admin/zeke', zekeAdminRouter);
+
   // ========== API VERSIONING SETUP ==========
   // Import API versioning utilities
   const { setupBackwardCompatibleRedirects, setupVersionEndpoint } = await import('./src/api-v1');

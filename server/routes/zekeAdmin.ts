@@ -1,7 +1,7 @@
 import express from 'express';
 import { Logger } from '../src/logger';
 import { db } from '../db';
-import { interactionLogs, zekeKpis } from '@shared/schema';
+import { interactionLogs, zekeKPIs } from '@shared/schema';
 import { desc, gte } from 'drizzle-orm';
 
 const router = express.Router();
@@ -9,8 +9,8 @@ const router = express.Router();
 // Get ZEKE KPIs
 router.get('/kpis', async (req, res) => {
   try {
-    const kpis = await db.query.zekeKpis.findMany({
-      orderBy: [desc(zekeKpis.date)],
+    const kpis = await db.query.zekeKPIs.findMany({
+      orderBy: [desc(zekeKPIs.date)],
       limit: 30
     });
     res.json(kpis);
@@ -24,10 +24,7 @@ router.get('/interactions', async (req, res) => {
   try {
     const logs = await db.query.interactionLogs.findMany({
       orderBy: [desc(interactionLogs.createdAt)],
-      limit: 50,
-      with: {
-        customer: true
-      }
+      limit: 50
     });
     res.json(logs);
   } catch (error: any) {
