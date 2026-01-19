@@ -57,6 +57,7 @@ integrations = ["javascript_openai:1.0.0"]
 [userenv]
 
 [userenv.shared]
+ADMIN_PHONE_NUMBER = "+16176868763"
 
 [userenv.production]
 MCP_PUBLIC_URL = "https://theabingtonplumber.com/mcp"
