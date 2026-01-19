@@ -1,7 +1,8 @@
 import { db } from '../db';
-import { customers, interactionLogs } from '@shared/schema';
+import { customers, interactionLogs, proactiveUpdates } from '@shared/schema';
 import { eq, or, desc } from 'drizzle-orm';
 import { Logger } from '../src/logger';
+import { ZekeProactiveService } from './zekeProactive';
 
 export async function resolveIdentity(phone?: string, email?: string) {
   if (!phone && !email) return null;
@@ -47,6 +48,17 @@ export async function logInteraction(data: {
   };
 }) {
   try {
+    // Check for critical technical failures to log proactively
+    if (data.metadata?.error || data.content.toLowerCase().includes('error') || data.content.toLowerCase().includes('failed')) {
+       await ZekeProactiveService.queueUpdate({
+         severity: 'high',
+         category: 'system',
+         title: `Technical Issue in ${data.channel.toUpperCase()} session`,
+         content: `Issue detected in session ${data.sessionId}: ${data.content.substring(0, 100)}...`,
+         metadata: data.metadata
+       }).catch(err => Logger.error('[ZEKE] Proactive alert failed:', err));
+    }
+
     await db.insert(interactionLogs).values({
       customerId: data.customerId,
       sessionId: data.sessionId,

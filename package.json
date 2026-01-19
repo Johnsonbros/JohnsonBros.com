@@ -26,6 +26,7 @@
     "@jridgewell/trace-mapping": "^0.3.25",
     "@modelcontextprotocol/sdk": "^1.17.4",
     "@neondatabase/serverless": "^0.10.4",
+    "@octokit/rest": "^22.0.0",
     "@openai/apps-sdk-ui": "^0.2.1",
     "@openai/chatkit-react": "^1.4.1",
     "@radix-ui/react-accordion": "^1.2.4",

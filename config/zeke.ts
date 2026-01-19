@@ -12,6 +12,13 @@ export const ZEKE_CONFIG = {
       "Emergency Protocol: For active flooding or gas leaks, direct to 617-479-9911 immediately."
     ]
   },
+  ceo: {
+    name: "Nate Johnson",
+    phone: "6176868763",
+    role: "CEO",
+    dynamic: "Co-founder / VP to CEO",
+    tone: "Direct, strategic, no-fluff, executive-level summaries"
+  },
   channels: {
     sms: {
       channelRules: [

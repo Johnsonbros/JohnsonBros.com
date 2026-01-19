@@ -307,6 +307,43 @@ export type InsertAttributionData = z.infer<typeof insertAttributionDataSchema>;
 export type Lead = typeof leads.$inferSelect;
 export type InsertLead = z.infer<typeof insertLeadSchema>;
 
+// ZEKE Proactive Updates & Alerts
+export const proactiveUpdates = pgTable('proactive_updates', {
+  id: serial('id').primaryKey(),
+  severity: text('severity').notNull(), // 'critical', 'high', 'medium', 'low'
+  category: text('category').notNull(), // 'system', 'business', 'ops'
+  title: text('title').notNull(),
+  content: text('content').notNull(),
+  metadata: json('metadata').default({}),
+  status: text('status').default('pending').notNull(), // pending, delivered, dismissed
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  deliveredAt: timestamp('delivered_at'),
+});
+
+export const escalationEvents = pgTable('escalation_events', {
+  id: serial('id').primaryKey(),
+  sessionId: text('session_id').notNull(),
+  customerId: integer('customer_id').references(() => customers.id),
+  type: text('type').notNull(), // 'technical_failure', 'human_request', 'auth_required'
+  reason: text('reason').notNull(),
+  context: json('context').default({}),
+  status: text('status').default('logged').notNull(), // logged, escalated, resolved
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const insertProactiveUpdateSchema = createInsertSchema(proactiveUpdates).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertEscalationEventSchema = createInsertSchema(escalationEvents).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type ProactiveUpdate = typeof proactiveUpdates.$inferSelect;
+export type EscalationEvent = typeof escalationEvents.$inferSelect;
+
 // Customer table for booking system
 export const customers = pgTable('customers', {
   id: serial('id').primaryKey(),

@@ -4,6 +4,7 @@ import { agentTracing } from './agentTracing';
 import { callMcpTool, listMcpTools } from './mcpClient';
 import { generateZekePrompt } from './zekePrompt';
 import { logInteraction } from './memory';
+import { ZEKE_CONFIG } from '../../config/zeke';
 
 interface TwilioStreamMessage {
   event: string;
@@ -42,12 +43,15 @@ const OPENAI_REALTIME_URL = 'wss://api.openai.com/v1/realtime?model=gpt-4o-realt
 // System instructions for voice assistant
 const VOICE_SYSTEM_INSTRUCTIONS = generateZekePrompt('voice');
 
+let failureCountMap = new Map<string, number>();
+
 export function handleMediaStream(twilioWs: WebSocket, request: any) {
   let openaiWs: WebSocket | null = null;
   let streamSid: string | null = null;
   let callSid: string | null = null;
   let sessionId: string | null = null;
   let mcpToolNames = new Set<string>();
+  let isCEOSession = false;
   
   Logger.info('[Realtime] New media stream connection');
   
@@ -58,6 +62,10 @@ export function handleMediaStream(twilioWs: WebSocket, request: any) {
       twilioWs.close();
       return;
     }
+
+    const currentInstructions = isCEOSession 
+      ? generateZekePrompt('voice', { isCEO: true })
+      : VOICE_SYSTEM_INSTRUCTIONS;
     
     openaiWs = new WebSocket(OPENAI_REALTIME_URL, {
       headers: {
@@ -86,7 +94,7 @@ export function handleMediaStream(twilioWs: WebSocket, request: any) {
             type: 'session.update',
             session: {
               modalities: ['text', 'audio'],
-              instructions: VOICE_SYSTEM_INSTRUCTIONS,
+              instructions: currentInstructions,
               voice: 'alloy',
               input_audio_format: 'g711_ulaw',
               output_audio_format: 'g711_ulaw',
@@ -116,6 +124,34 @@ export function handleMediaStream(twilioWs: WebSocket, request: any) {
                 },
                 {
                   type: 'function',
+                  name: 'transfer_to_owner',
+                  description: 'Transfer the call directly to the owner, Nate Johnson, as a last resort.',
+                  parameters: {
+                    type: 'object',
+                    properties: {
+                      reason: {
+                        type: 'string',
+                        description: 'Technical failure or specific request'
+                      }
+                    }
+                  }
+                },
+                {
+                  type: 'function',
+                  name: 'create_github_issue',
+                  description: 'Create a GitHub issue for technical support to fix a system flag or bug.',
+                  parameters: {
+                    type: 'object',
+                    properties: {
+                      title: { type: 'string', description: 'Title of the issue' },
+                      body: { type: 'string', description: 'Detailed description of the bug or flag' },
+                      labels: { type: 'array', items: { type: 'string' } }
+                    },
+                    required: ['title', 'body']
+                  }
+                },
+                {
+                  type: 'function',
                   name: 'end_call',
                   description: 'End the call politely after booking is complete or customer is done',
                   parameters: {
@@ -141,11 +177,15 @@ export function handleMediaStream(twilioWs: WebSocket, request: any) {
       
       // Send initial greeting
       setTimeout(() => {
+        const greeting = isCEOSession 
+          ? `Greet Nate as your Co-founder and CEO. Ask how you can help with business strategy today.`
+          : `Greet the caller warmly as ZEKE. Say: "Thanks for calling Johnson Bros. Plumbing! I'm ZEKE, the AI supervisor. How can I help you today?"`;
+        
         const greetingEvent = {
           type: 'response.create',
           response: {
             modalities: ['audio', 'text'],
-            instructions: `Greet the caller warmly as ZEKE. Say: "Thanks for calling Johnson Bros. Plumbing! I'm ZEKE, the AI supervisor. How can I help you today?"`
+            instructions: greeting
           }
         };
         openaiWs!.send(JSON.stringify(greetingEvent));
@@ -242,6 +282,35 @@ export function handleMediaStream(twilioWs: WebSocket, request: any) {
               break;
             }
 
+            if (functionName === 'transfer_to_owner' && callSid) {
+               // Logic to trigger Twilio transfer
+               Logger.info(`[Realtime] Escalating to Nate Johnson for call ${callSid}`);
+               break;
+            }
+
+            if (functionName === 'create_github_issue') {
+               import('./github').then(m => m.getUncachableGitHubClient()).then(client => {
+                 client.issues.create({
+                   owner: 'JohnsonBrosPlumbing', // Placeholder
+                   repo: 'website',
+                   title: args.title,
+                   body: args.body,
+                   labels: [...(args.labels || []), 'zeke-auto-fix']
+                 }).then(() => {
+                    if (!openaiWs) return;
+                    openaiWs.send(JSON.stringify({
+                      type: 'conversation.item.create',
+                      item: {
+                        type: 'function_call_output',
+                        call_id: callId,
+                        output: JSON.stringify({ status: 'success', message: 'GitHub issue created. Claude Code is on it.' })
+                      }
+                    }));
+                 });
+               });
+               break;
+            }
+
             if (mcpToolNames.has(functionName) && callId) {
               callMcpTool(functionName, args)
                 .then((result) => {
@@ -264,6 +333,19 @@ export function handleMediaStream(twilioWs: WebSocket, request: any) {
                 })
                 .catch((error: any) => {
                   Logger.error('[Realtime] MCP tool call failed:', { error: error?.message, functionName });
+                  if (sessionId) {
+                    const count = (failureCountMap.get(sessionId) || 0) + 1;
+                    failureCountMap.set(sessionId, count);
+                    if (count >= 2 && openaiWs) {
+                      openaiWs.send(JSON.stringify({
+                        type: 'response.create',
+                        response: {
+                          modalities: ['audio', 'text'],
+                          instructions: 'The system has failed twice. Apologize and offer to transfer the call directly to Nate Johnson, the owner.'
+                        }
+                      }));
+                    }
+                  }
                 });
             }
             break;
@@ -305,10 +387,17 @@ export function handleMediaStream(twilioWs: WebSocket, request: any) {
           callSid = message.start?.callSid || null;
           sessionId = `realtime_${callSid}`;
           
+          // Check for Nate's number in custom parameters
+          const from = message.start?.customParameters?.From;
+          if (from && from.includes(ZEKE_CONFIG.ceo.phone)) {
+            isCEOSession = true;
+            Logger.info(`[Realtime] CEO session detected for ${from}`);
+          }
+          
           Logger.info(`[Realtime] Stream started - SID: ${streamSid}, CallSid: ${callSid}`);
           
           // Start conversation tracking
-          agentTracing.getOrCreateConversation(sessionId!, 'voice', VOICE_SYSTEM_INSTRUCTIONS)
+          agentTracing.getOrCreateConversation(sessionId!, 'voice', isCEOSession ? generateZekePrompt('voice', { isCEO: true }) : VOICE_SYSTEM_INSTRUCTIONS)
             .catch(() => {});
           
           // Connect to OpenAI
