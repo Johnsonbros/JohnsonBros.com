@@ -402,11 +402,20 @@ export const insertCustomerSchema = createInsertSchema(customers).omit({
   id: true,
   createdAt: true,
   normalizedPhone: true, // Auto-populated from phone
+}).extend({
+  firstName: z.string().min(1, "First name is required").max(100),
+  lastName: z.string().min(1, "Last name is required").max(100),
+  email: z.string().email("Invalid email address"),
+  phone: z.string().regex(/^\+?1?\d{10,15}$/, "Invalid phone format (e.g. +16175550123)").optional().nullable(),
 });
 
 export const insertAppointmentSchema = createInsertSchema(appointments).omit({
   id: true,
   createdAt: true,
+}).extend({
+  serviceType: z.string().min(1, "Service type is required"),
+  date: z.coerce.date(),
+  timeSlot: z.string().min(1, "Time slot is required"),
 });
 
 // Types for booking system
