@@ -314,7 +314,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register admin routes with /api/admin prefix and rate limiting
   // Admin routes stay at /api/admin (not versioned) for backward compatibility
-  app.use('/api/admin', adminLimiter, adminRoutes);
+  // Ensure authentication for all admin routes
+  app.use('/api/admin', authenticate, adminLimiter, adminRoutes);
   
   // A/B Testing routes (public endpoints for tracking, admin endpoints for management)
   app.use(abTestingRoutes);
