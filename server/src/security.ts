@@ -45,9 +45,10 @@ export function configureSecurityMiddleware(app: Express) {
           : [];
         
         // Also allow .replit.app and production domains
-        const isReplitDomain = origin.endsWith('.replit.app');
-        const isProductionDomain = origin.includes('thejohnsonbros.com') || 
-                                    origin.toLowerCase().includes('theabingtonplumber.com');
+        const originLower = origin.toLowerCase();
+        const isReplitDomain = originLower.endsWith('.replit.app');
+        const isProductionDomain = originLower.includes('thejohnsonbros.com') || 
+                                    originLower.includes('theabingtonplumber.com');
         
         if (allowedOrigins.includes(origin) || isReplitDomain || isProductionDomain) {
           callback(null, true);

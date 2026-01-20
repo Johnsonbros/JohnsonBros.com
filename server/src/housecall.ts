@@ -270,32 +270,42 @@ export class HousecallProClient {
   }
 
   async getEmployees(): Promise<HCPEmployee[]> {
-    const data = await this.callAPI<{ employees: HCPEmployee[] }>('/employees', {
-      page_size: 100,
-    });
-    return data.employees || [];
+    try {
+      const data = await this.callAPI<{ employees: HCPEmployee[] }>('/employees', {
+        page_size: 100,
+      });
+      return data.employees || [];
+    } catch (error) {
+      Logger.error('Failed to fetch employees', { error: (error as Error).message });
+      return []; // Graceful degradation
+    }
   }
 
   async getBookingWindows(date: string): Promise<HCPBookingWindow[]> {
-    Logger.debug(`[HousecallProClient] Getting booking windows for date: ${date}`);
-    const data = await this.callAPI<{ booking_windows: HCPBookingWindow[] }>(
-      '/company/schedule_availability/booking_windows',
-      {
-        start_date: date,
-        end_date: date,
-      }
-    );
-    Logger.debug(`[HousecallProClient] Booking windows response: ${JSON.stringify(data.booking_windows)}`);
-    Logger.debug(`[HousecallProClient] First window available? ${data.booking_windows?.[0]?.available}`);
+    try {
+      Logger.debug(`[HousecallProClient] Getting booking windows for date: ${date}`);
+      const data = await this.callAPI<{ booking_windows: HCPBookingWindow[] }>(
+        '/company/schedule_availability/booking_windows',
+        {
+          start_date: date,
+          end_date: date,
+        }
+      );
+      Logger.debug(`[HousecallProClient] Booking windows response: ${JSON.stringify(data.booking_windows)}`);
+      Logger.debug(`[HousecallProClient] First window available? ${data.booking_windows?.[0]?.available}`);
 
-    const windows = data.booking_windows || [];
+      const windows = data.booking_windows || [];
 
-    // Log availability summary
-    const availableCount = windows.filter(w => w.available).length;
-    Logger.debug(`[HousecallProClient] ${availableCount} of ${windows.length} windows are available`);
+      // Log availability summary
+      const availableCount = windows.filter(w => w.available).length;
+      Logger.debug(`[HousecallProClient] ${availableCount} of ${windows.length} windows are available`);
 
-    // NO FAKE DATA - Return exactly what the API gives us
-    return windows;
+      // NO FAKE DATA - Return exactly what the API gives us
+      return windows;
+    } catch (error) {
+      Logger.error('Failed to fetch booking windows', { error: (error as Error).message, date });
+      return []; // Graceful degradation - show no slots instead of crashing
+    }
   }
 
   async getJobs(params: {

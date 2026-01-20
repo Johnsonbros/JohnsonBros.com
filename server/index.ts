@@ -183,7 +183,10 @@ app.use((req, res, next) => {
 
     // Send error response
     res.status(status).json({
-      message,
+      message: status === 500 && app.get("env") === "production" 
+        ? "An internal server error occurred" 
+        : message,
+      // Removed stack trace exposure for production security
       ...(app.get("env") === "development" && { stack: err.stack })
     });
   });
