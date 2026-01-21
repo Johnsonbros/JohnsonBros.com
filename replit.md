@@ -48,7 +48,14 @@ A five-tier agent architecture automates plumbing business operations:
 ## Business Logic & Rules
 -   **Service Area Management**: Defined by postal codes in `config/capacity.yml`.
 -   **Capacity Calculation**: Based on real-time availability from HousecallPro, technician schedules, and time of day.
--   **Booking Workflow**: Integrates customer lookup/creation, address management, service selection, and job creation within HousecallPro. All online bookings require SMS phone verification. Failed SMS attempts trigger a "Call to Schedule" fallback. Address autocomplete uses Google Places API. The system verifies the phone number on record, requiring unregistered household members to call the office for booking.
+-   **Booking Workflow (2026 Refactor)**:
+    1.  **Identity**: Customer lookup (Housecall Pro) or new profile creation.
+    2.  **Schedule**: Date and time selection with problem notes and photos.
+    3.  **Verification**: SMS OTP final fraud prevention gate.
+    4.  **Confirm**: Final review and HCP job creation.
+-   **Fraud Prevention**: Bookings are blocked until a human-verified SMS code is entered for the specific phone number linked to the profile.
+-   **Address Handling**: Lookup allows selecting from existing addresses or entering a new one.
+-   **SMS Verification**: All online bookings require SMS phone verification as the final security gate. Failed SMS attempts trigger a "Call to Schedule" fallback. Address autocomplete uses Google Places API.
 -   **Pricing & Fees**: Automatic service fee waivers based on capacity and premium pricing for emergency services.
 
 # External Dependencies
