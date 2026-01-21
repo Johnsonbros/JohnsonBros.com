@@ -316,6 +316,29 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
 
         {currentStep === 1 && (
           <div className="space-y-6">
+            {bookingData.selectedDate && bookingData.selectedTimeSlot && (
+              <div className="bg-johnson-blue/5 border border-johnson-blue/20 rounded-xl p-3 mb-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="bg-johnson-blue text-white p-2 rounded-lg">
+                    <Calendar className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="text-[10px] uppercase font-bold text-johnson-blue/60 tracking-wider">Your Selection</div>
+                    <div className="text-sm font-bold text-johnson-blue">
+                      {new Date(bookingData.selectedDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} • {formatTimeSlotWindow(bookingData.selectedTimeSlot.startTime, bookingData.selectedTimeSlot.endTime)}
+                    </div>
+                  </div>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-johnson-blue hover:bg-johnson-blue/10 font-bold text-xs h-8"
+                  onClick={() => setCurrentStep(2)}
+                >
+                  Change
+                </Button>
+              </div>
+            )}
             <div className="bg-blue-50 p-3 rounded-lg flex items-center gap-2 border border-blue-100">
               <Lock className="w-4 h-4 text-blue-600" />
               <span className="text-xs text-blue-800 font-medium">Secure & Encrypted Lookup</span>
