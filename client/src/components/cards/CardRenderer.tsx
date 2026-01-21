@@ -140,12 +140,12 @@ export function CardRenderer({ card, onAction, onDismiss, isLoading }: CardRende
         <EmergencyInstructionsCard
           payload={{
             title: card.title || 'Emergency Help',
-            message: card.message || '',
-            severity: card.severity,
-            instructions: card.instructions || [],
-            contactLabel: card.contactLabel,
-            contactPhone: card.contactPhone,
-            cta: card.cta,
+            message: (card as any).message || (card as any).summary || '',
+            severity: (card as any).severity || 'high',
+            instructions: (card as any).instructions || [],
+            contactLabel: (card as any).contactLabel || 'Call Now',
+            contactPhone: (card as any).contactPhone || '(617) 479-9911',
+            cta: (card as any).cta,
           }}
           onAction={onAction}
           onDismiss={handleDismiss}

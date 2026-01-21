@@ -2318,19 +2318,19 @@ IMPORTANT: For gas leaks, always advise leaving the house and calling 911 first.
 
       const result = {
         success: true,
-        emergency_type: guidance.title,
-        urgency_level: guidance.urgency,
-        immediate_steps: guidance.immediateSteps,
-        safety_warnings: guidance.doNotDo,
-        recommendation: guidance.callToAction,
-        emergency_contact: {
-          phone: "(617) 555-0123",
-          available: "24/7 for emergencies",
-          response_time: guidance.urgency === "critical" ? "Within 1 hour" : "Same day"
+        type: "emergency_help",
+        id: randomUUID(),
+        title: guidance.title,
+        message: guidance.callToAction,
+        severity: guidance.urgency,
+        instructions: guidance.immediateSteps,
+        contactLabel: "Call Now",
+        contactPhone: "(617) 479-9911",
+        cta: {
+          label: "Call Now",
+          action: "OPEN_CALL_MODAL",
+          payload: { phone: "(617) 479-9911" }
         },
-        book_now: guidance.urgency === "critical" 
-          ? "CRITICAL: We recommend booking emergency service immediately."
-          : "Book a service call to address this issue professionally.",
         correlation_id: correlationId
       };
 
@@ -2338,7 +2338,8 @@ IMPORTANT: For gas leaks, always advise leaving the house and calling 911 first.
 
       return {
         content: [
-          { type: "text", text: JSON.stringify(result, null, 2) }
+          { type: "text", text: `I've found some emergency guidance for ${input.emergency_type}. Please follow these steps immediately.` },
+          { type: "text", text: `\`\`\`card_intent\n${JSON.stringify(result, null, 2)}\n\`\`\`` }
         ]
       };
       
