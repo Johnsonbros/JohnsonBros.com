@@ -299,10 +299,16 @@ const blogLimiter = rateLimit({
 });
 
 import zekeAdminRouter from "./routes/zekeAdmin";
+import { adminGateway } from "./mcp/adminGateway";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Register ZEKE Admin routes
   app.use('/api/v1/admin/zeke', zekeAdminRouter);
+
+  // Admin MCP Registry
+  app.get("/api/admin/mcp/tools", (req, res) => {
+    res.json(adminGateway.listNamespacedTools());
+  });
 
   // ========== API VERSIONING SETUP ==========
   // Import API versioning utilities

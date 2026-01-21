@@ -27,8 +27,14 @@ function getMcpServerUrl(): string {
 
 const MCP_PUBLIC_URL = getMcpServerUrl();
 
-// Allowed tools to expose to OpenAI - matches tools in src/booker.ts
-const ALLOWED_MCP_TOOLS = [
+import { adminGateway, initAdminMcp } from '../mcp';
+import { callMcpTool } from './mcpClient';
+
+// Initialize Admin MCP
+initAdminMcp().catch(e => Logger.error('Admin MCP Init Failed', e));
+
+// Allowed tools to expose to OpenAI - public booker tools
+const PUBLIC_MCP_TOOLS = [
   'book_service_call',
   'search_availability', 
   'lookup_customer',
@@ -54,20 +60,25 @@ export async function getSessionHistory(sessionId: string): Promise<any[]> {
 
 const SYSTEM_PROMPT = generateZekePrompt('sms');
 
-export { SYSTEM_PROMPT, openai, ALLOWED_MCP_TOOLS, MCP_PUBLIC_URL };
+export { SYSTEM_PROMPT, openai, PUBLIC_MCP_TOOLS as ALLOWED_MCP_TOOLS, MCP_PUBLIC_URL };
 
 export async function processChat(sessionId: string, message: string, channel: string = 'web') {
   try {
+    const isChannelAdmin = channel === 'admin';
+    const currentTools = isChannelAdmin 
+      ? adminGateway.listNamespacedTools()
+      : PUBLIC_MCP_TOOLS.map(name => ({ name, description: 'Public booking tool' })); // Simplified for now
+
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
-      messages: [{ role: "system", content: SYSTEM_PROMPT }, { role: "user", content: message }],
+      messages: [{ role: "system", content: generateZekePrompt(channel as any) }, { role: "user", content: message }],
       response_format: { type: "text" },
-      tools: ALLOWED_MCP_TOOLS.length > 0 ? ALLOWED_MCP_TOOLS.map(t => ({
+      tools: currentTools.length > 0 ? currentTools.map((t: any) => ({
         type: "function",
         function: {
           name: t.name,
           description: t.description,
-          parameters: t.inputSchema
+          parameters: t.inputSchema || { type: 'object', properties: {} }
         }
       })) : undefined
     } as any);

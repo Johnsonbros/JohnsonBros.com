@@ -1,9 +1,8 @@
-import { customersServer } from "./sub-servers/customers";
-import { jobsServer } from "./sub-servers/jobs";
-import { schedulingServer } from "./sub-servers/scheduling";
-import { leadsServer } from "./sub-servers/leads";
-import { adminGateway } from "./adminGateway";
-import { Logger } from "../src/logger";
+export { adminGateway } from "./adminGateway";
+export { customersServer } from "./sub-servers/customers";
+export { jobsServer } from "./sub-servers/jobs";
+export { schedulingServer } from "./sub-servers/scheduling";
+export { leadsServer } from "./sub-servers/leads";
 
 /**
  * Initialize all specialized MCP sub-servers and register them with the gateway
