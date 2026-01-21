@@ -416,16 +416,26 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
             {bookingData.selectedDate && (
               <div className="grid grid-cols-1 gap-2">
                 {timeSlotsLoading ? <div className="text-center py-4 animate-pulse">Loading windows...</div> : 
-                  timeSlots?.map((s: any) => (
-                    <button key={s.id} onClick={() => setBookingData(prev => ({ ...prev, selectedTimeSlot: s }))}
-                      className={`p-4 rounded-xl border-2 text-left flex justify-between items-center ${bookingData.selectedTimeSlot?.id === s.id ? 'border-johnson-blue bg-blue-50' : 'border-gray-100 bg-white'}`}>
-                      <div>
-                        <div className="text-[10px] font-bold text-gray-500 uppercase">Available Window</div>
-                        <div className="font-bold">{formatTimeSlotWindow(s.startTime, s.endTime)}</div>
-                      </div>
-                      {bookingData.selectedTimeSlot?.id === s.id && <CheckCircle className="text-johnson-blue" />}
-                    </button>
-                  ))}
+                  timeSlots?.map((s: any, idx: number) => {
+                    const timeLabels = ['Morning', 'Midday', 'Afternoon'];
+                    const timeIcons = ['🌅', '☀️', '🌆'];
+                    return (
+                      <button key={s.id} onClick={() => setBookingData(prev => ({ ...prev, selectedTimeSlot: s }))}
+                        className={`p-4 rounded-xl border-2 text-left flex justify-between items-center relative ${bookingData.selectedTimeSlot?.id === s.id ? 'border-johnson-blue bg-blue-50' : 'border-gray-100 bg-white'}`}>
+                        <div className="flex items-center gap-3">
+                          <span className="text-2xl">{timeIcons[idx] || '⏰'}</span>
+                          <div>
+                            <div className="flex items-center gap-2 mb-0.5">
+                              <div className="text-[10px] font-bold text-gray-500 uppercase">{timeLabels[idx] || 'Window'}</div>
+                              <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 uppercase tracking-tighter">Available</span>
+                            </div>
+                            <div className="font-bold">{formatTimeSlotWindow(s.startTime, s.endTime)}</div>
+                          </div>
+                        </div>
+                        {bookingData.selectedTimeSlot?.id === s.id && <CheckCircle className="text-johnson-blue" />}
+                      </button>
+                    );
+                  })}
               </div>
             )}
             <Textarea placeholder="Notes for the technician (optional)..." value={problemDescription} onChange={e => setProblemDescription(e.target.value)} />
