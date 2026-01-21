@@ -135,23 +135,25 @@ export function CardRenderer({ card, onAction, onDismiss, isLoading }: CardRende
         </Card>
       );
 
-    case 'emergency_help':
+    case 'emergency_help': {
+      const eCard = card as any;
       return (
         <EmergencyInstructionsCard
           payload={{
-            title: card.title || 'Emergency Help',
-            message: (card as any).message || (card as any).summary || '',
-            severity: (card as any).severity || 'high',
-            instructions: (card as any).instructions || [],
-            contactLabel: (card as any).contactLabel || 'Call Now',
-            contactPhone: (card as any).contactPhone || '(617) 479-9911',
-            cta: (card as any).cta,
+            title: eCard.title || eCard.emergency_type || 'Emergency Help',
+            message: eCard.message || eCard.summary || eCard.recommendation || '',
+            severity: (eCard.severity || eCard.urgency_level || 'high') as "low" | "medium" | "high" | "critical",
+            instructions: eCard.instructions || eCard.immediate_steps || [],
+            contactLabel: eCard.contactLabel || 'Call Now',
+            contactPhone: eCard.contactPhone || eCard.emergency_contact?.phone || '(617) 479-9911',
+            cta: eCard.cta,
           }}
           onAction={onAction}
           onDismiss={handleDismiss}
           isLoading={isLoading}
         />
       );
+    }
 
     default:
       return null;

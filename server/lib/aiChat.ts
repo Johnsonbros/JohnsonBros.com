@@ -56,11 +56,12 @@ const SYSTEM_PROMPT = generateZekePrompt('sms');
 
 export { SYSTEM_PROMPT, openai, ALLOWED_MCP_TOOLS, MCP_PUBLIC_URL };
 
-export async function processChat(sessionId: string, message: string) {
+export async function processChat(sessionId: string, message: string, channel: string = 'web') {
   try {
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [{ role: "system", content: SYSTEM_PROMPT }, { role: "user", content: message }],
+      response_format: { type: "text" }
     });
 
     const usage = response.usage ? {
@@ -69,11 +70,31 @@ export async function processChat(sessionId: string, message: string) {
       total_tokens: response.usage.total_tokens
     } : undefined;
 
-    const reply = response.choices[0].message.content || "";
+    let reply = response.choices[0].message.content || "";
+
+    // Proactively inject card intents if they are missing but relevant
+    if (channel === 'web' && reply.toLowerCase().includes('emergency') && !reply.includes('card_intent')) {
+      const emergencyCard = {
+        type: "emergency_help",
+        id: `card-${Date.now()}`,
+        title: "Plumbing Emergency Detected",
+        message: "We're here to help. Follow these safety steps and call us immediately.",
+        severity: "critical",
+        instructions: [
+          "Shut off the main water valve immediately",
+          "If you smell gas, leave the building and call 911",
+          "Turn off electricity if water is near outlets",
+          "Call (617) 479-9911 for 24/7 emergency dispatch"
+        ],
+        contactLabel: "Call (617) 479-9911",
+        contactPhone: "(617) 479-9911"
+      };
+      reply += `\n\n\`\`\`card_intent\n${JSON.stringify(emergencyCard, null, 2)}\n\`\`\``;
+    }
 
     await logInteraction({
       sessionId,
-      channel: 'chat',
+      channel: channel as any,
       direction: 'outbound',
       content: reply,
       usage

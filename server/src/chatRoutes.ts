@@ -32,7 +32,7 @@ router.post('/chat', async (req: Request, res: Response) => {
       success: true,
       sessionId: session,
       message: response.message,
-      toolsUsed: response.toolsUsed
+      toolsUsed: (response as any).toolsUsed || []
     });
   } catch (error: any) {
     Logger.error('Chat endpoint error:', error);
