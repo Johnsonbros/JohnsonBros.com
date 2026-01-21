@@ -79,6 +79,7 @@ export function CardRenderer({ card, onAction, onDismiss, isLoading }: CardRende
           card={{ ...card, title: card.title ?? 'Booking Confirmed' }}
           onAction={onAction}
           onDismiss={handleDismiss}
+          isLoading={isLoading}
         />
       );
 

@@ -16,12 +16,19 @@ export const CardTypeEnum = z.enum([
 export type CardType = z.infer<typeof CardTypeEnum>;
 
 const BaseCardSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().default(() => crypto.randomUUID()),
   type: CardTypeEnum,
-  title: z.string(),
+  title: z.string().optional(),
   priority: z.enum(['low', 'medium', 'high']).default('medium'),
   createdAt: z.string().datetime().optional(),
   threadId: z.string().optional(),
+  version: z.literal("1").default("1"),
+});
+
+const CtaSchema = z.object({
+  label: z.string(),
+  action: z.string(),
+  payload: z.record(z.unknown()).optional(),
 });
 
 export const LeadCardSchema = BaseCardSchema.extend({
@@ -72,7 +79,8 @@ export const DatePickerCardSchema = BaseCardSchema.extend({
   serviceId: z.string().optional(),
   availableDates: z.array(z.object({
     date: z.string(),
-    slotsAvailable: z.number(),
+    label: z.string().optional(),
+    slotsAvailable: z.number().optional(),
     capacityState: z.enum(['SAME_DAY_FEE_WAIVED', 'LIMITED_SAME_DAY', 'NEXT_DAY', 'AVAILABLE']).optional(),
   })).optional(),
   selectedDate: z.string().optional(),
@@ -81,7 +89,7 @@ export const DatePickerCardSchema = BaseCardSchema.extend({
 export const TimePickerCardSchema = BaseCardSchema.extend({
   type: z.literal('time_picker'),
   message: z.string().optional(),
-  selectedDate: z.string(),
+  selectedDate: z.string().optional(),
   slots: z.array(z.object({
     id: z.string(),
     label: z.string(),
@@ -90,6 +98,10 @@ export const TimePickerCardSchema = BaseCardSchema.extend({
     endTime: z.string().optional(),
     available: z.boolean(),
     technicianCount: z.number().optional(),
+  })).optional(),
+  availableTimes: z.array(z.object({
+    time: z.string(),
+    label: z.string().optional(),
   })).optional(),
   selectedSlot: z.string().optional(),
 });
@@ -100,35 +112,28 @@ export const BookingConfirmationCardSchema = BaseCardSchema.extend({
   booking: z.object({
     jobId: z.string().optional(),
     externalId: z.string().optional(),
-    customerName: z.string(),
-    phone: z.string(),
-    address: z.string(),
-    serviceType: z.string(),
+    customerName: z.string().optional(),
+    phone: z.string().optional(),
+    address: z.string().optional(),
+    serviceType: z.string().optional(),
     scheduledDate: z.string(),
     scheduledTime: z.string(),
     estimatedArrival: z.string().optional(),
     confirmationNumber: z.string().optional(),
   }),
-  cta: z.object({
-    label: z.string(),
-    action: z.string(),
-    payload: z.record(z.unknown()).optional(),
-  }).optional(),
+  cta: CtaSchema.optional(),
 });
 
 export const ServiceRecommendationCardSchema = BaseCardSchema.extend({
   type: z.literal('service_recommendation'),
-  summary: z.string(),
+  summary: z.string().optional(),
+  description: z.string().optional(),
   priceRange: z.object({
     min: z.number(),
     max: z.number(),
     currency: z.string().default('USD'),
   }).optional(),
-  cta: z.object({
-    label: z.string(),
-    action: z.string(),
-    payload: z.record(z.unknown()).optional(),
-  }).optional(),
+  cta: CtaSchema.optional(),
 });
 
 export const ServiceFeeCardSchema = BaseCardSchema.extend({
@@ -136,16 +141,12 @@ export const ServiceFeeCardSchema = BaseCardSchema.extend({
   message: z.string().optional(),
   amount: z.number().default(99),
   waived: z.boolean().optional(),
-  cta: z.object({
-    label: z.string(),
-    action: z.string(),
-    payload: z.record(z.unknown()).optional(),
-  }).optional(),
+  cta: CtaSchema.optional(),
 });
 
 export const EstimateRangeCardSchema = BaseCardSchema.extend({
   type: z.literal('estimate_range'),
-  summary: z.string(),
+  summary: z.string().optional(),
   range: z.object({
     min: z.number(),
     max: z.number(),
@@ -161,11 +162,7 @@ export const EmergencyHelpCardSchema = BaseCardSchema.extend({
   instructions: z.array(z.string()).default([]),
   contactLabel: z.string().optional(),
   contactPhone: z.string().optional(),
-  cta: z.object({
-    label: z.string(),
-    action: z.string(),
-    payload: z.record(z.unknown()).optional(),
-  }).optional(),
+  cta: CtaSchema.optional(),
 });
 
 export const CardIntentSchema = z.discriminatedUnion('type', [
