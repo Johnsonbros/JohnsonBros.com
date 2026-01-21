@@ -139,16 +139,17 @@ export function CardRenderer({ card, onAction, onDismiss, isLoading }: CardRende
       return (
         <EmergencyInstructionsCard
           payload={{
-            title: card.title,
-            message: card.message,
+            title: card.title || 'Emergency Help',
+            message: card.message || '',
             severity: card.severity,
-            instructions: card.instructions ?? [],
+            instructions: card.instructions || [],
             contactLabel: card.contactLabel,
             contactPhone: card.contactPhone,
             cta: card.cta,
           }}
           onAction={onAction}
           onDismiss={handleDismiss}
+          isLoading={isLoading}
         />
       );
 
