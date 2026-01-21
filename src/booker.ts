@@ -2197,10 +2197,25 @@ RETURNS: Service name, price range (min/max in USD), estimated duration, urgency
   }
 );
 
+// Shared response formatting helper
+function formatMcpResponse(result: any, channel: string = 'web') {
+  const text = typeof result === 'string' ? result : JSON.stringify(result);
+  
+  // If channel is SMS or Voice, strip card_intent markers
+  if (channel === 'sms' || channel === 'voice') {
+    // Regular expression to match ```card_intent ... ``` blocks
+    const cardIntentRegex = /```card_intent[\s\S]*?```/g;
+    return text.replace(cardIntentRegex, '').trim();
+  }
+  
+  return text;
+}
+
 // Emergency Help Tool
 const EmergencyHelpInput = z.object({
   emergency_type: z.string().describe("Type of plumbing emergency"),
-  additional_details: z.string().optional().describe("Any additional details about the situation")
+  additional_details: z.string().optional().describe("Any additional details about the situation"),
+  channel: z.enum(["web", "sms", "voice", "chatgpt"]).default("web").describe("Communication channel")
 });
 
 registerToolWithDiagnostics(
@@ -2234,6 +2249,11 @@ IMPORTANT: For gas leaks, always advise leaving the house and calling 911 first.
         additional_details: { 
           type: "string", 
           description: "Additional context about the emergency (optional). Include: location in home, how long it's been happening, any actions already taken. Example: 'Pipe burst in basement, water is actively spraying, I can't find the shutoff valve'" 
+        },
+        channel: {
+          type: "string",
+          enum: ["web", "sms", "voice", "chatgpt"],
+          description: "Communication channel calling the tool (default: 'web')"
         }
       },
       required: ["emergency_type"]
@@ -2256,6 +2276,7 @@ IMPORTANT: For gas leaks, always advise leaving the house and calling 911 first.
     
     try {
       const input = EmergencyHelpInput.parse(raw);
+      const channel = input.channel || 'web';
       log.info({ input, correlationId }, "emergency_help: start");
 
       // Match emergency type to guidance
@@ -2336,24 +2357,27 @@ IMPORTANT: For gas leaks, always advise leaving the house and calling 911 first.
 
       log.info({ result: { emergency_type: guidance.title, urgency: guidance.urgency }, correlationId }, "emergency_help: success");
 
+      const textResponse = `I've found some emergency guidance for ${input.emergency_type}. Please follow these steps immediately.\n\nImmediate steps to take:\n${guidance.immediateSteps.map(i => `- ${i}`).join('\n')}\n\nPlease call us immediately at 617-479-9911 for 24/7 emergency dispatch.\n\n\`\`\`card_intent\n${JSON.stringify(result, null, 2)}\n\`\`\``;
+
       return {
         content: [
-          { type: "text", text: `I've found some emergency guidance for ${input.emergency_type}. Please follow these steps immediately.` },
-          { type: "text", text: `\`\`\`card_intent\n${JSON.stringify(result, null, 2)}\n\`\`\`` }
+          { type: "text", text: formatMcpResponse(textResponse, channel) }
         ]
       };
       
     } catch (err: any) {
       log.error({ error: err.message, correlationId }, "emergency_help: error");
       
+      const errorResult = {
+        success: false,
+        error: "Unable to process emergency request. For immediate help, call (617) 479-9911.",
+        correlation_id: correlationId
+      };
+
       return {
         content: [{
           type: "text",
-          text: JSON.stringify({
-            success: false,
-            error: "Unable to process emergency request. For immediate help, call (617) 555-0123.",
-            correlation_id: correlationId
-          }, null, 2)
+          text: formatMcpResponse(JSON.stringify(errorResult, null, 2), (raw as any).channel || 'web')
         }]
       };
     }

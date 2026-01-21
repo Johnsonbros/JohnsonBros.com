@@ -61,8 +61,16 @@ export async function processChat(sessionId: string, message: string, channel: s
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [{ role: "system", content: SYSTEM_PROMPT }, { role: "user", content: message }],
-      response_format: { type: "text" }
-    });
+      response_format: { type: "text" },
+      tools: ALLOWED_MCP_TOOLS.length > 0 ? ALLOWED_MCP_TOOLS.map(t => ({
+        type: "function",
+        function: {
+          name: t.name,
+          description: t.description,
+          parameters: t.inputSchema
+        }
+      })) : undefined
+    } as any);
 
     const usage = response.usage ? {
       prompt_tokens: response.usage.prompt_tokens,
@@ -71,6 +79,33 @@ export async function processChat(sessionId: string, message: string, channel: s
     } : undefined;
 
     let reply = response.choices[0].message.content || "";
+    const toolCalls = response.choices[0].message.tool_calls;
+
+    if (toolCalls && toolCalls.length > 0) {
+      const toolResponses = await Promise.all(toolCalls.map(async (toolCall: any) => {
+        const name = toolCall.function.name;
+        const args = JSON.parse(toolCall.function.arguments);
+        const result = await callMcpTool(name, args, channel);
+        return {
+          role: "tool",
+          tool_call_id: toolCall.id,
+          name,
+          content: result.raw
+        };
+      }));
+
+      const secondResponse = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: message },
+          response.choices[0].message,
+          ...toolResponses as any[]
+        ]
+      });
+
+      reply = secondResponse.choices[0].message.content || "";
+    }
 
     // Proactively inject card intents if they are missing but relevant
     if (channel === 'web' && reply.toLowerCase().includes('emergency') && !reply.includes('card_intent')) {
@@ -90,6 +125,12 @@ export async function processChat(sessionId: string, message: string, channel: s
         contactPhone: "(617) 479-9911"
       };
       reply += `\n\n\`\`\`card_intent\n${JSON.stringify(emergencyCard, null, 2)}\n\`\`\``;
+    }
+
+    // Strip card intents for SMS/Voice channels if they were accidentally included by AI or tools
+    if (channel === 'sms' || channel === 'voice') {
+      const cardIntentRegex = /```card_intent[\s\S]*?```/g;
+      reply = reply.replace(cardIntentRegex, '').trim();
     }
 
     await logInteraction({

@@ -129,16 +129,22 @@ export async function listMcpTools(): Promise<any[]> {
   }
 }
 
-export async function callMcpTool<T = unknown>(name: string, args: Record<string, unknown>): Promise<{
+export async function callMcpTool<T = unknown>(name: string, args: Record<string, unknown>, channel: string = 'web'): Promise<{
   raw: string;
   parsed?: T;
 }> {
   try {
     const client = await connectMcpClient();
 
-    Logger.info(`[MCP] Executing tool: ${name}`, { args });
+    // Inject channel into arguments if not present
+    const toolArgs = { ...args };
+    if (!toolArgs.channel) {
+      toolArgs.channel = channel;
+    }
+
+    Logger.info(`[MCP] Executing tool: ${name}`, { args: toolArgs });
     const result = await withTimeout(
-      client.callTool({ name, arguments: args }),
+      client.callTool({ name, arguments: toolArgs }),
       TOOL_CALL_TIMEOUT_MS,
       `MCP tool call: ${name}`
     ) as McpToolResult;
