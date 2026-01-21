@@ -16,11 +16,13 @@ export class AdminMcpGateway {
   async registerSubServer(name: string, server: McpServer) {
     this.servers.set(name, server);
     // @ts-ignore - access internal tools for aggregation
-    const tools = server.listTools();
-    for (const tool of tools) {
-      const namespacedName = `${name}.${tool.name}`;
-      this.toolRegistry.set(namespacedName, { serverName: name, tool });
-      Logger.debug(`Registered tool: ${namespacedName}`);
+    const tools = (server as any).tools;
+    if (tools) {
+      for (const [toolName, tool] of Object.entries(tools)) {
+        const namespacedName = `${name}.${toolName}`;
+        this.toolRegistry.set(namespacedName, { serverName: name, tool });
+        Logger.debug(`Registered tool: ${namespacedName}`);
+      }
     }
   }
 
@@ -36,7 +38,8 @@ export class AdminMcpGateway {
     }
 
     Logger.info(`Gateway routing call to ${entry.serverName}: ${entry.tool.name}`);
-    return await server.callTool(entry.tool.name, args);
+    // Use the registered handler directly since McpServer.callTool isn't a public method in some versions
+    return await entry.tool.execute(args);
   }
 
   listNamespacedTools() {
