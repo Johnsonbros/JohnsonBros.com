@@ -1,3 +1,10 @@
+import { Logger } from "../src/logger";
+import { adminGateway } from "./adminGateway";
+import { customersServer } from "./sub-servers/customers";
+import { jobsServer } from "./sub-servers/jobs";
+import { schedulingServer } from "./sub-servers/scheduling";
+import { leadsServer } from "./sub-servers/leads";
+
 export { adminGateway } from "./adminGateway";
 export { customersServer } from "./sub-servers/customers";
 export { jobsServer } from "./sub-servers/jobs";
@@ -17,8 +24,6 @@ export async function initAdminMcp() {
     await adminGateway.registerSubServer("jobs", jobsServer as any);
     await adminGateway.registerSubServer("scheduling", schedulingServer as any);
     await adminGateway.registerSubServer("leads", leadsServer as any);
-    
-    // Add more sub-servers as they are implemented...
     
     Logger.info("Admin MCP Gateway initialization complete");
     return adminGateway;
