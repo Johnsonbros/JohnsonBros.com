@@ -301,9 +301,22 @@ const blogLimiter = rateLimit({
 import zekeAdminRouter from "./routes/zekeAdmin";
 import { adminGateway } from "./mcp/adminGateway";
 
+import { runFullSeoPipeline } from "./lib/seo-agent/pipeline/orchestrator";
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Register ZEKE Admin routes
   app.use('/api/v1/admin/zeke', zekeAdminRouter);
+
+  // SEO Automation Endpoint (Cron Trigger)
+  app.post('/api/admin/seo/trigger', authenticate, async (req, res) => {
+    try {
+      // Run in background
+      runFullSeoPipeline().catch(err => Logger.error('[SEO Route] Pipeline background error:', err));
+      res.json({ success: true, message: 'SEO Pipeline triggered in background' });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
 
   // Admin MCP Registry
   app.get("/api/admin/mcp/tools", (req, res) => {
