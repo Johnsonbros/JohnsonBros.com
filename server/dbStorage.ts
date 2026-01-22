@@ -456,7 +456,18 @@ export class DatabaseStorage implements IStorage {
     return mix;
   }
 
-  // System Settings methods
+  async getMemberSubscription(customerId: number): Promise<MemberSubscription | undefined> {
+    const [sub] = await db.select().from(memberSubscriptions).where(eq(memberSubscriptions.customerId, customerId)).limit(1);
+    return sub;
+  }
+
+  async getUpsellOffersForService(serviceType: string) {
+    return await db.select().from(upsellOffers).where(and(eq(upsellOffers.isActive, true), sql`${upsellOffers.relevantServices} ? ${serviceType}`));
+  }
+
+  async getAvailableTimeSlots(date: Date) {
+    return await db.select().from(availableTimeSlots).where(eq(availableTimeSlots.date, date));
+  }
   async getSystemSetting<T>(key: string): Promise<T | undefined> {
     const [setting] = await db.select().from(systemSettings).where(eq(systemSettings.key, key)).limit(1);
     return setting?.value as T | undefined;

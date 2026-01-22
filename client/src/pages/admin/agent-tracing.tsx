@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { 
   MessageSquare, Phone, Mail, Bot, User, Wrench, Clock, 
   CheckCircle, XCircle, AlertTriangle, Download, RefreshCw,
-  Star, Flag, ThumbsUp, ThumbsDown, FileText, Activity
+  Star, Flag, ThumbsUp, ThumbsDown, FileText, Activity, Search
 } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
 import { format, formatDistanceToNow } from "date-fns";
@@ -113,6 +113,7 @@ export default function AgentTracingPage() {
     }
   };
 
+  const [searchTerm, setSearchTerm] = useState("");
   const { data: statsData, isLoading: statsLoading, refetch: refetchStats } = useQuery<{
     conversations: ConversationStats;
     toolCalls: ToolCallStats;
@@ -126,12 +127,13 @@ export default function AgentTracingPage() {
   });
 
   const { data: conversations, isLoading: conversationsLoading, refetch: refetchConversations } = useQuery<AgentConversation[]>({
-    queryKey: ['/api/admin/agent-tracing/conversations', selectedChannel, selectedOutcome],
+    queryKey: ['/api/admin/agent-tracing/conversations', selectedChannel, selectedOutcome, searchTerm],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (selectedChannel !== 'all') params.append('channel', selectedChannel);
       if (selectedOutcome !== 'all') params.append('outcome', selectedOutcome);
-      const res = await fetch(`/api/admin/agent-tracing/conversations?${params}`, authHeaders);
+      if (searchTerm) params.append('search', searchTerm);
+      const res = await fetch(`/api/admin/agent-tracing/conversations?${params.toString()}`, authHeaders);
       if (!res.ok) throw new Error('Failed to fetch conversations');
       return res.json();
     },
@@ -364,7 +366,18 @@ export default function AgentTracingPage() {
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle>Conversation History</CardTitle>
+                  <div className="flex items-center gap-4">
+                    <CardTitle>Conversation History</CardTitle>
+                    <div className="relative w-64">
+                      <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        placeholder="Search messages..." 
+                        className="pl-8 h-9"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                      />
+                    </div>
+                  </div>
                   <div className="flex gap-2">
                     <Select value={selectedChannel} onValueChange={setSelectedChannel}>
                       <SelectTrigger className="w-[150px]" data-testid="select-channel">

@@ -3,7 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Settings, Save, Database, Plus } from "lucide-react";
@@ -23,8 +26,9 @@ export function DatasetManager() {
   });
 
   useEffect(() => {
-    if (modelSetting?.value?.primaryModel) {
-      setPrimaryModel(modelSetting.value.primaryModel);
+    const settings = modelSetting as any;
+    if (settings?.value?.primaryModel) {
+      setPrimaryModel(settings.value.primaryModel);
     }
   }, [modelSetting]);
 
@@ -35,6 +39,21 @@ export function DatasetManager() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/v1/system/settings/ai_models'] });
       toast({ title: "Settings updated", description: "Global AI model settings have been saved." });
+    }
+  });
+
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [newDataset, setNewDataset] = useState({ name: '', purpose: '', targetCount: 100 });
+
+  const createDatasetMutation = useMutation({
+    mutationFn: async (data: typeof newDataset) => {
+      await apiRequest('POST', '/api/v1/voice-training/datasets', data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/v1/voice-training/datasets"] });
+      setIsCreateModalOpen(false);
+      setNewDataset({ name: '', purpose: '', targetCount: 100 });
+      toast({ title: "Dataset created", description: "The new training dataset has been initialized." });
     }
   });
 
@@ -85,9 +104,55 @@ export function DatasetManager() {
 
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold tracking-tight">Training Datasets</h2>
-        <Button size="sm" variant="outline" className="gap-2">
-          <Plus className="h-4 w-4" /> New Dataset
-        </Button>
+        <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+          <DialogTrigger asChild>
+            <Button size="sm" variant="outline" className="gap-2">
+              <Plus className="h-4 w-4" /> New Dataset
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create New Dataset</DialogTitle>
+              <DialogDescription>Initialize a new collection for voice training data.</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Dataset Name</Label>
+                <Input 
+                  placeholder="e.g. Nate Sales Tone V3" 
+                  value={newDataset.name}
+                  onChange={e => setNewDataset(prev => ({ ...prev, name: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Purpose</Label>
+                <Textarea 
+                  placeholder="What is this dataset trying to achieve?" 
+                  value={newDataset.purpose}
+                  onChange={e => setNewDataset(prev => ({ ...prev, purpose: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Target Samples</Label>
+                <Input 
+                  type="number" 
+                  value={newDataset.targetCount}
+                  onChange={e => setNewDataset(prev => ({ ...prev, targetCount: parseInt(e.target.value) }))}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>Cancel</Button>
+              <Button 
+                className="bg-johnson-orange hover:bg-johnson-orange/90"
+                onClick={() => createDatasetMutation.mutate(newDataset)}
+                disabled={createDatasetMutation.isPending || !newDataset.name}
+              >
+                Create Dataset
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">

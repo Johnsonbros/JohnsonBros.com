@@ -85,12 +85,17 @@ export interface IStorage {
   getEmailTemplate(id: number): Promise<EmailTemplate | undefined>;
   createEmailTemplate(template: InsertEmailTemplate): Promise<EmailTemplate>;
   updateEmailTemplate(id: number, template: Partial<InsertEmailTemplate>): Promise<EmailTemplate | undefined>;
+  getMemberSubscription(customerId: number): Promise<MemberSubscription | undefined>;
 
   // Upsell Offer methods
   getUpsellOffers(): Promise<UpsellOffer[]>;
+  getUpsellOffersForService(serviceType: string): Promise<UpsellOffer[]>;
 
   // Subscription methods
   getSubscriptions(): Promise<MemberSubscription[]>;
+
+  // Appointment/Scheduling methods
+  getAvailableTimeSlots(date: Date): Promise<AvailableTimeSlot[]>;
 
   // Revenue Metrics methods
   getRevenueMetrics(startDate: Date, endDate: Date): Promise<RevenueMetric[]>;
@@ -417,8 +422,17 @@ export class MemStorage implements IStorage {
     return Array.from(this.upsellOffers.values()).filter(o => o.isActive);
   }
 
-  async getSubscriptions(): Promise<MemberSubscription[]> {
-    return Array.from(this.memberSubscriptions.values());
+  async getMemberSubscription(customerId: number): Promise<MemberSubscription | undefined> {
+    return Array.from(this.memberSubscriptions.values()).find(s => s.customerId === customerId);
+  }
+
+  async getUpsellOffersForService(serviceType: string): Promise<UpsellOffer[]> {
+    return Array.from(this.upsellOffers.values()).filter(o => o.isActive && (o.relevantServices as string[]).includes(serviceType));
+  }
+
+  async getAvailableTimeSlots(date: Date): Promise<AvailableTimeSlot[]> {
+    // Basic mock implementation for MemStorage
+    return [];
   }
 
   async getRevenueMetrics(startDate: Date, endDate: Date): Promise<RevenueMetric[]> {

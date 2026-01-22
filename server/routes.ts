@@ -10,7 +10,7 @@ import {
   type BlogPost, type Keyword, type PostKeyword, type KeywordRanking,
   checkIns, jobLocations,
   insertLeadSchema, smsVerificationFailures,
-  housecallWebhooks
+  housecallWebhooks, voiceDatasetMixes, voiceDatasetMixResults, voiceTranscriptAssignments
 } from "@shared/schema";
 import { ZekeProactiveService } from "./lib/zekeProactive";
 import { TranscriptionPipeline } from "./lib/voice-training/pipeline";
@@ -412,12 +412,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/v1/voice-training/datasets', authenticate, async (req, res) => {
+  app.get('/api/v1/voice-training/datasets/:id/sections', authenticate, async (req, res) => {
     try {
-      const datasets = await storage.getVoiceDatasets();
-      res.json(datasets);
+      const sections = await storage.getVoiceDatasetSections(parseInt(req.params.id));
+      res.json(sections);
     } catch (error) {
-      res.status(500).json({ error: 'Failed to fetch datasets' });
+      res.status(500).json({ error: 'Failed to fetch sections' });
+    }
+  });
+
+  app.post('/api/v1/voice-training/sections', authenticate, async (req, res) => {
+    try {
+      const section = await storage.createVoiceDatasetSection(req.body);
+      res.json(section);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to create section' });
     }
   });
 
@@ -447,7 +456,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Trigger pipeline for each
       for (const rec of recordings) {
         transcriptionPipeline.processCall(rec.id).catch(err => 
-          Logger.error(`[Manual Import] Pipeline failed for ${rec.id}:`, err)
+          Logger.error(`[Manual Import] Pipeline failed for ${rec.id}:`, (err as any).message)
         );
       }
 
@@ -481,16 +490,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const mix = await storage.getVoiceDatasetMix(mixId);
       if (!mix) return res.status(404).json({ error: 'Mix not found' });
 
-      // Placeholder for actual aggregation and blending logic
-      // In a real implementation, this would query transcripts based on section ratios,
-      // shuffle them, and store in voice_dataset_mix_results.
+      // Actual aggregation and blending logic
+      const config = mix.config as any;
+      const ratios = config.ratios || {};
+      const limit = config.limit || 100;
+      
+      const allTranscripts: any[] = [];
+      
+      // For each section in the ratio, gather transcripts
+      for (const [sectionId, weight] of Object.entries(ratios)) {
+        const assignments = await db.select()
+          .from(voiceTranscriptAssignments)
+          .where(and(
+            eq(voiceTranscriptAssignments.sectionId, parseInt(sectionId)),
+            eq(voiceTranscriptAssignments.status, 'approved')
+          ));
+        
+        const count = Math.floor(limit * (weight as number));
+        const selected = assignments
+          .sort(() => 0.5 - Math.random())
+          .slice(0, count);
+          
+        allTranscripts.push(...selected);
+      }
+
+      // Shuffle and save results
+      if (config.shuffle !== false) {
+        allTranscripts.sort(() => 0.5 - Math.random());
+      }
+
+      await db.delete(voiceDatasetMixResults).where(eq(voiceDatasetMixResults.mixId, mixId));
+      
+      if (allTranscripts.length > 0) {
+        await db.insert(voiceDatasetMixResults).values(
+          allTranscripts.slice(0, limit).map((t, i) => ({
+            mixId,
+            transcriptId: t.transcriptId,
+            order: i
+          }))
+        );
+      }
       
       await db.update(voiceDatasetMixes)
         .set({ status: 'ready' })
         .where(eq(voiceDatasetMixes.id, mixId));
 
-      res.json({ success: true, message: 'Dataset mix generated' });
+      res.json({ success: true, message: 'Dataset mix generated', count: allTranscripts.length });
     } catch (error) {
+      Logger.error('[Mix Generation] Failed:', error);
       res.status(500).json({ error: 'Failed to generate dataset mix' });
     }
   });
