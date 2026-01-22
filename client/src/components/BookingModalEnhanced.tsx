@@ -190,8 +190,8 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
   const queryClient = useQueryClient();
 
   const steps = [
-    { id: 1, name: "Identity", icon: User },
-    { id: 2, name: "Schedule", icon: Calendar },
+    { id: 1, name: "Schedule", icon: Calendar },
+    { id: 2, name: "Identity", icon: User },
     { id: 3, name: "Verification", icon: Shield },
     { id: 4, name: "Confirm", icon: CheckCircle },
   ];
@@ -216,8 +216,6 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
     mutationFn: lookupCustomer,
     onSuccess: (data: any) => {
       if (data.customers && data.customers.length > 0) {
-        // If multiple customers or multiple addresses, we'd ideally let them pick.
-        // For now, let's store the raw customers and check addresses.
         const c = data.customers[0];
         setBookingData(prev => ({
           ...prev,
@@ -286,12 +284,12 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
   };
 
   const handleNextStep = () => {
-    if (currentStep === 1 && (!bookingData.customer || !bookingData.customer.address)) {
-      toast({ title: "Profile & Address Required", description: "Please identify yourself and ensure a service address is set.", variant: "destructive" });
+    if (currentStep === 1 && !bookingData.selectedTimeSlot) {
+      toast({ title: "Selection Required", description: "Please pick a time slot.", variant: "destructive" });
       return;
     }
-    if (currentStep === 2 && !bookingData.selectedTimeSlot) {
-      toast({ title: "Selection Required", description: "Please pick a time slot.", variant: "destructive" });
+    if (currentStep === 2 && (!bookingData.customer || !bookingData.customer.address)) {
+      toast({ title: "Profile & Address Required", description: "Please identify yourself and ensure a service address is set.", variant: "destructive" });
       return;
     }
     if (currentStep === 3 && bookingData.smsVerification.status !== "verified") {
@@ -316,113 +314,8 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
 
         {currentStep === 1 && (
           <div className="space-y-6">
-            {bookingData.selectedDate && bookingData.selectedTimeSlot && (
-              <div className="bg-johnson-blue/5 border border-johnson-blue/20 rounded-xl p-3 mb-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="bg-johnson-blue text-white p-2 rounded-lg">
-                    <Calendar className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <div className="text-[10px] uppercase font-bold text-johnson-blue/60 tracking-wider">Your Selection</div>
-                    <div className="text-sm font-bold text-johnson-blue">
-                      {new Date(bookingData.selectedDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} • {formatTimeSlotWindow(bookingData.selectedTimeSlot.startTime, bookingData.selectedTimeSlot.endTime)}
-                    </div>
-                  </div>
-                </div>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="text-johnson-blue hover:bg-johnson-blue/10 font-bold text-xs h-8"
-                  onClick={() => setCurrentStep(2)}
-                >
-                  Change
-                </Button>
-              </div>
-            )}
-            <div className="bg-blue-50 p-3 rounded-lg flex items-center gap-2 border border-blue-100">
-              <Lock className="w-4 h-4 text-blue-600" />
-              <span className="text-xs text-blue-800 font-medium">Secure & Encrypted Lookup</span>
-            </div>
-            <Tabs defaultValue="returning" onValueChange={(v) => setCustomerType(v as any)}>
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="new">New Customer</TabsTrigger>
-                <TabsTrigger value="returning">Returning Customer</TabsTrigger>
-              </TabsList>
-              <TabsContent value="returning" className="pt-4 space-y-4">
-                <Input placeholder="First Name" value={returningCustomerForm.watch("firstName")} onChange={e => returningCustomerForm.setValue("firstName", e.target.value)} />
-                <Input placeholder="Last Name" value={returningCustomerForm.watch("lastName")} onChange={e => returningCustomerForm.setValue("lastName", e.target.value)} />
-                <Input placeholder="Phone" value={returningCustomerForm.watch("phone")} onChange={e => returningCustomerForm.setValue("phone", e.target.value)} />
-                <Button className="w-full" onClick={() => lookupCustomerMutation.mutate(returningCustomerForm.getValues())}>
-                  {lookupCustomerMutation.isPending ? "Searching..." : "Look up Profile"}
-                </Button>
-              </TabsContent>
-              <TabsContent value="new" className="pt-4 space-y-4">
-                <Input placeholder="First Name" {...newCustomerForm.register("firstName")} />
-                <Input placeholder="Last Name" {...newCustomerForm.register("lastName")} />
-                <Input placeholder="Phone" {...newCustomerForm.register("phone")} />
-                <AddressAutocomplete onSelect={(addr) => {
-                  newCustomerForm.setValue("address", addr);
-                  setBookingData(prev => ({ ...prev, customer: { ...newCustomerForm.getValues(), id: 'new', address: addr, email: "" } }));
-                }} />
-              </TabsContent>
-            </Tabs>
-            {bookingData.customer && (
-              <div className="bg-green-50 p-4 rounded-xl border border-green-200">
-                <div className="flex items-center gap-2 text-green-800 font-bold text-sm mb-1"><CheckCircle className="w-4 h-4" /> Profile Active</div>
-                <div className="text-xs text-green-700 font-medium mb-2">{bookingData.customer.firstName} {bookingData.customer.lastName} • {bookingData.customer.phone}</div>
-                
-                {/* Address selection for existing profiles */}
-                {lookupCustomerMutation.data?.customers?.[0]?.addresses?.length > 1 && (
-                  <div className="mt-2 space-y-2">
-                    <Label className="text-[10px] uppercase text-green-700 font-bold">Select Service Address</Label>
-                    <Select 
-                      value={selectedAddressIndex?.toString()} 
-                      onValueChange={(val) => {
-                        const idx = parseInt(val);
-                        setSelectedAddressIndex(idx);
-                        const addr = lookupCustomerMutation.data.customers[0].addresses[idx];
-                        setBookingData(prev => ({
-                          ...prev,
-                          customer: { ...prev.customer!, address: addr.street }
-                        }));
-                      }}
-                    >
-                      <SelectTrigger className="bg-white border-green-200 text-xs h-8">
-                        <SelectValue placeholder="Pick an address" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {lookupCustomerMutation.data.customers[0].addresses.map((addr: any, idx: number) => (
-                          <SelectItem key={idx} value={idx.toString()}>
-                            {addr.street}, {addr.city}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-                {!lookupCustomerMutation.data?.customers?.[0]?.addresses?.length && customerType === "returning" && (
-                   <div className="mt-2">
-                     <Label className="text-[10px] uppercase text-green-700 font-bold">No address on file. Please enter one:</Label>
-                     <AddressAutocomplete onSelect={(addr) => setBookingData(prev => ({ ...prev, customer: { ...prev.customer!, address: addr } }))} />
-                   </div>
-                )}
-                {lookupCustomerMutation.data?.customers?.[0]?.addresses?.length === 1 && (
-                  <div className="text-[10px] text-green-600 italic mt-1">
-                    Service Address: {bookingData.customer.address}
-                  </div>
-                )}
-              </div>
-            )}
-            <div className="flex justify-end gap-2 pt-4">
-              <Button variant="outline" onClick={onClose}>Cancel</Button>
-              <Button className="bg-johnson-blue" onClick={handleNextStep} disabled={!bookingData.customer}>Continue <ChevronRight className="w-4 h-4 ml-1" /></Button>
-            </div>
-          </div>
-        )}
-
-        {currentStep === 2 && (
-          <div className="space-y-6">
-            <h3 className="font-bold text-lg">Select Your Window</h3>
+            <h3 className="font-bold text-lg text-johnson-blue">1. Select Date & Window</h3>
+            <p className="text-xs text-gray-500 -mt-4">Verify availability before profile creation</p>
             <div className="flex gap-2 p-1 bg-gray-100 rounded-lg">
               <Button variant={weekOffset === 0 ? "secondary" : "ghost"} size="sm" className="flex-1" onClick={() => setWeekOffset(0)}>This Week</Button>
               <Button variant={weekOffset === 1 ? "secondary" : "ghost"} size="sm" className="flex-1" onClick={() => setWeekOffset(1)}>Next Week</Button>
@@ -462,9 +355,96 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
               </div>
             )}
             <Textarea placeholder="Notes for the technician (optional)..." value={problemDescription} onChange={e => setProblemDescription(e.target.value)} />
-            <div className="flex justify-between pt-4">
-              <Button variant="outline" onClick={handlePreviousStep}><ChevronLeft className="w-4 h-4 mr-1" /> Back</Button>
-              <Button className="bg-johnson-blue" onClick={handleNextStep} disabled={!bookingData.selectedTimeSlot}>Continue <ChevronRight className="w-4 h-4 ml-1" /></Button>
+            <div className="flex justify-end gap-2 pt-4">
+              <Button variant="outline" onClick={onClose}>Cancel</Button>
+              <Button className="bg-johnson-blue" onClick={handleNextStep} disabled={!bookingData.selectedTimeSlot}>Continue to Profile <ChevronRight className="w-4 h-4 ml-1" /></Button>
+            </div>
+          </div>
+        )}
+
+        {currentStep === 2 && (
+          <div className="space-y-6">
+            {bookingData.selectedDate && bookingData.selectedTimeSlot && (
+              <div className="bg-johnson-blue/5 border border-johnson-blue/20 rounded-xl p-3 mb-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="bg-johnson-blue text-white p-2 rounded-lg">
+                    <Calendar className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="text-[10px] uppercase font-bold text-johnson-blue/60 tracking-wider">Your Selection</div>
+                    <div className="text-sm font-bold text-johnson-blue">
+                      {new Date(bookingData.selectedDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} • {formatTimeSlotWindow(bookingData.selectedTimeSlot.startTime, bookingData.selectedTimeSlot.endTime)}
+                    </div>
+                  </div>
+                </div>
+                <Button variant="ghost" size="sm" className="text-johnson-blue hover:bg-johnson-blue/10 font-bold text-xs h-8" onClick={() => setCurrentStep(1)}>Change</Button>
+              </div>
+            )}
+            <h3 className="font-bold text-lg">2. Identity & Profile</h3>
+            <div className="bg-blue-50 p-3 rounded-lg flex items-center gap-2 border border-blue-100">
+              <Lock className="w-4 h-4 text-blue-600" />
+              <span className="text-xs text-blue-800 font-medium">Secure & Encrypted Lookup</span>
+            </div>
+            <Tabs defaultValue="returning" onValueChange={(v) => setCustomerType(v as any)}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="new">New Customer</TabsTrigger>
+                <TabsTrigger value="returning">Returning Customer</TabsTrigger>
+              </TabsList>
+              <TabsContent value="returning" className="pt-4 space-y-4">
+                <Input placeholder="First Name" value={returningCustomerForm.watch("firstName")} onChange={e => returningCustomerForm.setValue("firstName", e.target.value)} />
+                <Input placeholder="Last Name" value={returningCustomerForm.watch("lastName")} onChange={e => returningCustomerForm.setValue("lastName", e.target.value)} />
+                <Input placeholder="Phone" value={returningCustomerForm.watch("phone")} onChange={e => returningCustomerForm.setValue("phone", e.target.value)} />
+                <Button className="w-full" onClick={() => lookupCustomerMutation.mutate(returningCustomerForm.getValues())}>
+                  {lookupCustomerMutation.isPending ? "Searching..." : "Look up Profile"}
+                </Button>
+              </TabsContent>
+              <TabsContent value="new" className="pt-4 space-y-4">
+                <Input placeholder="First Name" {...newCustomerForm.register("firstName")} />
+                <Input placeholder="Last Name" {...newCustomerForm.register("lastName")} />
+                <AddressAutocomplete 
+                  value={newCustomerForm.watch("address") || ""}
+                  onChange={(addr: string) => {
+                    newCustomerForm.setValue("address", addr);
+                    setBookingData(prev => ({ ...prev, customer: { firstName: newCustomerForm.getValues().firstName, lastName: newCustomerForm.getValues().lastName, phone: newCustomerForm.getValues().phone, id: 'new', address: addr, email: "" } }));
+                  }} 
+                />
+              </TabsContent>
+            </Tabs>
+            {bookingData.customer && (
+              <div className="bg-green-50 p-4 rounded-xl border border-green-200">
+                <div className="flex items-center gap-2 text-green-800 font-bold text-sm mb-1"><CheckCircle className="w-4 h-4" /> Profile Active</div>
+                <div className="text-xs text-green-700 font-medium mb-2">{bookingData.customer.firstName} {bookingData.customer.lastName} • {bookingData.customer.phone}</div>
+                {lookupCustomerMutation.data?.customers?.[0]?.addresses?.length > 1 && (
+                  <div className="mt-2 space-y-2">
+                    <Label className="text-[10px] uppercase text-green-700 font-bold">Select Service Address</Label>
+                    <Select value={selectedAddressIndex?.toString()} onValueChange={(val) => {
+                      const idx = parseInt(val);
+                      setSelectedAddressIndex(idx);
+                      const addr = lookupCustomerMutation.data.customers[0].addresses[idx];
+                      setBookingData(prev => ({ ...prev, customer: { ...prev.customer!, address: addr.street } }));
+                    }}>
+                      <SelectTrigger className="bg-white border-green-200 text-xs h-8"><SelectValue placeholder="Pick an address" /></SelectTrigger>
+                      <SelectContent>{lookupCustomerMutation.data.customers[0].addresses.map((addr: any, idx: number) => (<SelectItem key={idx} value={idx.toString()}>{addr.street}, {addr.city}</SelectItem>))}</SelectContent>
+                    </Select>
+                  </div>
+                )}
+                {!lookupCustomerMutation.data?.customers?.[0]?.addresses?.length && customerType === "returning" && (
+                   <div className="mt-2">
+                     <Label className="text-[10px] uppercase text-green-700 font-bold">No address on file. Please enter one:</Label>
+                     <AddressAutocomplete 
+                       value={bookingData.customer.address || ""}
+                       onChange={(addr: string) => setBookingData(prev => ({ ...prev, customer: { ...prev.customer!, address: addr } }))} 
+                     />
+                   </div>
+                )}
+                {lookupCustomerMutation.data?.customers?.[0]?.addresses?.length === 1 && (
+                  <div className="text-[10px] text-green-600 italic mt-1">Service Address: {bookingData.customer.address}</div>
+                )}
+              </div>
+            )}
+            <div className="flex justify-between gap-2 pt-4">
+              <Button variant="outline" onClick={handlePreviousStep}>Back</Button>
+              <Button className="bg-johnson-blue" onClick={handleNextStep} disabled={!bookingData.customer}>Continue to Verification <ChevronRight className="w-4 h-4 ml-1" /></Button>
             </div>
           </div>
         )}
@@ -473,8 +453,8 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
           <div className="space-y-6">
             <div className="text-center space-y-2">
               <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center mx-auto"><Shield className="text-johnson-blue" /></div>
-              <h3 className="font-bold text-xl">Identity Verification</h3>
-              <p className="text-xs text-gray-500">To prevent fraud, we send a one-time code to {bookingData.customer?.phone}</p>
+              <h3 className="font-bold text-xl">3. Verification</h3>
+              <p className="text-xs text-gray-500">Security gate: confirming your identity via text</p>
             </div>
             {bookingData.smsVerification.status !== "verified" ? (
               <div className="space-y-4">
@@ -486,7 +466,6 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
                     <InputOTP maxLength={6} value={smsCode} onChange={setSmsCode} onComplete={(code) => confirmSmsVerificationMutation.mutate({ phone: bookingData.customer?.phone || "", code })}>
                       <InputOTPGroup><InputOTPSlot index={0}/><InputOTPSlot index={1}/><InputOTPSlot index={2}/><InputOTPSlot index={3}/><InputOTPSlot index={4}/><InputOTPSlot index={5}/></InputOTPGroup>
                     </InputOTP>
-                    {confirmSmsVerificationMutation.isPending && <p className="text-xs text-blue-600 animate-pulse">Verifying code...</p>}
                   </div>
                 )}
               </div>
@@ -494,7 +473,6 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
               <div className="bg-green-50 p-6 rounded-2xl border-2 border-green-200 text-center space-y-2">
                 <CheckCircle className="w-10 h-10 text-green-600 mx-auto" />
                 <div className="font-bold text-green-800">Human Verified</div>
-                <div className="text-xs text-green-700">Thank you! Your identity has been confirmed.</div>
               </div>
             )}
             <div className="flex justify-between pt-4">
@@ -506,7 +484,7 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
 
         {currentStep === 4 && (
           <div className="space-y-6">
-            <h3 className="font-bold text-xl text-center text-johnson-blue uppercase">Final Confirmation</h3>
+            <h3 className="font-bold text-xl text-center text-johnson-blue uppercase">4. Confirmation</h3>
             <div className="space-y-4 border rounded-2xl p-4 bg-gray-50/50">
               <div className="flex justify-between items-start"><div className="text-sm font-bold text-gray-500 uppercase">Service</div><div className="font-bold">Service Call</div></div>
               <div className="flex justify-between items-start"><div className="text-sm font-bold text-gray-500 uppercase">Date</div><div className="font-bold">{bookingData.selectedDate}</div></div>
@@ -519,7 +497,7 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
               selectedDate: bookingData.selectedDate,
               selectedTime: bookingData.selectedTimeSlot!.startTime,
               problemDescription: problemDescription || "Standard Service Call"
-            })} disabled={createBookingMutation.isPending}>
+            } as any)} disabled={createBookingMutation.isPending}>
               {createBookingMutation.isPending ? "Finalizing..." : "Confirm & Schedule Appointment"}
             </Button>
             <Button variant="ghost" className="w-full text-xs" onClick={handlePreviousStep}>Back to edit</Button>
