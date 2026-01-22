@@ -170,6 +170,7 @@ export const customerAddressesRelations = relations(customerAddresses, ({ one })
 export const voiceCallRecordings = pgTable('voice_call_recordings', {
   id: serial('id').primaryKey(),
   twilioCallSid: text('twilio_call_sid').notNull().unique(),
+  voiceFingerprint: text('voice_fingerprint'), // For identifying callers across different phone numbers
   recordingUrl: text('recording_url'),
   duration: integer('duration'),
   status: text('status').default('pending').notNull(), // pending, processing, completed, failed

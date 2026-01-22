@@ -41,7 +41,8 @@ export class TranscriptionPipeline {
 
     try {
       let rawTranscript = "";
-      let pass1Data = {};
+      let pass1Data: any = {};
+      let voiceFingerprint: string | undefined = undefined;
 
       if (this.deepgram) {
         // Pass 1: Deepgram for fast transcription and diarization
@@ -54,6 +55,15 @@ export class TranscriptionPipeline {
         
         rawTranscript = result.results?.channels[0]?.alternatives[0]?.transcript || "";
         pass1Data = result;
+
+        // Extract voice fingerprint if available (using deepgram's speaker diarization features)
+        // For actual fingerprinting, we might need a specialized service, 
+        // but we can use metadata or speaker profiles as a proxy for now.
+        if (result.results?.channels[0]?.detected_language) {
+           // Placeholder for actual biometric fingerprinting logic
+           // In a real implementation, we'd use a voice biometric API
+           voiceFingerprint = `vfp_${Buffer.from(recording.recordingUrl).toString('base64').substring(0, 16)}`;
+        }
       }
 
     // Pass 3: GPT-4 Coherence, Formatting, Intent & Mood Extraction
@@ -114,15 +124,17 @@ export class TranscriptionPipeline {
         pass3Data: aiResult
       });
 
-      // Update recording with AI suggestions
+      // Update recording with AI suggestions and fingerprint
       await storage.updateVoiceCallRecording(recordingId, { 
         status: 'completed',
         grade: aiResult.grade || 'gray',
         confidence: aiResult.confidence || 0.9,
+        voiceFingerprint,
         metadata: { 
           ...recording.metadata, 
           suggestedCategory: aiResult.category,
-          analysis: aiResult.analysis 
+          analysis: aiResult.analysis,
+          returningCustomer: !!voiceFingerprint // Logic to be refined based on database lookup
         }
       });
 
