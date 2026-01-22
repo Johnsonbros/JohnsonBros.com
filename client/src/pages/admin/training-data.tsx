@@ -7,11 +7,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   ThumbsUp, ThumbsDown, Download, RefreshCw, MessageSquare, 
-  Bot, User, Clock, Database
+  Bot, User, Clock, Database, Upload, Play, CheckCircle2, AlertCircle
 } from "lucide-react";
-import { queryClient } from "@/lib/queryClient";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
 import { SEO } from "@/components/SEO";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
 
 interface TrainingDataItem {
   id: number;
@@ -39,6 +41,8 @@ interface TrainingDataResponse {
 
 export default function TrainingDataPage() {
   const [filter, setFilter] = useState<'all' | 'positive' | 'negative'>('all');
+  const [importUrls, setImportUrls] = useState("");
+  const { toast } = useToast();
 
   const { data, isLoading, refetch } = useQuery<TrainingDataResponse>({
     queryKey: ['/api/v1/chat/training-data', filter],
@@ -51,12 +55,26 @@ export default function TrainingDataPage() {
     }
   });
 
-  const handleExport = () => {
-    window.open('/api/v1/chat/training-data/export?format=jsonl', '_blank');
+  const handleImport = async () => {
+    if (!importUrls.trim()) return;
+    const urls = importUrls.split('\n').map(u => u.trim()).filter(Boolean);
+    try {
+      await apiRequest('POST', '/api/v1/voice-training/import', { urls });
+      toast({ title: "Import Started", description: `Started processing ${urls.length} recordings.` });
+      setImportUrls("");
+      refetchRecordings();
+    } catch (error) {
+      toast({ title: "Import Failed", description: "Failed to start import pipeline.", variant: "destructive" });
+    }
   };
 
-  const stats = data?.stats || { positive: 0, negative: 0 };
-  const total = (stats.positive || 0) + (stats.negative || 0);
+  const { data: recordings, refetch: refetchRecordings } = useQuery<any[]>({
+    queryKey: ['/api/v1/voice-training/recordings'],
+    queryFn: async () => {
+      const res = await fetch('/api/v1/voice-training/recordings');
+      return res.json();
+    }
+  });
 
   return (
     <>
@@ -137,7 +155,65 @@ export default function TrainingDataPage() {
             <TabsTrigger value="negative" className="text-red-600">
               <ThumbsDown className="w-4 h-4 mr-1" /> Negative
             </TabsTrigger>
+            <TabsTrigger value="voice_import" className="flex items-center gap-2">
+              <Upload className="w-4 h-4" /> Voice Pipeline
+            </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="voice_import" className="mt-4 space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Manual Audio Import</CardTitle>
+                <CardDescription>Paste public audio URLs (one per line) to process through the transcription pipeline</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <textarea 
+                  className="w-full h-32 p-3 rounded-md border bg-background font-mono text-sm"
+                  placeholder="https://example.com/call1.mp3&#10;https://example.com/call2.wav"
+                  value={importUrls}
+                  onChange={(e) => setImportUrls(e.target.value)}
+                />
+                <Button onClick={handleImport} disabled={!importUrls.trim()}>
+                  <Play className="w-4 h-4 mr-2" /> Start Pipeline
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Imports</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {recordings?.map((rec) => (
+                    <div key={rec.id} className="flex items-center justify-between p-3 rounded-md border">
+                      <div className="flex items-center gap-3">
+                        {rec.status === 'completed' ? (
+                          <CheckCircle2 className="w-5 h-5 text-green-500" />
+                        ) : rec.status === 'failed' ? (
+                          <AlertCircle className="w-5 h-5 text-red-500" />
+                        ) : (
+                          <RefreshCw className="w-5 h-5 animate-spin text-blue-500" />
+                        )}
+                        <div>
+                          <p className="text-sm font-medium truncate max-w-xs">{rec.recordingUrl}</p>
+                          <p className="text-xs text-muted-foreground">
+                            ID: {rec.twilioCallSid} • {format(new Date(rec.createdAt), 'MMM d, h:mm a')}
+                          </p>
+                        </div>
+                      </div>
+                      <Badge variant={rec.status === 'completed' ? 'default' : 'secondary'}>
+                        {rec.status}
+                      </Badge>
+                    </div>
+                  ))}
+                  {(!recordings || recordings.length === 0) && (
+                    <p className="text-center py-8 text-muted-foreground">No recent voice imports</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           <TabsContent value={filter} className="mt-4">
             {isLoading ? (
