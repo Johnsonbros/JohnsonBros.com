@@ -392,6 +392,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: 'Failed to start fine-tuning' });
     }
   });
+  app.get('/api/v1/voice-training/recordings', authenticate, async (req, res) => {
     try {
       const recordings = await storage.getVoiceCallRecordings();
       res.json(recordings);
@@ -400,9 +401,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/v1/voice-training/transcripts', authenticate, async (req, res) => {
+    try {
+      const transcripts = await storage.getVoiceTranscripts();
+      res.json(transcripts);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch transcripts' });
+    }
+  });
+
   app.get('/api/v1/voice-training/datasets', authenticate, async (req, res) => {
     try {
-      const datasets = await storage.getAllVoiceDatasets();
+      const datasets = await storage.getVoiceDatasets();
       res.json(datasets);
     } catch (error) {
       res.status(500).json({ error: 'Failed to fetch datasets' });

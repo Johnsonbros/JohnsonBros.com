@@ -636,6 +636,13 @@ export default function AdminDashboard() {
               <GoogleAdsPanel />
             </TabsContent>
 
+            <TabsContent value="voice-training">
+              <div className="space-y-8">
+                <VoiceInbox />
+                <DatasetManager />
+              </div>
+            </TabsContent>
+
             <TabsContent value="webhooks">
               <WebhooksPanel />
             </TabsContent>
