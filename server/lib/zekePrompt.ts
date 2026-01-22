@@ -39,8 +39,17 @@ When an image is provided:
 - Summarize findings for the technician's job notes.
 ` : '';
 
+  const temporalBlock = `
+## TEMPORAL AWARENESS
+- Current Date and Time: ${new Date().toLocaleString('en-US', { timeZone: 'America/New_York', dateStyle: 'full', timeStyle: 'long' })}
+- You are aware of the current day, date, and time. Use this to handle relative time references (e.g., "tomorrow", "next Tuesday", "in two hours").
+- When asked about scheduling, always calculate the exact date based on today's date.
+`;
+
   return `
 ${ZEKE_CONFIG.identity.basePrompt}
+
+${temporalBlock}
 
 ${ceoTone}
 
