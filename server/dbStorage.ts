@@ -26,7 +26,7 @@ import {
   referrals, customerCredits, leads, memberSubscriptions,
   emailTemplates, upsellOffers, revenueMetrics,
   voiceCallRecordings, voiceTranscripts, voiceDatasets, voiceDatasetSections, voiceTranscriptAssignments, voiceTrainingRuns,
-  voiceDatasetMixes, systemSettings
+  voiceDatasetMixes, systemSettings, availableTimeSlots
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, lte, desc, asc, sql } from "drizzle-orm";
@@ -53,7 +53,7 @@ export class DatabaseStorage implements IStorage {
     if (!customer) {
       const [fallbackCustomer] = await db.select()
         .from(customers)
-        .where(sql`${customers.normalizedPhone} IS NULL AND regexp_replace(${customers.phone}, '[^0-9]', '', 'g') = ${normalizedPhone}`)
+        .where(sql`regexp_replace(${customers.phone}, '[^0-9]', '', 'g') = ${normalizedPhone}`)
         .limit(1);
       return fallbackCustomer;
     }
@@ -106,7 +106,7 @@ export class DatabaseStorage implements IStorage {
   async getAllBlogPosts(status?: string, limit: number = 10, offset: number = 0): Promise<BlogPost[]> {
     let query = db.select().from(blogPosts);
     if (status) {
-      query = query.where(eq(blogPosts.status, status)) as any;
+      query = query.where(eq(blogPosts.status, status as any)) as any;
     }
     return await query.orderBy(desc(blogPosts.createdAt)).limit(limit).offset(offset);
   }
@@ -131,7 +131,7 @@ export class DatabaseStorage implements IStorage {
 
   async incrementPostViews(id: number): Promise<void> {
     await db.update(blogPosts)
-      .set({ views: sql`${blogPosts.views} + 1` })
+      .set({ viewCount: sql`${blogPosts.viewCount} + 1` })
       .where(eq(blogPosts.id, id));
   }
 
@@ -157,7 +157,7 @@ export class DatabaseStorage implements IStorage {
 
   async updateKeyword(id: number, keyword: Partial<InsertKeyword>): Promise<Keyword | undefined> {
     const [updatedKeyword] = await db.update(keywords)
-      .set({ ...keyword, lastCrawled: new Date() })
+      .set({ ...keyword, lastTracked: new Date() })
       .where(eq(keywords.id, id))
       .returning();
     return updatedKeyword;
@@ -193,7 +193,7 @@ export class DatabaseStorage implements IStorage {
   async getKeywordRankings(keywordId: number, limit: number = 30): Promise<KeywordRanking[]> {
     return await db.select().from(keywordRankings)
       .where(eq(keywordRankings.keywordId, keywordId))
-      .orderBy(desc(keywordRankings.createdAt))
+      .orderBy(desc(keywordRankings.trackedDate))
       .limit(limit);
   }
 
@@ -204,9 +204,9 @@ export class DatabaseStorage implements IStorage {
 
   // Analytics methods
   async getBlogAnalytics(postId: number, startDate?: Date, endDate?: Date): Promise<BlogAnalytics[]> {
-    let query = db.select().from(blogAnalytics).where(eq(blogAnalytics.postId, postId));
+    let query = db.select().from(blogAnalytics).where(eq(blogAnalytics.postId, postId)).$dynamic();
     if (startDate && endDate) {
-      query = query.where(and(gte(blogAnalytics.date, startDate), lte(blogAnalytics.date, endDate))) as any;
+      query = query.where(and(gte(blogAnalytics.date, startDate), lte(blogAnalytics.date, endDate)));
     }
     return await query.orderBy(desc(blogAnalytics.date));
   }
@@ -233,12 +233,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getReferralsByCustomer(customerId: string): Promise<Referral[]> {
-    return await db.select().from(referrals).where(eq(referrals.referrerId, parseInt(customerId)));
+    return await db.select().from(referrals).where(eq(referrals.referrerCustomerId, customerId));
   }
 
   async updateReferralStatus(id: number, status: string, leadId?: string): Promise<Referral | undefined> {
     const [updated] = await db.update(referrals)
-      .set({ status, convertedLeadId: leadId ? parseInt(leadId) : null })
+      .set({ status, convertedAt: new Date() })
       .where(eq(referrals.id, id))
       .returning();
     return updated;
@@ -251,7 +251,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCustomerCredits(customerId: string): Promise<CustomerCredit[]> {
-    return await db.select().from(customerCredits).where(eq(customerCredits.customerId, parseInt(customerId)));
+    return await db.select().from(customerCredits).where(eq(customerCredits.customerId, customerId));
   }
 
   // Email Template methods
@@ -281,7 +281,7 @@ export class DatabaseStorage implements IStorage {
   async getUpsellOffers(): Promise<UpsellOffer[]> {
     return await db.select().from(upsellOffers)
       .where(eq(upsellOffers.isActive, true))
-      .orderBy(asc(upsellOffers.displayOrder));
+      .orderBy(asc(upsellOffers.updatedAt));
   }
 
   // Subscription methods
@@ -468,6 +468,8 @@ export class DatabaseStorage implements IStorage {
   async getAvailableTimeSlots(date: Date) {
     return await db.select().from(availableTimeSlots).where(eq(availableTimeSlots.date, date));
   }
+
+  // System Settings methods
   async getSystemSetting<T>(key: string): Promise<T | undefined> {
     const [setting] = await db.select().from(systemSettings).where(eq(systemSettings.key, key)).limit(1);
     return setting?.value as T | undefined;
