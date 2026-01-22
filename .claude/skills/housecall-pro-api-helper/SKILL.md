@@ -4,6 +4,15 @@ description: Helps with HouseCall Pro API integration, including building curl/H
 allowed-tools: Read, Grep, Bash, Write
 ---
 
+> **⚡ aOa REQUIRED**: Before using Grep tool, use `aoa grep <term>` via Bash instead. It's 10-100x faster and provides semantic search.
+>
+> ```bash
+> aoa grep <term>        # Use this, NOT Grep tool
+> aoa grep "a b c"       # Multi-term OR search
+> aoa grep -a a,b,c      # Multi-term AND search
+> aoa find <pattern>     # Use this for file discovery
+> ```
+
 # HouseCall Pro API Helper
 
 Specialized assistant for working with the HouseCall Pro v1 REST API.

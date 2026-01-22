@@ -1,3 +1,10 @@
+---
+description:
+alwaysApply: false
+---
+
+> **⚡ aOa REQUIRED**: Before using Grep or Glob tools, use `aoa grep <term>` via Bash instead. It's 10-100x faster and provides semantic search. See CLAUDE.md for full aOa documentation.
+
 # Johnson Bros. Plumbing & Drain Cleaning: AI Agent Swarm Framework
 
 ## **1. Executive Summary**

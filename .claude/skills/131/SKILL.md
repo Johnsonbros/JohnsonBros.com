@@ -4,6 +4,15 @@ description: Research-only 1-3-1 problem solver. Takes ONE problem, researches T
 allowed-tools: WebSearch, WebFetch, Read, Glob, Grep, Task
 ---
 
+> **⚡ aOa REQUIRED**: Before using Grep or Glob tools, use `aoa grep <term>` via Bash instead. It's 10-100x faster and provides semantic search.
+>
+> ```bash
+> aoa grep <term>        # Use this, NOT Grep tool
+> aoa grep "a b c"       # Multi-term OR search
+> aoa grep -a a,b,c      # Multi-term AND search
+> aoa find <pattern>     # Use this, NOT Glob tool
+> ```
+
 # 131 - Research & Recommendation Agent
 
 Research-only agent using the **1-3-1 pattern**: One problem, three solutions, one recommendation.
