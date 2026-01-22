@@ -23,7 +23,6 @@ import {
   type SystemSettings, type InsertSystemSettings,
   type VoiceDatasetMix, type InsertVoiceDatasetMix
 } from "@shared/schema";
-import { randomUUID } from "crypto";
 
 export interface IStorage {
   // Customer methods
@@ -175,6 +174,7 @@ export class MemStorage implements IStorage {
     const newCustomer: Customer = {
       ...customer,
       id,
+      phone: customer.phone ?? null,
       normalizedPhone: customer.phone ? customer.phone.replace(/\D/g, '') : null,
       housecallProId: customer.housecallProId ?? null,
       createdAt: new Date()
@@ -197,6 +197,7 @@ export class MemStorage implements IStorage {
       ...appointment,
       id,
       status: appointment.status ?? 'scheduled',
+      customerId: appointment.customerId ?? null,
       address: appointment.address ?? null,
       notes: appointment.notes ?? null,
       createdAt: new Date()
@@ -234,10 +235,20 @@ export class MemStorage implements IStorage {
     const newPost: BlogPost = {
       ...post,
       id,
-      description: post.description ?? null,
+      excerpt: post.excerpt ?? null,
       featuredImage: post.featuredImage ?? null,
+      metaTitle: post.metaTitle ?? null,
+      metaDescription: post.metaDescription ?? null,
+      canonicalUrl: post.metaTitle ?? null,
+      ogTitle: post.metaTitle ?? null,
+      ogDescription: post.metaDescription ?? null,
+      ogImage: post.featuredImage ?? null,
+      twitterTitle: post.metaTitle ?? null,
+      twitterDescription: post.metaDescription ?? null,
+      twitterImage: post.featuredImage ?? null,
+      publishDate: post.publishDate ? new Date(post.publishDate) : null,
       tags: post.tags ?? [],
-      views: 0,
+      viewCount: 0,
       createdAt: new Date(),
       updatedAt: new Date()
     };
@@ -248,7 +259,12 @@ export class MemStorage implements IStorage {
   async updateBlogPost(id: number, post: Partial<InsertBlogPost>): Promise<BlogPost | undefined> {
     const existing = this.blogPosts.get(id);
     if (existing) {
-      const updated = { ...existing, ...post, updatedAt: new Date() };
+      const updated = { 
+        ...existing, 
+        ...post, 
+        publishDate: post.publishDate ? new Date(post.publishDate) : existing.publishDate,
+        updatedAt: new Date() 
+      };
       this.blogPosts.set(id, updated);
       return updated;
     }
@@ -262,7 +278,7 @@ export class MemStorage implements IStorage {
   async incrementPostViews(id: number): Promise<void> {
     const post = this.blogPosts.get(id);
     if (post) {
-      post.views++;
+      post.viewCount++;
       this.blogPosts.set(id, post);
     }
   }
@@ -286,7 +302,12 @@ export class MemStorage implements IStorage {
       id,
       difficulty: keyword.difficulty ?? null,
       searchVolume: keyword.searchVolume ?? null,
-      lastCrawled: null
+      competition: keyword.competition ?? null,
+      searchIntent: keyword.searchIntent ?? null,
+      location: keyword.location ?? null,
+      isPrimary: keyword.isPrimary ?? false,
+      lastTracked: null,
+      createdAt: new Date()
     };
     this.keywords.set(id, newKeyword);
     return newKeyword;
@@ -316,7 +337,13 @@ export class MemStorage implements IStorage {
 
   async addPostKeyword(postKeyword: InsertPostKeyword): Promise<PostKeyword> {
     const id = this.nextId++;
-    const newPK = { ...postKeyword, id };
+    const newPK = { 
+      ...postKeyword, 
+      id,
+      isPrimary: postKeyword.isPrimary ?? false,
+      keywordDensity: postKeyword.keywordDensity ?? null,
+      createdAt: new Date()
+    };
     this.postKeywords.set(id, newPK);
     return newPK;
   }
@@ -330,13 +357,25 @@ export class MemStorage implements IStorage {
   async getKeywordRankings(keywordId: number, limit: number = 30): Promise<KeywordRanking[]> {
     return Array.from(this.keywordRankings.values())
       .filter(r => r.keywordId === keywordId)
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .sort((a, b) => b.trackedDate.getTime() - a.trackedDate.getTime())
       .slice(0, limit);
   }
 
   async addKeywordRanking(ranking: InsertKeywordRanking): Promise<KeywordRanking> {
     const id = this.nextId++;
-    const newRanking = { ...ranking, id, createdAt: new Date() };
+    const newRanking = { 
+      ...ranking, 
+      id, 
+      location: ranking.location ?? null,
+      position: ranking.position ?? null,
+      previousPosition: ranking.previousPosition ?? null,
+      url: ranking.url ?? null,
+      searchEngine: ranking.searchEngine ?? 'google',
+      impressions: ranking.impressions ?? null,
+      clicks: ranking.clicks ?? null,
+      ctr: ranking.ctr ?? null,
+      trackedDate: new Date() 
+    };
     this.keywordRankings.set(id, newRanking);
     return newRanking;
   }
@@ -347,14 +386,35 @@ export class MemStorage implements IStorage {
 
   async updateBlogAnalytics(analytics: InsertBlogAnalytics): Promise<BlogAnalytics> {
     const id = this.nextId++;
-    const newAnalytics = { ...analytics, id };
+    const newAnalytics = { 
+      ...analytics, 
+      id,
+      pageViews: analytics.pageViews ?? 0,
+      uniqueVisitors: analytics.uniqueVisitors ?? 0,
+      avgTimeOnPage: analytics.avgTimeOnPage ?? 0,
+      bounceRate: analytics.bounceRate ?? 0,
+      conversionRate: analytics.conversionRate ?? 0,
+      createdAt: new Date()
+    };
     this.blogAnalytics.set(id, newAnalytics);
     return newAnalytics;
   }
 
   async createReferral(referral: InsertReferral): Promise<Referral> {
     const id = this.nextId++;
-    const newReferral = { ...referral, id, convertedLeadId: referral.convertedLeadId ?? null, createdAt: new Date() };
+    const newReferral = { 
+      ...referral, 
+      id, 
+      status: referral.status ?? 'pending',
+      notes: referral.notes ?? null,
+      referredLeadId: referral.referredLeadId ?? null,
+      convertedAt: null,
+      rewardAmount: referral.rewardAmount ?? 0,
+      rewardStatus: referral.rewardAmount ?? 'pending',
+      rewardType: referral.rewardType ?? 'credit',
+      expiresAt: referral.expiresAt ?? null,
+      createdAt: new Date() 
+    };
     this.referrals.set(id, newReferral);
     return newReferral;
   }
@@ -368,14 +428,15 @@ export class MemStorage implements IStorage {
   }
 
   async getReferralsByCustomer(customerId: string): Promise<Referral[]> {
-    return Array.from(this.referrals.values()).filter(r => r.referrerId === parseInt(customerId));
+    return Array.from(this.referrals.values()).filter(r => r.referrerCustomerId === customerId);
   }
 
   async updateReferralStatus(id: number, status: string, leadId?: string): Promise<Referral | undefined> {
     const referral = this.referrals.get(id);
     if (referral) {
       referral.status = status;
-      if (leadId) referral.convertedLeadId = parseInt(leadId);
+      if (leadId) referral.referredLeadId = leadId;
+      referral.convertedAt = new Date();
       this.referrals.set(id, referral);
       return referral;
     }
@@ -384,13 +445,23 @@ export class MemStorage implements IStorage {
 
   async createCustomerCredit(credit: InsertCustomerCredit): Promise<CustomerCredit> {
     const id = this.nextId++;
-    const newCredit = { ...credit, id, notes: credit.notes ?? null, createdAt: new Date() };
+    const newCredit = { 
+      ...credit, 
+      id, 
+      type: credit.type ?? 'referral',
+      status: credit.status ?? 'available',
+      expiresAt: credit.expiresAt ?? null,
+      sourceReferralId: credit.sourceReferralId ?? null,
+      appliedToJobId: credit.appliedToJobId ?? null,
+      appliedAt: null,
+      createdAt: new Date() 
+    };
     this.customerCredits.set(id, newCredit);
     return newCredit;
   }
 
   async getCustomerCredits(customerId: string): Promise<CustomerCredit[]> {
-    return Array.from(this.customerCredits.values()).filter(c => c.customerId === parseInt(customerId));
+    return Array.from(this.customerCredits.values()).filter(c => c.customerId === customerId);
   }
 
   async getEmailTemplates(): Promise<EmailTemplate[]> {
@@ -403,7 +474,15 @@ export class MemStorage implements IStorage {
 
   async createEmailTemplate(template: InsertEmailTemplate): Promise<EmailTemplate> {
     const id = this.nextId++;
-    const newTemplate = { ...template, id, createdAt: new Date(), updatedAt: new Date() };
+    const newTemplate = { 
+      ...template, 
+      id, 
+      triggerDelay: template.triggerDelay ?? 0,
+      variables: template.variables ?? [],
+      isActive: template.isActive ?? true,
+      createdAt: new Date(), 
+      updatedAt: new Date() 
+    };
     this.emailTemplates.set(id, newTemplate);
     return newTemplate;
   }
@@ -422,16 +501,19 @@ export class MemStorage implements IStorage {
     return Array.from(this.upsellOffers.values()).filter(o => o.isActive);
   }
 
-  async getMemberSubscription(customerId: number): Promise<MemberSubscription | undefined> {
-    return Array.from(this.memberSubscriptions.values()).find(s => s.customerId === customerId);
-  }
-
   async getUpsellOffersForService(serviceType: string): Promise<UpsellOffer[]> {
     return Array.from(this.upsellOffers.values()).filter(o => o.isActive && (o.relevantServices as string[]).includes(serviceType));
   }
 
+  async getSubscriptions(): Promise<MemberSubscription[]> {
+    return Array.from(this.memberSubscriptions.values());
+  }
+
+  async getMemberSubscription(customerId: number): Promise<MemberSubscription | undefined> {
+    return Array.from(this.memberSubscriptions.values()).find(s => s.customerId === customerId);
+  }
+
   async getAvailableTimeSlots(date: Date): Promise<AvailableTimeSlot[]> {
-    // Basic mock implementation for MemStorage
     return [];
   }
 
@@ -456,13 +538,22 @@ export class MemStorage implements IStorage {
       ...lead, 
       id, 
       email: lead.email ?? null,
-      service: lead.service ?? null,
-      address: lead.address ?? null,
-      notes: lead.notes ?? null,
-      status: lead.status ?? 'new',
-      landingPage: lead.landingPage ?? null,
+      unitNumber: lead.unitNumber ?? null,
+      serviceType: lead.serviceType ?? null,
+      message: lead.message ?? null,
+      campaignSource: lead.campaignSource ?? null,
+      campaignMedium: lead.campaignMedium ?? null,
       campaignName: lead.campaignName ?? null,
-      convertedCustomerId: lead.convertedCustomerId ?? null,
+      landingPage: lead.landingPage ?? null,
+      gclid: lead.gclid ?? null,
+      utmSource: lead.utmSource ?? null,
+      utmMedium: lead.utmMedium ?? null,
+      utmCampaign: lead.utmCampaign ?? null,
+      utmTerm: lead.utmTerm ?? null,
+      utmContent: lead.utmContent ?? null,
+      referrer: lead.referrer ?? null,
+      status: lead.status ?? 'new',
+      convertedCustomerId: null,
       createdAt: new Date() 
     };
     this.leads.set(id, newLead);

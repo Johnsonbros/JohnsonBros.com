@@ -394,12 +394,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: 'Failed to start fine-tuning' });
     }
   });
+  app.get('/api/v1/available-slots', async (req, res) => {
+    try {
+      const dateStr = req.query.date as string;
+      const date = dateStr ? new Date(dateStr) : new Date();
+      const slots = await storage.getAvailableTimeSlots(date);
+      res.json(slots);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch slots' });
+    }
+  });
+
   app.get('/api/v1/voice-training/recordings', authenticate, async (req, res) => {
     try {
       const recordings = await storage.getVoiceCallRecordings();
       res.json(recordings);
     } catch (error) {
       res.status(500).json({ error: 'Failed to fetch recordings' });
+    }
+  });
+
+  app.get('/api/v1/voice-training/datasets', authenticate, async (req, res) => {
+    try {
+      const datasets = await storage.getVoiceDatasets();
+      res.json(datasets);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch datasets' });
     }
   });
 

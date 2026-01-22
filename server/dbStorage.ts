@@ -462,7 +462,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUpsellOffersForService(serviceType: string) {
-    return await db.select().from(upsellOffers).where(and(eq(upsellOffers.isActive, true), sql`${upsellOffers.relevantServices} ? ${serviceType}`));
+    return await db.select().from(upsellOffers).where(eq(upsellOffers.isActive, true));
   }
 
   async getAvailableTimeSlots(date: Date) {
