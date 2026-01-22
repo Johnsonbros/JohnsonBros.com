@@ -28,7 +28,7 @@ export class TranscriptionPipeline {
         if (!snippet.toLowerCase().includes("johnson bros. plumbing")) {
           await storage.updateVoiceCallRecording(recordingId, { 
             status: 'rejected',
-            metadata: { ...recording.metadata, rejectionReason: 'Greeting missing in first 10s' }
+            metadata: { ...(recording.metadata as object || {}), rejectionReason: 'Greeting missing in first 10s' }
           });
           return;
         }
@@ -131,7 +131,7 @@ export class TranscriptionPipeline {
         confidence: aiResult.confidence || 0.9,
         voiceFingerprint,
         metadata: { 
-          ...recording.metadata, 
+          ...(recording.metadata as object || {}), 
           suggestedCategory: aiResult.category,
           analysis: aiResult.analysis,
           returningCustomer: !!voiceFingerprint // Logic to be refined based on database lookup

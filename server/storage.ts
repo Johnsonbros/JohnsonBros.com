@@ -92,6 +92,7 @@ export interface IStorage {
   getVoiceCallRecordings(): Promise<VoiceCallRecording[]>;
   createVoiceCallRecording(recording: InsertVoiceCallRecording): Promise<VoiceCallRecording>;
   updateVoiceCallRecording(id: number, updates: Partial<VoiceCallRecording>): Promise<VoiceCallRecording | undefined>;
+  getVoiceCallRecordingsByFingerprint(fingerprint: string): Promise<VoiceCallRecording[]>;
   
   getVoiceTranscript(recordingId: number): Promise<VoiceTranscript | undefined>;
   getVoiceTranscripts(): Promise<VoiceTranscript[]>;
@@ -742,6 +743,12 @@ export class MemStorage implements IStorage {
       return updated;
     }
     return undefined;
+  }
+
+  async getVoiceCallRecordingsByFingerprint(fingerprint: string): Promise<VoiceCallRecording[]> {
+    return Array.from(this.voiceCallRecordingsMap.values())
+      .filter(r => r.voiceFingerprint === fingerprint)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
 
   async getVoiceTranscript(recordingId: number): Promise<VoiceTranscript | undefined> {

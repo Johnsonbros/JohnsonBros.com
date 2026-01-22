@@ -509,6 +509,13 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
+  async getVoiceCallRecordingsByFingerprint(fingerprint: string): Promise<VoiceCallRecording[]> {
+    return await db.select()
+      .from(voiceCallRecordings)
+      .where(eq(voiceCallRecordings.voiceFingerprint, fingerprint))
+      .orderBy(desc(voiceCallRecordings.createdAt));
+  }
+
   async getVoiceTranscript(recordingId: number): Promise<VoiceTranscript | undefined> {
     const [transcript] = await db.select().from(voiceTranscripts).where(eq(voiceTranscripts.recordingId, recordingId));
     return transcript;
