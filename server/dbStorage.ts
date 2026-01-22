@@ -14,9 +14,16 @@ import {
   type EmailTemplate, type InsertEmailTemplate,
   type UpsellOffer, type InsertUpsellOffer,
   type RevenueMetric, type InsertRevenueMetric,
+  type VoiceCallRecording, type InsertVoiceCallRecording,
+  type VoiceTranscript, type InsertVoiceTranscript,
+  type VoiceDataset, type InsertVoiceDataset,
+  type VoiceDatasetSection, type InsertVoiceDatasetSection,
+  type VoiceTranscriptAssignment, type InsertVoiceTranscriptAssignment,
+  type VoiceTrainingRun, type InsertVoiceTrainingRun,
   customers, appointments, blogPosts, keywords, postKeywords, keywordRankings, blogAnalytics,
   referrals, customerCredits, leads, memberSubscriptions,
-  emailTemplates, upsellOffers, revenueMetrics
+  emailTemplates, upsellOffers, revenueMetrics,
+  voiceCallRecordings, voiceTranscripts, voiceDatasets, voiceDatasetSections, voiceTranscriptAssignments, voiceTrainingRuns
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, lte, desc, asc, sql } from "drizzle-orm";
@@ -477,6 +484,88 @@ export class DatabaseStorage implements IStorage {
       .where(eq(leads.id, id))
       .returning();
     return updatedLead;
+  }
+
+  // AI Voice Training methods
+  async getVoiceCallRecording(id: number): Promise<VoiceCallRecording | undefined> {
+    const [recording] = await db.select().from(voiceCallRecordings).where(eq(voiceCallRecordings.id, id));
+    return recording;
+  }
+
+  async getVoiceCallBySid(sid: string): Promise<VoiceCallRecording | undefined> {
+    const [recording] = await db.select().from(voiceCallRecordings).where(eq(voiceCallRecordings.twilioCallSid, sid));
+    return recording;
+  }
+
+  async createVoiceCallRecording(recording: InsertVoiceCallRecording): Promise<VoiceCallRecording> {
+    const [newRecording] = await db.insert(voiceCallRecordings).values(recording).returning();
+    return newRecording;
+  }
+
+  async updateVoiceCallRecording(id: number, updates: Partial<VoiceCallRecording>): Promise<VoiceCallRecording | undefined> {
+    const [updated] = await db.update(voiceCallRecordings).set(updates).where(eq(voiceCallRecordings.id, id)).returning();
+    return updated;
+  }
+
+  async getVoiceTranscript(recordingId: number): Promise<VoiceTranscript | undefined> {
+    const [transcript] = await db.select().from(voiceTranscripts).where(eq(voiceTranscripts.recordingId, recordingId));
+    return transcript;
+  }
+
+  async createVoiceTranscript(transcript: InsertVoiceTranscript): Promise<VoiceTranscript> {
+    const [newTranscript] = await db.insert(voiceTranscripts).values(transcript).returning();
+    return newTranscript;
+  }
+
+  async updateVoiceTranscript(id: number, updates: Partial<VoiceTranscript>): Promise<VoiceTranscript | undefined> {
+    const [updated] = await db.update(voiceTranscripts).set(updates).where(eq(voiceTranscripts.id, id)).returning();
+    return updated;
+  }
+
+  async getVoiceDataset(id: number): Promise<VoiceDataset | undefined> {
+    const [dataset] = await db.select().from(voiceDatasets).where(eq(voiceDatasets.id, id));
+    return dataset;
+  }
+
+  async getAllVoiceDatasets(): Promise<VoiceDataset[]> {
+    return await db.select().from(voiceDatasets);
+  }
+
+  async createVoiceDataset(dataset: InsertVoiceDataset): Promise<VoiceDataset> {
+    const [newDataset] = await db.insert(voiceDatasets).values(dataset).returning();
+    return newDataset;
+  }
+
+  async getVoiceDatasetSections(datasetId: number): Promise<VoiceDatasetSection[]> {
+    return await db.select().from(voiceDatasetSections).where(eq(voiceDatasetSections.datasetId, datasetId));
+  }
+
+  async createVoiceDatasetSection(section: InsertVoiceDatasetSection): Promise<VoiceDatasetSection> {
+    const [newSection] = await db.insert(voiceDatasetSections).values(section).returning();
+    return newSection;
+  }
+
+  async createVoiceTranscriptAssignment(assignment: InsertVoiceTranscriptAssignment): Promise<VoiceTranscriptAssignment> {
+    const [newAssignment] = await db.insert(voiceTranscriptAssignments).values(assignment).returning();
+    return newAssignment;
+  }
+
+  async getTranscriptAssignments(transcriptId: number): Promise<VoiceTranscriptAssignment[]> {
+    return await db.select().from(voiceTranscriptAssignments).where(eq(voiceTranscriptAssignments.transcriptId, transcriptId));
+  }
+
+  async createVoiceTrainingRun(run: InsertVoiceTrainingRun): Promise<VoiceTrainingRun> {
+    const [newRun] = await db.insert(voiceTrainingRuns).values(run).returning();
+    return newRun;
+  }
+
+  async getVoiceTrainingRun(id: number): Promise<VoiceTrainingRun | undefined> {
+    const [run] = await db.select().from(voiceTrainingRuns).where(eq(voiceTrainingRuns.id, id));
+    return run;
+  }
+
+  async getVoiceCallRecordings(): Promise<VoiceCallRecording[]> {
+    return await db.select().from(voiceCallRecordings);
   }
 }
 
