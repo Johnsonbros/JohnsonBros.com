@@ -36,7 +36,6 @@ export async function runCompetitorResearch() {
         keyword: k.keyword,
         difficulty: 50, // Default
         searchVolume: 100, // Placeholder
-        relevance: Math.round(k.relevance * 100)
       });
     }
   }
