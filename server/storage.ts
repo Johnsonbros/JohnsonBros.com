@@ -9,7 +9,13 @@ import {
   type AvailableTimeSlot,
   type Referral, type InsertReferral,
   type CustomerCredit, type InsertCustomerCredit,
-  type Lead, type InsertLead
+  type Lead, type InsertLead,
+  type VoiceCallRecording, type InsertVoiceCallRecording,
+  type VoiceTranscript, type InsertVoiceTranscript,
+  type VoiceDataset, type InsertVoiceDataset,
+  type VoiceDatasetSection, type InsertVoiceDatasetSection,
+  type VoiceTranscriptAssignment, type InsertVoiceTranscriptAssignment,
+  type VoiceTrainingRun, type InsertVoiceTrainingRun
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -79,6 +85,29 @@ export interface IStorage {
   getLeadsByLandingPage(landingPage: string): Promise<Lead[]>;
   getLeadsByCampaign(campaignName: string): Promise<Lead[]>;
   updateLeadStatus(id: number, status: string): Promise<Lead | undefined>;
+
+  // AI Voice Training methods
+  getVoiceCallRecording(id: number): Promise<VoiceCallRecording | undefined>;
+  getVoiceCallBySid(sid: string): Promise<VoiceCallRecording | undefined>;
+  createVoiceCallRecording(recording: InsertVoiceCallRecording): Promise<VoiceCallRecording>;
+  updateVoiceCallRecording(id: number, updates: Partial<VoiceCallRecording>): Promise<VoiceCallRecording | undefined>;
+  
+  getVoiceTranscript(recordingId: number): Promise<VoiceTranscript | undefined>;
+  createVoiceTranscript(transcript: InsertVoiceTranscript): Promise<VoiceTranscript>;
+  updateVoiceTranscript(id: number, updates: Partial<VoiceTranscript>): Promise<VoiceTranscript | undefined>;
+  
+  getVoiceDataset(id: number): Promise<VoiceDataset | undefined>;
+  getAllVoiceDatasets(): Promise<VoiceDataset[]>;
+  createVoiceDataset(dataset: InsertVoiceDataset): Promise<VoiceDataset>;
+  
+  getVoiceDatasetSections(datasetId: number): Promise<VoiceDatasetSection[]>;
+  createVoiceDatasetSection(section: InsertVoiceDatasetSection): Promise<VoiceDatasetSection>;
+  
+  createVoiceTranscriptAssignment(assignment: InsertVoiceTranscriptAssignment): Promise<VoiceTranscriptAssignment>;
+  getTranscriptAssignments(transcriptId: number): Promise<VoiceTranscriptAssignment[]>;
+  
+  createVoiceTrainingRun(run: InsertVoiceTrainingRun): Promise<VoiceTrainingRun>;
+  getVoiceTrainingRun(id: number): Promise<VoiceTrainingRun | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -647,7 +676,172 @@ export class MemStorage implements IStorage {
     }
     return undefined;
   }
+
+  // AI Voice Training methods
+  private voiceCallRecordingsMap = new Map<number, VoiceCallRecording>();
+  private voiceTranscriptsMap = new Map<number, VoiceTranscript>();
+  private voiceDatasetsMap = new Map<number, VoiceDataset>();
+  private voiceDatasetSectionsMap = new Map<number, VoiceDatasetSection>();
+  private voiceTranscriptAssignmentsMap = new Map<number, VoiceTranscriptAssignment>();
+  private voiceTrainingRunsMap = new Map<number, VoiceTrainingRun>();
+  
+  private nextVoiceRecordingId = 1;
+  private nextVoiceTranscriptId = 1;
+  private nextVoiceDatasetId = 1;
+  private nextVoiceSectionId = 1;
+  private nextVoiceAssignmentId = 1;
+  private nextVoiceTrainingRunId = 1;
+
+  async getVoiceCallRecording(id: number): Promise<VoiceCallRecording | undefined> {
+    return this.voiceCallRecordingsMap.get(id);
+  }
+
+  async getVoiceCallBySid(sid: string): Promise<VoiceCallRecording | undefined> {
+    return Array.from(this.voiceCallRecordingsMap.values()).find(r => r.twilioCallSid === sid);
+  }
+
+  async createVoiceCallRecording(recording: InsertVoiceCallRecording): Promise<VoiceCallRecording> {
+    const id = this.nextVoiceRecordingId++;
+    const newRecording: VoiceCallRecording = {
+      ...recording,
+      id,
+      recordingUrl: recording.recordingUrl ?? null,
+      duration: recording.duration ?? null,
+      status: recording.status ?? 'pending',
+      grade: recording.grade ?? 'gray',
+      confidence: recording.confidence ?? null,
+      metadata: recording.metadata ?? {},
+      createdAt: new Date(),
+    };
+    this.voiceCallRecordingsMap.set(id, newRecording);
+    return newRecording;
+  }
+
+  async updateVoiceCallRecording(id: number, updates: Partial<VoiceCallRecording>): Promise<VoiceCallRecording | undefined> {
+    const recording = this.voiceCallRecordingsMap.get(id);
+    if (recording) {
+      const updated = { ...recording, ...updates };
+      this.voiceCallRecordingsMap.set(id, updated);
+      return updated;
+    }
+    return undefined;
+  }
+
+  async getVoiceTranscript(recordingId: number): Promise<VoiceTranscript | undefined> {
+    return Array.from(this.voiceTranscriptsMap.values()).find(t => t.recordingId === recordingId);
+  }
+
+  async createVoiceTranscript(transcript: InsertVoiceTranscript): Promise<VoiceTranscript> {
+    const id = this.nextVoiceTranscriptId++;
+    const newTranscript: VoiceTranscript = {
+      ...transcript,
+      id,
+      rawTranscript: transcript.rawTranscript ?? null,
+      cleanedTranscript: transcript.cleanedTranscript ?? null,
+      pass1Data: transcript.pass1Data ?? null,
+      pass2Data: transcript.pass2Data ?? null,
+      pass3Data: transcript.pass3Data ?? null,
+      createdAt: new Date(),
+    };
+    this.voiceTranscriptsMap.set(id, newTranscript);
+    return newTranscript;
+  }
+
+  async updateVoiceTranscript(id: number, updates: Partial<VoiceTranscript>): Promise<VoiceTranscript | undefined> {
+    const transcript = this.voiceTranscriptsMap.get(id);
+    if (transcript) {
+      const updated = { ...transcript, ...updates };
+      this.voiceTranscriptsMap.set(id, updated);
+      return updated;
+    }
+    return undefined;
+  }
+
+  async getVoiceDataset(id: number): Promise<VoiceDataset | undefined> {
+    return this.voiceDatasetsMap.get(id);
+  }
+
+  async getAllVoiceDatasets(): Promise<VoiceDataset[]> {
+    return Array.from(this.voiceDatasetsMap.values());
+  }
+
+  async createVoiceDataset(dataset: InsertVoiceDataset): Promise<VoiceDataset> {
+    const id = this.nextVoiceDatasetId++;
+    const newDataset: VoiceDataset = {
+      ...dataset,
+      id,
+      description: dataset.description ?? null,
+      targetCount: dataset.targetCount ?? 100,
+      currentCount: dataset.currentCount ?? 0,
+      status: dataset.status ?? 'active',
+      createdAt: new Date(),
+    };
+    this.voiceDatasetsMap.set(id, newDataset);
+    return newDataset;
+  }
+
+  async getVoiceDatasetSections(datasetId: number): Promise<VoiceDatasetSection[]> {
+    return Array.from(this.voiceDatasetSectionsMap.values()).filter(s => s.datasetId === datasetId);
+  }
+
+  async createVoiceDatasetSection(section: InsertVoiceDatasetSection): Promise<VoiceDatasetSection> {
+    const id = this.nextVoiceSectionId++;
+    const newSection: VoiceDatasetSection = {
+      ...section,
+      id,
+      description: section.description ?? null,
+      lookingFor: section.lookingFor ?? null,
+      targetCount: section.targetCount ?? 50,
+      currentCount: section.currentCount ?? 0,
+      createdAt: new Date(),
+    };
+    this.voiceDatasetSectionsMap.set(id, newSection);
+    return newSection;
+  }
+
+  async createVoiceTranscriptAssignment(assignment: InsertVoiceTranscriptAssignment): Promise<VoiceTranscriptAssignment> {
+    const id = this.nextVoiceAssignmentId++;
+    const newAssignment: VoiceTranscriptAssignment = {
+      ...assignment,
+      id,
+      status: assignment.status ?? 'pending',
+      notes: assignment.notes ?? null,
+      assignedAt: new Date(),
+    };
+    this.voiceTranscriptAssignmentsMap.set(id, newAssignment);
+    return newAssignment;
+  }
+
+  async getTranscriptAssignments(transcriptId: number): Promise<VoiceTranscriptAssignment[]> {
+    return Array.from(this.voiceTranscriptAssignmentsMap.values()).filter(a => a.transcriptId === transcriptId);
+  }
+
+  async createVoiceTrainingRun(run: InsertVoiceTrainingRun): Promise<VoiceTrainingRun> {
+    const id = this.nextVoiceTrainingRunId++;
+    const newRun: VoiceTrainingRun = {
+      ...run,
+      id,
+      openaiJobId: run.openaiJobId ?? null,
+      config: run.config ?? null,
+      results: run.results ?? null,
+      createdAt: new Date(),
+      finishedAt: run.finishedAt ? new Date(run.finishedAt) : null,
+    };
+    this.voiceTrainingRunsMap.set(id, newRun);
+    return newRun;
+  }
+
+  async getVoiceTrainingRun(id: number): Promise<VoiceTrainingRun | undefined> {
+    return this.voiceTrainingRunsMap.get(id);
+  }
+
+  // Database persistence stubs (to be implemented in DatabaseStorage if needed)
+  async getVoiceCallRecordings(): Promise<VoiceCallRecording[]> {
+    return Array.from(this.voiceCallRecordingsMap.values());
+  }
 }
+
+export const storage = new MemStorage();
 
 // Import the database storage implementation
 import { dbStorage } from "./dbStorage";

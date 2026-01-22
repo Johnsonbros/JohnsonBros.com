@@ -165,6 +165,132 @@ export const customerAddressesRelations = relations(customerAddresses, ({ one })
   }),
 }));
 
+// --- AI Voice Training Pipeline Tables ---
+
+export const voiceCallRecordings = pgTable('voice_call_recordings', {
+  id: serial('id').primaryKey(),
+  twilioCallSid: text('twilio_call_sid').notNull().unique(),
+  recordingUrl: text('recording_url'),
+  duration: integer('duration'),
+  status: text('status').default('pending').notNull(), // pending, processing, completed, failed
+  grade: text('grade').default('gray').notNull(), // green, yellow, red, gray
+  confidence: real('confidence'),
+  metadata: json('metadata').default({}),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const voiceTranscripts = pgTable('voice_transcripts', {
+  id: serial('id').primaryKey(),
+  recordingId: integer('recording_id').references(() => voiceCallRecordings.id).notNull(),
+  rawTranscript: text('raw_transcript'), // Raw Deepgram/Whisper output
+  cleanedTranscript: json('cleaned_transcript'), // Structured JSON for training (OpenAI format)
+  pass1Data: json('pass1_data'), // Deepgram diarization
+  pass2Data: json('pass2_data'), // Whisper refinements
+  pass3Data: json('pass3_data'), // GPT-4 cleanup/coherence
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const voiceDatasets = pgTable('voice_datasets', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull().unique(),
+  purpose: text('purpose').notNull(),
+  description: text('description'),
+  targetCount: integer('target_count').default(100).notNull(),
+  currentCount: integer('current_count').default(0).notNull(),
+  status: text('status').default('active').notNull(), // active, archiving, ready_to_train
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const voiceDatasetSections = pgTable('voice_dataset_sections', {
+  id: serial('id').primaryKey(),
+  datasetId: integer('dataset_id').references(() => voiceDatasets.id).notNull(),
+  name: text('name').notNull(),
+  description: text('description'),
+  lookingFor: text('looking_for'), // Specific traits for this section
+  targetCount: integer('target_count').default(50).notNull(),
+  currentCount: integer('current_count').default(0).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const voiceTranscriptAssignments = pgTable('voice_transcript_assignments', {
+  id: serial('id').primaryKey(),
+  transcriptId: integer('transcript_id').references(() => voiceTranscripts.id).notNull(),
+  sectionId: integer('section_id').references(() => voiceDatasetSections.id).notNull(),
+  status: text('status').default('pending').notNull(), // pending, approved, rejected
+  notes: text('notes'),
+  assignedAt: timestamp('assigned_at').defaultNow().notNull(),
+});
+
+export const voiceTrainingRuns = pgTable('voice_training_runs', {
+  id: serial('id').primaryKey(),
+  datasetId: integer('dataset_id').references(() => voiceDatasets.id).notNull(),
+  openaiJobId: text('openai_job_id'),
+  baseModel: text('base_model').notNull(),
+  status: text('status').notNull(), // created, running, succeeded, failed
+  config: json('config'),
+  results: json('results'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  finishedAt: timestamp('finished_at'),
+});
+
+// Insert Schemas
+export const insertVoiceCallRecordingSchema = createInsertSchema(voiceCallRecordings).omit({ id: true, createdAt: true });
+export const insertVoiceTranscriptSchema = createInsertSchema(voiceTranscripts).omit({ id: true, createdAt: true });
+export const insertVoiceDatasetSchema = createInsertSchema(voiceDatasets).omit({ id: true, createdAt: true });
+export const insertVoiceDatasetSectionSchema = createInsertSchema(voiceDatasetSections).omit({ id: true, createdAt: true });
+export const insertVoiceTranscriptAssignmentSchema = createInsertSchema(voiceTranscriptAssignments).omit({ id: true, assignedAt: true });
+export const insertVoiceTrainingRunSchema = createInsertSchema(voiceTrainingRuns).omit({ id: true, createdAt: true });
+
+// Types
+export type VoiceCallRecording = typeof voiceCallRecordings.$inferSelect;
+export type VoiceTranscript = typeof voiceTranscripts.$inferSelect;
+export type VoiceDataset = typeof voiceDatasets.$inferSelect;
+export type VoiceDatasetSection = typeof voiceDatasetSections.$inferSelect;
+export type VoiceTranscriptAssignment = typeof voiceTranscriptAssignments.$inferSelect;
+export type VoiceTrainingRun = typeof voiceTrainingRuns.$inferSelect;
+
+// --- End AI Voice Training Pipeline Tables ---
+
+// Voice Relations
+export const voiceCallRecordingsRelations = relations(voiceCallRecordings, ({ one }) => ({
+  transcript: one(voiceTranscripts, {
+    fields: [voiceCallRecordings.id],
+    references: [voiceTranscripts.recordingId],
+  }),
+}));
+
+export const voiceTranscriptsRelations = relations(voiceTranscripts, ({ one, many }) => ({
+  recording: one(voiceCallRecordings, {
+    fields: [voiceTranscripts.recordingId],
+    references: [voiceCallRecordings.id],
+  }),
+  assignments: many(voiceTranscriptAssignments),
+}));
+
+export const voiceDatasetsRelations = relations(voiceDatasets, ({ many }) => ({
+  sections: many(voiceDatasetSections),
+  trainingRuns: many(voiceTrainingRuns),
+}));
+
+export const voiceDatasetSectionsRelations = relations(voiceDatasetSections, ({ one, many }) => ({
+  dataset: one(voiceDatasets, {
+    fields: [voiceDatasetSections.datasetId],
+    references: [voiceDatasets.id],
+  }),
+  assignments: many(voiceTranscriptAssignments),
+}));
+
+export const voiceTranscriptAssignmentsRelations = relations(voiceTranscriptAssignments, ({ one }) => ({
+  transcript: one(voiceTranscripts, {
+    fields: [voiceTranscriptAssignments.transcriptId],
+    references: [voiceTranscripts.id],
+  }),
+  section: one(voiceDatasetSections, {
+    fields: [voiceTranscriptAssignments.sectionId],
+    references: [voiceDatasetSections.id],
+  }),
+}));
+
 // Insert schemas
 export const insertCustomerAddressSchema = createInsertSchema(customerAddresses).omit({
   id: true,
