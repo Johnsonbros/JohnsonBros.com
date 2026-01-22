@@ -176,7 +176,7 @@ export const voiceCallRecordings = pgTable('voice_call_recordings', {
   status: text('status').default('pending').notNull(), // pending, processing, completed, failed
   grade: text('grade').default('gray').notNull(), // green, yellow, red, gray
   confidence: real('confidence'),
-  metadata: json('metadata').default({}),
+  metadata: jsonb('metadata').default({}),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
@@ -184,10 +184,10 @@ export const voiceTranscripts = pgTable('voice_transcripts', {
   id: serial('id').primaryKey(),
   recordingId: integer('recording_id').references(() => voiceCallRecordings.id).notNull(),
   rawTranscript: text('raw_transcript'), // Raw Deepgram/Whisper output
-  cleanedTranscript: json('cleaned_transcript'), // Structured JSON for training (OpenAI format)
-  pass1Data: json('pass1_data'), // Deepgram diarization
-  pass2Data: json('pass2_data'), // Whisper refinements
-  pass3Data: json('pass3_data'), // GPT-4 cleanup/coherence
+  cleanedTranscript: jsonb('cleaned_transcript'), // Structured JSON for training (OpenAI format)
+  pass1Data: jsonb('pass1_data'), // Deepgram diarization
+  pass2Data: jsonb('pass2_data'), // Whisper refinements
+  pass3Data: jsonb('pass3_data'), // GPT-4 cleanup/coherence
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
@@ -255,10 +255,17 @@ export const insertVoiceTrainingRunSchema = createInsertSchema(voiceTrainingRuns
 
 // Types
 export type VoiceCallRecording = typeof voiceCallRecordings.$inferSelect;
+export type InsertVoiceCallRecording = z.infer<typeof insertVoiceCallRecordingSchema>;
 export type VoiceTranscript = typeof voiceTranscripts.$inferSelect;
+export type InsertVoiceTranscript = z.infer<typeof insertVoiceTranscriptSchema>;
 export type VoiceDataset = typeof voiceDatasets.$inferSelect;
+export type InsertVoiceDataset = z.infer<typeof insertVoiceDatasetSchema>;
 export type VoiceDatasetSection = typeof voiceDatasetSections.$inferSelect;
+export type InsertVoiceDatasetSection = z.infer<typeof insertVoiceDatasetSectionSchema>;
 export type VoiceTranscriptAssignment = typeof voiceTranscriptAssignments.$inferSelect;
+export type InsertVoiceTranscriptAssignment = z.infer<typeof insertVoiceTranscriptAssignmentSchema>;
+export type VoiceTrainingRun = typeof voiceTrainingRuns.$inferSelect;
+export type InsertVoiceTrainingRun = z.infer<typeof insertVoiceTrainingRunSchema>;
 export const voiceDatasetMixes = pgTable("voice_dataset_mixes", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),

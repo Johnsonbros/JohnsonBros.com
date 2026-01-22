@@ -20,12 +20,13 @@ import {
   type VoiceDatasetSection, type InsertVoiceDatasetSection,
   type VoiceTranscriptAssignment, type InsertVoiceTranscriptAssignment,
   type VoiceTrainingRun, type InsertVoiceTrainingRun,
-  type SystemSettings,
+  type SystemSettings, type InsertSystemSettings,
+  type VoiceDatasetMix, type InsertVoiceDatasetMix,
   customers, appointments, blogPosts, keywords, postKeywords, keywordRankings, blogAnalytics,
   referrals, customerCredits, leads, memberSubscriptions,
   emailTemplates, upsellOffers, revenueMetrics,
   voiceCallRecordings, voiceTranscripts, voiceDatasets, voiceDatasetSections, voiceTranscriptAssignments, voiceTrainingRuns,
-  systemSettings
+  voiceDatasetMixes, systemSettings
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, lte, desc, asc, sql } from "drizzle-orm";
@@ -44,16 +45,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCustomerByPhone(phone: string): Promise<Customer | undefined> {
-    // Normalize phone number for comparison (remove non-digits)
     const normalizedPhone = phone.replace(/\D/g, '');
-    
-    // Use indexed normalizedPhone column for fast lookup
     const [customer] = await db.select()
       .from(customers)
       .where(eq(customers.normalizedPhone, normalizedPhone))
       .limit(1);
-    
-    // If not found and normalizedPhone might be NULL (legacy data), try regex fallback
     if (!customer) {
       const [fallbackCustomer] = await db.select()
         .from(customers)
@@ -61,21 +57,18 @@ export class DatabaseStorage implements IStorage {
         .limit(1);
       return fallbackCustomer;
     }
-    
     return customer;
   }
 
   async createCustomer(customer: InsertCustomer): Promise<Customer> {
-    // Normalize phone for storage and indexing
     const normalizedPhone = customer.phone ? customer.phone.replace(/\D/g, '') : null;
-    
     const [newCustomer] = await db.insert(customers).values({
       ...customer,
       normalizedPhone
     }).returning();
     return newCustomer;
   }
-  
+
   // Appointment methods
   async getAppointment(id: string): Promise<Appointment | undefined> {
     const [appointment] = await db.select().from(appointments).where(eq(appointments.id, parseInt(id))).limit(1);
@@ -98,7 +91,7 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return updatedAppointment;
   }
-  
+
   // Blog methods
   async getBlogPost(id: number): Promise<BlogPost | undefined> {
     const [post] = await db.select().from(blogPosts).where(eq(blogPosts.id, id)).limit(1);
@@ -110,71 +103,38 @@ export class DatabaseStorage implements IStorage {
     return post;
   }
 
-  async getAllBlogPosts(status?: string, limit?: number, offset?: number): Promise<BlogPost[]> {
-    const baseQuery = db.select().from(blogPosts);
-    
-    if (status && limit !== undefined && offset !== undefined) {
-      return await baseQuery
-        .where(eq(blogPosts.status, status))
-        .orderBy(desc(blogPosts.publishDate))
-        .limit(limit)
-        .offset(offset);
-    } else if (status && limit !== undefined) {
-      return await baseQuery
-        .where(eq(blogPosts.status, status))
-        .orderBy(desc(blogPosts.publishDate))
-        .limit(limit);
-    } else if (status) {
-      return await baseQuery
-        .where(eq(blogPosts.status, status))
-        .orderBy(desc(blogPosts.publishDate));
-    } else if (limit !== undefined && offset !== undefined) {
-      return await baseQuery
-        .orderBy(desc(blogPosts.publishDate))
-        .limit(limit)
-        .offset(offset);
-    } else if (limit !== undefined) {
-      return await baseQuery
-        .orderBy(desc(blogPosts.publishDate))
-        .limit(limit);
-    } else {
-      return await baseQuery.orderBy(desc(blogPosts.publishDate));
+  async getAllBlogPosts(status?: string, limit: number = 10, offset: number = 0): Promise<BlogPost[]> {
+    let query = db.select().from(blogPosts);
+    if (status) {
+      query = query.where(eq(blogPosts.status, status)) as any;
     }
+    return await query.orderBy(desc(blogPosts.createdAt)).limit(limit).offset(offset);
   }
 
   async createBlogPost(post: InsertBlogPost): Promise<BlogPost> {
-    const [newPost] = await db.insert(blogPosts).values({
-      ...post,
-      publishDate: post.publishDate ? new Date(post.publishDate) : null
-    }).returning();
+    const [newPost] = await db.insert(blogPosts).values(post).returning();
     return newPost;
   }
 
   async updateBlogPost(id: number, post: Partial<InsertBlogPost>): Promise<BlogPost | undefined> {
-    const updateData = {
-      ...post,
-      publishDate: post.publishDate ? new Date(post.publishDate) : undefined,
-      updatedAt: new Date()
-    };
-    
     const [updatedPost] = await db.update(blogPosts)
-      .set(updateData)
+      .set({ ...post, updatedAt: new Date() })
       .where(eq(blogPosts.id, id))
       .returning();
     return updatedPost;
   }
 
   async deleteBlogPost(id: number): Promise<boolean> {
-    const result = await db.delete(blogPosts).where(eq(blogPosts.id, id));
-    return result.rowCount ? result.rowCount > 0 : false;
+    const [deleted] = await db.delete(blogPosts).where(eq(blogPosts.id, id)).returning();
+    return !!deleted;
   }
 
   async incrementPostViews(id: number): Promise<void> {
     await db.update(blogPosts)
-      .set({ viewCount: sql`${blogPosts.viewCount} + 1` })
+      .set({ views: sql`${blogPosts.views} + 1` })
       .where(eq(blogPosts.id, id));
   }
-  
+
   // Keyword methods
   async getKeyword(id: number): Promise<Keyword | undefined> {
     const [keyword] = await db.select().from(keywords).where(eq(keywords.id, id)).limit(1);
@@ -182,8 +142,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getKeywordByName(keyword: string): Promise<Keyword | undefined> {
-    const [result] = await db.select().from(keywords).where(eq(keywords.keyword, keyword)).limit(1);
-    return result;
+    const [foundKeyword] = await db.select().from(keywords).where(eq(keywords.keyword, keyword)).limit(1);
+    return foundKeyword;
   }
 
   async getAllKeywords(): Promise<Keyword[]> {
@@ -197,18 +157,18 @@ export class DatabaseStorage implements IStorage {
 
   async updateKeyword(id: number, keyword: Partial<InsertKeyword>): Promise<Keyword | undefined> {
     const [updatedKeyword] = await db.update(keywords)
-      .set(keyword)
+      .set({ ...keyword, lastCrawled: new Date() })
       .where(eq(keywords.id, id))
       .returning();
     return updatedKeyword;
   }
 
   async deleteKeyword(id: number): Promise<boolean> {
-    const result = await db.delete(keywords).where(eq(keywords.id, id));
-    return result.rowCount ? result.rowCount > 0 : false;
+    const [deleted] = await db.delete(keywords).where(eq(keywords.id, id)).returning();
+    return !!deleted;
   }
-  
-  // Post-Keyword relationship methods
+
+  // Post-Keyword methods
   async getPostKeywords(postId: number): Promise<PostKeyword[]> {
     return await db.select().from(postKeywords).where(eq(postKeywords.postId, postId));
   }
@@ -223,79 +183,42 @@ export class DatabaseStorage implements IStorage {
   }
 
   async removePostKeyword(postId: number, keywordId: number): Promise<boolean> {
-    const result = await db.delete(postKeywords)
-      .where(and(eq(postKeywords.postId, postId), eq(postKeywords.keywordId, keywordId)));
-    return result.rowCount ? result.rowCount > 0 : false;
+    const [deleted] = await db.delete(postKeywords)
+      .where(and(eq(postKeywords.postId, postId), eq(postKeywords.keywordId, keywordId)))
+      .returning();
+    return !!deleted;
   }
-  
-  // Keyword ranking methods
-  async getKeywordRankings(keywordId: number, limit?: number): Promise<KeywordRanking[]> {
-    const baseQuery = db.select().from(keywordRankings)
+
+  // Ranking methods
+  async getKeywordRankings(keywordId: number, limit: number = 30): Promise<KeywordRanking[]> {
+    return await db.select().from(keywordRankings)
       .where(eq(keywordRankings.keywordId, keywordId))
-      .orderBy(desc(keywordRankings.trackedDate));
-    
-    if (limit) {
-      return await baseQuery.limit(limit);
-    }
-    
-    return await baseQuery;
+      .orderBy(desc(keywordRankings.createdAt))
+      .limit(limit);
   }
 
   async addKeywordRanking(ranking: InsertKeywordRanking): Promise<KeywordRanking> {
     const [newRanking] = await db.insert(keywordRankings).values(ranking).returning();
     return newRanking;
   }
-  
+
   // Analytics methods
   async getBlogAnalytics(postId: number, startDate?: Date, endDate?: Date): Promise<BlogAnalytics[]> {
-    const conditions = [eq(blogAnalytics.postId, postId)];
-    
-    if (startDate) {
-      conditions.push(gte(blogAnalytics.date, startDate));
+    let query = db.select().from(blogAnalytics).where(eq(blogAnalytics.postId, postId));
+    if (startDate && endDate) {
+      query = query.where(and(gte(blogAnalytics.date, startDate), lte(blogAnalytics.date, endDate))) as any;
     }
-    
-    if (endDate) {
-      conditions.push(lte(blogAnalytics.date, endDate));
-    }
-    
-    return await db.select().from(blogAnalytics).where(and(...conditions));
+    return await query.orderBy(desc(blogAnalytics.date));
   }
 
   async updateBlogAnalytics(analytics: InsertBlogAnalytics): Promise<BlogAnalytics> {
-    // Try to find existing analytics for this post and date
-    const [existing] = await db.select().from(blogAnalytics)
-      .where(and(
-        eq(blogAnalytics.postId, analytics.postId),
-        eq(blogAnalytics.date, analytics.date)
-      ))
-      .limit(1);
-    
-    if (existing) {
-      const [updated] = await db.update(blogAnalytics)
-        .set(analytics)
-        .where(eq(blogAnalytics.id, existing.id))
-        .returning();
-      return updated;
-    } else {
-      const [newAnalytics] = await db.insert(blogAnalytics).values(analytics).returning();
-      return newAnalytics;
-    }
-  }
-
-  // Time slots method (not implemented in database - using HousecallPro API)
-  async getAvailableTimeSlots(date: string): Promise<AvailableTimeSlot[]> {
-    // Time slots come from HousecallPro API, not database storage
-    // This method is here for interface compatibility
-    return [];
+    const [newAnalytics] = await db.insert(blogAnalytics).values(analytics).returning();
+    return newAnalytics;
   }
 
   // Referral methods
   async createReferral(referral: InsertReferral): Promise<Referral> {
-    const code = `REF${Date.now().toString(36).toUpperCase()}`;
-    const [newReferral] = await db.insert(referrals).values({
-      ...referral,
-      referralCode: code
-    }).returning();
+    const [newReferral] = await db.insert(referrals).values(referral).returning();
     return newReferral;
   }
 
@@ -310,116 +233,51 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getReferralsByCustomer(customerId: string): Promise<Referral[]> {
-    return await db.select().from(referrals).where(eq(referrals.referrerCustomerId, customerId));
+    return await db.select().from(referrals).where(eq(referrals.referrerId, parseInt(customerId)));
   }
 
   async updateReferralStatus(id: number, status: string, leadId?: string): Promise<Referral | undefined> {
-    const updateData: any = { status };
-    if (leadId) {
-      updateData.referredLeadId = leadId;
-    }
-    if (status === 'converted') {
-      updateData.convertedAt = new Date();
-    }
-    
     const [updated] = await db.update(referrals)
-      .set(updateData)
+      .set({ status, convertedLeadId: leadId ? parseInt(leadId) : null })
       .where(eq(referrals.id, id))
       .returning();
     return updated;
   }
 
-  // Customer credit methods
+  // Credit methods
   async createCustomerCredit(credit: InsertCustomerCredit): Promise<CustomerCredit> {
     const [newCredit] = await db.insert(customerCredits).values(credit).returning();
     return newCredit;
   }
 
   async getCustomerCredits(customerId: string): Promise<CustomerCredit[]> {
-    return await db.select().from(customerCredits)
-      .where(and(
-        eq(customerCredits.customerId, customerId),
-        eq(customerCredits.status, 'available')
-      ));
-  }
-
-  async applyCredit(creditId: number, jobId: string): Promise<CustomerCredit | undefined> {
-    const [credit] = await db.update(customerCredits)
-      .set({
-        status: 'applied',
-        appliedToJobId: jobId,
-        appliedAt: new Date()
-      })
-      .where(and(
-        eq(customerCredits.id, creditId),
-        eq(customerCredits.status, 'available')
-      ))
-      .returning();
-    return credit;
-  }
-
-  // Member Subscription methods
-  async getMemberSubscription(customerId: number): Promise<MemberSubscription | undefined> {
-    const [subscription] = await db.select().from(memberSubscriptions)
-      .where(and(
-        eq(memberSubscriptions.customerId, customerId),
-        eq(memberSubscriptions.status, 'active')
-      ))
-      .limit(1);
-    return subscription;
-  }
-
-  async updateMemberSubscription(id: number, updates: Partial<MemberSubscription>): Promise<MemberSubscription | undefined> {
-    const [updated] = await db.update(memberSubscriptions)
-      .set(updates)
-      .where(eq(memberSubscriptions.id, id))
-      .returning();
-    return updated;
+    return await db.select().from(customerCredits).where(eq(customerCredits.customerId, parseInt(customerId)));
   }
 
   // Email Template methods
-  async getEmailTemplates(category?: string): Promise<EmailTemplate[]> {
-    if (category) {
-      return await db.select().from(emailTemplates)
-        .where(and(
-          eq(emailTemplates.category, category),
-          eq(emailTemplates.isActive, true)
-        ));
-    }
-    return await db.select().from(emailTemplates)
-      .where(eq(emailTemplates.isActive, true));
+  async getEmailTemplates(): Promise<EmailTemplate[]> {
+    return await db.select().from(emailTemplates).orderBy(asc(emailTemplates.name));
   }
 
-  async getEmailTemplateByName(name: string): Promise<EmailTemplate | undefined> {
-    const [template] = await db.select().from(emailTemplates)
-      .where(and(
-        eq(emailTemplates.name, name),
-        eq(emailTemplates.isActive, true)
-      ))
-      .limit(1);
+  async getEmailTemplate(id: number): Promise<EmailTemplate | undefined> {
+    const [template] = await db.select().from(emailTemplates).where(eq(emailTemplates.id, id)).limit(1);
     return template;
   }
 
   async createEmailTemplate(template: InsertEmailTemplate): Promise<EmailTemplate> {
-    const [newTemplate] = await db.insert(emailTemplates).values([template]).returning();
+    const [newTemplate] = await db.insert(emailTemplates).values(template).returning();
     return newTemplate;
   }
 
+  async updateEmailTemplate(id: number, template: Partial<InsertEmailTemplate>): Promise<EmailTemplate | undefined> {
+    const [updated] = await db.update(emailTemplates)
+      .set({ ...template, updatedAt: new Date() })
+      .where(eq(emailTemplates.id, id))
+      .returning();
+    return updated;
+  }
+
   // Upsell Offer methods
-  async getUpsellOffersForService(serviceName: string): Promise<UpsellOffer[]> {
-    return await db.select().from(upsellOffers)
-      .where(and(
-        eq(upsellOffers.triggerService, serviceName),
-        eq(upsellOffers.isActive, true)
-      ))
-      .orderBy(asc(upsellOffers.displayOrder));
-  }
-
-  async createUpsellOffer(offer: InsertUpsellOffer): Promise<UpsellOffer> {
-    const [newOffer] = await db.insert(upsellOffers).values(offer).returning();
-    return newOffer;
-  }
-
   async getUpsellOffers(): Promise<UpsellOffer[]> {
     return await db.select().from(upsellOffers)
       .where(eq(upsellOffers.isActive, true))
@@ -450,7 +308,6 @@ export class DatabaseStorage implements IStorage {
   async getLatestRevenueMetrics(): Promise<RevenueMetric[]> {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    
     return await db.select().from(revenueMetrics)
       .where(gte(revenueMetrics.date, thirtyDaysAgo))
       .orderBy(desc(revenueMetrics.date))
@@ -490,13 +347,17 @@ export class DatabaseStorage implements IStorage {
 
   // AI Voice Training methods
   async getVoiceCallRecording(id: number): Promise<VoiceCallRecording | undefined> {
-    const [recording] = await db.select().from(voiceCallRecordings).where(eq(voiceCallRecordings.id, id));
+    const [recording] = await db.select().from(voiceCallRecordings).where(eq(voiceCallRecordings.id, id)).limit(1);
     return recording;
   }
 
   async getVoiceCallBySid(sid: string): Promise<VoiceCallRecording | undefined> {
-    const [recording] = await db.select().from(voiceCallRecordings).where(eq(voiceCallRecordings.twilioCallSid, sid));
+    const [recording] = await db.select().from(voiceCallRecordings).where(eq(voiceCallRecordings.twilioCallSid, sid)).limit(1);
     return recording;
+  }
+
+  async getVoiceCallRecordings(): Promise<VoiceCallRecording[]> {
+    return await db.select().from(voiceCallRecordings).orderBy(desc(voiceCallRecordings.createdAt));
   }
 
   async createVoiceCallRecording(recording: InsertVoiceCallRecording): Promise<VoiceCallRecording> {
@@ -517,7 +378,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getVoiceTranscript(recordingId: number): Promise<VoiceTranscript | undefined> {
-    const [transcript] = await db.select().from(voiceTranscripts).where(eq(voiceTranscripts.recordingId, recordingId));
+    const [transcript] = await db.select().from(voiceTranscripts).where(eq(voiceTranscripts.recordingId, recordingId)).limit(1);
     return transcript;
   }
 
@@ -536,7 +397,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getVoiceDataset(id: number): Promise<VoiceDataset | undefined> {
-    const [dataset] = await db.select().from(voiceDatasets).where(eq(voiceDatasets.id, id));
+    const [dataset] = await db.select().from(voiceDatasets).where(eq(voiceDatasets.id, id)).limit(1);
     return dataset;
   }
 
@@ -577,7 +438,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getVoiceTrainingRun(id: number): Promise<VoiceTrainingRun | undefined> {
-    const [run] = await db.select().from(voiceTrainingRuns).where(eq(voiceTrainingRuns.id, id));
+    const [run] = await db.select().from(voiceTrainingRuns).where(eq(voiceTrainingRuns.id, id)).limit(1);
     return run;
   }
 
@@ -591,14 +452,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getVoiceDatasetMix(id: number): Promise<VoiceDatasetMix | undefined> {
-    const [mix] = await db.select().from(voiceDatasetMixes).where(eq(voiceDatasetMixes.id, id));
+    const [mix] = await db.select().from(voiceDatasetMixes).where(eq(voiceDatasetMixes.id, id)).limit(1);
     return mix;
   }
 
-  async getVoiceCallRecordings(): Promise<VoiceCallRecording[]> {
-    return await db.select().from(voiceCallRecordings).orderBy(desc(voiceCallRecordings.createdAt));
-  }
-
+  // System Settings methods
   async getSystemSetting<T>(key: string): Promise<T | undefined> {
     const [setting] = await db.select().from(systemSettings).where(eq(systemSettings.key, key)).limit(1);
     return setting?.value as T | undefined;

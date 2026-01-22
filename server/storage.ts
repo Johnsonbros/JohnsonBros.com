@@ -10,12 +10,18 @@ import {
   type Referral, type InsertReferral,
   type CustomerCredit, type InsertCustomerCredit,
   type Lead, type InsertLead,
+  type MemberSubscription,
+  type EmailTemplate, type InsertEmailTemplate,
+  type UpsellOffer, type InsertUpsellOffer,
+  type RevenueMetric, type InsertRevenueMetric,
   type VoiceCallRecording, type InsertVoiceCallRecording,
   type VoiceTranscript, type InsertVoiceTranscript,
   type VoiceDataset, type InsertVoiceDataset,
   type VoiceDatasetSection, type InsertVoiceDatasetSection,
   type VoiceTranscriptAssignment, type InsertVoiceTranscriptAssignment,
-  type VoiceTrainingRun, type InsertVoiceTrainingRun
+  type VoiceTrainingRun, type InsertVoiceTrainingRun,
+  type SystemSettings, type InsertSystemSettings,
+  type VoiceDatasetMix, type InsertVoiceDatasetMix
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -73,12 +79,24 @@ export interface IStorage {
   // Customer credit methods
   createCustomerCredit(credit: InsertCustomerCredit): Promise<CustomerCredit>;
   getCustomerCredits(customerId: string): Promise<CustomerCredit[]>;
-  applyCredit(creditId: number, jobId: string): Promise<CustomerCredit | undefined>;
-  
-  // Member Subscription methods
-  getMemberSubscription(customerId: number): Promise<any | undefined>;
-  updateMemberSubscription(id: number, updates: any): Promise<any | undefined>;
-  
+
+  // Email Template methods
+  getEmailTemplates(): Promise<EmailTemplate[]>;
+  getEmailTemplate(id: number): Promise<EmailTemplate | undefined>;
+  createEmailTemplate(template: InsertEmailTemplate): Promise<EmailTemplate>;
+  updateEmailTemplate(id: number, template: Partial<InsertEmailTemplate>): Promise<EmailTemplate | undefined>;
+
+  // Upsell Offer methods
+  getUpsellOffers(): Promise<UpsellOffer[]>;
+
+  // Subscription methods
+  getSubscriptions(): Promise<MemberSubscription[]>;
+
+  // Revenue Metrics methods
+  getRevenueMetrics(startDate: Date, endDate: Date): Promise<RevenueMetric[]>;
+  createRevenueMetric(metric: InsertRevenueMetric): Promise<RevenueMetric>;
+  getLatestRevenueMetrics(): Promise<RevenueMetric[]>;
+
   // Lead methods
   createLead(lead: InsertLead): Promise<Lead>;
   getLead(id: number): Promise<Lead | undefined>;
@@ -93,26 +111,20 @@ export interface IStorage {
   createVoiceCallRecording(recording: InsertVoiceCallRecording): Promise<VoiceCallRecording>;
   updateVoiceCallRecording(id: number, updates: Partial<VoiceCallRecording>): Promise<VoiceCallRecording | undefined>;
   getVoiceCallRecordingsByFingerprint(fingerprint: string): Promise<VoiceCallRecording[]>;
-  
   getVoiceTranscript(recordingId: number): Promise<VoiceTranscript | undefined>;
   getVoiceTranscripts(): Promise<VoiceTranscript[]>;
   createVoiceTranscript(transcript: InsertVoiceTranscript): Promise<VoiceTranscript>;
   updateVoiceTranscript(id: number, updates: Partial<VoiceTranscript>): Promise<VoiceTranscript | undefined>;
-  
   getVoiceDataset(id: number): Promise<VoiceDataset | undefined>;
+  getVoiceDatasets(): Promise<VoiceDataset[]> ;
   getAllVoiceDatasets(): Promise<VoiceDataset[]>;
-  getVoiceDatasets(): Promise<VoiceDataset[]>;
   createVoiceDataset(dataset: InsertVoiceDataset): Promise<VoiceDataset>;
-  
   getVoiceDatasetSections(datasetId: number): Promise<VoiceDatasetSection[]>;
   createVoiceDatasetSection(section: InsertVoiceDatasetSection): Promise<VoiceDatasetSection>;
-  
   createVoiceTranscriptAssignment(assignment: InsertVoiceTranscriptAssignment): Promise<VoiceTranscriptAssignment>;
   getTranscriptAssignments(transcriptId: number): Promise<VoiceTranscriptAssignment[]>;
-  
   createVoiceTrainingRun(run: InsertVoiceTrainingRun): Promise<VoiceTrainingRun>;
   getVoiceTrainingRun(id: number): Promise<VoiceTrainingRun | undefined>;
-
   createVoiceDatasetMix(mix: InsertVoiceDatasetMix): Promise<VoiceDatasetMix>;
   getVoiceDatasetMixes(): Promise<VoiceDatasetMix[]>;
   getVoiceDatasetMix(id: number): Promise<VoiceDatasetMix | undefined>;
@@ -123,222 +135,117 @@ export interface IStorage {
 }
 
 export class MemStorage implements IStorage {
-  private customers: Map<string, Customer>;
-  private appointments: Map<string, Appointment>;
-  private blogPosts: Map<number, BlogPost>;
-  private keywords: Map<number, Keyword>;
-  private postKeywords: Map<number, PostKeyword>;
-  private keywordRankings: Map<number, KeywordRanking>;
-  private blogAnalytics: Map<number, BlogAnalytics>;
-  private timeSlots: Map<string, AvailableTimeSlot>;
-  private referrals: Map<number, Referral>;
-  private customerCredits: Map<number, CustomerCredit>;
-  private leads: Map<number, Lead>;
-  private nextBlogId: number;
-  private nextKeywordId: number;
-  private nextPostKeywordId: number;
-  private nextRankingId: number;
-  private nextAnalyticsId: number;
-  private nextReferralId: number;
-  private nextCreditId: number;
-  private nextLeadId: number;
+  private customers: Map<number, Customer> = new Map();
+  private appointments: Map<number, Appointment> = new Map();
+  private blogPosts: Map<number, BlogPost> = new Map();
+  private keywords: Map<number, Keyword> = new Map();
+  private postKeywords: Map<number, PostKeyword> = new Map();
+  private keywordRankings: Map<number, KeywordRanking> = new Map();
+  private blogAnalytics: Map<number, BlogAnalytics> = new Map();
+  private referrals: Map<number, Referral> = new Map();
+  private customerCredits: Map<number, CustomerCredit> = new Map();
+  private emailTemplates: Map<number, EmailTemplate> = new Map();
+  private upsellOffers: Map<number, UpsellOffer> = new Map();
+  private memberSubscriptions: Map<number, MemberSubscription> = new Map();
+  private revenueMetrics: Map<number, RevenueMetric> = new Map();
+  private leads: Map<number, Lead> = new Map();
 
-  constructor() {
-    this.customers = new Map();
-    this.appointments = new Map();
-    this.blogPosts = new Map();
-    this.keywords = new Map();
-    this.postKeywords = new Map();
-    this.keywordRankings = new Map();
-    this.blogAnalytics = new Map();
-    this.timeSlots = new Map();
-    this.referrals = new Map();
-    this.customerCredits = new Map();
-    this.leads = new Map();
-    this.nextBlogId = 1;
-    this.nextKeywordId = 1;
-    this.nextPostKeywordId = 1;
-    this.nextRankingId = 1;
-    this.nextAnalyticsId = 1;
-    this.nextReferralId = 1;
-    this.nextCreditId = 1;
-    this.nextLeadId = 1;
-  }
+  private nextId = 1;
 
-  private initializeDefaultData() {
-    // Default services - commented out since we're using Housecall Pro services
-    /*
-    const defaultServices = [
-    ...
-    ];
-    // Services now come from Housecall Pro API
-    */
-
-    // DISABLED: Don't generate fake time slots - use real Housecall Pro API data
-    // The system should only show real availability from the API
-    this.timeSlots.clear();
-  }
-
-  // Customer methods
   async getCustomer(id: string): Promise<Customer | undefined> {
-    return this.customers.get(id);
+    return this.customers.get(parseInt(id));
   }
 
   async getCustomerByEmail(email: string): Promise<Customer | undefined> {
-    return Array.from(this.customers.values()).find(
-      (customer) => customer.email === email,
-    );
+    return Array.from(this.customers.values()).find(c => c.email === email);
   }
 
   async getCustomerByPhone(phone: string): Promise<Customer | undefined> {
-    // Normalize phone number for comparison (remove non-digits)
-    const normalizedPhone = phone.replace(/\D/g, '');
-    return Array.from(this.customers.values()).find(
-      (customer) => customer.phone && customer.phone.replace(/\D/g, '') === normalizedPhone,
-    );
+    const normalized = phone.replace(/\D/g, '');
+    return Array.from(this.customers.values()).find(c => c.normalizedPhone === normalized);
   }
 
-  async createCustomer(insertCustomer: InsertCustomer): Promise<Customer> {
-    const id = parseInt(randomUUID().replace(/-/g, '').substring(0, 8), 16);
-    const normalizedPhone = insertCustomer.phone ? insertCustomer.phone.replace(/\D/g, '') : null;
-    const customer: Customer = {
-      ...insertCustomer,
+  async createCustomer(customer: InsertCustomer): Promise<Customer> {
+    const id = this.nextId++;
+    const newCustomer: Customer = {
+      ...customer,
       id,
-      phone: insertCustomer.phone || null,
-      normalizedPhone,
-      housecallProId: null,
-      createdAt: new Date(),
+      normalizedPhone: customer.phone ? customer.phone.replace(/\D/g, '') : null,
+      housecallProId: customer.housecallProId ?? null,
+      createdAt: new Date()
     };
-    this.customers.set(String(id), customer);
-    return customer;
+    this.customers.set(id, newCustomer);
+    return newCustomer;
   }
 
-  // Services now come from Housecall Pro API - no local storage needed
-
-  // Appointment methods
   async getAppointment(id: string): Promise<Appointment | undefined> {
-    return this.appointments.get(id);
+    return this.appointments.get(parseInt(id));
   }
 
   async getAppointmentsByCustomer(customerId: string): Promise<Appointment[]> {
-    return Array.from(this.appointments.values()).filter(
-      (appointment) => appointment.customerId === parseInt(customerId),
-    );
+    return Array.from(this.appointments.values()).filter(a => a.customerId === parseInt(customerId));
   }
 
   async createAppointment(appointment: InsertAppointment): Promise<Appointment> {
-    const id = parseInt(randomUUID().replace(/-/g, '').substring(0, 8), 16);
+    const id = this.nextId++;
     const newAppointment: Appointment = {
       ...appointment,
       id,
-      status: appointment.status ?? "scheduled",
-      customerId: appointment.customerId || null,
-      address: appointment.address || null,
-      notes: appointment.notes || null,
-      createdAt: new Date(),
+      status: appointment.status ?? 'scheduled',
+      address: appointment.address ?? null,
+      notes: appointment.notes ?? null,
+      createdAt: new Date()
     };
-    this.appointments.set(String(id), newAppointment);
+    this.appointments.set(id, newAppointment);
     return newAppointment;
   }
 
   async updateAppointmentStatus(id: string, status: string): Promise<Appointment | undefined> {
-    const appointment = this.appointments.get(id);
+    const appointment = this.appointments.get(parseInt(id));
     if (appointment) {
       appointment.status = status;
-      this.appointments.set(id, appointment);
+      this.appointments.set(parseInt(id), appointment);
+      return appointment;
     }
-    return appointment;
+    return undefined;
   }
 
-  // Time slots methods
-  async getAvailableTimeSlots(date: string): Promise<AvailableTimeSlot[]> {
-    return Array.from(this.timeSlots.values()).filter(
-      (slot) => slot.date === date && slot.isAvailable,
-    );
-  }
-
-  // Reviews now come from Google Reviews API - no local storage needed
-
-  // Blog methods
   async getBlogPost(id: number): Promise<BlogPost | undefined> {
     return this.blogPosts.get(id);
   }
 
   async getBlogPostBySlug(slug: string): Promise<BlogPost | undefined> {
-    return Array.from(this.blogPosts.values()).find(
-      (post) => post.slug === slug
-    );
+    return Array.from(this.blogPosts.values()).find(p => p.slug === slug);
   }
 
-  async getAllBlogPosts(status?: string, limit?: number, offset?: number): Promise<BlogPost[]> {
+  async getAllBlogPosts(status?: string, limit: number = 10, offset: number = 0): Promise<BlogPost[]> {
     let posts = Array.from(this.blogPosts.values());
-    
-    if (status) {
-      posts = posts.filter(post => post.status === status);
-    }
-    
-    // Sort by publish date (newest first)
-    posts.sort((a, b) => {
-      const dateA = a.publishDate ? new Date(a.publishDate).getTime() : 0;
-      const dateB = b.publishDate ? new Date(b.publishDate).getTime() : 0;
-      return dateB - dateA;
-    });
-    
-    if (offset !== undefined && limit !== undefined) {
-      posts = posts.slice(offset, offset + limit);
-    }
-    
-    return posts;
+    if (status) posts = posts.filter(p => p.status === status);
+    return posts.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).slice(offset, offset + limit);
   }
 
   async createBlogPost(post: InsertBlogPost): Promise<BlogPost> {
-    const id = this.nextBlogId++;
-    const now = new Date();
+    const id = this.nextId++;
     const newPost: BlogPost = {
+      ...post,
       id,
-      slug: post.slug || '',
-      title: post.title || '',
-      excerpt: post.excerpt ?? null,
-      content: post.content,
+      description: post.description ?? null,
       featuredImage: post.featuredImage ?? null,
-      metaTitle: post.metaTitle ?? null,
-      metaDescription: post.metaDescription ?? null,
-      author: post.author ?? 'Johnson Bros. Plumbing',
-      status: post.status,
-      publishDate: post.publishDate ? new Date(post.publishDate) : null,
-      viewCount: 0,
-      readingTime: post.readingTime ?? null,
-      category: post.category ?? null,
-      tags: post.tags ?? null,
-      createdAt: now,
-      updatedAt: now,
+      tags: post.tags ?? [],
+      views: 0,
+      createdAt: new Date(),
+      updatedAt: new Date()
     };
     this.blogPosts.set(id, newPost);
     return newPost;
   }
 
   async updateBlogPost(id: number, post: Partial<InsertBlogPost>): Promise<BlogPost | undefined> {
-    const existingPost = this.blogPosts.get(id);
-    if (existingPost) {
-      const updatedPost: BlogPost = {
-        ...existingPost,
-        ...(post.slug !== undefined && { slug: post.slug }),
-        ...(post.title !== undefined && { title: post.title }),
-        ...(post.excerpt !== undefined && { excerpt: post.excerpt ?? null }),
-        ...(post.content !== undefined && { content: post.content }),
-        ...(post.featuredImage !== undefined && { featuredImage: post.featuredImage ?? null }),
-        ...(post.metaTitle !== undefined && { metaTitle: post.metaTitle ?? null }),
-        ...(post.metaDescription !== undefined && { metaDescription: post.metaDescription ?? null }),
-        ...(post.author !== undefined && { author: post.author }),
-        ...(post.status !== undefined && { status: post.status }),
-        ...(post.publishDate !== undefined && { publishDate: post.publishDate ? new Date(post.publishDate) : null }),
-        ...(post.readingTime !== undefined && { readingTime: post.readingTime ?? null }),
-        ...(post.category !== undefined && { category: post.category ?? null }),
-        ...(post.tags !== undefined && { tags: post.tags ?? null }),
-        updatedAt: new Date(),
-      };
-      this.blogPosts.set(id, updatedPost);
-      return updatedPost;
+    const existing = this.blogPosts.get(id);
+    if (existing) {
+      const updated = { ...existing, ...post, updatedAt: new Date() };
+      this.blogPosts.set(id, updated);
+      return updated;
     }
     return undefined;
   }
@@ -350,20 +257,17 @@ export class MemStorage implements IStorage {
   async incrementPostViews(id: number): Promise<void> {
     const post = this.blogPosts.get(id);
     if (post) {
-      post.viewCount++;
+      post.views++;
       this.blogPosts.set(id, post);
     }
   }
 
-  // Keyword methods
   async getKeyword(id: number): Promise<Keyword | undefined> {
     return this.keywords.get(id);
   }
 
   async getKeywordByName(keyword: string): Promise<Keyword | undefined> {
-    return Array.from(this.keywords.values()).find(
-      (k) => k.keyword === keyword
-    );
+    return Array.from(this.keywords.values()).find(k => k.keyword === keyword);
   }
 
   async getAllKeywords(): Promise<Keyword[]> {
@@ -371,32 +275,24 @@ export class MemStorage implements IStorage {
   }
 
   async createKeyword(keyword: InsertKeyword): Promise<Keyword> {
-    const id = this.nextKeywordId++;
+    const id = this.nextId++;
     const newKeyword: Keyword = {
+      ...keyword,
       id,
-      keyword: keyword.keyword,
-      searchVolume: keyword.searchVolume ?? null,
       difficulty: keyword.difficulty ?? null,
-      competition: keyword.competition ?? null,
-      searchIntent: keyword.searchIntent ?? null,
-      location: keyword.location ?? null,
-      isPrimary: keyword.isPrimary ?? null,
-      lastTracked: null,
-      createdAt: new Date(),
+      searchVolume: keyword.searchVolume ?? null,
+      lastCrawled: null
     };
     this.keywords.set(id, newKeyword);
     return newKeyword;
   }
 
   async updateKeyword(id: number, keyword: Partial<InsertKeyword>): Promise<Keyword | undefined> {
-    const existingKeyword = this.keywords.get(id);
-    if (existingKeyword) {
-      const updatedKeyword = {
-        ...existingKeyword,
-        ...keyword,
-      };
-      this.keywords.set(id, updatedKeyword);
-      return updatedKeyword;
+    const existing = this.keywords.get(id);
+    if (existing) {
+      const updated = { ...existing, ...keyword };
+      this.keywords.set(id, updated);
+      return updated;
     }
     return undefined;
   }
@@ -405,154 +301,55 @@ export class MemStorage implements IStorage {
     return this.keywords.delete(id);
   }
 
-  // Post-Keyword relationship methods
   async getPostKeywords(postId: number): Promise<PostKeyword[]> {
-    return Array.from(this.postKeywords.values()).filter(
-      (pk) => pk.postId === postId
-    );
+    return Array.from(this.postKeywords.values()).filter(pk => pk.postId === postId);
   }
 
   async getKeywordPosts(keywordId: number): Promise<PostKeyword[]> {
-    return Array.from(this.postKeywords.values()).filter(
-      (pk) => pk.keywordId === keywordId
-    );
+    return Array.from(this.postKeywords.values()).filter(pk => pk.keywordId === keywordId);
   }
 
   async addPostKeyword(postKeyword: InsertPostKeyword): Promise<PostKeyword> {
-    const id = this.nextPostKeywordId++;
-    const newPostKeyword: PostKeyword = {
-      id,
-      postId: postKeyword.postId,
-      keywordId: postKeyword.keywordId,
-      isPrimary: postKeyword.isPrimary ?? null,
-      keywordDensity: postKeyword.keywordDensity ?? null,
-      createdAt: new Date(),
-    };
-    this.postKeywords.set(id, newPostKeyword);
-    return newPostKeyword;
+    const id = this.nextId++;
+    const newPK = { ...postKeyword, id };
+    this.postKeywords.set(id, newPK);
+    return newPK;
   }
 
   async removePostKeyword(postId: number, keywordId: number): Promise<boolean> {
-    const toRemove = Array.from(this.postKeywords.entries()).find(
-      ([_, pk]) => pk.postId === postId && pk.keywordId === keywordId
-    );
-    if (toRemove) {
-      return this.postKeywords.delete(toRemove[0]);
-    }
+    const pk = Array.from(this.postKeywords.values()).find(p => p.postId === postId && p.keywordId === keywordId);
+    if (pk) return this.postKeywords.delete(pk.id);
     return false;
   }
 
-  // Keyword ranking methods
-  async getKeywordRankings(keywordId: number, limit?: number): Promise<KeywordRanking[]> {
-    let rankings = Array.from(this.keywordRankings.values()).filter(
-      (r) => r.keywordId === keywordId
-    );
-    
-    // Sort by tracked date (newest first)
-    rankings.sort((a, b) => {
-      const dateA = new Date(a.trackedDate).getTime();
-      const dateB = new Date(b.trackedDate).getTime();
-      return dateB - dateA;
-    });
-    
-    if (limit) {
-      rankings = rankings.slice(0, limit);
-    }
-    
-    return rankings;
+  async getKeywordRankings(keywordId: number, limit: number = 30): Promise<KeywordRanking[]> {
+    return Array.from(this.keywordRankings.values())
+      .filter(r => r.keywordId === keywordId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .slice(0, limit);
   }
 
   async addKeywordRanking(ranking: InsertKeywordRanking): Promise<KeywordRanking> {
-    const id = this.nextRankingId++;
-    const newRanking: KeywordRanking = {
-      id,
-      keywordId: ranking.keywordId,
-      position: ranking.position ?? null,
-      previousPosition: ranking.previousPosition ?? null,
-      url: ranking.url ?? null,
-      searchEngine: ranking.searchEngine ?? null,
-      location: ranking.location ?? null,
-      impressions: ranking.impressions ?? null,
-      clicks: ranking.clicks ?? null,
-      ctr: ranking.ctr ?? null,
-      trackedDate: new Date(),
-    };
+    const id = this.nextId++;
+    const newRanking = { ...ranking, id, createdAt: new Date() };
     this.keywordRankings.set(id, newRanking);
     return newRanking;
   }
 
-  // Analytics methods
   async getBlogAnalytics(postId: number, startDate?: Date, endDate?: Date): Promise<BlogAnalytics[]> {
-    let analytics = Array.from(this.blogAnalytics.values()).filter(
-      (a) => a.postId === postId
-    );
-    
-    if (startDate) {
-      analytics = analytics.filter(a => new Date(a.date) >= startDate);
-    }
-    
-    if (endDate) {
-      analytics = analytics.filter(a => new Date(a.date) <= endDate);
-    }
-    
-    return analytics;
+    return Array.from(this.blogAnalytics.values()).filter(a => a.postId === postId);
   }
 
   async updateBlogAnalytics(analytics: InsertBlogAnalytics): Promise<BlogAnalytics> {
-    // Find existing analytics for this post and date
-    const existing = Array.from(this.blogAnalytics.entries()).find(
-      ([_, a]) => a.postId === analytics.postId && 
-                  new Date(a.date).toDateString() === new Date(analytics.date).toDateString()
-    );
-    
-    if (existing) {
-      const updatedAnalytics = {
-        ...existing[1],
-        ...analytics,
-      };
-      this.blogAnalytics.set(existing[0], updatedAnalytics);
-      return updatedAnalytics;
-    } else {
-      const id = this.nextAnalyticsId++;
-      const newAnalytics: BlogAnalytics = {
-        id,
-        postId: analytics.postId,
-        date: analytics.date,
-        pageViews: analytics.pageViews ?? null,
-        uniqueVisitors: analytics.uniqueVisitors ?? null,
-        avgTimeOnPage: analytics.avgTimeOnPage ?? null,
-        bounceRate: analytics.bounceRate ?? null,
-        conversionRate: analytics.conversionRate ?? null,
-        createdAt: new Date(),
-      };
-      this.blogAnalytics.set(id, newAnalytics);
-      return newAnalytics;
-    }
+    const id = this.nextId++;
+    const newAnalytics = { ...analytics, id };
+    this.blogAnalytics.set(id, newAnalytics);
+    return newAnalytics;
   }
 
-  // Referral methods
   async createReferral(referral: InsertReferral): Promise<Referral> {
-    const id = this.nextReferralId++;
-    const code = `REF${Date.now().toString(36).toUpperCase()}`;
-    const newReferral: Referral = {
-      id,
-      referrerCustomerId: referral.referrerCustomerId,
-      referrerName: referral.referrerName,
-      referrerPhone: referral.referrerPhone,
-      referredLeadId: referral.referredLeadId ?? null,
-      referredName: referral.referredName,
-      referredPhone: referral.referredPhone,
-      referredEmail: referral.referredEmail ?? null,
-      referralCode: code,
-      status: referral.status ?? 'pending',
-      discountAmount: referral.discountAmount ?? 9900,
-      discountApplied: referral.discountApplied ?? false,
-      notes: referral.notes ?? null,
-      jobId: referral.jobId ?? null,
-      convertedAt: null,
-      expiresAt: referral.expiresAt ?? null,
-      createdAt: new Date(),
-    };
+    const id = this.nextId++;
+    const newReferral = { ...referral, id, convertedLeadId: referral.convertedLeadId ?? null, createdAt: new Date() };
     this.referrals.set(id, newReferral);
     return newReferral;
   }
@@ -566,98 +363,93 @@ export class MemStorage implements IStorage {
   }
 
   async getReferralsByCustomer(customerId: string): Promise<Referral[]> {
-    return Array.from(this.referrals.values()).filter(
-      r => r.referrerCustomerId === customerId
-    );
+    return Array.from(this.referrals.values()).filter(r => r.referrerId === parseInt(customerId));
   }
 
   async updateReferralStatus(id: number, status: string, leadId?: string): Promise<Referral | undefined> {
     const referral = this.referrals.get(id);
     if (referral) {
       referral.status = status;
-      if (leadId) {
-        referral.referredLeadId = leadId;
-      }
-      if (status === 'converted') {
-        referral.convertedAt = new Date();
-      }
+      if (leadId) referral.convertedLeadId = parseInt(leadId);
+      this.referrals.set(id, referral);
       return referral;
     }
     return undefined;
   }
 
-  // Customer credit methods
   async createCustomerCredit(credit: InsertCustomerCredit): Promise<CustomerCredit> {
-    const id = this.nextCreditId++;
-    const newCredit: CustomerCredit = {
-      id,
-      customerId: credit.customerId,
-      amount: credit.amount,
-      type: credit.type ?? 'referral',
-      sourceReferralId: credit.sourceReferralId ?? null,
-      appliedToJobId: credit.appliedToJobId ?? null,
-      status: credit.status ?? 'available',
-      expiresAt: credit.expiresAt ?? null,
-      createdAt: new Date(),
-      appliedAt: null,
-    };
+    const id = this.nextId++;
+    const newCredit = { ...credit, id, notes: credit.notes ?? null, createdAt: new Date() };
     this.customerCredits.set(id, newCredit);
     return newCredit;
   }
 
   async getCustomerCredits(customerId: string): Promise<CustomerCredit[]> {
-    return Array.from(this.customerCredits.values()).filter(
-      c => c.customerId === customerId && c.status === 'available'
-    );
+    return Array.from(this.customerCredits.values()).filter(c => c.customerId === parseInt(customerId));
   }
 
-  async applyCredit(creditId: number, jobId: string): Promise<CustomerCredit | undefined> {
-    const credit = this.customerCredits.get(creditId);
-    if (credit && credit.status === 'available') {
-      credit.status = 'applied';
-      credit.appliedToJobId = jobId;
-      credit.appliedAt = new Date();
-      return credit;
+  async getEmailTemplates(): Promise<EmailTemplate[]> {
+    return Array.from(this.emailTemplates.values());
+  }
+
+  async getEmailTemplate(id: number): Promise<EmailTemplate | undefined> {
+    return this.emailTemplates.get(id);
+  }
+
+  async createEmailTemplate(template: InsertEmailTemplate): Promise<EmailTemplate> {
+    const id = this.nextId++;
+    const newTemplate = { ...template, id, createdAt: new Date(), updatedAt: new Date() };
+    this.emailTemplates.set(id, newTemplate);
+    return newTemplate;
+  }
+
+  async updateEmailTemplate(id: number, template: Partial<InsertEmailTemplate>): Promise<EmailTemplate | undefined> {
+    const existing = this.emailTemplates.get(id);
+    if (existing) {
+      const updated = { ...existing, ...template, updatedAt: new Date() };
+      this.emailTemplates.set(id, updated);
+      return updated;
     }
     return undefined;
   }
-  
-  // Member Subscription methods (stubs for MemStorage)
-  async getMemberSubscription(customerId: number): Promise<any | undefined> {
-    // MemStorage doesn't implement subscriptions - use dbStorage
-    return undefined;
+
+  async getUpsellOffers(): Promise<UpsellOffer[]> {
+    return Array.from(this.upsellOffers.values()).filter(o => o.isActive);
   }
 
-  async updateMemberSubscription(id: number, updates: any): Promise<any | undefined> {
-    // MemStorage doesn't implement subscriptions - use dbStorage
-    return undefined;
+  async getSubscriptions(): Promise<MemberSubscription[]> {
+    return Array.from(this.memberSubscriptions.values());
   }
 
-  // Lead methods
+  async getRevenueMetrics(startDate: Date, endDate: Date): Promise<RevenueMetric[]> {
+    return Array.from(this.revenueMetrics.values());
+  }
+
+  async createRevenueMetric(metric: InsertRevenueMetric): Promise<RevenueMetric> {
+    const id = this.nextId++;
+    const newMetric = { ...metric, id, createdAt: new Date() };
+    this.revenueMetrics.set(id, newMetric);
+    return newMetric;
+  }
+
+  async getLatestRevenueMetrics(): Promise<RevenueMetric[]> {
+    return Array.from(this.revenueMetrics.values()).slice(-30);
+  }
+
   async createLead(lead: InsertLead): Promise<Lead> {
-    const id = this.nextLeadId++;
-    const newLead: Lead = {
-      id,
-      name: lead.name,
-      phone: lead.phone,
+    const id = this.nextId++;
+    const newLead = { 
+      ...lead, 
+      id, 
       email: lead.email ?? null,
-      unitNumber: lead.unitNumber ?? null,
-      serviceType: lead.serviceType ?? null,
-      message: lead.message ?? null,
-      campaignSource: lead.campaignSource ?? null,
-      campaignMedium: lead.campaignMedium ?? null,
-      campaignName: lead.campaignName ?? null,
-      landingPage: lead.landingPage ?? null,
-      gclid: lead.gclid ?? null,
-      utmSource: lead.utmSource ?? null,
-      utmMedium: lead.utmMedium ?? null,
-      utmCampaign: lead.utmCampaign ?? null,
-      utmTerm: lead.utmTerm ?? null,
-      utmContent: lead.utmContent ?? null,
-      referrer: lead.referrer ?? null,
+      service: lead.service ?? null,
+      address: lead.address ?? null,
+      notes: lead.notes ?? null,
       status: lead.status ?? 'new',
-      convertedCustomerId: null,
-      createdAt: new Date(),
+      landingPage: lead.landingPage ?? null,
+      campaignName: lead.campaignName ?? null,
+      convertedCustomerId: lead.convertedCustomerId ?? null,
+      createdAt: new Date() 
     };
     this.leads.set(id, newLead);
     return newLead;
@@ -668,15 +460,11 @@ export class MemStorage implements IStorage {
   }
 
   async getLeadsByLandingPage(landingPage: string): Promise<Lead[]> {
-    return Array.from(this.leads.values()).filter(
-      lead => lead.landingPage === landingPage
-    );
+    return Array.from(this.leads.values()).filter(l => l.landingPage === landingPage);
   }
 
   async getLeadsByCampaign(campaignName: string): Promise<Lead[]> {
-    return Array.from(this.leads.values()).filter(
-      lead => lead.campaignName === campaignName
-    );
+    return Array.from(this.leads.values()).filter(l => l.campaignName === campaignName);
   }
 
   async updateLeadStatus(id: number, status: string): Promise<Lead | undefined> {
@@ -723,6 +511,7 @@ export class MemStorage implements IStorage {
     const newRecording: VoiceCallRecording = {
       ...recording,
       id,
+      voiceFingerprint: recording.voiceFingerprint ?? null,
       recordingUrl: recording.recordingUrl ?? null,
       duration: recording.duration ?? null,
       status: recording.status ?? 'pending',
@@ -898,8 +687,5 @@ export class MemStorage implements IStorage {
   }
 }
 
-// Import the database storage implementation
 import { dbStorage } from "./dbStorage";
-
-// Use PostgreSQL database storage for production persistence
 export const storage = dbStorage;
