@@ -65,6 +65,16 @@ export { SYSTEM_PROMPT, openai, PUBLIC_MCP_TOOLS as ALLOWED_MCP_TOOLS, MCP_PUBLI
 export async function processChat(sessionId: string, message: string, channel: string = 'web') {
   try {
     const isChannelAdmin = channel === 'admin';
+    const isSmsChannel = channel === 'sms';
+    
+    // RESTRICT ZEKE: Only allow 'admin' portal or 'sms' (which is now gated by isAdminPhone in webhook)
+    // If it's the public 'web' channel, we need to ensure it's not the internal supervisor agent (ZEKE) 
+    // but rather the public assistant (JENNY)
+    if (channel === 'web') {
+      // In the future, we will split JENNY and ZEKE's logic here
+      // For now, we allow web but note that ZEKE's persona is restricted
+    }
+
     const currentTools = isChannelAdmin 
       ? adminGateway.listNamespacedTools()
       : PUBLIC_MCP_TOOLS.map(name => ({ name, description: 'Public booking tool' })); // Simplified for now

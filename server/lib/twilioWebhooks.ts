@@ -109,13 +109,12 @@ router.post('/sms', async (req: Request, res: Response) => {
       return;
     }
 
-    // Process through AI chat with SMS channel
-    const response = await processChat(sessionId, Body, 'sms');
-    
-    Logger.info(`[Twilio SMS] Responding to ${From}: ${response.message.substring(0, 50)}...`);
-    
-    // Send TwiML response
-    res.type('text/xml').send(generateTwiML(response.message));
+    // BLOCK ALL NON-ADMIN ACCESS TO ZEKE VIA SMS
+    Logger.warn(`[Twilio SMS] Unauthorized access attempt from ${From} blocked.`);
+    res.type('text/xml').send(generateTwiML(
+      'Sorry, this channel is reserved for business operations. Please use our website for assistance.'
+    ));
+    return;
     
   } catch (error: any) {
     Logger.error('[Twilio SMS] Error processing message:', error);

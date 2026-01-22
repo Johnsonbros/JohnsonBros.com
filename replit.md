@@ -20,9 +20,9 @@ The homepage includes sections for Express Booking with dynamic capacity messagi
 ## Multi-Hierarchical Agent Swarm
 A five-tier agent architecture automates plumbing business operations:
 1.  **PRIME (Strategic Command)**: Strategic planning and KPI monitoring.
-2.  **ZEKE (Operational Supervision)**: Daily operations, staff coordination, and escalation.
+2.  **ZEKE (Operational Supervision)**: Daily operations, staff coordination, and escalation. Restricted access: Only accessible via Admin Phone (+16176868763) or Admin Dashboard.
 3.  **Specialized Admin Swarm**: Agents for Marketing, Data Processing, and Order Management.
-4.  **JENNY (Public Interaction)**: Customer-facing secretary for booking, quotes, and FAQs.
+4.  **JENNY (Public Interaction)**: Customer-facing secretary for booking, quotes, and FAQs. Accessible via public website widget and Jenny's dedicated Twilio number.
 5.  **Technician Copilots**: Field assistants for jobsite support.
 
 ## Technical Implementations
