@@ -419,7 +419,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/v1/voice-training/datasets', authenticate, async (req, res) => {
+  app.post('/api/v1/voice-training/import', authenticate, async (req, res) => {
+    try {
+      const { urls } = req.body;
+      if (!Array.isArray(urls)) return res.status(400).json({ error: 'urls array required' });
+
+      const recordings = await Promise.all(urls.map(url => 
+        storage.createVoiceCallRecording({
+          externalId: `manual_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          url,
+          status: 'pending',
+          metadata: { source: 'manual_import' }
+        })
+      ));
+
+      // Trigger pipeline for each
+      for (const rec of recordings) {
+        VoiceTrainingPipeline.getInstance().processRecording(rec.id).catch(err => 
+          Logger.error(`[Manual Import] Pipeline failed for ${rec.id}:`, err)
+        );
+      }
+
+      res.json(recordings);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to import recordings' });
+    }
+  });
     try {
       const dataset = await storage.createVoiceDataset(req.body);
       res.json(dataset);
