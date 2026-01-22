@@ -731,6 +731,10 @@ export class MemStorage implements IStorage {
     return Array.from(this.voiceTranscriptsMap.values()).find(t => t.recordingId === recordingId);
   }
 
+  async getVoiceTranscripts(): Promise<VoiceTranscript[]> {
+    return Array.from(this.voiceTranscriptsMap.values());
+  }
+
   async createVoiceTranscript(transcript: InsertVoiceTranscript): Promise<VoiceTranscript> {
     const id = this.nextVoiceTranscriptId++;
     const newTranscript: VoiceTranscript = {
@@ -837,7 +841,7 @@ export class MemStorage implements IStorage {
 
   // Database persistence stubs (to be implemented in DatabaseStorage if needed)
   async getVoiceCallRecordings(): Promise<VoiceCallRecording[]> {
-    return Array.from(this.voiceCallRecordingsMap.values());
+    return Array.from(this.voiceCallRecordingsMap.values()).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
 }
 

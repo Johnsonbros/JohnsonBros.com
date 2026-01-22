@@ -1,14 +1,15 @@
 import { storage } from "../../storage";
 import { type VoiceTranscript } from "@shared/schema";
-import { Deepgram } from "@deepgram/sdk";
-import { openai } from "../openai";
+import { createClient } from "@deepgram/sdk";
+import { openai } from "../aiChat";
 
 export class TranscriptionPipeline {
-  private deepgram: Deepgram | null = null;
+  private deepgram: any = null;
 
   constructor() {
-    if (process.env.DEEPGRAM_API_KEY) {
-      this.deepgram = new Deepgram(process.env.DEEPGRAM_API_KEY);
+    const apiKey = process.env.DEEPGRAM_API_KEY;
+    if (apiKey) {
+      this.deepgram = createClient(apiKey);
     }
   }
 
@@ -24,16 +25,19 @@ export class TranscriptionPipeline {
 
       if (this.deepgram) {
         // Pass 1: Deepgram for fast transcription and diarization
-        const response = await this.deepgram.transcription.preRecorded(
+        const { result, error } = await this.deepgram.listen.prerecorded.transcription(
           { url: recording.recordingUrl },
-          { punctuate: true, utterances: true, diarize: true }
+          { punctuate: true, utterances: true, diarize: true, model: 'nova-2', smart_format: true }
         );
-        rawTranscript = response.results?.channels[0]?.alternatives[0]?.transcript || "";
-        pass1Data = response;
+        
+        if (error) throw error;
+        
+        rawTranscript = result.results?.channels[0]?.alternatives[0]?.transcript || "";
+        pass1Data = result;
       }
 
       // Pass 3: GPT-4 Coherence, Formatting, and Auto-Categorization
-      const response = await openai.chat.completions.create({
+      const gptResponse = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
           {
@@ -61,7 +65,7 @@ export class TranscriptionPipeline {
         response_format: { type: "json_object" }
       });
 
-      const aiResult = JSON.parse(response.choices[0].message.content || "{}");
+      const aiResult = JSON.parse(gptResponse.choices[0].message.content || "{}");
 
       const transcript = await storage.createVoiceTranscript({
         recordingId,

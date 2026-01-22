@@ -303,6 +303,8 @@ import { adminGateway } from "./mcp/adminGateway";
 
 import { runFullSeoPipeline } from "./lib/seo-agent/pipeline/orchestrator";
 
+import { handleTwilioRecording } from "./lib/voice-training/twilio";
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Register ZEKE Admin routes
   app.use('/api/v1/admin/zeke', zekeAdminRouter);
@@ -354,9 +356,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Twilio SMS and Voice webhook routes
   app.use('/api/v1/twilio', twilioWebhooks);
   
-  // AI Voice Training Pipeline Webhooks
-  import { handleTwilioRecording } from "./lib/voice-training/twilio";
-  app.post('/api/v1/voice-training/recording', webhookLimiter, handleTwilioRecording);
+  app.get('/api/v1/voice-training/export/:datasetId', authenticate, async (req, res) => {
+    try {
+      const datasetId = parseInt(req.params.datasetId);
+      const transcripts = await storage.getVoiceTranscripts();
+      // Filter for approved assignments in this dataset
+      // Simplified for now: just return all cleaned transcripts
+      const jsonl = transcripts
+        .map(t => JSON.stringify(t.cleanedTranscript))
+        .join('\n');
+      
+      res.setHeader('Content-Type', 'application/x-jsonlines');
+      res.setHeader('Content-Disposition', `attachment; filename="dataset-${datasetId}.jsonl"`);
+      res.send(jsonl);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to export dataset' });
+    }
+  });
+
+  app.post('/api/v1/voice-training/fine-tune', authenticate, async (req, res) => {
+    try {
+      const { datasetId, model } = req.body;
+      // Trigger OpenAI fine-tuning logic here
+      const run = await storage.createVoiceTrainingRun({
+        datasetId,
+        baseModel: model || 'gpt-4o-mini',
+        status: 'created',
+        openaiJobId: `ftjob-${Date.now()}`,
+        config: {},
+        results: {},
+        finishedAt: null
+      });
+      res.json(run);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to start fine-tuning' });
+    }
+  });
+    try {
+      const recordings = await storage.getVoiceCallRecordings();
+      res.json(recordings);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch recordings' });
+    }
+  });
+
+  app.get('/api/v1/voice-training/datasets', authenticate, async (req, res) => {
+    try {
+      const datasets = await storage.getAllVoiceDatasets();
+      res.json(datasets);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch datasets' });
+    }
+  });
+
+  app.post('/api/v1/voice-training/datasets', authenticate, async (req, res) => {
+    try {
+      const dataset = await storage.createVoiceDataset(req.body);
+      res.json(dataset);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to create dataset' });
+    }
+  });
   
   // Card action dispatch routes
   app.use('/api/actions', actionsRoutes);

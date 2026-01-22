@@ -4,11 +4,13 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { DatasetManager } from '@/components/admin/DatasetManager';
+import { VoiceInbox } from '@/components/admin/VoiceInbox';
 import {
   BarChart3, Users, FileText, Settings, LogOut, 
   Home, DollarSign, CheckCircle,
   Clock, Activity, Brain, Target, Bell, ListTodo, Menu, X, RefreshCw,
-  Loader2, Zap, Radar, Cpu, MapPin, ShieldCheck
+  Loader2, Zap, Radar, Cpu, MapPin, ShieldCheck, Mic
 } from 'lucide-react';
 import { authenticatedFetch, logout, getAdminUser, isAuthenticated } from '@/lib/auth';
 import { cn } from '@/lib/utils';
@@ -122,6 +124,7 @@ export default function AdminDashboard() {
     { id: 'ai-agent', label: 'AI Agent', icon: Brain },
     { id: 'blog', label: 'Blog', icon: FileText },
     { id: 'google-ads', label: 'Google Ads', icon: Target },
+    { id: 'voice-training', label: 'Voice Training', icon: Mic },
     { id: 'webhooks', label: 'Webhooks', icon: Activity },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];

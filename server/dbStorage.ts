@@ -512,6 +512,10 @@ export class DatabaseStorage implements IStorage {
     return transcript;
   }
 
+  async getVoiceTranscripts(): Promise<VoiceTranscript[]> {
+    return await db.select().from(voiceTranscripts);
+  }
+
   async createVoiceTranscript(transcript: InsertVoiceTranscript): Promise<VoiceTranscript> {
     const [newTranscript] = await db.insert(voiceTranscripts).values(transcript).returning();
     return newTranscript;
@@ -565,7 +569,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getVoiceCallRecordings(): Promise<VoiceCallRecording[]> {
-    return await db.select().from(voiceCallRecordings);
+    return await db.select().from(voiceCallRecordings).orderBy(desc(voiceCallRecordings.createdAt));
   }
 }
 
