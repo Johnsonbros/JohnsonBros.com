@@ -1,19 +1,27 @@
 # JohnsonBros - Current Session
 
-> **Session**: 03 | **Date**: 2026-01-18
-> **Phase**: 2 - Feature Verification | **Status**: READY | **Confidence**: 🟢
+> **Session**: 04 | **Date**: 2026-01-22
+> **Phase**: 2.5 - aOa Integration | **Status**: IN PROGRESS | **Confidence**: 🟢
 
 ---
 
 ## Now
 
-Session handoff from Linux to Windows workstation. Ready to continue from Phase 1 completion.
+Setting up aOa (AI Optimization Assistant) for faster codebase search and semantic tagging.
 
 ## Active
 
 | # | Task | Solution Pattern | C | R |
 |---|------|------------------|---|---|
-| P2-000 | Verify environment on Windows | Check npm, node, docker status | 🟢 | - |
+| P2.5-001 | aOa semantic tagging | Tag files with hashtags via `aoa intent store` | 🟢 | - |
+| P2.5-002 | Update agent files | Add aOa instructions to all agents/skills | 🟢 | - |
+
+## Completed This Session
+
+- ✅ aOa health verified (all services running)
+- ✅ Added aOa instructions to 6 agent/skill files
+- ✅ Tagged 200+ files with semantic hashtags
+- ✅ 11.5k+ tokens saved already
 
 ## Blocked
 
@@ -21,9 +29,9 @@ Session handoff from Linux to Windows workstation. Ready to continue from Phase 
 
 ## Next
 
-1. Verify local environment works on Windows
-2. Start dev server and confirm health check
-3. Begin Phase 2: Feature Verification
+1. Continue tagging remaining files (~200 left)
+2. Test semantic search (`aoa intent files <tag>`)
+3. Resume Phase 2 feature verification
 
 ---
 

@@ -1,7 +1,7 @@
 
 # Work Board
 
-> **Updated**: 2026-01-18 | **Phase**: 2 - Feature Verification | **Status**: READY
+> **Updated**: 2026-01-22 | **Phase**: 2.5 - aOa Integration | **Status**: IN PROGRESS
 
 ---
 
@@ -25,7 +25,28 @@
 
 | # | Task | Expected Output | Solution Pattern | Status | C | R |
 |---|------|-----------------|------------------|--------|---|---|
-| P2-000 | Verify Windows environment | Node, npm, Docker confirmed | Check versions, start containers | Queued | 🟢 | - |
+| P2.5-001 | aOa semantic tagging | 400+ files tagged with hashtags | `aoa intent store` | Active | 🟢 | - |
+| P2.5-002 | Update agent files with aOa | All agents use `aoa grep` first | Edit frontmatter | Done | 🟢 | - |
+
+---
+
+## Phase 2.5: aOa Integration
+
+Enable fast codebase search and semantic tagging for AI-optimized development.
+
+| # | Task | Expected Output | Solution Pattern | Deps | Status | C | R |
+|---|------|-----------------|------------------|------|--------|---|---|
+| P2.5-001 | Verify aOa health | All services green | `aoa health` | - | Done | 🟢 | - |
+| P2.5-002 | Add aOa to AGENTS.md | aOa callout block | Edit frontmatter | - | Done | 🟢 | - |
+| P2.5-003 | Add aOa to 131.md | aOa callout block | Edit frontmatter | - | Done | 🟢 | - |
+| P2.5-004 | Add aOa to beacon.md | aOa callout block | Edit frontmatter | - | Done | 🟢 | - |
+| P2.5-005 | Add aOa to gh.md | aOa callout block | Edit frontmatter | - | Done | 🟢 | - |
+| P2.5-006 | Add aOa to skills | aOa callout blocks | Edit frontmatter | - | Done | 🟢 | - |
+| P2.5-007 | Tag server files | ~65 files tagged | `aoa intent store` | - | Done | 🟢 | - |
+| P2.5-008 | Tag client files | ~228 files tagged | `aoa intent store` | - | Active | 🟢 | - |
+| P2.5-009 | Tag config files | ~20 files tagged | `aoa intent store` | - | Done | 🟢 | - |
+| P2.5-010 | Tag documentation | ~15 files tagged | `aoa intent store` | - | Done | 🟢 | - |
+| P2.5-011 | Verify semantic search | `aoa intent files <tag>` works | Test searches | P2.5-008 | Queued | 🟢 | - |
 
 ---
 
@@ -90,7 +111,8 @@ Test what works without full integrations. Focus on features that don't require 
 |-------|-------|--------|------------|
 | 0 | Setup & Analysis | Done | - |
 | 1 | MVP Local Launch | Done | - |
-| 2 | Feature Verification | **Active** | Environment setup |
+| 2 | Feature Verification | Paused | - |
+| 2.5 | aOa Integration | **Active** | - |
 | 3 | Integration Setup | Backlog | Phase 2 completion |
 | 4 | Production Hardening | Backlog | Phase 3 completion |
 
@@ -120,6 +142,11 @@ Test what works without full integrations. Focus on features that don't require 
 
 | # | Task | Output | Completed |
 |---|------|--------|-----------|
+| P2.5-001 | aOa health check | All services green | 2026-01-22 |
+| P2.5-002 | Add aOa to agents | 6 files updated with aOa instructions | 2026-01-22 |
+| P2.5-007 | Tag server files | 65+ files tagged | 2026-01-22 |
+| P2.5-009 | Tag config files | 20+ files tagged | 2026-01-22 |
+| P2.5-010 | Tag documentation | 15+ files tagged | 2026-01-22 |
 | P0-001 | Initialize Beacon | .context/ folder created | 2026-01-16 |
 | P0-002 | Project analysis | `details/2026-01-16-project-analysis.md` | 2026-01-16 |
 | P0-003 | Security audit | `details/2026-01-16-security-audit.md` - CLEAN | 2026-01-16 |
