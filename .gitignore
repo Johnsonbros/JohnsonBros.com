@@ -5,3 +5,15 @@ server/public
 vite.config.ts.*
 *.tar.gz
 .cursor/
+
+# Environment files (NEVER commit secrets)
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# Logs
+logs/
+*.log
+npm-debug.log*
