@@ -315,7 +315,15 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
         {currentStep === 1 && (
           <div className="space-y-6">
             <h3 className="font-bold text-lg text-johnson-blue">1. Select Date & Window</h3>
-            <p className="text-xs text-gray-500 -mt-4">Verify availability before profile creation</p>
+            <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center gap-3">
+              <div className="bg-green-600 text-white p-2 rounded-full">
+                <CheckCircle className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-sm font-bold text-green-800">Guaranteed Availability</div>
+                <div className="text-xs text-green-700">Pick a slot below to lock it in. We'll verify your details next.</div>
+              </div>
+            </div>
             <div className="flex gap-2 p-1 bg-gray-100 rounded-lg">
               <Button variant={weekOffset === 0 ? "secondary" : "ghost"} size="sm" className="flex-1" onClick={() => setWeekOffset(0)}>This Week</Button>
               <Button variant={weekOffset === 1 ? "secondary" : "ghost"} size="sm" className="flex-1" onClick={() => setWeekOffset(1)}>Next Week</Button>
