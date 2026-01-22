@@ -574,6 +574,20 @@ export class DatabaseStorage implements IStorage {
     return run;
   }
 
+  async createVoiceDatasetMix(mix: InsertVoiceDatasetMix): Promise<VoiceDatasetMix> {
+    const [newMix] = await db.insert(voiceDatasetMixes).values(mix).returning();
+    return newMix;
+  }
+
+  async getVoiceDatasetMixes(): Promise<VoiceDatasetMix[]> {
+    return await db.select().from(voiceDatasetMixes).orderBy(desc(voiceDatasetMixes.createdAt));
+  }
+
+  async getVoiceDatasetMix(id: number): Promise<VoiceDatasetMix | undefined> {
+    const [mix] = await db.select().from(voiceDatasetMixes).where(eq(voiceDatasetMixes.id, id));
+    return mix;
+  }
+
   async getVoiceCallRecordings(): Promise<VoiceCallRecording[]> {
     return await db.select().from(voiceCallRecordings).orderBy(desc(voiceCallRecordings.createdAt));
   }

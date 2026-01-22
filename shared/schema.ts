@@ -258,9 +258,25 @@ export type VoiceTranscript = typeof voiceTranscripts.$inferSelect;
 export type VoiceDataset = typeof voiceDatasets.$inferSelect;
 export type VoiceDatasetSection = typeof voiceDatasetSections.$inferSelect;
 export type VoiceTranscriptAssignment = typeof voiceTranscriptAssignments.$inferSelect;
-export type VoiceTrainingRun = typeof voiceTrainingRuns.$inferSelect;
+export const voiceDatasetMixes = pgTable("voice_dataset_mixes", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  config: jsonb("config").notNull(), // { ratios: { sectionId: weight }, limit: number, shuffle: boolean }
+  status: text("status").default("draft").notNull(), // draft, generating, ready, archived
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
 
-// --- End AI Voice Training Pipeline Tables ---
+export const voiceDatasetMixResults = pgTable("voice_dataset_mix_results", {
+  id: serial("id").primaryKey(),
+  mixId: integer("mix_id").references(() => voiceDatasetMixes.id).notNull(),
+  transcriptId: integer("transcript_id").references(() => voiceTranscripts.id).notNull(),
+  order: integer("order").notNull(),
+});
+
+export const insertVoiceDatasetMixSchema = createInsertSchema(voiceDatasetMixes).omit({ id: true, createdAt: true });
+export type VoiceDatasetMix = typeof voiceDatasetMixes.$inferSelect;
+export type InsertVoiceDatasetMix = z.infer<typeof insertVoiceDatasetMixSchema>;
 
 // Voice Relations
 export const voiceCallRecordingsRelations = relations(voiceCallRecordings, ({ one }) => ({

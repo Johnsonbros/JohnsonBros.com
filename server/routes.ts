@@ -457,6 +457,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/v1/voice-training/mixes', authenticate, async (req, res) => {
+    try {
+      const mixes = await storage.getVoiceDatasetMixes();
+      res.json(mixes);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch dataset mixes' });
+    }
+  });
+
+  app.post('/api/v1/voice-training/mixes', authenticate, async (req, res) => {
+    try {
+      const mix = await storage.createVoiceDatasetMix(req.body);
+      res.json(mix);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to create dataset mix' });
+    }
+  });
+
+  app.post('/api/v1/voice-training/mixes/generate/:mixId', authenticate, async (req, res) => {
+    try {
+      const mixId = parseInt(req.params.mixId);
+      const mix = await storage.getVoiceDatasetMix(mixId);
+      if (!mix) return res.status(404).json({ error: 'Mix not found' });
+
+      // Placeholder for actual aggregation and blending logic
+      // In a real implementation, this would query transcripts based on section ratios,
+      // shuffle them, and store in voice_dataset_mix_results.
+      
+      await db.update(voiceDatasetMixes)
+        .set({ status: 'ready' })
+        .where(eq(voiceDatasetMixes.id, mixId));
+
+      res.json({ success: true, message: 'Dataset mix generated' });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to generate dataset mix' });
+    }
+  });
+
   // Global System Settings for AI Models
   app.get('/api/v1/system/settings/:key', authenticate, async (req, res) => {
     try {

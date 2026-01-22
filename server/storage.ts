@@ -112,6 +112,10 @@ export interface IStorage {
   createVoiceTrainingRun(run: InsertVoiceTrainingRun): Promise<VoiceTrainingRun>;
   getVoiceTrainingRun(id: number): Promise<VoiceTrainingRun | undefined>;
 
+  createVoiceDatasetMix(mix: InsertVoiceDatasetMix): Promise<VoiceDatasetMix>;
+  getVoiceDatasetMixes(): Promise<VoiceDatasetMix[]>;
+  getVoiceDatasetMix(id: number): Promise<VoiceDatasetMix | undefined>;
+
   // System Settings methods
   getSystemSetting<T>(key: string): Promise<T | undefined>;
   setSystemSetting<T>(key: string, value: T): Promise<void>;
@@ -691,6 +695,7 @@ export class MemStorage implements IStorage {
   private voiceDatasetSectionsMap = new Map<number, VoiceDatasetSection>();
   private voiceTranscriptAssignmentsMap = new Map<number, VoiceTranscriptAssignment>();
   private voiceTrainingRunsMap = new Map<number, VoiceTrainingRun>();
+  private voiceDatasetMixesMap = new Map<number, VoiceDatasetMix>();
   
   private nextVoiceRecordingId = 1;
   private nextVoiceTranscriptId = 1;
@@ -698,6 +703,7 @@ export class MemStorage implements IStorage {
   private nextVoiceSectionId = 1;
   private nextVoiceAssignmentId = 1;
   private nextVoiceTrainingRunId = 1;
+  private nextVoiceMixId = 1;
 
   async getVoiceCallRecording(id: number): Promise<VoiceCallRecording | undefined> {
     return this.voiceCallRecordingsMap.get(id);
@@ -852,6 +858,27 @@ export class MemStorage implements IStorage {
 
   async getVoiceTrainingRun(id: number): Promise<VoiceTrainingRun | undefined> {
     return this.voiceTrainingRunsMap.get(id);
+  }
+
+  async createVoiceDatasetMix(mix: InsertVoiceDatasetMix): Promise<VoiceDatasetMix> {
+    const id = this.nextVoiceMixId++;
+    const newMix: VoiceDatasetMix = {
+      ...mix,
+      id,
+      description: mix.description ?? null,
+      status: mix.status ?? 'draft',
+      createdAt: new Date(),
+    };
+    this.voiceDatasetMixesMap.set(id, newMix);
+    return newMix;
+  }
+
+  async getVoiceDatasetMixes(): Promise<VoiceDatasetMix[]> {
+    return Array.from(this.voiceDatasetMixesMap.values()).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async getVoiceDatasetMix(id: number): Promise<VoiceDatasetMix | undefined> {
+    return this.voiceDatasetMixesMap.get(id);
   }
 
   // System Settings methods
