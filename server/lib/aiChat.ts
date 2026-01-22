@@ -2,6 +2,9 @@
 // Uses OpenAI Responses API with MCP tool type for automatic tool discovery
 // Tools are defined in src/booker.ts MCP server - no duplicate definitions needed
 
+import { eq, desc } from 'drizzle-orm';
+import { interactionLogs } from '@shared/schema';
+import { db } from '../db';
 import OpenAI from 'openai';
 import { Logger } from '../src/logger';
 import { logInteraction } from './memory';
@@ -55,7 +58,21 @@ export function clearSession(sessionId: string): void {
 }
 
 export async function getSessionHistory(sessionId: string): Promise<any[]> {
-  return []; // Placeholder for now
+  try {
+    const history = await db.query.interactionLogs.findMany({
+      where: eq(interactionLogs.sessionId, sessionId),
+      orderBy: [desc(interactionLogs.createdAt)],
+      limit: 10,
+    });
+    
+    return history.reverse().map(log => ({
+      role: log.direction === 'inbound' ? 'user' : 'assistant',
+      content: log.content
+    }));
+  } catch (error) {
+    Logger.error('[ZEKE] Failed to fetch session history:', error);
+    return [];
+  }
 }
 
 const SYSTEM_PROMPT = generateZekePrompt('sms');
@@ -67,21 +84,20 @@ export async function processChat(sessionId: string, message: string, channel: s
     const isChannelAdmin = channel === 'admin';
     const isSmsChannel = channel === 'sms';
     
-    // RESTRICT ZEKE: Only allow 'admin' portal or 'sms' (which is now gated by isAdminPhone in webhook)
-    // If it's the public 'web' channel, we need to ensure it's not the internal supervisor agent (ZEKE) 
-    // but rather the public assistant (JENNY)
-    if (channel === 'web') {
-      // In the future, we will split JENNY and ZEKE's logic here
-      // For now, we allow web but note that ZEKE's persona is restricted
-    }
+    // 1. Get Session History for context
+    const history = await getSessionHistory(sessionId);
 
     const currentTools = isChannelAdmin 
       ? adminGateway.listNamespacedTools()
-      : PUBLIC_MCP_TOOLS.map(name => ({ name, description: 'Public booking tool' })); // Simplified for now
+      : PUBLIC_MCP_TOOLS.map(name => ({ name, description: 'Public booking tool' }));
 
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
-      messages: [{ role: "system", content: generateZekePrompt(channel as any) }, { role: "user", content: message }],
+      messages: [
+        { role: "system", content: generateZekePrompt(channel as any) },
+        ...history,
+        { role: "user", content: message }
+      ],
       response_format: { type: "text" },
       tools: currentTools.length > 0 ? currentTools.map((t: any) => ({
         type: "function",
@@ -118,7 +134,8 @@ export async function processChat(sessionId: string, message: string, channel: s
       const secondResponse = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
-          { role: "system", content: SYSTEM_PROMPT },
+          { role: "system", content: generateZekePrompt(channel as any) },
+          ...history,
           { role: "user", content: message },
           response.choices[0].message,
           ...toolResponses as any[]
