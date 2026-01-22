@@ -89,15 +89,18 @@ export interface IStorage {
   // AI Voice Training methods
   getVoiceCallRecording(id: number): Promise<VoiceCallRecording | undefined>;
   getVoiceCallBySid(sid: string): Promise<VoiceCallRecording | undefined>;
+  getVoiceCallRecordings(): Promise<VoiceCallRecording[]>;
   createVoiceCallRecording(recording: InsertVoiceCallRecording): Promise<VoiceCallRecording>;
   updateVoiceCallRecording(id: number, updates: Partial<VoiceCallRecording>): Promise<VoiceCallRecording | undefined>;
   
   getVoiceTranscript(recordingId: number): Promise<VoiceTranscript | undefined>;
+  getVoiceTranscripts(): Promise<VoiceTranscript[]>;
   createVoiceTranscript(transcript: InsertVoiceTranscript): Promise<VoiceTranscript>;
   updateVoiceTranscript(id: number, updates: Partial<VoiceTranscript>): Promise<VoiceTranscript | undefined>;
   
   getVoiceDataset(id: number): Promise<VoiceDataset | undefined>;
   getAllVoiceDatasets(): Promise<VoiceDataset[]>;
+  getVoiceDatasets(): Promise<VoiceDataset[]>;
   createVoiceDataset(dataset: InsertVoiceDataset): Promise<VoiceDataset>;
   
   getVoiceDatasetSections(datasetId: number): Promise<VoiceDatasetSection[]>;
@@ -108,6 +111,10 @@ export interface IStorage {
   
   createVoiceTrainingRun(run: InsertVoiceTrainingRun): Promise<VoiceTrainingRun>;
   getVoiceTrainingRun(id: number): Promise<VoiceTrainingRun | undefined>;
+
+  // System Settings methods
+  getSystemSetting<T>(key: string): Promise<T | undefined>;
+  setSystemSetting<T>(key: string, value: T): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
@@ -700,6 +707,10 @@ export class MemStorage implements IStorage {
     return Array.from(this.voiceCallRecordingsMap.values()).find(r => r.twilioCallSid === sid);
   }
 
+  async getVoiceCallRecordings(): Promise<VoiceCallRecording[]> {
+    return Array.from(this.voiceCallRecordingsMap.values()).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
   async createVoiceCallRecording(recording: InsertVoiceCallRecording): Promise<VoiceCallRecording> {
     const id = this.nextVoiceRecordingId++;
     const newRecording: VoiceCallRecording = {
@@ -767,6 +778,10 @@ export class MemStorage implements IStorage {
 
   async getAllVoiceDatasets(): Promise<VoiceDataset[]> {
     return Array.from(this.voiceDatasetsMap.values());
+  }
+
+  async getVoiceDatasets(): Promise<VoiceDataset[]> {
+    return this.getAllVoiceDatasets();
   }
 
   async createVoiceDataset(dataset: InsertVoiceDataset): Promise<VoiceDataset> {
@@ -839,9 +854,13 @@ export class MemStorage implements IStorage {
     return this.voiceTrainingRunsMap.get(id);
   }
 
-  // Database persistence stubs (to be implemented in DatabaseStorage if needed)
-  async getVoiceCallRecordings(): Promise<VoiceCallRecording[]> {
-    return Array.from(this.voiceCallRecordingsMap.values()).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  // System Settings methods
+  private settingsMap = new Map<string, any>();
+  async getSystemSetting<T>(key: string): Promise<T | undefined> {
+    return this.settingsMap.get(key) as T | undefined;
+  }
+  async setSystemSetting<T>(key: string, value: T): Promise<void> {
+    this.settingsMap.set(key, value);
   }
 }
 

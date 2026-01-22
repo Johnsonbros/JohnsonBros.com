@@ -56,10 +56,20 @@ export class TranscriptionPipeline {
         pass1Data = result;
       }
 
-      // Pass 3: GPT-4 Coherence, Formatting, Intent & Mood Extraction
-      const gptResponse = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
+    // Pass 3: GPT-4 Coherence, Formatting, Intent & Mood Extraction
+    let model = "gpt-4o";
+    try {
+      const modelSetting = await storage.getSystemSetting<{ primaryModel: string }>('ai_models');
+      if (modelSetting?.primaryModel) {
+        model = modelSetting.primaryModel;
+      }
+    } catch (e) {
+      console.error("Failed to fetch model setting, falling back to gpt-4o", e);
+    }
+
+    const gptResponse = await openai.chat.completions.create({
+      model: model,
+      messages: [
           {
             role: "system",
             content: `You are an expert at cleaning up plumbing service call transcripts. 

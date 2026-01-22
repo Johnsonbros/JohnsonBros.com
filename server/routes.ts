@@ -13,6 +13,8 @@ import {
   housecallWebhooks
 } from "@shared/schema";
 import { ZekeProactiveService } from "./lib/zekeProactive";
+import { TranscriptionPipeline } from "./lib/voice-training/pipeline";
+const transcriptionPipeline = new TranscriptionPipeline();
 import { z } from "zod";
 import { db } from "./db";
 import { eq, sql, and, gte, desc } from "drizzle-orm";
@@ -452,6 +454,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(recordings);
     } catch (error) {
       res.status(500).json({ error: 'Failed to import recordings' });
+    }
+  });
+
+  // Global System Settings for AI Models
+  app.get('/api/v1/system/settings/:key', authenticate, async (req, res) => {
+    try {
+      const value = await storage.getSystemSetting(req.params.key);
+      res.json({ value });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch setting' });
+    }
+  });
+
+  app.post('/api/v1/system/settings', authenticate, async (req, res) => {
+    try {
+      const { key, value } = req.body;
+      await storage.setSystemSetting(key, value);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to update setting' });
     }
   });
   

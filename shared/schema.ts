@@ -1,4 +1,4 @@
-import { pgTable, serial, text, timestamp, real, integer, boolean, index, uniqueIndex, json, uuid } from 'drizzle-orm/pg-core';
+import { pgTable, serial, text, timestamp, real, integer, boolean, index, uniqueIndex, json, jsonb, uuid } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
@@ -221,17 +221,28 @@ export const voiceTranscriptAssignments = pgTable('voice_transcript_assignments'
   assignedAt: timestamp('assigned_at').defaultNow().notNull(),
 });
 
-export const voiceTrainingRuns = pgTable('voice_training_runs', {
-  id: serial('id').primaryKey(),
-  datasetId: integer('dataset_id').references(() => voiceDatasets.id).notNull(),
-  openaiJobId: text('openai_job_id'),
-  baseModel: text('base_model').notNull(),
-  status: text('status').notNull(), // created, running, succeeded, failed
-  config: json('config'),
-  results: json('results'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  finishedAt: timestamp('finished_at'),
+export const voiceTrainingRuns = pgTable("voice_training_runs", {
+  id: serial("id").primaryKey(),
+  datasetId: integer("dataset_id").references(() => voiceDatasets.id).notNull(),
+  openaiJobId: text("openai_job_id"),
+  baseModel: text("base_model").notNull(),
+  status: text("status").notNull(), // created, running, succeeded, failed
+  config: json("config"),
+  results: json("results"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  finishedAt: timestamp("finished_at"),
 });
+
+export const systemSettings = pgTable("system_settings", {
+  id: serial("id").primaryKey(),
+  key: text("key").notNull().unique(),
+  value: jsonb("value").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertSystemSettingsSchema = createInsertSchema(systemSettings).omit({ id: true, updatedAt: true });
+export type SystemSettings = typeof systemSettings.$inferSelect;
+export type InsertSystemSettings = z.infer<typeof insertSystemSettingsSchema>;
 
 // Insert Schemas
 export const insertVoiceCallRecordingSchema = createInsertSchema(voiceCallRecordings).omit({ id: true, createdAt: true });

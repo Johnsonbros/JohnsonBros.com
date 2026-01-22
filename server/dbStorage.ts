@@ -20,10 +20,12 @@ import {
   type VoiceDatasetSection, type InsertVoiceDatasetSection,
   type VoiceTranscriptAssignment, type InsertVoiceTranscriptAssignment,
   type VoiceTrainingRun, type InsertVoiceTrainingRun,
+  type SystemSettings,
   customers, appointments, blogPosts, keywords, postKeywords, keywordRankings, blogAnalytics,
   referrals, customerCredits, leads, memberSubscriptions,
   emailTemplates, upsellOffers, revenueMetrics,
-  voiceCallRecordings, voiceTranscripts, voiceDatasets, voiceDatasetSections, voiceTranscriptAssignments, voiceTrainingRuns
+  voiceCallRecordings, voiceTranscripts, voiceDatasets, voiceDatasetSections, voiceTranscriptAssignments, voiceTrainingRuns,
+  systemSettings
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, lte, desc, asc, sql } from "drizzle-orm";
@@ -531,6 +533,10 @@ export class DatabaseStorage implements IStorage {
     return dataset;
   }
 
+  async getVoiceDatasets(): Promise<VoiceDataset[]> {
+    return await db.select().from(voiceDatasets);
+  }
+
   async getAllVoiceDatasets(): Promise<VoiceDataset[]> {
     return await db.select().from(voiceDatasets);
   }
@@ -570,6 +576,20 @@ export class DatabaseStorage implements IStorage {
 
   async getVoiceCallRecordings(): Promise<VoiceCallRecording[]> {
     return await db.select().from(voiceCallRecordings).orderBy(desc(voiceCallRecordings.createdAt));
+  }
+
+  async getSystemSetting<T>(key: string): Promise<T | undefined> {
+    const [setting] = await db.select().from(systemSettings).where(eq(systemSettings.key, key)).limit(1);
+    return setting?.value as T | undefined;
+  }
+
+  async setSystemSetting<T>(key: string, value: T): Promise<void> {
+    await db.insert(systemSettings)
+      .values({ key, value: value as any })
+      .onConflictDoUpdate({
+        target: systemSettings.key,
+        set: { value: value as any, updatedAt: new Date() }
+      });
   }
 }
 
