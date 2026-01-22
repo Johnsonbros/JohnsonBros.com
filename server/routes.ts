@@ -609,7 +609,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           title: `New Job: ${job.name || job.id}`,
           content: `Customer: ${job.customer?.first_name} ${job.customer?.last_name}\nAddress: ${job.address?.street}\nScheduled: ${job.schedule?.scheduled_start}`,
           metadata: { jobId: job.id, type: payload.type }
-        }).catch((err: any) => Logger.error('[HCP Webhook] Failed to notify ZEKE:', (err as any).message));
+        }).catch((err: unknown) => Logger.error('[HCP Webhook] Failed to notify ZEKE:', (err as any).message));
       }
 
       // Mark as processed
