@@ -32,13 +32,26 @@ export class TranscriptionPipeline {
         pass1Data = response;
       }
 
-      // Pass 3: GPT-4 Coherence and Formatting
+      // Pass 3: GPT-4 Coherence, Formatting, and Auto-Categorization
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
           {
             role: "system",
-            content: "You are an expert at cleaning up plumbing service call transcripts. Convert the raw transcript into a structured JSONL format for OpenAI fine-tuning. Separate Nate (the plumber/assistant) and the Customer (user). Fix technical plumbing terms and addresses."
+            content: `You are an expert at cleaning up plumbing service call transcripts. 
+            Convert the raw transcript into a structured JSONL format for OpenAI fine-tuning. 
+            Separate Nate (the plumber/assistant) and the Customer (user). 
+            Fix technical plumbing terms and addresses.
+            
+            Also, suggest which dataset category this call belongs to:
+            - "Core Booking": Standard appointments
+            - "Emergency": Urgent/after-hours
+            - "Pricing/Quotes": Nate giving estimates
+            - "Objections": Handling pushback
+            
+            Assign a traffic light grade: "green" (perfect), "yellow" (needs fix), "red" (trash).
+            
+            Return JSON format: { "messages": [...], "category": "...", "grade": "...", "confidence": 0.95 }`
           },
           {
             role: "user",
@@ -48,23 +61,23 @@ export class TranscriptionPipeline {
         response_format: { type: "json_object" }
       });
 
-      const cleanedContent = JSON.parse(response.choices[0].message.content || "{}");
+      const aiResult = JSON.parse(response.choices[0].message.content || "{}");
 
       const transcript = await storage.createVoiceTranscript({
         recordingId,
         rawTranscript,
-        cleanedTranscript: cleanedContent,
+        cleanedTranscript: aiResult,
         pass1Data,
-        pass2Data: {}, // Whisper can be added as a secondary pass if needed
-        pass3Data: response
+        pass2Data: {},
+        pass3Data: aiResult
       });
 
-      // Auto-grading logic
-      const grade = this.calculateGrade(transcript);
+      // Update recording with AI suggestions
       await storage.updateVoiceCallRecording(recordingId, { 
         status: 'completed',
-        grade,
-        confidence: recording.confidence || 0.9
+        grade: aiResult.grade || 'gray',
+        confidence: aiResult.confidence || 0.9,
+        metadata: { ...recording.metadata, suggestedCategory: aiResult.category }
       });
 
       return transcript;

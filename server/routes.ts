@@ -354,6 +354,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Twilio SMS and Voice webhook routes
   app.use('/api/v1/twilio', twilioWebhooks);
   
+  // AI Voice Training Pipeline Webhooks
+  import { handleTwilioRecording } from "./lib/voice-training/twilio";
+  app.post('/api/v1/voice-training/recording', webhookLimiter, handleTwilioRecording);
+  
   // Card action dispatch routes
   app.use('/api/actions', actionsRoutes);
 
