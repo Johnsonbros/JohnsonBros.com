@@ -17,6 +17,26 @@ export class TranscriptionPipeline {
     const recording = await storage.getVoiceCallRecording(recordingId);
     if (!recording || !recording.recordingUrl) return;
 
+    // Reject if business greeting not found in first 10 seconds
+    try {
+      if (this.deepgram) {
+        const { result } = await this.deepgram.listen.prerecorded.transcription(
+          { url: recording.recordingUrl },
+          { model: 'nova-2', smart_format: true, end_ms: 10000 }
+        );
+        const snippet = result?.results?.channels[0]?.alternatives[0]?.transcript || "";
+        if (!snippet.toLowerCase().includes("johnson bros. plumbing")) {
+          await storage.updateVoiceCallRecording(recordingId, { 
+            status: 'rejected',
+            metadata: { ...recording.metadata, rejectionReason: 'Greeting missing in first 10s' }
+          });
+          return;
+        }
+      }
+    } catch (e) {
+      console.error("Greeting check failed:", e);
+    }
+
     await storage.updateVoiceCallRecording(recordingId, { status: 'processing' });
 
     try {
@@ -36,7 +56,7 @@ export class TranscriptionPipeline {
         pass1Data = result;
       }
 
-      // Pass 3: GPT-4 Coherence, Formatting, and Auto-Categorization
+      // Pass 3: GPT-4 Coherence, Formatting, Intent & Mood Extraction
       const gptResponse = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
@@ -47,6 +67,13 @@ export class TranscriptionPipeline {
             Separate Nate (the plumber/assistant) and the Customer (user). 
             Fix technical plumbing terms and addresses.
             
+            EXTRACT KEY CONVERSATION COMPONENTS:
+            - "intent": Primary reason for call
+            - "mood": Customer's emotional state
+            - "resolution": Was the issue resolved?
+            - "outcome": Booking confirmed?
+            - "upset_level": 1-10
+            
             Also, suggest which dataset category this call belongs to:
             - "Core Booking": Standard appointments
             - "Emergency": Urgent/after-hours
@@ -54,8 +81,9 @@ export class TranscriptionPipeline {
             - "Objections": Handling pushback
             
             Assign a traffic light grade: "green" (perfect), "yellow" (needs fix), "red" (trash).
+            Base grade on professional resolution and clarity.
             
-            Return JSON format: { "messages": [...], "category": "...", "grade": "...", "confidence": 0.95 }`
+            Return JSON format: { "messages": [...], "category": "...", "grade": "...", "confidence": 0.95, "analysis": { "intent": "...", "mood": "...", "resolution": "...", "outcome": "...", "upset_level": 0 } }`
           },
           {
             role: "user",
@@ -81,7 +109,11 @@ export class TranscriptionPipeline {
         status: 'completed',
         grade: aiResult.grade || 'gray',
         confidence: aiResult.confidence || 0.9,
-        metadata: { ...recording.metadata, suggestedCategory: aiResult.category }
+        metadata: { 
+          ...recording.metadata, 
+          suggestedCategory: aiResult.category,
+          analysis: aiResult.analysis 
+        }
       });
 
       return transcript;

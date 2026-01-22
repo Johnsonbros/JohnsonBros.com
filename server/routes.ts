@@ -419,6 +419,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post('/api/v1/voice-training/datasets', authenticate, async (req, res) => {
+    try {
+      const dataset = await storage.createVoiceDataset(req.body);
+      res.json(dataset);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to create dataset' });
+    }
+  });
+
   app.post('/api/v1/voice-training/import', authenticate, async (req, res) => {
     try {
       const { urls } = req.body;
@@ -427,7 +436,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const recordings = await Promise.all(urls.map(url => 
         storage.createVoiceCallRecording({
           externalId: `manual_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          url,
+          recordingUrl: url,
           status: 'pending',
           metadata: { source: 'manual_import' }
         })
@@ -435,7 +444,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Trigger pipeline for each
       for (const rec of recordings) {
-        VoiceTrainingPipeline.getInstance().processRecording(rec.id).catch(err => 
+        transcriptionPipeline.processCall(rec.id).catch(err => 
           Logger.error(`[Manual Import] Pipeline failed for ${rec.id}:`, err)
         );
       }
@@ -443,13 +452,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(recordings);
     } catch (error) {
       res.status(500).json({ error: 'Failed to import recordings' });
-    }
-  });
-    try {
-      const dataset = await storage.createVoiceDataset(req.body);
-      res.json(dataset);
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to create dataset' });
     }
   });
   
