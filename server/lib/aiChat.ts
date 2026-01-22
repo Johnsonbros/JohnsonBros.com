@@ -77,7 +77,7 @@ export async function processChat(sessionId: string, message: string, channel: s
         type: "function",
         function: {
           name: t.name,
-          description: t.description,
+          description: t.description || 'Johnson Bros Plumbing Tool',
           parameters: t.inputSchema || { type: 'object', properties: {} }
         }
       })) : undefined
