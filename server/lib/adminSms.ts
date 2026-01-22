@@ -3,6 +3,12 @@ import { sendSMS } from './twilio';
 import { db } from '../db';
 import os from 'os';
 import { ZEKE_IDENTITY } from '../../config/zeke';
+import { dbStorage } from '../dbStorage';
+import OpenAI from 'openai';
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
 
 const ADMIN_PHONE = process.env.ADMIN_PHONE_NUMBER;
 
@@ -148,6 +154,18 @@ const ADMIN_COMMANDS: Record<string, {
         return { message: `DB Error: ${error.message}`, success: false };
       }
     }
+  },
+  'blog': {
+    description: 'Manage blog drafts (Jessica Agent)',
+    handler: async (args: string[]) => {
+      if (args.length === 0) {
+        const drafts = await dbStorage.getBlogPosts({ status: 'draft' });
+        if (drafts.length === 0) return { message: 'No active blog drafts.', success: true };
+        const list = drafts.slice(0, 5).map(d => `• ${d.title}`).join('\n');
+        return { message: `CURRENT DRAFTS:\n${list}\n\nReply with "blog [title] feedback" to refine.`, success: true };
+      }
+      return { message: 'Blog command usage: blog [topic] [feedback]', success: true };
+    }
   }
 };
 
@@ -167,12 +185,50 @@ export function logAdminError(message: string, context?: any): void {
 }
 
 export async function processAdminMessage(body: string): Promise<string> {
-  const parts = body.trim().toLowerCase().split(/\s+/);
+  const normalizedBody = body.trim();
+  const parts = normalizedBody.toLowerCase().split(/\s+/);
   const command = parts[0];
   const args = parts.slice(1);
   
   Logger.info('[Admin SMS] Processing command', { command, args });
   
+  // Blog Feedback Loop (Jessica Agent)
+  if (normalizedBody.toLowerCase().includes('feedback') || command === 'blog') {
+    const drafts = await dbStorage.getBlogPosts({ status: 'draft' });
+    // Simple heuristic: find the draft mentioned or the most recent
+    const targetDraft = drafts.find(d => normalizedBody.toLowerCase().includes(d.title.toLowerCase().substring(0, 10))) || drafts[0];
+    
+    if (targetDraft) {
+      Logger.info(`[Jessica] Processing feedback for draft: ${targetDraft.title}`);
+      
+      const prompt = `You are Jessica, the PR/Social Media Agent for Johnson Bros. Plumbing. 
+      You are refining a blog post draft based on Co-Founder feedback.
+      
+      Original Title: ${targetDraft.title}
+      Feedback: "${normalizedBody}"
+      
+      Current Content: ${targetDraft.content.substring(0, 500)}...
+      
+      Provide an updated HTML content and Title based on the feedback. 
+      Format: JSON with 'title' and 'content'.`;
+
+      const aiResponse = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [{ role: "system", content: prompt }],
+        response_format: { type: "json_object" }
+      });
+
+      const updated = JSON.parse(aiResponse.choices[0].message.content || '{}');
+      await dbStorage.updateBlogPost(targetDraft.id, {
+        title: updated.title,
+        content: updated.content,
+        updatedAt: new Date()
+      });
+
+      return `✨ Jessica here! I've updated the draft "${updated.title}" based on your feedback. Check it out at the dashboard link. Anything else?`;
+    }
+  }
+
   const handler = ADMIN_COMMANDS[command];
   if (handler) {
     try {

@@ -25,8 +25,12 @@ export async function runFullSeoPipeline() {
     }
     
     // 3. Notify Co-Founder for approval
-    const notificationPhone = process.env.BUSINESS_NOTIFICATION_PHONE || '+16174799911';
-    const message = `🚀 SEO Agent created ${createdPosts.length} new blog drafts based on competitor research.\n\nTopics:\n${createdPosts.map(p => `• ${p.title}`).join('\n')}\n\nReview them in the Admin Dashboard.`;
+    const notificationPhone = process.env.ADMIN_PHONE_NUMBER || '+16176868763';
+    const baseUrl = process.env.SITE_URL || 'https://theabingtonplumber.com';
+    
+    const message = `🚀 SEO Agent "Jessica" created ${createdPosts.length} new blog drafts.\n\n` +
+      createdPosts.map(p => `• ${p.title}\n  View: ${baseUrl}/admin/blog/edit/${p.id}`).join('\n\n') +
+      `\n\nReply with the blog title and your feedback to refine!`;
     
     await sendSMS(notificationPhone, message);
     
