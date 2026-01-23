@@ -7,8 +7,10 @@ import { apiRequest } from "@/lib/queryClient";
 import { useState, useEffect, useRef } from "react";
 import { formatTimeSlotWindow } from "@/lib/timeUtils";
 import { format, addDays } from "date-fns";
-import plumberVideo from "@assets/Website video_1759942431968.mp4";
 import bluePipesBg from "/blue-pipes-bg.png";
+
+// Video removed to reduce bundle size - using placeholder instead
+const plumberVideo: string | undefined = undefined;
 
 interface HeroSectionProps {
   onBookService: () => void;

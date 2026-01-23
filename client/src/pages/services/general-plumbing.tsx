@@ -6,7 +6,7 @@ import { Phone, CheckCircle, Clock, Shield, Star } from "lucide-react";
 import { Link } from "wouter";
 import { LocalBusinessSchema } from "@/components/schema-markup";
 import { WhyChooseUs } from "@/components/WhyChooseUs";
-import faucetImg from '@assets/plumbing_1763062911390.jpg';
+import faucetImg from '@assets/plumbing.jpg';
 
 export default function GeneralPlumbing() {
   return (

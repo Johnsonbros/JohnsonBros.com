@@ -1,23 +1,41 @@
 # JohnsonBros - Current Session
 
-> **Session**: 04 | **Date**: 2026-01-22
+> **Session**: 05 | **Date**: 2026-01-23
 > **Phase**: 2 - Feature Verification (Tier 3) | **Status**: IN PROGRESS | **Confidence**: 🟢
 
 ---
 
 ## Now
 
-Server running. Ready for frontend verification.
+Assets cleanup complete. Service page images added. Ready to commit changes and continue frontend verification.
 
 ## Active
 
 | # | Task | Solution Pattern | C | R |
 |---|------|------------------|---|---|
+| P2-017 | Commit asset changes | `git add` + `git commit` | 🟢 | - |
 | P2-010 | Homepage loads | Open http://localhost:5000 | 🟢 | - |
 | P2-011 | Check console errors | Browser DevTools | 🟡 | - |
-| P2-012 | Test routing | Click through nav | 🟢 | - |
+
+## Uncommitted Changes
+
+**Modified:**
+- `client/src/pages/services/drain-cleaning.tsx` - Updated asset imports
+
+**New Assets (untracked):**
+- `client/src/assets/cold-radiator.webp`
+- `client/src/assets/cold-shower.jpg`
+- `client/src/assets/dirty-sink.jpg`
+- `client/src/assets/emergency.jpg`
+- `client/src/assets/new-construction.jpg`
+- `client/src/assets/plumbing.jpg`
+- `client/src/assets/slow-drain.png`
 
 ## Completed This Session
+
+- ✅ Board status review and update
+
+## Completed Previous Session (04)
 
 - ✅ Node.js v22.19.0 verified
 - ✅ npm install (1304 packages)
@@ -36,24 +54,24 @@ Server running. Ready for frontend verification.
 
 ## Next
 
-1. **Open http://localhost:5000** in browser
-2. Test navigation and routing
-3. Test blog (/blog) and admin (/admin)
-4. Check browser console for errors
+1. **Commit asset changes** - Add new images and drain-cleaning update
+2. **Start dev server** (`npm run dev`)
+3. **Open http://localhost:5000** in browser
+4. Test navigation and routing
+5. Check browser console for errors
 
 ---
 
-## Previous Session Summary (Session 02)
+## Recent Git Activity
 
-**Completed on 2026-01-16 (Linux)**:
-- Installed 1090 npm packages
-- Set up PostgreSQL via Docker (port 5433)
-- Pushed Drizzle schema (25+ tables)
-- Started dev server on port 5000
-- Verified health endpoint and frontend rendering
-- Upgraded .gitignore (6 -> 140 lines)
+**Recent Commits (main branch):**
+- `1fc8aef` - Fix asset imports after attached_assets cleanup
+- `68f167a` - Fix startup issues: remove duplicate export, add dotenv
+- `1c4b7d5` - Update start script for production
+- `0f0efd7` - Housekeeping: Remove attached_assets bloat, update gitignore
+- `c728d2c` - Resolve merge: accept remote deletions
 
-**System was running in degraded mode** (no API keys configured).
+**Summary**: Cleaned up bloated attached_assets folder, fixed asset imports to use client/src/assets, and resolved startup issues.
 
 ---
 

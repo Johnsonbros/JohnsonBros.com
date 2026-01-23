@@ -12,8 +12,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Phone, CheckCircle, Clock, Star, Award, Shield, Wrench, Droplet, Thermometer, AlertCircle } from "lucide-react";
-import emergencyImg from '@assets/emergency_1763062911389.jpg';
-import cleanFaucetImg from '@assets/plumbing_1763062911390.jpg';
+import emergencyImg from '@assets/emergency.jpg';
+import cleanFaucetImg from '@assets/plumbing.jpg';
 
 const leadFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),

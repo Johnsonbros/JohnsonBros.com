@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LocalBusinessSchema } from '@/components/schema-markup';
 import { WhyChooseUs } from '@/components/WhyChooseUs';
-import emergencyWaterHeaterImg from '@assets/emergency_1763062911389.jpg';
-import coldShowerImg from '@assets/2-woman-shocked-with-cold-water-while-taking-a-shower-as-a-result-of-a-faulty-circulator-pump-300x200_1763063444910.jpg';
+import emergencyWaterHeaterImg from '@assets/emergency.jpg';
+import coldShowerImg from '@assets/cold-shower.jpg';
 
 export default function EmergencyPlumbing() {
   return (

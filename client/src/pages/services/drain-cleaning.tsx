@@ -7,8 +7,8 @@ import { Link } from "wouter";
 import { LocalBusinessSchema, FAQSchema, BreadcrumbSchema, ReviewSchema } from "@/components/schema-markup";
 import { WhyChooseUs } from "@/components/WhyChooseUs";
 import { serviceMetadata, serviceFAQs, generateSocialMetaTags } from "@/lib/seoMetadata";
-import dirtySinkImg from '@assets/21d982e80f233f91df9c7f01feb0270d&w=600_1763063444910.jpg';
-import slowDrainImg from '@assets/Slow-sink-drain_1763063487225.png';
+import dirtySinkImg from '@assets/dirty-sink.jpg';
+import slowDrainImg from '@assets/slow-drain.png';
 
 export default function DrainCleaningServices() {
   // Get SEO metadata
