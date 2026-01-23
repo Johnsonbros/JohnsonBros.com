@@ -1,6 +1,60 @@
-node_modules
-dist
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+server/public/
+
+# OS files
 .DS_Store
-server/public
+Thumbs.db
+
+# IDE/Editor
+.cursor/
+.idea/
+*.swp
+*.swo
+.vscode/settings.json
+
+# Claude Code local settings
+.claude/settings.local.json
+.claude/hooks/intent-data.json
+
+# Environment files (NEVER commit secrets)
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+*.pem
+*.key
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Runtime/Cache
+*.pid
+*.seed
+*.pid.lock
+.npm/
+.eslintcache
+.node_repl_history
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Temp files
+*.tmp
+*.temp
+*.bak
 vite.config.ts.*
 *.tar.gz
+
+# Optional: Large assets (uncomment if using external storage)
+# attached_assets/

@@ -2544,3 +2544,32 @@ export const insertApiUsageSchema = createInsertSchema(apiUsage).omit({
 
 export type ApiUsage = typeof apiUsage.$inferSelect;
 export type InsertApiUsage = z.infer<typeof insertApiUsageSchema>;
+
+// ============================================
+// AVAILABLE TIME SLOTS (Scheduling)
+// ============================================
+
+export const availableTimeSlots = pgTable('available_time_slots', {
+  id: serial('id').primaryKey(),
+  date: timestamp('date').notNull(),
+  startTime: text('start_time').notNull(), // e.g., '09:00'
+  endTime: text('end_time').notNull(), // e.g., '10:00'
+  technicianId: text('technician_id'), // optional specific technician
+  isAvailable: boolean('is_available').default(true).notNull(),
+  slotType: text('slot_type').default('standard'), // 'standard', 'express', 'emergency'
+  metadata: json('metadata'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  dateIdx: index('available_time_slots_date_idx').on(table.date),
+  availabilityIdx: index('available_time_slots_availability_idx').on(table.date, table.isAvailable),
+}));
+
+export const insertAvailableTimeSlotsSchema = createInsertSchema(availableTimeSlots).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type AvailableTimeSlot = typeof availableTimeSlots.$inferSelect;
+export type InsertAvailableTimeSlot = z.infer<typeof insertAvailableTimeSlotsSchema>;
