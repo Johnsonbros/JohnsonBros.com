@@ -273,11 +273,13 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
     for (let i = 0; i < 7; i++) {
       const d = new Date(start);
       d.setDate(start.getDate() + i);
+      const isWeekend = d.getDay() === 0 || d.getDay() === 6;
       weekdays.push({
         date: d.toISOString().split('T')[0],
         dayNum: d.getDate(),
         dayName: d.toLocaleDateString('en-US', { weekday: 'short' }),
-        isPast: d < new Date(new Date().setHours(0,0,0,0))
+        isPast: d < new Date(new Date().setHours(0,0,0,0)),
+        isWeekend
       });
     }
     return { weekdays };
@@ -330,8 +332,18 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
             </div>
             <div className="grid grid-cols-7 gap-1">
               {generateWeekDays().weekdays.map(d => (
-                <button key={d.date} disabled={d.isPast} onClick={() => setBookingData(prev => ({ ...prev, selectedDate: d.date, selectedTimeSlot: null }))}
-                  className={`p-2 rounded-lg text-center transition-all border ${bookingData.selectedDate === d.date ? 'bg-johnson-blue text-white' : 'bg-white hover:bg-gray-50'}`}>
+                <button 
+                  key={d.date} 
+                  disabled={d.isPast || d.isWeekend} 
+                  onClick={() => setBookingData(prev => ({ ...prev, selectedDate: d.date, selectedTimeSlot: null }))}
+                  className={`p-2 rounded-lg text-center transition-all border ${
+                    bookingData.selectedDate === d.date 
+                      ? 'bg-johnson-blue text-white' 
+                      : d.isWeekend 
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
+                        : 'bg-white hover:bg-gray-50 border-gray-200'
+                  }`}
+                >
                   <div className="text-[10px] opacity-70 uppercase">{d.dayName}</div>
                   <div className="font-bold">{d.dayNum}</div>
                 </button>
