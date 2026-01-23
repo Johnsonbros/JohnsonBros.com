@@ -112,13 +112,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createBlogPost(post: InsertBlogPost): Promise<BlogPost> {
-    const [newPost] = await db.insert(blogPosts).values(post).returning();
+    const [newPost] = await db.insert(blogPosts).values(post as any).returning();
     return newPost;
   }
 
   async updateBlogPost(id: number, post: Partial<InsertBlogPost>): Promise<BlogPost | undefined> {
     const [updatedPost] = await db.update(blogPosts)
-      .set({ ...post, updatedAt: new Date() })
+      .set({ ...post, updatedAt: new Date() } as any)
       .where(eq(blogPosts.id, id))
       .returning();
     return updatedPost;
@@ -466,7 +466,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAvailableTimeSlots(date: Date) {
-    return await db.select().from(availableTimeSlots).where(eq(availableTimeSlots.date, date));
+    const slots = await db.select().from(availableTimeSlots).where(eq(availableTimeSlots.date, date));
+    return slots.map(s => ({
+      ...s,
+      startTime: s.timeSlot.split('-')[0] || '',
+      endTime: s.timeSlot.split('-')[1] || '',
+      available: s.isAvailable ?? false
+    }));
   }
 
   // System Settings methods

@@ -246,12 +246,12 @@ export class MemStorage implements IStorage {
       twitterTitle: post.metaTitle ?? null,
       twitterDescription: post.metaDescription ?? null,
       twitterImage: post.featuredImage ?? null,
-      publishDate: post.publishDate ? new Date(post.publishDate) : null,
+      publishDate: post.publishDate ? (typeof post.publishDate === 'string' ? post.publishDate : (post.publishDate as Date).toISOString()) : null,
       tags: post.tags ?? [],
       viewCount: 0,
       createdAt: new Date(),
       updatedAt: new Date()
-    };
+    } as any;
     this.blogPosts.set(id, newPost);
     return newPost;
   }
@@ -262,9 +262,9 @@ export class MemStorage implements IStorage {
       const updated = { 
         ...existing, 
         ...post, 
-        publishDate: post.publishDate ? new Date(post.publishDate) : existing.publishDate,
+        publishDate: post.publishDate ? (typeof post.publishDate === 'string' ? post.publishDate : (post.publishDate as Date).toISOString()) : existing.publishDate,
         updatedAt: new Date() 
-      };
+      } as any;
       this.blogPosts.set(id, updated);
       return updated;
     }
