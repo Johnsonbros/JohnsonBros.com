@@ -465,14 +465,15 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(upsellOffers).where(eq(upsellOffers.isActive, true));
   }
 
-  async getAvailableTimeSlots(date: Date) {
+  async getAvailableTimeSlots(date: Date): Promise<AvailableTimeSlot[]> {
     const slots = await db.select().from(availableTimeSlots).where(eq(availableTimeSlots.date, date));
     return slots.map(s => ({
       ...s,
+      id: s.id.toString(),
       startTime: s.timeSlot.split('-')[0] || '',
       endTime: s.timeSlot.split('-')[1] || '',
       available: s.isAvailable ?? false
-    }));
+    })) as AvailableTimeSlot[];
   }
 
   // System Settings methods
