@@ -1,8 +1,6 @@
 import { useRef, useState, useEffect } from "react";
+import plumberVideo from "@assets/plumber-video.mp4";
 import bluePipesBg from "/blue-pipes-bg.png";
-
-// Video removed to reduce bundle size - using placeholder instead
-const plumberVideo: string | undefined = undefined;
 import { Card, CardContent } from "@/components/ui/card";
 
 export function HeroVideoCard() {
