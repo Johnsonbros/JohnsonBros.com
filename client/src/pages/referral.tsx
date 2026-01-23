@@ -16,7 +16,8 @@ import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { SEO } from "@/components/SEO";
-import heroImage from "@assets/stock_images/happy_friends_celebr_4fbee77b.jpg";
+// Placeholder for removed stock image
+const heroImage: string | undefined = undefined;
 
 // Customer lookup schema
 const customerLookupSchema = z.object({

@@ -1,6 +1,8 @@
 import { Bot, Zap, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import feeWaivedImage from "@assets/generated_images/$99_fee_waived_promotional_graphic_f5d5b265.png";
+
+// Placeholder for removed promotional image
+const feeWaivedImage: string | undefined = undefined;
 
 interface MCPIntegrationBannerProps {
   variant?: "compact" | "full";

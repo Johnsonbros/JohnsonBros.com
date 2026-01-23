@@ -25,7 +25,8 @@
 
 | # | Task | Expected Output | Solution Pattern | Status | C | R |
 |---|------|-----------------|------------------|--------|---|---|
-| P2-010 | Homepage loads | Johnson Bros. homepage renders | Open localhost:5000 | **Active** | 🟢 | - |
+| P2-017 | Commit asset changes | New images + drain-cleaning committed | git add, git commit | **Active** | 🟢 | - |
+| P2-010 | Homepage loads | Johnson Bros. homepage renders | Open localhost:5000 | Queued | 🟢 | - |
 | P2-011 | Check console for errors | No critical errors | Browser DevTools | Queued | 🟡 | - |
 | P2-012 | Test routing | Pages navigate correctly | Click through nav | Queued | 🟢 | - |
 
@@ -78,7 +79,8 @@ Test what works without full integrations. Focus on features that don't require 
 
 | # | Task | Expected Output | Solution Pattern | Deps | Status | C | R |
 |---|------|-----------------|------------------|------|--------|---|---|
-| P2-010 | Homepage loads | Johnson Bros. homepage renders | Open localhost:5000 | P2-007 | **Active** | 🟢 | - |
+| P2-017 | Commit asset changes | 7 new images + drain-cleaning committed | git add, git commit | - | **Active** | 🟢 | - |
+| P2-010 | Homepage loads | Johnson Bros. homepage renders | Open localhost:5000 | P2-007 | Queued | 🟢 | - |
 | P2-011 | Check console for errors | No critical errors | Browser DevTools | P2-010 | Queued | 🟡 | - |
 | P2-012 | Test routing | Pages navigate correctly | Click through nav | P2-010 | Queued | 🟢 | - |
 
@@ -145,6 +147,8 @@ Test what works without full integrations. Focus on features that don't require 
 
 | # | Task | Output | Completed |
 |---|------|--------|-----------|
+| - | Asset cleanup | Removed attached_assets bloat, moved to client/src/assets | 2026-01-23 |
+| - | Fix startup issues | Added dotenv, fixed duplicate export | 2026-01-23 |
 | P2-001 | Verify Node.js | v22.19.0 | 2026-01-22 |
 | P2-002 | Verify npm | npm available | 2026-01-22 |
 | P2-003 | Install dependencies | 1304 packages | 2026-01-22 |

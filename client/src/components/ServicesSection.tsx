@@ -5,10 +5,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { AlertTriangle, Droplets, Flame, Wrench, Settings, Home, ArrowRight, HardHat, MapPin } from "lucide-react";
 import { Link } from "wouter";
 import { InteractiveCoverageMap } from "@/components/InteractiveCoverageMap";
-import emergencyImage from "@assets/emergency_1764896582532.jpg";
-import pipeRepairImage from "@assets/NC_1764896608320.jpg";
-import serviceCallImage from "@assets/plumbing_1764896658519.jpg";
-import drainCleaningImage from "@assets/21d982e80f233f91df9c7f01feb0270d&w=600_1764896906835.jpg";
+import emergencyImage from "@assets/emergency.jpg";
+import pipeRepairImage from "@assets/new-construction.jpg";
+import serviceCallImage from "@assets/plumbing.jpg";
+import drainCleaningImage from "@assets/dirty-sink.jpg";
 
 interface ServicesSectionProps {
   onBookService: (serviceId: string) => void;

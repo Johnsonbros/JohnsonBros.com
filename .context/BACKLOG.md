@@ -1,6 +1,6 @@
 # Backlog
 
-> **Updated**: 2026-01-18
+> **Updated**: 2026-01-23
 
 ---
 
@@ -56,6 +56,8 @@ Items moved here have enough context to pick up later but are not actively plann
 |------|----------|----------|
 | Test coverage near zero | `TEST_COVERAGE_ANALYSIS.md` | High |
 | MCP server as child process | Could be separate service | Low |
+| npm audit vulnerabilities | 15 vulnerabilities (2 low, 13 moderate) | Medium |
+| Service page images need optimization | `client/src/assets/` | Low |
 
 ---
 
