@@ -31,6 +31,7 @@ import chatkitRoutes from "./src/chatkitRoutes";
 import twilioWebhooks from "./lib/twilioWebhooks";
 import actionsRoutes from "./routes/actions";
 import { generateSitemap } from "./src/sitemap";
+import { seoRedirectMiddleware } from "./src/seoRedirects";
 import { healthChecker } from "./src/healthcheck";
 import { Logger, logError, getErrorMessage } from "./src/logger";
 import { cachePresets } from "./src/cachingMiddleware";
@@ -308,6 +309,10 @@ import { runFullSeoPipeline } from "./lib/seo-agent/pipeline/orchestrator";
 import { handleTwilioRecording } from "./lib/voice-training/twilio";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // SEO Redirect Middleware - MUST be registered first for migration URL handling
+  // See SEO_MIGRATION_STRATEGY.md for redirect mapping documentation
+  app.use(seoRedirectMiddleware);
+
   // Register ZEKE Admin routes
   app.use('/api/v1/admin/zeke', zekeAdminRouter);
 
