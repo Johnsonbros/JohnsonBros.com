@@ -72,6 +72,7 @@ app.use((req, res, next) => {
     '/api/v1/chatkit',        // ChatKit session endpoints
     '/api/v1/customers/search', // Customer lookup (read-only, rate-limited)
     '/api/v1/leads',          // Lead creation from chat widget (rate-limited)
+    '/api/v1/analytics',      // Web vitals and analytics (telemetry only)
     '/mcp',                   // MCP endpoint for AI assistants (external clients)
     '/.well-known',           // Discovery endpoints
     '/api/mcp',               // MCP API endpoints
