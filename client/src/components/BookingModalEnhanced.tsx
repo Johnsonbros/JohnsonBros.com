@@ -348,7 +348,7 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
                   className={`p-2 rounded-lg text-center transition-all border ${
                     bookingData.selectedDate === d.date 
                       ? 'bg-johnson-blue text-white' 
-                      : d.isWeekend 
+                      : (d.isWeekend || d.isPast)
                         ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
                         : 'bg-white hover:bg-gray-50 border-gray-200'
                   }`}
