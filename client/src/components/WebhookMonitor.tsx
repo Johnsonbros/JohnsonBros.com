@@ -440,7 +440,7 @@ export default function WebhookMonitor() {
                 <ol className="list-decimal list-inside space-y-2 text-sm">
                   <li>Log in to your Housecall Pro account</li>
                   <li>Navigate to Settings → Integrations → Webhooks</li>
-                  <li>Add your webhook URL: <code className="bg-background px-2 py-1 rounded">{config?.webhookUrl || 'https://yourdomain.com/api/webhooks/housecall'}</code></li>
+                  <li>Add your webhook URL: <code className="bg-background px-2 py-1 rounded">{config?.webhookUrl || `https://${window.location.host}/api/v1/webhooks/housecall`}</code></li>
                   <li>Copy the webhook signing secret provided by Housecall Pro</li>
                   <li>Add the secret to your environment as <code className="bg-background px-2 py-1 rounded">HOUSECALL_WEBHOOK_SECRET</code></li>
                   <li>Select the events you want to receive</li>

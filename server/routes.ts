@@ -607,9 +607,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
           severity: 'medium',
           category: 'ops',
           title: `New Job: ${job.name || job.id}`,
-          content: `Customer: ${job.customer?.first_name} ${job.customer?.last_name}\nAddress: ${job.address?.street}\nScheduled: ${job.schedule?.scheduled_start}`,
+          content: `Customer: ${job.customer?.first_name} ${job.customer?.last_name}\nAddress: ${job.street}\nScheduled: ${job.schedule?.scheduled_start}`,
           metadata: { jobId: job.id, type: payload.type }
         }).catch((err: unknown) => Logger.error('[HCP Webhook] Failed to notify ZEKE:', (err as any).message));
+      }
+
+      // Handle Job Completion (Check-ins & Heatmap)
+      if (payload.type === 'job.completed') {
+        const job = payload.data;
+        Logger.info(`[HCP Webhook] Processing job completion for ${job.id}`);
+        
+        // 1. Add Heatmap entry
+        const { heatMapService } = await import('./src/heatmap');
+        await heatMapService.processJobCompletion(job).catch(err => 
+          Logger.error('[HCP Webhook] Heatmap update failed:', err)
+        );
+
+        // 2. Add Check-in entry
+        try {
+          await db.insert(checkIns).values({
+            jobId: job.id,
+            customerName: `${job.customer?.first_name} ${job.customer?.last_name}`.trim(),
+            serviceType: job.name || job.job_type || 'Plumbing Service',
+            city: job.address?.city || 'Unknown',
+            state: job.address?.state || 'MA',
+            completionDate: new Date(job.completed_at || Date.now()),
+            description: job.description || generateTestimonialText(job.name || ''),
+            isPublic: true
+          });
+        } catch (err) {
+          Logger.error('[HCP Webhook] Check-in creation failed:', err);
+        }
       }
 
       // Mark as processed
