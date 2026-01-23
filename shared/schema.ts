@@ -241,14 +241,6 @@ export const systemSettings = pgTable("system_settings", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const availableTimeSlots = pgTable("available_time_slots", {
-  id: serial("id").primaryKey(),
-  date: timestamp("date").notNull(),
-  timeSlot: text("time_slot").notNull(),
-  isAvailable: boolean("is_available").default(true),
-  technicianId: integer("technician_id"),
-});
-
 export const insertSystemSettingsSchema = createInsertSchema(systemSettings).omit({ id: true, updatedAt: true });
 export type SystemSettings = typeof systemSettings.$inferSelect;
 export type InsertSystemSettings = z.infer<typeof insertSystemSettingsSchema>;
