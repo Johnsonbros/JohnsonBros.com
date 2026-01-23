@@ -147,7 +147,7 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
         {/* Desktop: Multi-row grid for alignment | Mobile: Single column */}
         <div className="grid lg:grid-cols-[1fr_1fr] gap-6 sm:gap-8 lg:gap-x-12 lg:gap-y-6">
           {/* Row 1: Hero content spans full width on mobile, left column on desktop */}
-          <div className="lg:col-start-1 lg:row-start-1">
+          <div className="lg:col-start-1">
             {/* Express, Next Day, or Emergency Badge */}
             {activeCapacity && (
               <div className="mb-4">
@@ -186,37 +186,43 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
               </div>
             )}
 
-            <p className="text-sm sm:text-base font-semibold text-blue-100 mb-3 uppercase tracking-wider">
+            <p className="text-sm sm:text-base font-semibold text-blue-100 mb-3">
               Trusted Plumber in Quincy, MA • Plumbing • Heating • Drain Cleaning
             </p>
 
             {/* Dynamic Headline */}
-            <h2 className="text-3xl sm:text-4xl lg:text-6xl font-black mb-4 sm:mb-6 leading-[1.1] tracking-tight">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 leading-tight">
               {hasToday ? (
                 <>
-                  Express Booking <br />
-                  <span className="text-johnson-orange">Now Available!</span>
+                  Express Booking Available!
+                  <span className="text-johnson-orange block text-2xl sm:text-3xl lg:text-4xl mt-2">Now Booking Appointments</span>
                 </>
               ) : hasTomorrow ? (
                 <>
-                  Next Day <br />
-                  <span className="text-johnson-orange italic">Guaranteed.</span>
+                  Next Day Appointment Guarantee
+                  <span className="text-johnson-orange block text-2xl sm:text-3xl lg:text-4xl mt-2">
+                    Abington & Quincy, MA
+                  </span>
                 </>
               ) : isEmergency ? (
                 <>
-                  24/7 Emergency <br />
-                  <span className="text-johnson-orange">Help is Here.</span>
+                  24/7 Emergency Service Available
+                  <span className="text-johnson-orange block text-2xl sm:text-3xl lg:text-4xl mt-2">
+                    Call Now: (617) 479-9911
+                  </span>
                 </>
               ) : (
                 <>
-                  Expert Plumbing <br />
-                  <span className="text-johnson-orange">Done Right.</span>
+                  Schedule Your Service
+                  <span className="text-johnson-orange block text-2xl sm:text-3xl lg:text-4xl mt-2">
+                    Quincy, Greater Boston & the South Shore
+                  </span>
                 </>
               )}
             </h2>
 
             {/* Dynamic Subhead */}
-            <p className="text-base sm:text-lg lg:text-2xl text-blue-100 max-w-xl leading-relaxed font-medium">
+            <p className="text-base sm:text-lg lg:text-xl text-blue-100">
               {hasToday 
                 ? "Book now for same-day plumbing, heating, or drain cleaning with the $99 service fee waived."
                 : hasTomorrow
@@ -225,43 +231,6 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
                     ? "Emergency plumbing help is available 24/7 across Quincy, Greater Boston, and the South Shore. Call or text anytime."
                     : "Fast, reliable service with real-time scheduling, trusted by Quincy, Greater Boston, and the South Shore homeowners."}
             </p>
-          </div>
-
-          {/* Floating Trust Grid (Desktop Only) */}
-          <div className="hidden lg:flex lg:col-start-2 lg:row-start-1 items-center justify-center relative">
-            <div className="grid grid-cols-2 gap-4 w-full max-w-md">
-              <div className="bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/20 shadow-2xl transform hover:-translate-y-1 transition-all duration-300">
-                <div className="bg-johnson-orange/20 w-12 h-12 rounded-xl flex items-center justify-center mb-4">
-                  <Shield className="h-6 w-6 text-johnson-orange" />
-                </div>
-                <h3 className="font-bold text-xl mb-1">Local Pros</h3>
-                <p className="text-sm text-blue-100">Family owned & operated since 2008.</p>
-              </div>
-              <div className="bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/20 shadow-2xl transform translate-y-8 hover:-translate-y-1 transition-all duration-300">
-                <div className="bg-green-400/20 w-12 h-12 rounded-xl flex items-center justify-center mb-4">
-                  <Star className="h-6 w-6 text-green-400" />
-                </div>
-                <h3 className="font-bold text-xl mb-1">5-Star Rated</h3>
-                <p className="text-sm text-blue-100">2,500+ South Shore neighbors served.</p>
-              </div>
-              <div className="bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/20 shadow-2xl transform -translate-y-4 hover:-translate-y-1 transition-all duration-300">
-                <div className="bg-blue-400/20 w-12 h-12 rounded-xl flex items-center justify-center mb-4">
-                  <Zap className="h-6 w-6 text-blue-400" />
-                </div>
-                <h3 className="font-bold text-xl mb-1">Fast Response</h3>
-                <p className="text-sm text-blue-100">Arrival within 90 mins on average.</p>
-              </div>
-              <div className="bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/20 shadow-2xl transform translate-y-4 hover:-translate-y-1 transition-all duration-300">
-                <div className="bg-red-400/20 w-12 h-12 rounded-xl flex items-center justify-center mb-4">
-                  <Phone className="h-6 w-6 text-red-400" />
-                </div>
-                <h3 className="font-bold text-xl mb-1">Live Support</h3>
-                <p className="text-sm text-blue-100">Talk to a local plumber 24/7.</p>
-              </div>
-            </div>
-            
-            {/* Background Glow Accent */}
-            <div className="absolute -z-10 w-64 h-64 bg-johnson-orange/20 blur-[100px] rounded-full top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse" />
           </div>
 
           {/* Row 2: Video card on desktop - aligns with time slot row */}
