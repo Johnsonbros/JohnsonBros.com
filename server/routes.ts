@@ -1432,51 +1432,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Lookup existing customer with rate limiting
-  app.post("/api/v1/customers/lookup", async (req, res) => {
+  app.post("/api/v1/customers/lookup", customerLookupLimiter, async (req, res) => {
     try {
       const { phone, name, firstName, lastName } = req.body;
       
       // Support both formats: separate firstName/lastName or combined name
-      const customerName = name || (firstName && lastName ? `${firstName} ${lastName}` : null);
+      const customerName = (name || (firstName && lastName ? `${firstName} ${lastName}` : firstName || lastName || "")).trim();
+      const cleanPhone = phone ? phone.replace(/\D/g, '') : '';
       
-      if (!phone || !customerName) {
-        return res.status(400).json({ error: "Phone number, first name, and last name are required" });
+      if (!cleanPhone || !customerName) {
+        return res.status(400).json({ error: "Phone number and name are required" });
       }
       
       // Look up customer using Housecall Pro API
-      Logger.info(`[Customer Lookup] Searching for customer - Name: "${customerName}", Phone: "${phone}"`);
+      Logger.info(`[Customer Lookup] Searching for customer - Name: "${customerName}", Phone: "${cleanPhone}"`);
       const housecallClient = HousecallProClient.getInstance();
       const customers = await housecallClient.searchCustomers({
-        phone: phone,
+        phone: cleanPhone,
         name: customerName
       });
-      Logger.info(`[Customer Lookup] API returned ${customers.length} customers:`, customers.map(c => ({ id: c.id, name: `${c.first_name} ${c.last_name}`, phone: c.mobile_number })));
       
       if (customers.length > 0) {
-        // Simply take the first matching customer
-        // (The API already filtered by phone, and we verified name match in the search)
         const bestMatch = customers[0];
         
-        // Convert Housecall Pro customer format to our format
+        // Return structured data that components expect
         const customer = {
           id: bestMatch.id,
           firstName: bestMatch.first_name,
           lastName: bestMatch.last_name,
           email: bestMatch.email,
-          phone: bestMatch.mobile_number || phone,
+          phone: bestMatch.mobile_number || cleanPhone,
           address: bestMatch.addresses?.[0]?.street || '',
-          housecallProId: bestMatch.id,
-          createdAt: new Date(bestMatch.created_at || Date.now()),
+          addresses: bestMatch.addresses || [],
+          housecallProId: bestMatch.id
         };
         
         Logger.info(`[Customer Lookup] Returning customer: ${customer.firstName} ${customer.lastName} (${customer.phone})`);
-        res.json({ success: true, customer });
+        res.json({ success: true, customer, customers: [bestMatch] });
       } else {
-        res.status(404).json({ error: "Customer not found" });
+        Logger.info('[Customer Lookup] No matches found');
+        res.json({ success: false, message: "No profile found. Try 'New Customer' tab." });
       }
     } catch (error) {
       logError("Customer lookup error:", error);
-      res.status(500).json({ error: "Failed to lookup customer" });
+      res.status(500).json({ success: false, error: "Failed to lookup customer" });
     }
   });
 

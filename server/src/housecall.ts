@@ -375,11 +375,13 @@ export class HousecallProClient {
       // If we have both phone and name, filter results to ensure exact match
       if (searchParams.phone && searchParams.name && customers.length > 0) {
         const searchPhone = searchParams.phone.replace(/\D/g, '');
-        const searchName = searchParams.name.toLowerCase().trim();
+        const searchName = searchParams.name.toLowerCase().trim().replace(/\s+/g, ' ');
 
         const exactMatches = customers.filter(customer => {
           const customerPhone = (customer.mobile_number || '').replace(/\D/g, '');
-          const fullName = `${customer.first_name || ''} ${customer.last_name || ''}`.toLowerCase().trim();
+          const firstName = (customer.first_name || '').toLowerCase().trim();
+          const lastName = (customer.last_name || '').toLowerCase().trim();
+          const fullName = `${firstName} ${lastName}`.replace(/\s+/g, ' ');
 
           const phoneMatch = customerPhone === searchPhone;
           const nameMatch = fullName === searchName ||
