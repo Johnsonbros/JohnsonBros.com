@@ -56,5 +56,5 @@ coverage/
 vite.config.ts.*
 *.tar.gz
 
-# Optional: Large assets (uncomment if using external storage)
-# attached_assets/
+# Replit attached assets (screenshots, uploads, AI-generated content)
+attached_assets/
