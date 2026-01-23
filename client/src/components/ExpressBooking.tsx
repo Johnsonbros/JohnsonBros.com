@@ -131,6 +131,25 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
   const uniqueSlots = !isEmergency ? (activeCapacity?.unique_express_windows || []) : [];
   const isNextDay = hasTomorrow && !hasToday && !isEmergency;
   
+  // Cutoff logic: Check if it's after 12pm NY time
+  const [isAfterCutoff, setIsAfterCutoff] = useState(false);
+  
+  useEffect(() => {
+    const checkCutoff = () => {
+      const now = new Date();
+      const nyTime = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/New_York',
+        hour: 'numeric',
+        hour12: false
+      }).format(now);
+      setIsAfterCutoff(parseInt(nyTime) >= 12);
+    };
+    
+    checkCutoff();
+    const interval = setInterval(checkCutoff, 60000); // Check every minute
+    return () => clearInterval(interval);
+  }, []);
+
   // Get the appointment date
   const appointmentDate = isNextDay ? addDays(new Date(), 1) : new Date();
   const dateDisplay = format(appointmentDate, 'EEEE, MMMM d');
@@ -154,17 +173,24 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
                 <Badge 
                   className={`
                     inline-flex items-center px-4 py-2 text-sm font-bold
-                    ${hasToday 
-                      ? 'bg-green-500 text-white animate-pulse shadow-lg shadow-green-500/50' 
-                      : hasTomorrow
-                        ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/50'
-                        : isEmergency
-                          ? 'bg-red-500 text-white animate-pulse shadow-lg shadow-red-500/50'
-                          : 'bg-orange-500 text-white'}
+                    ${isAfterCutoff && !isEmergency
+                      ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/50'
+                      : hasToday 
+                        ? 'bg-green-500 text-white animate-pulse shadow-lg shadow-green-500/50' 
+                        : hasTomorrow
+                          ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/50'
+                          : isEmergency
+                            ? 'bg-red-500 text-white animate-pulse shadow-lg shadow-red-500/50'
+                            : 'bg-orange-500 text-white'}
                   `}
                   data-testid="express-badge"
                 >
-                  {hasToday ? (
+                  {isAfterCutoff && !isEmergency ? (
+                    <>
+                      <Clock className="mr-2 h-4 w-4" />
+                      Same-Day Booking Closed
+                    </>
+                  ) : hasToday ? (
                     <>
                       <Zap className="mr-2 h-4 w-4 animate-bounce" />
                       Express - $99 Fee Waived
@@ -192,12 +218,12 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
 
             {/* Dynamic Headline */}
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 leading-tight">
-              {hasToday ? (
+              {isAfterCutoff && !isEmergency ? (
                 <>
-                  Express Booking Available!
-                  <span className="text-johnson-orange block text-2xl sm:text-3xl lg:text-4xl mt-2">Now Booking Appointments</span>
+                  Same-Day Booking is Now Closed
+                  <span className="text-johnson-orange block text-2xl sm:text-3xl lg:text-4xl mt-2">Call Directly for Availability</span>
                 </>
-              ) : hasTomorrow ? (
+              ) : hasToday ? (
                 <>
                   Next Day Appointment Guarantee
                   <span className="text-johnson-orange block text-2xl sm:text-3xl lg:text-4xl mt-2">
@@ -223,13 +249,15 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
 
             {/* Dynamic Subhead */}
             <p className="text-base sm:text-lg lg:text-xl text-blue-100">
-              {hasToday 
-                ? "Book now for same-day plumbing, heating, or drain cleaning with the $99 service fee waived."
-                : hasTomorrow
-                  ? "Reserve a guaranteed appointment tomorrow for Quincy, Greater Boston, and the South Shore with the $99 service fee waived."
-                  : isEmergency
-                    ? "Emergency plumbing help is available 24/7 across Quincy, Greater Boston, and the South Shore. Call or text anytime."
-                    : "Fast, reliable service with real-time scheduling, trusted by Quincy, Greater Boston, and the South Shore homeowners."}
+              {isAfterCutoff && !isEmergency
+                ? "Same-day online booking is now closed for today. Please call our office directly to see if we have any last-minute availability."
+                : hasToday 
+                  ? "Book now for same-day plumbing, heating, or drain cleaning with the $99 service fee waived."
+                  : hasTomorrow
+                    ? "Reserve a guaranteed appointment tomorrow for Quincy, Greater Boston, and the South Shore with the $99 service fee waived."
+                    : isEmergency
+                      ? "Emergency plumbing help is available 24/7 across Quincy, Greater Boston, and the South Shore. Call or text anytime."
+                      : "Fast, reliable service with real-time scheduling, trusted by Quincy, Greater Boston, and the South Shore homeowners."}
             </p>
           </div>
 
@@ -297,8 +325,32 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
 
           {/* Row 2: Time Slot Selection + Key Benefits + CTAs */}
           <div className="lg:col-start-1">
+            {/* Same-Day Cutoff Card */}
+            {isAfterCutoff && !isEmergency && (
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 mb-6 border border-white/20 text-center">
+                <div className="flex flex-col items-center space-y-4">
+                  <div className="w-16 h-16 bg-johnson-orange/20 rounded-full flex items-center justify-center">
+                    <Clock className="h-8 w-8 text-johnson-orange" />
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="text-xl font-bold">Same-Day Booking Closed</h3>
+                    <p className="text-blue-100 max-w-sm mx-auto">
+                      Online same-day booking is now closed. Please call our dispatcher directly to check for last-minute openings.
+                    </p>
+                  </div>
+                  <a 
+                    href="tel:6174799911" 
+                    className="bg-johnson-orange text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-orange-600 transition-all duration-300 transform hover:scale-105 shadow-xl flex items-center justify-center w-full sm:w-auto"
+                  >
+                    <Phone className="mr-2 h-5 w-5" />
+                    Call (617) 479-9911
+                  </a>
+                </div>
+              </div>
+            )}
+
             {/* Time Slot Selection */}
-            {uniqueSlots.length > 0 && (
+            {uniqueSlots.length > 0 && !isAfterCutoff && (
               <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 mb-6 border border-white/20">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center">

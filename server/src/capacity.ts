@@ -474,17 +474,15 @@ export class CapacityCalculator {
       // No slots available today - show NEXT_DAY state
       // Frontend will fetch tomorrow's capacity and show appropriate UI
       state = 'NEXT_DAY';
-    } else if (isBeforeNoon) {
-      // Before noon with available slots - show same day with fee based on capacity
-      if (overallScore >= config.thresholds.same_day_fee_waived) {
-        state = 'SAME_DAY_FEE_WAIVED';
-      } else if (overallScore >= config.thresholds.limited_same_day) {
-        state = 'LIMITED_SAME_DAY';
-      } else {
-        state = 'NEXT_DAY';
-      }
-    } else {
+    } else if (!isBeforeNoon) {
       // After noon - show NEXT_DAY state (even if slots available today)
+      // This enforces the 12 PM cutoff for same-day bookings
+      state = 'NEXT_DAY';
+    } else if (overallScore >= config.thresholds.same_day_fee_waived) {
+      state = 'SAME_DAY_FEE_WAIVED';
+    } else if (overallScore >= config.thresholds.limited_same_day) {
+      state = 'LIMITED_SAME_DAY';
+    } else {
       state = 'NEXT_DAY';
     }
 
