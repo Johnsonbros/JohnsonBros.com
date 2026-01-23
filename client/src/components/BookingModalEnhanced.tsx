@@ -268,17 +268,26 @@ export default function BookingModalEnhanced({ isOpen, onClose, preSelectedServi
 
   const generateWeekDays = () => {
     const weekdays = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     const start = new Date();
     start.setDate(start.getDate() + (weekOffset * 7));
+
+    // Calculate the most recent Sunday to start the week view
+    const sunday = new Date(start);
+    const day = sunday.getDay();
+    sunday.setDate(sunday.getDate() - day);
+
     for (let i = 0; i < 7; i++) {
-      const d = new Date(start);
-      d.setDate(start.getDate() + i);
+      const d = new Date(sunday);
+      d.setDate(sunday.getDate() + i);
       const isWeekend = d.getDay() === 0 || d.getDay() === 6;
       weekdays.push({
         date: d.toISOString().split('T')[0],
         dayNum: d.getDate(),
         dayName: d.toLocaleDateString('en-US', { weekday: 'short' }),
-        isPast: d < new Date(new Date().setHours(0,0,0,0)),
+        isPast: d < today,
         isWeekend
       });
     }
