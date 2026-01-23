@@ -1,7 +1,7 @@
 
 # Work Board
 
-> **Updated**: 2026-01-22 | **Phase**: 2.5 - aOa Integration | **Status**: IN PROGRESS
+> **Updated**: 2026-01-22 | **Phase**: 2 - Feature Verification | **Status**: IN PROGRESS
 
 ---
 
@@ -25,8 +25,9 @@
 
 | # | Task | Expected Output | Solution Pattern | Status | C | R |
 |---|------|-----------------|------------------|--------|---|---|
-| P2.5-001 | aOa semantic tagging | 400+ files tagged with hashtags | `aoa intent store` | Active | 🟢 | - |
-| P2.5-002 | Update agent files with aOa | All agents use `aoa grep` first | Edit frontmatter | Done | 🟢 | - |
+| P2-010 | Homepage loads | Johnson Bros. homepage renders | Open localhost:5000 | **Active** | 🟢 | - |
+| P2-011 | Check console for errors | No critical errors | Browser DevTools | Queued | 🟡 | - |
+| P2-012 | Test routing | Pages navigate correctly | Click through nav | Queued | 🟢 | - |
 
 ---
 
@@ -58,26 +59,26 @@ Test what works without full integrations. Focus on features that don't require 
 
 | # | Task | Expected Output | Solution Pattern | Deps | Status | C | R |
 |---|------|-----------------|------------------|------|--------|---|---|
-| P2-001 | Verify Node.js installed | `node --version` returns 18+ | Check installed version | - | Queued | 🟢 | - |
-| P2-002 | Verify npm installed | `npm --version` returns version | Check installed version | - | Queued | 🟢 | - |
-| P2-003 | Install dependencies | `node_modules/` populated | `npm install` | P2-001 | Queued | 🟢 | - |
-| P2-004 | Start/verify PostgreSQL | Database accessible on port | Docker or local postgres | P2-003 | Queued | 🟡 | - |
-| P2-005 | Create/verify .env | .env file with DATABASE_URL | Copy from .env.example | P2-003 | Queued | 🟢 | - |
-| P2-006 | Push database schema | Tables created in database | `npm run db:push` | P2-004, P2-005 | Queued | 🟢 | - |
+| P2-001 | Verify Node.js installed | `node --version` returns 18+ | Check installed version | - | **Done** | 🟢 | - |
+| P2-002 | Verify npm installed | `npm --version` returns version | Check installed version | - | **Done** | 🟢 | - |
+| P2-003 | Install dependencies | `node_modules/` populated | `npm install` | P2-001 | **Done** | 🟢 | - |
+| P2-004 | Start/verify PostgreSQL | Database accessible on port | Docker or local postgres | P2-003 | **Done** | 🟢 | - |
+| P2-005 | Create/verify .env | .env file with DATABASE_URL | Copy from .env.example | P2-003 | **Done** | 🟢 | - |
+| P2-006 | Push database schema | Tables created in database | `npm run db:push` | P2-004, P2-005 | **Done** | 🟢 | - |
 
 ### Tier 2: Server Verification
 
 | # | Task | Expected Output | Solution Pattern | Deps | Status | C | R |
 |---|------|-----------------|------------------|------|--------|---|---|
-| P2-007 | Start dev server | Server running on :5000 | `npm run dev` | P2-006 | Queued | 🟢 | - |
-| P2-008 | Verify health endpoint | `{"status":"ok"}` | `curl localhost:5000/health` | P2-007 | Queued | 🟢 | - |
-| P2-009 | Verify MCP server | Port 3001 responding | Check child process started | P2-007 | Queued | 🟢 | - |
+| P2-007 | Start dev server | Server running on :5000 | `npm run dev` | P2-006 | **Done** | 🟢 | - |
+| P2-008 | Verify health endpoint | `{"status":"ok"}` | `curl localhost:5000/health` | P2-007 | **Done** | 🟢 | - |
+| P2-009 | Verify MCP server | Port 3001 responding | Check child process started | P2-007 | **Done** | 🟢 | - |
 
 ### Tier 3: Frontend Verification
 
 | # | Task | Expected Output | Solution Pattern | Deps | Status | C | R |
 |---|------|-----------------|------------------|------|--------|---|---|
-| P2-010 | Homepage loads | Johnson Bros. homepage renders | Open localhost:5000 | P2-007 | Queued | 🟢 | - |
+| P2-010 | Homepage loads | Johnson Bros. homepage renders | Open localhost:5000 | P2-007 | **Active** | 🟢 | - |
 | P2-011 | Check console for errors | No critical errors | Browser DevTools | P2-010 | Queued | 🟡 | - |
 | P2-012 | Test routing | Pages navigate correctly | Click through nav | P2-010 | Queued | 🟢 | - |
 
@@ -111,8 +112,8 @@ Test what works without full integrations. Focus on features that don't require 
 |-------|-------|--------|------------|
 | 0 | Setup & Analysis | Done | - |
 | 1 | MVP Local Launch | Done | - |
-| 2 | Feature Verification | Paused | - |
-| 2.5 | aOa Integration | **Active** | - |
+| 2 | Feature Verification | **Active** (Tier 3) | - |
+| 2.5 | aOa Integration | Done | - |
 | 3 | Integration Setup | Backlog | Phase 2 completion |
 | 4 | Production Hardening | Backlog | Phase 3 completion |
 
@@ -122,19 +123,21 @@ Test what works without full integrations. Focus on features that don't require 
 
 | Component | Previous (Linux) | Current (Windows) |
 |-----------|------------------|-------------------|
-| Server | Running :5000 | Needs verification |
-| MCP Server | Running :3001 | Needs verification |
-| Database | Docker :5433 | Needs setup |
-| Frontend | Running | Needs verification |
+| Server | Running :5000 | ✅ Running :5000 |
+| MCP Server | Running :3001 | ✅ Running :3001 (16 tools) |
+| Database | Docker :5433 | ✅ Docker :5433 |
+| Frontend | Running | ✅ Vite HMR active |
+| Node.js | - | ✅ v22.19.0 |
 
-### Degraded Mode (No API Keys)
+### API Integrations
 
 | Integration | Status | Impact |
 |-------------|--------|--------|
-| HousecallPro | Not configured | No real bookings, capacity sync |
-| OpenAI | Not configured | AI chat disabled |
-| Google Maps | Not configured | No maps, geocoding |
-| Twilio | Not configured | No SMS/voice |
+| HousecallPro | ✅ Configured | Capacity sync working |
+| OpenAI | ✅ Configured | AI chat available |
+| Google Maps | ✅ Configured | Maps & geocoding available |
+| Twilio | ✅ Configured | SMS/voice available |
+| Neon Database | ✅ Connected | Cloud PostgreSQL |
 
 ---
 
@@ -142,6 +145,15 @@ Test what works without full integrations. Focus on features that don't require 
 
 | # | Task | Output | Completed |
 |---|------|--------|-----------|
+| P2-001 | Verify Node.js | v22.19.0 | 2026-01-22 |
+| P2-002 | Verify npm | npm available | 2026-01-22 |
+| P2-003 | Install dependencies | 1304 packages | 2026-01-22 |
+| P2-004 | Start PostgreSQL | Docker johnsonbros-db:5433 | 2026-01-22 |
+| P2-005 | Create .env | All API keys configured | 2026-01-22 |
+| P2-006 | Push schema | Tables synced | 2026-01-22 |
+| P2-007 | Start dev server | Running on :5000 | 2026-01-22 |
+| P2-008 | Health endpoint | Returns {"status":"ok"} | 2026-01-22 |
+| P2-009 | MCP server | Running on :3001, 16 tools | 2026-01-22 |
 | P2.5-001 | aOa health check | All services green | 2026-01-22 |
 | P2.5-002 | Add aOa to agents | 6 files updated with aOa instructions | 2026-01-22 |
 | P2.5-007 | Tag server files | 65+ files tagged | 2026-01-22 |
