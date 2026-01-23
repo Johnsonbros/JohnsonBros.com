@@ -26,6 +26,11 @@ export interface CapacityConfig {
     tier2?: string[];
     tier3?: string[];
   };
+  service_area?: {
+    norfolk_county?: string[];
+    suffolk_county?: string[];
+    plymouth_county?: string[];
+  };
   ads_rules: {
     brand_min_daily: number;
     discovery_min_daily: number;

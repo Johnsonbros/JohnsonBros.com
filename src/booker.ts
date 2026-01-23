@@ -4,7 +4,10 @@ import { z } from "zod";
 import { fetch } from "undici";
 import pino from "pino";
 import { randomUUID } from "crypto";
+import { readFileSync, statSync } from "node:fs";
 import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+import { parse as parseYaml } from "yaml";
 import { CapacityCalculator } from "../server/src/capacity.js";
 
 const log = pino({ name: "jb-booker", level: process.env.LOG_LEVEL || "info" });
@@ -59,34 +62,77 @@ const HCP_BASE = "https://api.housecallpro.com";
 // In-memory locks for customer creation to prevent duplicate records
 const customerCreationLocks = new Map<string, Promise<any>>();
 
-// Service Area Validation - In-memory set of valid zip codes
-// Norfolk, Suffolk, and Plymouth County MA zip codes
-const SERVICE_AREA_ZIPS = new Set([
-  // Norfolk County
-  "02021", "02025", "02026", "02027", "02030", "02032", "02035", "02038", "02043", "02045",
-  "02047", "02050", "02052", "02053", "02054", "02056", "02061", "02062", "02066", "02067",
-  "02070", "02071", "02072", "02081", "02090", "02093", "02169", "02170", "02171", "02184",
-  "02185", "02186", "02187", "02188", "02189", "02190", "02191", "02269",
-  "02382", "02445", "02446", "02447", "02457", "02459", "02460", "02461", "02462", "02464",
-  "02465", "02466", "02467", "02468", "02481", "02482", "02492", "02494",
-  // Suffolk County
-  "02108", "02109", "02110", "02111", "02113", "02114", "02115", "02116", "02117", "02118",
-  "02119", "02120", "02121", "02122", "02124", "02125", "02126", "02127", "02128", "02129",
-  "02130", "02131", "02132", "02133", "02134", "02135", "02136", "02137", "02150", "02151",
-  "02152", "02163", "02199", "02201", "02203", "02204", "02205", "02206", "02210", "02211",
-  "02212", "02215", "02217", "02222", "02228", "02241", "02266", "02283", "02284", "02293",
-  "02297", "02298",
-  // Plymouth County
-  "02018", "02020", "02040", "02041", "02044", "02048", "02050", "02051", "02055", "02059",
-  "02060", "02061", "02065", "02066", "02330", "02331", "02332", "02333", "02337", "02338",
-  "02339", "02340", "02341", "02343", "02344", "02345", "02346", "02347", "02349", "02350",
-  "02351", "02355", "02356", "02357", "02358", "02359", "02360", "02361", "02362", "02364",
-  "02366", "02367", "02368", "02370", "02375", "02379", "02381", "02382"
-]);
+// Service Area Validation - loaded from config/capacity.yml
+// Single source of truth for Norfolk, Suffolk, and Plymouth County MA zip codes
+interface CapacityYamlConfig {
+  geos?: string[];
+  service_area?: {
+    norfolk_county?: string[];
+    suffolk_county?: string[];
+    plymouth_county?: string[];
+  };
+  express_zones?: {
+    tier1?: string[];
+    tier2?: string[];
+    tier3?: string[];
+  };
+}
+
+let cachedServiceAreaZips: Set<string> | null = null;
+let configLastModified: number = 0;
+
+function loadServiceAreaZips(): Set<string> {
+  const configPath = join(process.cwd(), 'config', 'capacity.yml');
+
+  try {
+    const stats = statSync(configPath);
+
+    // Return cached version if file hasn't changed
+    if (cachedServiceAreaZips && stats.mtimeMs <= configLastModified) {
+      return cachedServiceAreaZips;
+    }
+
+    const yamlContent = readFileSync(configPath, 'utf8');
+    const config = parseYaml(yamlContent) as CapacityYamlConfig;
+
+    const zips = new Set<string>();
+
+    // Load from service_area (organized by county) if available
+    if (config.service_area) {
+      const { norfolk_county, suffolk_county, plymouth_county } = config.service_area;
+      norfolk_county?.forEach(zip => zips.add(zip));
+      suffolk_county?.forEach(zip => zips.add(zip));
+      plymouth_county?.forEach(zip => zips.add(zip));
+    }
+
+    // Fallback to geos array for backward compatibility
+    if (zips.size === 0 && config.geos) {
+      config.geos.forEach(zip => zips.add(zip));
+    }
+
+    cachedServiceAreaZips = zips;
+    configLastModified = stats.mtimeMs;
+    log.info({ zipCount: zips.size }, 'Loaded service area ZIP codes from capacity.yml');
+
+    return zips;
+  } catch (error: any) {
+    log.error({ error: error.message }, 'Failed to load capacity.yml, using fallback');
+    // Minimal fallback - core Quincy area only
+    return new Set(['02169', '02170', '02171', '02351', '02184', '02188']);
+  }
+}
+
+// Lazy-loaded service area ZIPs (loads on first use)
+function getServiceAreaZips(): Set<string> {
+  if (!cachedServiceAreaZips) {
+    cachedServiceAreaZips = loadServiceAreaZips();
+  }
+  return cachedServiceAreaZips;
+}
 
 function isInServiceArea(zipCode: string): boolean {
   const normalizedZip = zipCode.trim().substring(0, 5);
-  return SERVICE_AREA_ZIPS.has(normalizedZip);
+  return getServiceAreaZips().has(normalizedZip);
 }
 
 function getServiceAreaMessage(): string {

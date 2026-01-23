@@ -10,11 +10,11 @@ tech_map:
   jahz: "pro_b0a7d40a10dc4477908cc808f62054ff"
 
 # Service area ZIP codes
-# Express booking eligibility tiers based on distance
+# Express booking eligibility tiers based on distance from Quincy HQ
 express_zones:
   tier1:  # Immediate area - always eligible for express
     - "02170"  # Quincy
-    - "02169"  # Quincy 
+    - "02169"  # Quincy
     - "02171"  # Quincy
     - "02351"  # Abington
   tier2:  # Secondary area - eligible when capacity > 50%
@@ -26,17 +26,333 @@ express_zones:
     - "02045"  # Hull
     - "02269"  # Quincy
 
-# Legacy geo list for backward compatibility  
+# Full service area - all ZIP codes we service
+# Norfolk, Suffolk, and Plymouth Counties, Massachusetts
+service_area:
+  norfolk_county:
+    - "02021"  # Canton
+    - "02025"  # Cohasset
+    - "02026"  # Dedham
+    - "02027"  # Dedham
+    - "02030"  # Dover
+    - "02032"  # East Walpole
+    - "02035"  # Foxborough
+    - "02038"  # Franklin
+    - "02043"  # Hingham
+    - "02045"  # Hull
+    - "02047"  # Humarock
+    - "02050"  # Marshfield
+    - "02052"  # Medfield
+    - "02053"  # Medway
+    - "02054"  # Millis
+    - "02056"  # Norfolk
+    - "02061"  # Norwell
+    - "02062"  # Norwood
+    - "02066"  # Scituate
+    - "02067"  # Sharon
+    - "02070"  # Sheldonville
+    - "02071"  # South Walpole
+    - "02072"  # Stoughton
+    - "02081"  # Walpole
+    - "02090"  # Westwood
+    - "02093"  # Wrentham
+    - "02169"  # Quincy
+    - "02170"  # Quincy
+    - "02171"  # Quincy
+    - "02184"  # Braintree
+    - "02185"  # Braintree
+    - "02186"  # Milton
+    - "02187"  # Milton Village
+    - "02188"  # Weymouth
+    - "02189"  # East Weymouth
+    - "02190"  # South Weymouth
+    - "02191"  # North Weymouth
+    - "02269"  # Quincy
+    - "02382"  # Whitman
+    - "02445"  # Brookline
+    - "02446"  # Brookline
+    - "02447"  # Brookline
+    - "02457"  # Babson Park
+    - "02459"  # Newton Centre
+    - "02460"  # Newtonville
+    - "02461"  # Newton Highlands
+    - "02462"  # Newton Lower Falls
+    - "02464"  # Newton Upper Falls
+    - "02465"  # West Newton
+    - "02466"  # Auburndale
+    - "02467"  # Chestnut Hill
+    - "02468"  # Waban
+    - "02481"  # Wellesley Hills
+    - "02482"  # Wellesley
+    - "02492"  # Needham
+    - "02494"  # Needham Heights
+
+  suffolk_county:
+    - "02108"  # Boston (Beacon Hill)
+    - "02109"  # Boston (Downtown)
+    - "02110"  # Boston (Financial District)
+    - "02111"  # Boston (Chinatown)
+    - "02113"  # Boston (North End)
+    - "02114"  # Boston (West End)
+    - "02115"  # Boston (Longwood)
+    - "02116"  # Boston (Back Bay)
+    - "02117"  # Boston
+    - "02118"  # Boston (South End)
+    - "02119"  # Boston (Roxbury)
+    - "02120"  # Boston (Mission Hill)
+    - "02121"  # Boston (Dorchester)
+    - "02122"  # Boston (Dorchester)
+    - "02124"  # Boston (Dorchester)
+    - "02125"  # Boston (Dorchester)
+    - "02126"  # Boston (Mattapan)
+    - "02127"  # Boston (South Boston)
+    - "02128"  # Boston (East Boston)
+    - "02129"  # Boston (Charlestown)
+    - "02130"  # Boston (Jamaica Plain)
+    - "02131"  # Boston (Roslindale)
+    - "02132"  # Boston (West Roxbury)
+    - "02133"  # Boston
+    - "02134"  # Boston (Allston)
+    - "02135"  # Boston (Brighton)
+    - "02136"  # Boston (Hyde Park)
+    - "02137"  # Boston (Readville)
+    - "02150"  # Chelsea
+    - "02151"  # Revere
+    - "02152"  # Winthrop
+    - "02163"  # Boston (Allston)
+    - "02199"  # Boston (Prudential)
+    - "02201"  # Boston
+    - "02203"  # Boston
+    - "02204"  # Boston
+    - "02205"  # Boston
+    - "02206"  # Boston
+    - "02210"  # Boston (Seaport)
+    - "02211"  # Boston
+    - "02212"  # Boston
+    - "02215"  # Boston (Fenway)
+    - "02217"  # Boston
+    - "02222"  # Boston
+    - "02228"  # Boston (East Boston)
+    - "02241"  # Boston
+    - "02266"  # Boston
+    - "02283"  # Boston
+    - "02284"  # Boston
+    - "02293"  # Boston
+    - "02297"  # Boston
+    - "02298"  # Boston
+
+  plymouth_county:
+    - "02018"  # Accord
+    - "02020"  # Brant Rock
+    - "02040"  # Green Harbor
+    - "02041"  # Green Harbor
+    - "02044"  # Hingham
+    - "02048"  # Mansfield
+    - "02050"  # Marshfield
+    - "02051"  # Marshfield Hills
+    - "02055"  # Minot
+    - "02059"  # North Marshfield
+    - "02060"  # North Scituate
+    - "02061"  # Norwell
+    - "02065"  # Ocean Bluff
+    - "02066"  # Scituate
+    - "02330"  # Carver
+    - "02331"  # Duxbury
+    - "02332"  # Duxbury
+    - "02333"  # East Bridgewater
+    - "02337"  # Elmwood
+    - "02338"  # Halifax
+    - "02339"  # Hanover
+    - "02340"  # Hanover
+    - "02341"  # Hanson
+    - "02343"  # Holbrook
+    - "02344"  # Middleborough
+    - "02345"  # Middleborough
+    - "02346"  # Middleborough
+    - "02347"  # Lakeville
+    - "02349"  # Middleborough
+    - "02350"  # Monponsett
+    - "02351"  # Abington
+    - "02355"  # North Carver
+    - "02356"  # North Easton
+    - "02357"  # North Easton
+    - "02358"  # North Pembroke
+    - "02359"  # Pembroke
+    - "02360"  # Plymouth
+    - "02361"  # Plymouth
+    - "02362"  # Plymouth
+    - "02364"  # Kingston
+    - "02366"  # South Carver
+    - "02367"  # Plympton
+    - "02368"  # Randolph
+    - "02370"  # Rockland
+    - "02375"  # South Easton
+    - "02379"  # West Bridgewater
+    - "02381"  # White Horse Beach
+    - "02382"  # Whitman
+
+# Legacy geo list - combined flat list for backward compatibility
+# This is auto-generated from service_area above
 geos:
-  - "02170"  # Quincy
-  - "02169"  # Quincy
-  - "02171"  # Quincy
-  - "02351"  # Abington
-  - "02184"  # Braintree
-  - "02186"  # Milton
-  - "02188"  # Weymouth
-  - "02043"  # Hingham
-  - "02045"  # Hull
+  # Norfolk County
+  - "02021"
+  - "02025"
+  - "02026"
+  - "02027"
+  - "02030"
+  - "02032"
+  - "02035"
+  - "02038"
+  - "02043"
+  - "02045"
+  - "02047"
+  - "02050"
+  - "02052"
+  - "02053"
+  - "02054"
+  - "02056"
+  - "02061"
+  - "02062"
+  - "02066"
+  - "02067"
+  - "02070"
+  - "02071"
+  - "02072"
+  - "02081"
+  - "02090"
+  - "02093"
+  - "02169"
+  - "02170"
+  - "02171"
+  - "02184"
+  - "02185"
+  - "02186"
+  - "02187"
+  - "02188"
+  - "02189"
+  - "02190"
+  - "02191"
+  - "02269"
+  - "02382"
+  - "02445"
+  - "02446"
+  - "02447"
+  - "02457"
+  - "02459"
+  - "02460"
+  - "02461"
+  - "02462"
+  - "02464"
+  - "02465"
+  - "02466"
+  - "02467"
+  - "02468"
+  - "02481"
+  - "02482"
+  - "02492"
+  - "02494"
+  # Suffolk County
+  - "02108"
+  - "02109"
+  - "02110"
+  - "02111"
+  - "02113"
+  - "02114"
+  - "02115"
+  - "02116"
+  - "02117"
+  - "02118"
+  - "02119"
+  - "02120"
+  - "02121"
+  - "02122"
+  - "02124"
+  - "02125"
+  - "02126"
+  - "02127"
+  - "02128"
+  - "02129"
+  - "02130"
+  - "02131"
+  - "02132"
+  - "02133"
+  - "02134"
+  - "02135"
+  - "02136"
+  - "02137"
+  - "02150"
+  - "02151"
+  - "02152"
+  - "02163"
+  - "02199"
+  - "02201"
+  - "02203"
+  - "02204"
+  - "02205"
+  - "02206"
+  - "02210"
+  - "02211"
+  - "02212"
+  - "02215"
+  - "02217"
+  - "02222"
+  - "02228"
+  - "02241"
+  - "02266"
+  - "02283"
+  - "02284"
+  - "02293"
+  - "02297"
+  - "02298"
+  # Plymouth County
+  - "02018"
+  - "02020"
+  - "02040"
+  - "02041"
+  - "02044"
+  - "02048"
+  - "02050"
+  - "02051"
+  - "02055"
+  - "02059"
+  - "02060"
+  - "02061"
+  - "02065"
+  - "02066"
+  - "02330"
+  - "02331"
+  - "02332"
+  - "02333"
+  - "02337"
+  - "02338"
+  - "02339"
+  - "02340"
+  - "02341"
+  - "02343"
+  - "02344"
+  - "02345"
+  - "02346"
+  - "02347"
+  - "02349"
+  - "02350"
+  - "02351"
+  - "02355"
+  - "02356"
+  - "02357"
+  - "02358"
+  - "02359"
+  - "02360"
+  - "02361"
+  - "02362"
+  - "02364"
+  - "02366"
+  - "02367"
+  - "02368"
+  - "02370"
+  - "02375"
+  - "02379"
+  - "02381"
+  - "02382"
 
 # Google Ads rules
 ads_rules:
