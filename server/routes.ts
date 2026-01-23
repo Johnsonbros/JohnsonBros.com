@@ -2208,6 +2208,12 @@ $50 REFERRAL CREDIT APPLIES - New customer receives $50 credit toward any servic
     }
   });
 
+  // Web Vitals endpoint - receive performance metrics from frontend
+  app.post("/api/v1/analytics/web-vitals", async (req, res) => {
+    // Just acknowledge receipt - metrics are logged but not stored
+    res.json({ success: true });
+  });
+
   // Get services from Housecall Pro
   app.get("/api/v1/services", publicReadLimiter, cachePresets.long(), async (_req, res) => {
     Logger.info("[Services API] Route handler called");
