@@ -47,6 +47,27 @@ export async function generateSitemap(): Promise<string> {
     priority: 0.6
   });
 
+  // Add about page
+  urls.push({
+    loc: `${SITE_URL}/about`,
+    changefreq: 'monthly',
+    priority: 0.7
+  });
+
+  // Add reviews page
+  urls.push({
+    loc: `${SITE_URL}/reviews`,
+    changefreq: 'weekly',
+    priority: 0.75
+  });
+
+  // Add service area index
+  urls.push({
+    loc: `${SITE_URL}/service-areas`,
+    changefreq: 'monthly',
+    priority: 0.8
+  });
+
   // Add service pages
   const services = [
     'general-plumbing',
@@ -55,7 +76,8 @@ export async function generateSitemap(): Promise<string> {
     'drain-cleaning',
     'emergency-plumbing',
     'water-heater',
-    'pipe-repair'
+    'pipe-repair',
+    'heating'
   ];
 
   services.forEach(service => {
@@ -98,14 +120,23 @@ export async function generateSitemap(): Promise<string> {
     });
   });
 
-  // Add service area pages (Tier 1 cities)
+  // Add service area pages (All service areas)
   const serviceAreas = [
+    // Tier 1 - Primary markets
     'quincy',
+    'abington',
+    // Tier 2 - Secondary markets
     'braintree',
     'weymouth',
+    'hingham',
+    // Tier 3 - Extended service area
     'plymouth',
     'marshfield',
-    'hingham'
+    'rockland',
+    'hanover',
+    'scituate',
+    'cohasset',
+    'hull'
   ];
 
   serviceAreas.forEach(area => {
