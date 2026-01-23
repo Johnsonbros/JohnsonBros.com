@@ -191,38 +191,32 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
             </p>
 
             {/* Dynamic Headline */}
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 leading-tight">
+            <h2 className="text-3xl sm:text-4xl lg:text-6xl font-black mb-4 sm:mb-6 leading-[1.1] tracking-tight text-white drop-shadow-sm">
               {hasToday ? (
                 <>
-                  Express Booking Available!
-                  <span className="text-johnson-orange block text-2xl sm:text-3xl lg:text-4xl mt-2">Now Booking Appointments</span>
+                  Express Booking <br />
+                  <span className="text-johnson-orange">Now Available!</span>
                 </>
               ) : hasTomorrow ? (
                 <>
-                  Next Day Appointment Guarantee
-                  <span className="text-johnson-orange block text-2xl sm:text-3xl lg:text-4xl mt-2">
-                    Abington & Quincy, MA
-                  </span>
+                  Next Day <br />
+                  <span className="text-johnson-orange italic underline decoration-johnson-orange/30">Guaranteed.</span>
                 </>
               ) : isEmergency ? (
                 <>
-                  24/7 Emergency Service Available
-                  <span className="text-johnson-orange block text-2xl sm:text-3xl lg:text-4xl mt-2">
-                    Call Now: (617) 479-9911
-                  </span>
+                  24/7 Emergency <br />
+                  <span className="text-johnson-orange">Help is Here.</span>
                 </>
               ) : (
                 <>
-                  Schedule Your Service
-                  <span className="text-johnson-orange block text-2xl sm:text-3xl lg:text-4xl mt-2">
-                    Quincy, Greater Boston & the South Shore
-                  </span>
+                  Expert Plumbing <br />
+                  <span className="text-johnson-orange">Done Right.</span>
                 </>
               )}
             </h2>
 
             {/* Dynamic Subhead */}
-            <p className="text-base sm:text-lg lg:text-xl text-blue-100">
+            <p className="text-base sm:text-lg lg:text-2xl text-blue-50 max-w-xl leading-relaxed font-medium">
               {hasToday 
                 ? "Book now for same-day plumbing, heating, or drain cleaning with the $99 service fee waived."
                 : hasTomorrow
@@ -231,6 +225,50 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
                     ? "Emergency plumbing help is available 24/7 across Quincy, Greater Boston, and the South Shore. Call or text anytime."
                     : "Fast, reliable service with real-time scheduling, trusted by Quincy, Greater Boston, and the South Shore homeowners."}
             </p>
+          </div>
+
+          {/* Clean Glassmorphism Trust Column (Refined Vibe) */}
+          <div className="hidden lg:flex lg:col-start-2 lg:row-start-1 items-center justify-end relative">
+            <div className="space-y-4 w-full max-w-[340px]">
+              <div className="group bg-white/5 backdrop-blur-sm p-5 rounded-2xl border border-white/10 shadow-lg transition-all duration-300 hover:bg-white/10 hover:border-white/20">
+                <div className="flex items-center gap-4">
+                  <div className="bg-johnson-orange/20 p-3 rounded-xl">
+                    <Shield className="h-6 w-6 text-johnson-orange" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg leading-tight">Local Pros</h3>
+                    <p className="text-sm text-blue-100/80">Family owned since 2008.</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="group bg-white/5 backdrop-blur-sm p-5 rounded-2xl border border-white/10 shadow-lg transition-all duration-300 hover:bg-white/10 hover:border-white/20 ml-8">
+                <div className="flex items-center gap-4">
+                  <div className="bg-green-400/20 p-3 rounded-xl">
+                    <Star className="h-6 w-6 text-green-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg leading-tight">5-Star Rated</h3>
+                    <p className="text-sm text-blue-100/80">2,500+ Neighbors served.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="group bg-white/5 backdrop-blur-sm p-5 rounded-2xl border border-white/10 shadow-lg transition-all duration-300 hover:bg-white/10 hover:border-white/20 ml-4">
+                <div className="flex items-center gap-4">
+                  <div className="bg-blue-400/20 p-3 rounded-xl">
+                    <Zap className="h-6 w-6 text-blue-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg leading-tight">Fast Arrival</h3>
+                    <p className="text-sm text-blue-100/80">Within 90 mins on average.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Subtle Glow Accent */}
+            <div className="absolute -right-20 top-1/2 -translate-y-1/2 w-64 h-64 bg-johnson-orange/10 blur-[100px] rounded-full -z-10" />
           </div>
 
           {/* Row 2: Video card on desktop - aligns with time slot row */}
