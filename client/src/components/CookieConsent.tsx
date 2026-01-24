@@ -58,7 +58,7 @@ export function CookieConsent() {
     openPreferences();
   };
 
-  if (!showBanner && !showPreferences) {
+  if (!showPreferences) {
     return null;
   }
 

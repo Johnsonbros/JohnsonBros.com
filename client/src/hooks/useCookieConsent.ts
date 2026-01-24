@@ -80,9 +80,11 @@ export function useCookieConsent() {
       setConsent(stored);
       setShowBanner(false);
     } else {
-      setShowBanner(true);
+      // Auto-accept all cookies if no consent stored
+      acceptAll();
+      setShowBanner(false);
     }
-  }, []);
+  }, [acceptAll]);
 
   // Update consent via API
   const updateConsentApi = useCallback(async (updates: Partial<ConsentState>) => {
