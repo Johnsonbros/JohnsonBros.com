@@ -150,7 +150,6 @@ export function CardRenderer({ card, onAction, onDismiss, isLoading }: CardRende
           }}
           onAction={onAction}
           onDismiss={handleDismiss}
-          isLoading={isLoading}
         />
       );
     }

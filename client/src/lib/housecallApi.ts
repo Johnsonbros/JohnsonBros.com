@@ -1,5 +1,18 @@
 import { apiRequest } from "./queryClient";
-import type { Service, AvailableTimeSlot, Review, BookingFormData } from "@shared/schema";
+import type { Service, AvailableTimeSlot, BookingFormData } from "@shared/schema";
+
+// Review type for Google reviews (not stored in database schema)
+export interface Review {
+  id: string;
+  author: string;
+  customerName: string;
+  rating: number;
+  text: string;
+  time: string;
+  date: string;
+  serviceType?: string;
+  profilePhotoUrl?: string;
+}
 
 export async function getServices(): Promise<Service[]> {
   const response = await apiRequest("GET", "/api/v1/services");

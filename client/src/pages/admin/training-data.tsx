@@ -47,13 +47,27 @@ export default function TrainingDataPage() {
   const { data, isLoading, refetch } = useQuery<TrainingDataResponse>({
     queryKey: ['/api/v1/chat/training-data', filter],
     queryFn: async () => {
-      const url = filter === 'all' 
+      const url = filter === 'all'
         ? '/api/v1/chat/training-data?limit=100'
         : `/api/v1/chat/training-data?feedbackType=${filter}&limit=100`;
       const res = await fetch(url);
       return res.json();
     }
   });
+
+  const stats = data?.stats ?? { positive: 0, negative: 0 };
+  const total = data?.total ?? 0;
+
+  const handleExport = async () => {
+    try {
+      const res = await apiRequest('POST', '/api/v1/chat/training-data/export');
+      const result = await res.json();
+      toast({ title: "Export Complete", description: `Exported ${result.count} training examples.` });
+      refetch();
+    } catch (error) {
+      toast({ title: "Export Failed", description: "Failed to export training data.", variant: "destructive" });
+    }
+  };
 
   const handleImport = async () => {
     if (!importUrls.trim()) return;

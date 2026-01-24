@@ -644,9 +644,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             serviceType: job.name || job.job_type || 'Plumbing Service',
             city: job.address?.city || 'Unknown',
             state: job.address?.state || 'MA',
-            completionDate: new Date(job.completed_at || Date.now()),
-            description: job.description || generateTestimonialText(job.name || ''),
-            isPublic: true
+            checkInTime: new Date(job.completed_at || Date.now()),
+            completedAt: new Date(job.completed_at || Date.now()),
+            notes: job.description || generateTestimonialText(job.name || ''),
+            isVisible: true
           });
         } catch (err) {
           Logger.error('[HCP Webhook] Check-in creation failed:', err);
@@ -1330,7 +1331,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.json(timeSlots);
       } else {
         // Fallback to storage if no API key
-        const timeSlots = await storage.getAvailableTimeSlots(date);
+        const timeSlots = await storage.getAvailableTimeSlots(new Date(date));
         res.json(timeSlots);
       }
     } catch (error) {

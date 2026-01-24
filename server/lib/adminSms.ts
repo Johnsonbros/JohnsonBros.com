@@ -24,7 +24,7 @@ export function isAdminPhone(phone: string): boolean {
          normalizedAdmin.endsWith(normalizedIncoming);
   
   if (isMatch) {
-    Logger.info(`[ZEKE] Supervisor ${ZEKE_IDENTITY.authority.supervisor} recognized`);
+    Logger.info(`[ZEKE] Admin phone recognized for ${ZEKE_IDENTITY.name}`);
   }
   
   return isMatch;
@@ -159,9 +159,9 @@ const ADMIN_COMMANDS: Record<string, {
     description: 'Manage blog drafts (Jessica Agent)',
     handler: async (args: string[]) => {
       if (args.length === 0) {
-        const drafts = await dbStorage.getBlogPosts({ status: 'draft' });
+        const drafts = await dbStorage.getAllBlogPosts('draft', 10, 0);
         if (drafts.length === 0) return { message: 'No active blog drafts.', success: true };
-        const list = drafts.slice(0, 5).map(d => `• ${d.title}`).join('\n');
+        const list = drafts.slice(0, 5).map((d: { title: string }) => `• ${d.title}`).join('\n');
         return { message: `CURRENT DRAFTS:\n${list}\n\nReply with "blog [title] feedback" to refine.`, success: true };
       }
       return { message: 'Blog command usage: blog [topic] [feedback]', success: true };
@@ -194,9 +194,9 @@ export async function processAdminMessage(body: string): Promise<string> {
   
   // Blog Feedback Loop (Jessica Agent)
   if (normalizedBody.toLowerCase().includes('feedback') || command === 'blog') {
-    const drafts = await dbStorage.getBlogPosts({ status: 'draft' });
+    const drafts = await dbStorage.getAllBlogPosts('draft', 10, 0);
     // Simple heuristic: find the draft mentioned or the most recent
-    const targetDraft = drafts.find(d => normalizedBody.toLowerCase().includes(d.title.toLowerCase().substring(0, 10))) || drafts[0];
+    const targetDraft = drafts.find((d: { title: string }) => normalizedBody.toLowerCase().includes(d.title.toLowerCase().substring(0, 10))) || drafts[0];
     
     if (targetDraft) {
       Logger.info(`[Jessica] Processing feedback for draft: ${targetDraft.title}`);
@@ -221,8 +221,7 @@ export async function processAdminMessage(body: string): Promise<string> {
       const updated = JSON.parse(aiResponse.choices[0].message.content || '{}');
       await dbStorage.updateBlogPost(targetDraft.id, {
         title: updated.title,
-        content: updated.content,
-        updatedAt: new Date()
+        content: updated.content
       });
 
       return `✨ Jessica here! I've updated the draft "${updated.title}" based on your feedback. Check it out at the dashboard link. Anything else?`;
