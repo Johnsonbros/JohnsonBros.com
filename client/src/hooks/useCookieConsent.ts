@@ -80,11 +80,41 @@ export function useCookieConsent() {
       setConsent(stored);
       setShowBanner(false);
     } else {
-      // Auto-accept all cookies if no consent stored
-      acceptAll();
-      setShowBanner(false);
+      // Use the internal function directly if possible or call it in next tick
+      // to avoid use-before-declaration with acceptAll which is a useCallback defined below
+      const autoAccept = async () => {
+        try {
+          const response = await fetch('/api/compliance/consent/accept-all', {
+            method: 'POST',
+            credentials: 'include',
+          });
+
+          if (response.ok) {
+            const result = await response.json();
+            if (result.success && result.data) {
+              setConsent(result.data);
+              setShowBanner(false);
+              window.dispatchEvent(new CustomEvent('consentUpdated', {
+                detail: result.data,
+              }));
+            }
+          }
+        } catch (error) {
+          console.error('[CookieConsent] Failed auto-accept:', error);
+          setConsent({
+            necessary: true,
+            analytics: true,
+            marketing: true,
+            hasConsented: true,
+            timestamp: new Date().toISOString(),
+            version: '1.0',
+          });
+          setShowBanner(false);
+        }
+      };
+      autoAccept();
     }
-  }, [acceptAll]);
+  }, []);
 
   // Update consent via API
   const updateConsentApi = useCallback(async (updates: Partial<ConsentState>) => {
