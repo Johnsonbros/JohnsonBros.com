@@ -98,6 +98,7 @@
     "cors": "^2.8.5",
     "csurf": "^1.11.0",
     "date-fns": "^3.6.0",
+    "dotenv": "^17.2.3",
     "drizzle-orm": "^0.39.1",
     "drizzle-zod": "^0.7.0",
     "embla-carousel-autoplay": "^8.6.0",
