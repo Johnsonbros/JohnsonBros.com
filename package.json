@@ -14,7 +14,13 @@
     "test:integration": "vitest --config vitest.config.ts",
     "test:server:run": "vitest run --config vitest.config.ts",
     "test:client:run": "vitest run --config vitest.client.config.ts",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "seo:validate": "npm run seo:redirects && npm run seo:schema && npm run seo:sitemap && npm run seo:perf",
+    "seo:redirects": "tsx server/src/seo/validateRedirects.ts",
+    "seo:schema": "tsx server/src/seo/validateSchema.ts",
+    "seo:sitemap": "tsx server/src/seo/validateSitemap.ts",
+    "seo:perf": "tsx server/src/seo/measurePerformance.ts",
+    "seo:report": "tsx server/src/seo/generateReport.ts"
   },
   "dependencies": {
     "@deepgram/sdk": "^4.11.3",
@@ -155,6 +161,7 @@
     "dotenv-cli": "^11.0.0",
     "drizzle-kit": "^0.30.4",
     "esbuild": "^0.25.0",
+    "lighthouse": "^12.0.0",
     "jsdom": "^26.1.0",
     "postcss": "^8.4.47",
     "supertest": "^7.2.2",
