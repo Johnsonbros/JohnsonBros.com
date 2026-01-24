@@ -59,10 +59,11 @@ router.use('/consent', consentRouter);
 // POST /api/compliance/privacy/export - Export user data (rate limited)
 // POST /api/compliance/privacy/delete - Request data deletion (rate limited)
 // DELETE /api/compliance/privacy/delete - Cancel deletion request
-router.use('/privacy', privacyRouter);
 
-// Apply stricter rate limiting to expensive operations
+// Apply stricter rate limiting to expensive operations BEFORE mounting router
 router.use('/privacy/export', dataOperationsLimiter);
 router.use('/privacy/delete', dataOperationsLimiter);
+
+router.use('/privacy', privacyRouter);
 
 export default router;
