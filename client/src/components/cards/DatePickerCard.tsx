@@ -36,9 +36,9 @@ export function DatePickerCard({ card, onSelectDate, onDismiss, isLoading }: Dat
     if (!availability) return { available: false, state: null, slots: 0 };
     
     return {
-      available: availability.slotsAvailable > 0,
+      available: (availability.slotsAvailable ?? 0) > 0,
       state: availability.capacityState,
-      slots: availability.slotsAvailable,
+      slots: availability.slotsAvailable ?? 0,
     };
   };
 

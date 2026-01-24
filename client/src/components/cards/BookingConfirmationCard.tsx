@@ -4,10 +4,11 @@ import { CheckCircle2, Calendar, Clock, MapPin, User, Phone, Wrench, Copy, Exter
 import { useToast } from '@/hooks/use-toast';
 import type { BookingConfirmationCard as BookingConfirmationCardType } from '@/lib/cardProtocol';
 
-interface BookingConfirmationCardProps {
+export interface BookingConfirmationCardProps {
   card: BookingConfirmationCardType;
   onAction?: (action: string, payload?: Record<string, unknown>) => void;
   onDismiss?: () => void;
+  isLoading?: boolean;
 }
 
 export function BookingConfirmationCard({ card, onAction, onDismiss }: BookingConfirmationCardProps) {

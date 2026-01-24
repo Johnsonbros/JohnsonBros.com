@@ -1,9 +1,10 @@
 import { sentryClient } from './sentry';
 
+// Extend Window for analytics globals
 declare global {
   interface Window {
-    gtag?: (...args: any[]) => void;
-    dataLayer?: any[];
+    gtag?: ((...args: any[]) => void) | undefined;
+    dataLayer?: any[] | undefined;
   }
 }
 

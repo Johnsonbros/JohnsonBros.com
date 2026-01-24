@@ -1,12 +1,12 @@
-import { 
-  type Customer, type InsertCustomer, 
+import {
+  type Customer, type InsertCustomer,
   type Appointment, type InsertAppointment,
   type BlogPost, type InsertBlogPost,
   type Keyword, type InsertKeyword,
   type PostKeyword, type InsertPostKeyword,
   type KeywordRanking, type InsertKeywordRanking,
   type BlogAnalytics, type InsertBlogAnalytics,
-  type AvailableTimeSlot,
+  type AvailableTimeSlotDb,
   type Referral, type InsertReferral,
   type CustomerCredit, type InsertCustomerCredit,
   type Lead, type InsertLead,
@@ -465,15 +465,9 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(upsellOffers).where(eq(upsellOffers.isActive, true));
   }
 
-  async getAvailableTimeSlots(date: Date): Promise<AvailableTimeSlot[]> {
+  async getAvailableTimeSlots(date: Date): Promise<AvailableTimeSlotDb[]> {
     const slots = await db.select().from(availableTimeSlots).where(eq(availableTimeSlots.date, date));
-    return slots.map(s => ({
-      ...s,
-      id: s.id.toString(),
-      startTime: s.timeSlot.split('-')[0] || '',
-      endTime: s.timeSlot.split('-')[1] || '',
-      available: s.isAvailable ?? false
-    })) as AvailableTimeSlot[];
+    return slots;
   }
 
   // System Settings methods

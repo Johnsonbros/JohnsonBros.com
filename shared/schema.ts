@@ -597,7 +597,7 @@ export type Service = {
   category?: string;
 };
 
-// Available time slot type
+// Available time slot type for API responses (different from DB model)
 export type AvailableTimeSlot = {
   id: string;
   startTime: string;
@@ -2563,7 +2563,7 @@ export const insertAvailableTimeSlotsSchema = createInsertSchema(availableTimeSl
   updatedAt: true,
 });
 
-export type AvailableTimeSlot = typeof availableTimeSlots.$inferSelect;
+export type AvailableTimeSlotDb = typeof availableTimeSlots.$inferSelect;
 export type InsertAvailableTimeSlot = z.infer<typeof insertAvailableTimeSlotsSchema>;
 
 // ============================================

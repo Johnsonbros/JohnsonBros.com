@@ -13,13 +13,8 @@ const GA_MEASUREMENT_ID = import.meta.env.VITE_GA_MEASUREMENT_ID || '';
 // Track whether GA has been initialized
 let gaInitialized = false;
 
-// Declare gtag on window
-declare global {
-  interface Window {
-    dataLayer: unknown[];
-    gtag: (...args: unknown[]) => void;
-  }
-}
+// Window extension is declared in monitoring/analytics.ts
+// Use optional chaining to handle undefined cases
 
 /**
  * Load Google Analytics script dynamically
@@ -48,8 +43,8 @@ function loadGAScript(): Promise<void> {
 
     // Initialize dataLayer
     window.dataLayer = window.dataLayer || [];
-    window.gtag = function gtag() {
-      window.dataLayer.push(arguments);
+    window.gtag = function gtag(...args: any[]) {
+      window.dataLayer?.push(args);
     };
     window.gtag('js', new Date());
 
@@ -59,7 +54,7 @@ function loadGAScript(): Promise<void> {
     script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`;
 
     script.onload = () => {
-      window.gtag('config', GA_MEASUREMENT_ID, {
+      window.gtag?.('config', GA_MEASUREMENT_ID, {
         // Anonymize IP by default
         anonymize_ip: true,
         // Don't send page views automatically - we'll control this
@@ -108,7 +103,7 @@ export function trackPageView(path: string, title?: string): void {
     return;
   }
 
-  window.gtag('event', 'page_view', {
+  window.gtag?.('event', 'page_view', {
     page_path: path,
     page_title: title || document.title,
     page_location: window.location.href,
@@ -126,7 +121,7 @@ export function trackEvent(
     return;
   }
 
-  window.gtag('event', eventName, params);
+  window.gtag?.('event', eventName, params);
 }
 
 /**
@@ -141,7 +136,7 @@ export function trackConversion(
     return;
   }
 
-  window.gtag('event', 'conversion', {
+  window.gtag?.('event', 'conversion', {
     send_to: `${GA_MEASUREMENT_ID}/${conversionLabel}`,
     value,
     currency: currency || 'USD',
@@ -202,7 +197,7 @@ export function setUserProperties(properties: Record<string, unknown>): void {
     return;
   }
 
-  window.gtag('set', 'user_properties', properties);
+  window.gtag?.('set', 'user_properties', properties);
 }
 
 /**

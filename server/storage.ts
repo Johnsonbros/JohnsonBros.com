@@ -1,12 +1,12 @@
-import { 
-  type Customer, type InsertCustomer, 
+import {
+  type Customer, type InsertCustomer,
   type Appointment, type InsertAppointment,
   type BlogPost, type InsertBlogPost,
   type Keyword, type InsertKeyword,
   type PostKeyword, type InsertPostKeyword,
   type KeywordRanking, type InsertKeywordRanking,
   type BlogAnalytics, type InsertBlogAnalytics,
-  type AvailableTimeSlot,
+  type AvailableTimeSlotDb,
   type Referral, type InsertReferral,
   type CustomerCredit, type InsertCustomerCredit,
   type Lead, type InsertLead,
@@ -94,7 +94,7 @@ export interface IStorage {
   getSubscriptions(): Promise<MemberSubscription[]>;
 
   // Appointment/Scheduling methods
-  getAvailableTimeSlots(date: Date): Promise<AvailableTimeSlot[]>;
+  getAvailableTimeSlots(date: Date): Promise<AvailableTimeSlotDb[]>;
 
   // Revenue Metrics methods
   getRevenueMetrics(startDate: Date, endDate: Date): Promise<RevenueMetric[]>;
@@ -402,18 +402,24 @@ export class MemStorage implements IStorage {
 
   async createReferral(referral: InsertReferral): Promise<Referral> {
     const id = this.nextId++;
-    const newReferral = { 
-      ...referral, 
-      id, 
+    const newReferral: Referral = {
+      id,
+      referrerCustomerId: referral.referrerCustomerId,
+      referrerName: referral.referrerName,
+      referrerPhone: referral.referrerPhone,
+      referredName: referral.referredName,
+      referredPhone: referral.referredPhone,
+      referredEmail: referral.referredEmail ?? null,
+      referralCode: referral.referralCode ?? null,
       status: referral.status ?? 'pending',
       notes: referral.notes ?? null,
       referredLeadId: referral.referredLeadId ?? null,
+      jobId: referral.jobId ?? null,
       convertedAt: null,
-      rewardAmount: referral.rewardAmount ?? 0,
-      rewardStatus: referral.rewardAmount ?? 'pending',
-      rewardType: referral.rewardType ?? 'credit',
+      discountAmount: referral.discountAmount ?? 9900,
+      discountApplied: referral.discountApplied ?? false,
       expiresAt: referral.expiresAt ?? null,
-      createdAt: new Date() 
+      createdAt: new Date()
     };
     this.referrals.set(id, newReferral);
     return newReferral;
@@ -502,7 +508,7 @@ export class MemStorage implements IStorage {
   }
 
   async getUpsellOffersForService(serviceType: string): Promise<UpsellOffer[]> {
-    return Array.from(this.upsellOffers.values()).filter(o => o.isActive && (o.relevantServices as string[]).includes(serviceType));
+    return Array.from(this.upsellOffers.values()).filter(o => o.isActive && o.triggerService === serviceType);
   }
 
   async getSubscriptions(): Promise<MemberSubscription[]> {
@@ -513,7 +519,7 @@ export class MemStorage implements IStorage {
     return Array.from(this.memberSubscriptions.values()).find(s => s.customerId === customerId);
   }
 
-  async getAvailableTimeSlots(date: Date): Promise<AvailableTimeSlot[]> {
+  async getAvailableTimeSlots(date: Date): Promise<AvailableTimeSlotDb[]> {
     return [];
   }
 
@@ -523,7 +529,17 @@ export class MemStorage implements IStorage {
 
   async createRevenueMetric(metric: InsertRevenueMetric): Promise<RevenueMetric> {
     const id = this.nextId++;
-    const newMetric = { ...metric, id, createdAt: new Date() };
+    const newMetric: RevenueMetric = {
+      ...metric,
+      id,
+      transactionCount: metric.transactionCount ?? 0,
+      averageValue: metric.averageValue ?? null,
+      planConversions: metric.planConversions ?? null,
+      upsellConversions: metric.upsellConversions ?? null,
+      customerLifetimeValue: metric.customerLifetimeValue ?? null,
+      metadata: metric.metadata ?? null,
+      createdAt: new Date()
+    };
     this.revenueMetrics.set(id, newMetric);
     return newMetric;
   }
