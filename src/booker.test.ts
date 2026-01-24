@@ -247,14 +247,19 @@ function chooseWindow(
 }
 
 describe("Time Window Selection", () => {
-  const createWindow = (hour: number, available = true) => {
-    const date = new Date("2025-01-20");
-    date.setHours(hour, 0, 0, 0);
-    const start = date.toISOString();
-    date.setHours(hour + 2);
-    const end = date.toISOString();
+  // Create windows using explicit Eastern Time (ET) hours
+  // In winter, ET is UTC-5, so 9am ET = 14:00 UTC
+  const createWindowET = (hourET: number, available = true) => {
+    // Convert ET hour to UTC (add 5 hours for EST)
+    const hourUTC = hourET + 5;
+    const start = `2025-01-20T${hourUTC.toString().padStart(2, "0")}:00:00.000Z`;
+    const endHourUTC = hourET + 2 + 5;
+    const end = `2025-01-20T${endHourUTC.toString().padStart(2, "0")}:00:00.000Z`;
     return { start_time: start, end_time: end, available };
   };
+
+  // Alias for backward compatibility in tests
+  const createWindow = createWindowET;
 
   describe("chooseWindow", () => {
     it("should select first available window for 'any' preference", () => {
