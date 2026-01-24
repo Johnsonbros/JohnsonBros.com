@@ -10,18 +10,35 @@ import BookingModalEnhanced from "@/components/BookingModalEnhanced";
 import { useState } from "react";
 
 const areas = [
-  { name: "Quincy", desc: "Our headquarters, serving all neighborhoods with fast response times." },
+  // Core Service Areas (Google Maps locations)
+  { name: "Quincy", desc: "Our headquarters, serving all neighborhoods with fast response times.", priority: true },
+  { name: "Abington", desc: "Professional plumbing and heating services in Abington.", priority: true },
+  // Tier 1 - Adjacent to Quincy/Abington
   { name: "Braintree", desc: "Expert plumbing services for residential and commercial properties." },
   { name: "Weymouth", desc: "Full-service plumbing and drain cleaning for Weymouth homes." },
-  { name: "Plymouth", desc: "Reliable plumbing solutions for the historic Plymouth area." },
-  { name: "Marshfield", desc: "Coastal plumbing specialists for Marshfield residents." },
-  { name: "Hingham", desc: "Premium plumbing services for Hingham's beautiful homes." },
-  { name: "Abington", desc: "Professional plumbing and heating services in Abington." },
+  { name: "Milton", desc: "Local plumbing experts serving Milton and Milton Village." },
+  { name: "Randolph", desc: "Trusted plumbing services for Randolph homeowners." },
+  { name: "Holbrook", desc: "Reliable plumbing solutions in Holbrook." },
+  // Tier 2 - South Shore Core
   { name: "Rockland", desc: "Trusted local plumbers serving the Rockland community." },
   { name: "Hanover", desc: "Expert drain cleaning and plumbing repairs in Hanover." },
-  { name: "Scituate", desc: "Reliable coastal plumbing services for Scituate." },
+  { name: "Norwell", desc: "Professional plumbing services for Norwell residents." },
+  { name: "Hingham", desc: "Premium plumbing services for Hingham's beautiful homes." },
+  { name: "Hull", desc: "Expert plumbing services for Hull's unique coastal needs." },
   { name: "Cohasset", desc: "Premium residential plumbing solutions in Cohasset." },
-  { name: "Hull", desc: "Expert plumbing services for Hull's unique coastal needs." }
+  { name: "Scituate", desc: "Reliable coastal plumbing services for Scituate." },
+  { name: "Marshfield", desc: "Coastal plumbing specialists for Marshfield residents." },
+  { name: "Whitman", desc: "Expert plumbing services for Whitman homeowners." },
+  { name: "Hanson", desc: "Trusted local plumbing services in Hanson." },
+  { name: "Pembroke", desc: "Reliable plumbing solutions for Pembroke." },
+  { name: "Stoughton", desc: "Professional plumbing and heating in Stoughton." },
+  { name: "Canton", desc: "Expert plumbing services for Canton properties." },
+  { name: "East Bridgewater", desc: "Quality plumbing services in East Bridgewater.", slug: "east-bridgewater" },
+  // Tier 3 - Extended South Shore
+  { name: "Duxbury", desc: "Coastal plumbing experts for Duxbury homes." },
+  { name: "Kingston", desc: "Trusted plumbing services in Kingston." },
+  { name: "Halifax", desc: "Reliable plumbing solutions for Halifax." },
+  { name: "Plymouth", desc: "Reliable plumbing solutions for the historic Plymouth area." },
 ];
 
 export default function ServiceAreasDirectory() {
@@ -69,6 +86,40 @@ export default function ServiceAreasDirectory() {
                 </p>
               </div>
               <InteractiveCoverageMap onBookService={openBookingModal} />
+            </div>
+          </section>
+
+          {/* Service Areas List */}
+          <section className="py-12 sm:py-16 bg-gray-50">
+            <div className="container mx-auto px-4">
+              <div className="text-center mb-8">
+                <h2 className="text-3xl font-bold text-gray-900 mb-4">South Shore Communities We Serve</h2>
+                <p className="text-gray-600 max-w-2xl mx-auto">
+                  Click on any town to learn more about our plumbing services in that area.
+                </p>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                {areas.map((area) => (
+                  <Link
+                    key={area.name}
+                    href={`/service-areas/${(area as any).slug || area.name.toLowerCase().replace(' ', '-')}`}
+                    className="group"
+                  >
+                    <Card className="hover:shadow-lg transition-shadow h-full">
+                      <CardContent className="p-4 text-center">
+                        <div className="flex items-center justify-center gap-1 mb-2">
+                          <MapPin className="h-4 w-4 text-johnson-blue" />
+                          <span className="font-semibold group-hover:text-johnson-blue transition-colors">
+                            {area.name}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-500 line-clamp-2">{area.desc}</p>
+                        <ChevronRight className="h-4 w-4 mx-auto mt-2 text-gray-400 group-hover:text-johnson-blue transition-colors" />
+                      </CardContent>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
             </div>
           </section>
 

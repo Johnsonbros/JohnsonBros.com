@@ -71,6 +71,20 @@ const HanoverPlumbing = lazy(() => import("@/pages/service-areas/hanover"));
 const ScituatePlumbing = lazy(() => import("@/pages/service-areas/scituate"));
 const CohassetPlumbing = lazy(() => import("@/pages/service-areas/cohasset"));
 const HullPlumbing = lazy(() => import("@/pages/service-areas/hull"));
+// NEW South Shore Towns
+const MiltonPlumbing = lazy(() => import("@/pages/service-areas/milton"));
+const RandolphPlumbing = lazy(() => import("@/pages/service-areas/randolph"));
+const HolbrookPlumbing = lazy(() => import("@/pages/service-areas/holbrook"));
+const NorwellPlumbing = lazy(() => import("@/pages/service-areas/norwell"));
+const WhitmanPlumbing = lazy(() => import("@/pages/service-areas/whitman"));
+const StoughtonPlumbing = lazy(() => import("@/pages/service-areas/stoughton"));
+const CantonPlumbing = lazy(() => import("@/pages/service-areas/canton"));
+const PembrokePlumbing = lazy(() => import("@/pages/service-areas/pembroke"));
+const HansonPlumbing = lazy(() => import("@/pages/service-areas/hanson"));
+const EastBridgewaterPlumbing = lazy(() => import("@/pages/service-areas/east-bridgewater"));
+const DuxburyPlumbing = lazy(() => import("@/pages/service-areas/duxbury"));
+const KingstonPlumbing = lazy(() => import("@/pages/service-areas/kingston"));
+const HalifaxPlumbing = lazy(() => import("@/pages/service-areas/halifax"));
 
 // Landing Pages
 const EmergencyLandingPage = lazy(() => import("@/pages/landing/emergency"));
@@ -177,6 +191,20 @@ function Router() {
           <Route path="/service-areas/scituate" component={ScituatePlumbing} />
           <Route path="/service-areas/cohasset" component={CohassetPlumbing} />
           <Route path="/service-areas/hull" component={HullPlumbing} />
+          {/* NEW South Shore Towns */}
+          <Route path="/service-areas/milton" component={MiltonPlumbing} />
+          <Route path="/service-areas/randolph" component={RandolphPlumbing} />
+          <Route path="/service-areas/holbrook" component={HolbrookPlumbing} />
+          <Route path="/service-areas/norwell" component={NorwellPlumbing} />
+          <Route path="/service-areas/whitman" component={WhitmanPlumbing} />
+          <Route path="/service-areas/stoughton" component={StoughtonPlumbing} />
+          <Route path="/service-areas/canton" component={CantonPlumbing} />
+          <Route path="/service-areas/pembroke" component={PembrokePlumbing} />
+          <Route path="/service-areas/hanson" component={HansonPlumbing} />
+          <Route path="/service-areas/east-bridgewater" component={EastBridgewaterPlumbing} />
+          <Route path="/service-areas/duxbury" component={DuxburyPlumbing} />
+          <Route path="/service-areas/kingston" component={KingstonPlumbing} />
+          <Route path="/service-areas/halifax" component={HalifaxPlumbing} />
 
           {/* Landing Pages */}
           <Route path="/landing/emergency" component={EmergencyLandingPage} />

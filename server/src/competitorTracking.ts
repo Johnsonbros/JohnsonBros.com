@@ -44,17 +44,21 @@ export async function addCompetitor(data: InsertCompetitor) {
  * Get all active competitors
  */
 export async function getCompetitors(options?: { priorityOnly?: boolean; type?: string }) {
-  let query = db.select().from(competitors).where(eq(competitors.isActive, true));
+  // Build the where conditions
+  const conditions = [eq(competitors.isActive, true)];
 
   if (options?.priorityOnly) {
-    query = query.where(and(eq(competitors.isActive, true), eq(competitors.isPriority, true)));
+    conditions.push(eq(competitors.isPriority, true));
   }
 
   if (options?.type) {
-    query = query.where(and(eq(competitors.isActive, true), eq(competitors.type, options.type)));
+    conditions.push(eq(competitors.type, options.type));
   }
 
-  return query.orderBy(desc(competitors.isPriority), competitors.name);
+  return db.select()
+    .from(competitors)
+    .where(and(...conditions))
+    .orderBy(desc(competitors.isPriority), competitors.name);
 }
 
 /**

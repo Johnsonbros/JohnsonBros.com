@@ -2,10 +2,20 @@ import { Helmet } from "react-helmet-async";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { Phone, MapPin, CheckCircle, Clock, Shield } from "lucide-react";
+import { Phone, MapPin, CheckCircle, Clock, Shield, Star, ExternalLink } from "lucide-react";
 import { Link } from "wouter";
 import { LocalBusinessSchema, ServiceAreaSchema, FAQSchema, BreadcrumbSchema, ReviewSchema } from "@/components/schema-markup";
 import { serviceAreaMetadata, generateSocialMetaTags } from "@/lib/seoMetadata";
+
+// Official Google Business Profile Data
+const QUINCY_OFFICE = {
+  address: "75 E. Elm Ave, Quincy, MA 02170",
+  phone: "(617) 479-9911",
+  rating: 4.8,
+  reviewCount: 320,
+  googleMapsUrl: "https://maps.app.goo.gl/65wd4toecNfd1Qeo7",
+  hours: "Open 24 hours"
+};
 
 export default function QuincyPlumbing() {
   // Get SEO metadata
@@ -93,7 +103,7 @@ export default function QuincyPlumbing() {
       <ServiceAreaSchema areaName="Quincy" services={quincyServices} />
       <FAQSchema questions={quincyFAQs} />
       <BreadcrumbSchema items={breadcrumbs} />
-      <ReviewSchema reviews={localReviews} aggregateRating={{ ratingValue: 4.9, reviewCount: 112 }} />
+      <ReviewSchema reviews={localReviews} aggregateRating={{ ratingValue: QUINCY_OFFICE.rating, reviewCount: QUINCY_OFFICE.reviewCount }} />
 
       <div className="min-h-screen flex flex-col bg-gray-50">
         <Header onBookService={() => {}} />
@@ -109,9 +119,34 @@ export default function QuincyPlumbing() {
                     Plumber in Quincy, MA
                   </h1>
                 </div>
-                <p className="text-xl sm:text-2xl mb-8 text-blue-100">
+                <p className="text-xl sm:text-2xl mb-4 text-blue-100">
                   Your trusted local plumbing experts serving Quincy and surrounding areas
                 </p>
+
+                {/* Google Rating Badge */}
+                <div className="flex items-center justify-center gap-2 mb-4">
+                  <div className="flex items-center gap-1 bg-white/20 px-4 py-2 rounded-full">
+                    <Star className="h-5 w-5 text-yellow-400 fill-yellow-400" />
+                    <span className="font-bold">{QUINCY_OFFICE.rating}</span>
+                    <span className="text-blue-100">({QUINCY_OFFICE.reviewCount}+ reviews)</span>
+                  </div>
+                  <a
+                    href={QUINCY_OFFICE.googleMapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 bg-white/20 px-4 py-2 rounded-full hover:bg-white/30 transition-colors"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    <span>View on Google Maps</span>
+                  </a>
+                </div>
+
+                {/* Address */}
+                <p className="text-blue-100 mb-6">
+                  <MapPin className="h-4 w-4 inline mr-1" />
+                  {QUINCY_OFFICE.address} • {QUINCY_OFFICE.hours}
+                </p>
+
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <Button 
                     size="lg"
@@ -281,22 +316,28 @@ export default function QuincyPlumbing() {
           </section>
 
           {/* CTA */}
-          <section className="py-16 bg-gradient-to-br from-johnson-blue to-johnson-teal text-white">
-            <div className="container mx-auto px-4 text-center">
-              <h2 className="text-3xl sm:text-4xl font-bold mb-6">
-                Need a Plumber in Quincy Today?
-              </h2>
-              <p className="text-xl mb-8 text-blue-100">
-                Call Quincy's trusted plumbing experts for fast, reliable service
-              </p>
-              <Button 
-                size="lg"
-                className="bg-white text-johnson-blue hover:bg-gray-100 text-lg px-8 py-6"
-                onClick={() => window.location.href = 'tel:6174799911'}
-                data-testid="cta-call-button"
-              >
-                <Phone className="mr-2" /> Call (617) 479-9911 Now
-              </Button>
+          <section className="py-16 bg-white">
+            <div className="container mx-auto px-4">
+              <div className="max-w-4xl mx-auto text-center">
+                <h2 className="text-3xl sm:text-4xl font-bold mb-6">Schedule Plumbing Service in Quincy</h2>
+                <p className="text-gray-600 mb-4">
+                  From emergency repairs to routine maintenance, Johnson Bros. is ready to help.
+                </p>
+                <p className="text-gray-500 mb-8">
+                  <MapPin className="h-4 w-4 inline mr-1" />
+                  Visit us at {QUINCY_OFFICE.address}
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <Button size="lg" className="bg-johnson-blue text-white" asChild>
+                    <a href="tel:6174799911">
+                      <Phone className="mr-2 h-5 w-5" /> Call {QUINCY_OFFICE.phone}
+                    </a>
+                  </Button>
+                  <Button size="lg" variant="outline" asChild>
+                    <Link href="/contact">Request Service</Link>
+                  </Button>
+                </div>
+              </div>
             </div>
           </section>
         </main>

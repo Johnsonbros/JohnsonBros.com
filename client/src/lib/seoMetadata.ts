@@ -149,6 +149,98 @@ export const serviceAreaMetadata: Record<string, SEOMetadata> = {
     keywords: ['plumber Hull MA', 'Hull plumbing', 'emergency plumber Hull', 'drain cleaning Hull', 'water heater Hull'],
     canonicalUrl: '/service-areas/hull',
     type: 'website'
+  },
+  // NEW SOUTH SHORE TOWNS
+  'milton': {
+    title: 'Plumber in Milton, MA | Local Plumbing Experts | Johnson Bros.',
+    description: 'Professional plumber serving Milton, MA. 24/7 emergency service, drain cleaning, water heater repair. Family-owned, fast response. Call 617-479-9911',
+    keywords: ['plumber Milton MA', 'Milton plumbing', 'emergency plumber Milton', 'drain cleaning Milton', 'Milton water heater', 'Milton pipe repair'],
+    canonicalUrl: '/service-areas/milton',
+    type: 'website'
+  },
+  'randolph': {
+    title: 'Plumber in Randolph, MA | Trusted Plumbing Services | Johnson Bros.',
+    description: 'Expert plumber serving Randolph, MA. Emergency plumbing, drain cleaning, water heater installation. Licensed & insured. Call 617-479-9911',
+    keywords: ['plumber Randolph MA', 'Randolph plumbing', 'emergency plumber Randolph', 'drain cleaning Randolph', 'Randolph water heater'],
+    canonicalUrl: '/service-areas/randolph',
+    type: 'website'
+  },
+  'holbrook': {
+    title: 'Plumber in Holbrook, MA | Reliable Plumbing Solutions | Johnson Bros.',
+    description: 'Local plumber serving Holbrook, MA. Emergency repairs, drain cleaning, pipe repair, water heaters. Same-day service available. Call 617-479-9911',
+    keywords: ['plumber Holbrook MA', 'Holbrook plumbing', 'emergency plumber Holbrook', 'drain cleaning Holbrook', 'Holbrook pipe repair'],
+    canonicalUrl: '/service-areas/holbrook',
+    type: 'website'
+  },
+  'norwell': {
+    title: 'Plumber in Norwell, MA | Professional Plumbing Services | Johnson Bros.',
+    description: 'Trusted plumber serving Norwell, MA. 24/7 emergency plumbing, drain cleaning, water heater service. Fast response time. Call 617-479-9911',
+    keywords: ['plumber Norwell MA', 'Norwell plumbing', 'emergency plumber Norwell', 'drain cleaning Norwell', 'Norwell water heater'],
+    canonicalUrl: '/service-areas/norwell',
+    type: 'website'
+  },
+  'whitman': {
+    title: 'Plumber in Whitman, MA | Expert Plumbing Services | Johnson Bros.',
+    description: 'Professional plumber serving Whitman, MA. Emergency service, drain cleaning, water heater repair & installation. Call 617-479-9911',
+    keywords: ['plumber Whitman MA', 'Whitman plumbing', 'emergency plumber Whitman', 'drain cleaning Whitman', 'Whitman water heater'],
+    canonicalUrl: '/service-areas/whitman',
+    type: 'website'
+  },
+  'pembroke': {
+    title: 'Plumber in Pembroke, MA | Local Plumbing Pros | Johnson Bros.',
+    description: 'Reliable plumber serving Pembroke, MA. Emergency plumbing, drain cleaning, pipe repair, water heaters. Licensed professionals. Call 617-479-9911',
+    keywords: ['plumber Pembroke MA', 'Pembroke plumbing', 'emergency plumber Pembroke', 'drain cleaning Pembroke', 'Pembroke pipe repair'],
+    canonicalUrl: '/service-areas/pembroke',
+    type: 'website'
+  },
+  'hanson': {
+    title: 'Plumber in Hanson, MA | Trusted Plumbing Services | Johnson Bros.',
+    description: 'Expert plumber serving Hanson, MA. 24/7 emergency service, drain cleaning, water heater repair. Family-owned since 2008. Call 617-479-9911',
+    keywords: ['plumber Hanson MA', 'Hanson plumbing', 'emergency plumber Hanson', 'drain cleaning Hanson', 'Hanson water heater'],
+    canonicalUrl: '/service-areas/hanson',
+    type: 'website'
+  },
+  'east-bridgewater': {
+    title: 'Plumber in East Bridgewater, MA | Quality Plumbing | Johnson Bros.',
+    description: 'Local plumber serving East Bridgewater, MA. Emergency repairs, drain cleaning, pipe repair, water heaters. Fast response. Call 617-479-9911',
+    keywords: ['plumber East Bridgewater MA', 'East Bridgewater plumbing', 'emergency plumber East Bridgewater', 'drain cleaning East Bridgewater'],
+    canonicalUrl: '/service-areas/east-bridgewater',
+    type: 'website'
+  },
+  'stoughton': {
+    title: 'Plumber in Stoughton, MA | Professional Plumbing | Johnson Bros.',
+    description: 'Trusted plumber serving Stoughton, MA. Emergency plumbing, drain cleaning, water heater service, gas heat. Call 617-479-9911',
+    keywords: ['plumber Stoughton MA', 'Stoughton plumbing', 'emergency plumber Stoughton', 'drain cleaning Stoughton', 'Stoughton water heater'],
+    canonicalUrl: '/service-areas/stoughton',
+    type: 'website'
+  },
+  'canton': {
+    title: 'Plumber in Canton, MA | Expert Plumbing Services | Johnson Bros.',
+    description: 'Professional plumber serving Canton, MA. 24/7 emergency service, drain cleaning, water heater repair. Licensed & insured. Call 617-479-9911',
+    keywords: ['plumber Canton MA', 'Canton plumbing', 'emergency plumber Canton', 'drain cleaning Canton', 'Canton water heater'],
+    canonicalUrl: '/service-areas/canton',
+    type: 'website'
+  },
+  'duxbury': {
+    title: 'Plumber in Duxbury, MA | Coastal Plumbing Experts | Johnson Bros.',
+    description: 'Reliable plumber serving Duxbury, MA. Emergency plumbing, drain cleaning, water heater service. Coastal home specialists. Call 617-479-9911',
+    keywords: ['plumber Duxbury MA', 'Duxbury plumbing', 'emergency plumber Duxbury', 'drain cleaning Duxbury', 'Duxbury water heater'],
+    canonicalUrl: '/service-areas/duxbury',
+    type: 'website'
+  },
+  'kingston': {
+    title: 'Plumber in Kingston, MA | Trusted Local Plumbing | Johnson Bros.',
+    description: 'Expert plumber serving Kingston, MA. Emergency repairs, drain cleaning, water heater installation, pipe repair. Call 617-479-9911',
+    keywords: ['plumber Kingston MA', 'Kingston plumbing', 'emergency plumber Kingston', 'drain cleaning Kingston', 'Kingston water heater'],
+    canonicalUrl: '/service-areas/kingston',
+    type: 'website'
+  },
+  'halifax': {
+    title: 'Plumber in Halifax, MA | Reliable Plumbing Services | Johnson Bros.',
+    description: 'Local plumber serving Halifax, MA. 24/7 emergency service, drain cleaning, water heater repair. Family-owned. Call 617-479-9911',
+    keywords: ['plumber Halifax MA', 'Halifax plumbing', 'emergency plumber Halifax', 'drain cleaning Halifax', 'Halifax water heater'],
+    canonicalUrl: '/service-areas/halifax',
+    type: 'website'
   }
 };
 
