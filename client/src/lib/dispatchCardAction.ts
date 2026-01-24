@@ -91,6 +91,7 @@ export function createFallbackCard(action: string, error: ActionResult['error'])
   return {
     id: crypto.randomUUID(),
     type: 'lead_card',
+    version: "1",
     title: "Let's Book You By Phone",
     priority: 'high',
     message: "We're having trouble completing your request online. Call us and we'll get you scheduled in 60 seconds.",

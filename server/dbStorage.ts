@@ -6,6 +6,7 @@ import {
   type PostKeyword, type InsertPostKeyword,
   type KeywordRanking, type InsertKeywordRanking,
   type BlogAnalytics, type InsertBlogAnalytics,
+  type DbAvailableTimeSlot,
   type AvailableTimeSlot,
   type Referral, type InsertReferral,
   type CustomerCredit, type InsertCustomerCredit,
@@ -468,12 +469,14 @@ export class DatabaseStorage implements IStorage {
   async getAvailableTimeSlots(date: Date): Promise<AvailableTimeSlot[]> {
     const slots = await db.select().from(availableTimeSlots).where(eq(availableTimeSlots.date, date));
     return slots.map(s => ({
-      ...s,
       id: s.id.toString(),
-      startTime: s.timeSlot.split('-')[0] || '',
-      endTime: s.timeSlot.split('-')[1] || '',
-      available: s.isAvailable ?? false
-    })) as AvailableTimeSlot[];
+      startTime: s.startTime,
+      endTime: s.endTime,
+      date: s.date.toISOString().split('T')[0],
+      available: s.isAvailable,
+      isAvailable: s.isAvailable,
+      employeeIds: s.technicianId ? [s.technicianId] : [],
+    }));
   }
 
   // System Settings methods

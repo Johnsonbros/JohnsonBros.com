@@ -68,6 +68,16 @@ export default function TrainingDataPage() {
     }
   };
 
+  const handleExport = async () => {
+    try {
+      const res = await apiRequest('POST', '/api/v1/chat/training-data/export', {});
+      const result = await res.json();
+      toast({ title: "Export Complete", description: `Exported ${result.count || 0} training examples.` });
+    } catch (error) {
+      toast({ title: "Export Failed", description: "Failed to export training data.", variant: "destructive" });
+    }
+  };
+
   const { data: recordings, refetch: refetchRecordings } = useQuery<any[]>({
     queryKey: ['/api/v1/voice-training/recordings'],
     queryFn: async () => {
@@ -100,7 +110,7 @@ export default function TrainingDataPage() {
               <RefreshCw className="w-4 h-4 mr-2" />
               Refresh
             </Button>
-            <Button onClick={handleExport} disabled={stats.positive === 0}>
+            <Button onClick={handleExport} disabled={!data?.stats?.positive}>
               <Download className="w-4 h-4 mr-2" />
               Export for Training
             </Button>
@@ -115,7 +125,7 @@ export default function TrainingDataPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{total}</div>
+              <div className="text-2xl font-bold">{data?.total ?? 0}</div>
             </CardContent>
           </Card>
           
@@ -127,7 +137,7 @@ export default function TrainingDataPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">{stats.positive}</div>
+              <div className="text-2xl font-bold text-green-600">{data?.stats?.positive ?? 0}</div>
               <p className="text-xs text-muted-foreground">Ready for training</p>
             </CardContent>
           </Card>
@@ -140,7 +150,7 @@ export default function TrainingDataPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600">{stats.negative}</div>
+              <div className="text-2xl font-bold text-red-600">{data?.stats?.negative ?? 0}</div>
               <p className="text-xs text-muted-foreground">Review for improvements</p>
             </CardContent>
           </Card>

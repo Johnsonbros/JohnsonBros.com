@@ -150,12 +150,11 @@ router.post('/message', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Session missing customer mapping' });
     }
 
-    const context = await buildThreadContext(session.customerId, session.threadId);
     await logMessage(session.threadId, 'web', 'in', message);
 
-    const response = await processChat(session.sessionId, message, 'web', context);
+    const response = await processChat(session.sessionId, message, 'web');
     await logMessage(session.threadId, 'web', 'out', response.message);
-    
+
     // Return in ChatKit-compatible format
     res.json({
       id: randomUUID(),
@@ -169,8 +168,7 @@ router.post('/message', async (req: Request, res: Response) => {
           content: response.message
         },
         finish_reason: 'stop'
-      }],
-      tools_used: response.toolsUsed
+      }]
     });
     
   } catch (error: any) {
@@ -213,12 +211,11 @@ router.post('/message/stream', async (req: Request, res: Response) => {
       return;
     }
 
-    const context = await buildThreadContext(session.customerId, session.threadId);
     await logMessage(session.threadId, 'web', 'in', message);
 
-    const response = await processChat(session.sessionId, message, 'web', context);
+    const response = await processChat(session.sessionId, message, 'web');
     await logMessage(session.threadId, 'web', 'out', response.message);
-    
+
     // Simulate streaming by sending the response in chunks
     const chunks = response.message.split(/(?<=\. )|(?<=\! )|(?<=\? )/);
     

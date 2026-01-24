@@ -562,7 +562,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ success: true, message: 'Dataset mix generated', count: allTranscripts.length });
     } catch (error) {
-      Logger.error('[Mix Generation] Failed:', error);
+      logError('[Mix Generation] Failed', error);
       res.status(500).json({ error: 'Failed to generate dataset mix' });
     }
   });
@@ -636,12 +636,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             serviceType: job.name || job.job_type || 'Plumbing Service',
             city: job.address?.city || 'Unknown',
             state: job.address?.state || 'MA',
-            completionDate: new Date(job.completed_at || Date.now()),
-            description: job.description || generateTestimonialText(job.name || ''),
-            isPublic: true
+            completedAt: new Date(job.completed_at || Date.now()),
+            checkInTime: new Date(),
+            notes: job.description || generateTestimonialText(job.name || ''),
+            isVisible: true
           });
         } catch (err) {
-          Logger.error('[HCP Webhook] Check-in creation failed:', err);
+          logError('[HCP Webhook] Check-in creation failed', err);
         }
       }
 
@@ -1322,7 +1323,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.json(timeSlots);
       } else {
         // Fallback to storage if no API key
-        const timeSlots = await storage.getAvailableTimeSlots(date);
+        const timeSlots = await storage.getAvailableTimeSlots(new Date(date));
         res.json(timeSlots);
       }
     } catch (error) {

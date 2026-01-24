@@ -196,7 +196,7 @@ async function validateSitemapUrl(
     if (!result.hasTitle) {
       result.passed = false;
       result.errors.push('Missing <title> tag');
-    } else if (result.titleContent.length < 10) {
+    } else if (result.titleContent && result.titleContent.length < 10) {
       result.errors.push(`Title too short: "${result.titleContent}"`);
     }
 
@@ -207,7 +207,7 @@ async function validateSitemapUrl(
     if (!result.hasCanonical) {
       result.passed = false;
       result.errors.push('Missing <link rel="canonical"> tag');
-    } else {
+    } else if (result.canonicalUrl) {
       // Normalize URLs for comparison (remove trailing slashes)
       const normalizedCanonical = result.canonicalUrl.replace(/\/$/, '');
       const normalizedUrl = urlEntry.loc.replace(/\/$/, '');

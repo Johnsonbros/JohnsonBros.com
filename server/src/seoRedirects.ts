@@ -10,8 +10,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { Logger } from './logger';
 
-const logger = new Logger({ component: 'seo-redirects' });
-
 /**
  * Static URL redirect mappings
  * Maps old WordPress URLs to new React app URLs
@@ -247,7 +245,7 @@ export function seoRedirectMiddleware(req: Request, res: Response, next: NextFun
   // Try exact match
   if (STATIC_REDIRECTS[pathWithoutTrailingSlash]) {
     const targetUrl = STATIC_REDIRECTS[pathWithoutTrailingSlash];
-    logger.info(`301 Redirect: ${req.originalUrl} -> ${targetUrl}`);
+    Logger.info(`301 Redirect: ${req.originalUrl} -> ${targetUrl}`);
     res.redirect(301, targetUrl);
     return;
   }
@@ -255,7 +253,7 @@ export function seoRedirectMiddleware(req: Request, res: Response, next: NextFun
   // Try with trailing slash
   if (STATIC_REDIRECTS[pathWithTrailingSlash]) {
     const targetUrl = STATIC_REDIRECTS[pathWithTrailingSlash];
-    logger.info(`301 Redirect: ${req.originalUrl} -> ${targetUrl}`);
+    Logger.info(`301 Redirect: ${req.originalUrl} -> ${targetUrl}`);
     res.redirect(301, targetUrl);
     return;
   }
@@ -268,7 +266,7 @@ export function seoRedirectMiddleware(req: Request, res: Response, next: NextFun
         ? redirect.replacement(match)
         : redirect.replacement;
 
-      logger.info(`301 Redirect (pattern): ${req.originalUrl} -> ${targetUrl}`);
+      Logger.info(`301 Redirect (pattern): ${req.originalUrl} -> ${targetUrl}`);
       res.redirect(301, targetUrl);
       return;
     }
@@ -282,7 +280,7 @@ export function seoRedirectMiddleware(req: Request, res: Response, next: NextFun
       ? req.originalUrl.substring(req.originalUrl.indexOf('?'))
       : '';
 
-    logger.debug(`Removing trailing slash: ${path} -> ${cleanPath}`);
+    Logger.debug(`Removing trailing slash: ${path} -> ${cleanPath}`);
     res.redirect(301, `${cleanPath}${queryString}`);
     return;
   }

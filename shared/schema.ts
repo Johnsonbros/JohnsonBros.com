@@ -597,7 +597,7 @@ export type Service = {
   category?: string;
 };
 
-// Available time slot type
+// Available time slot type for API responses (different from database type)
 export type AvailableTimeSlot = {
   id: string;
   startTime: string;
@@ -607,6 +607,24 @@ export type AvailableTimeSlot = {
   isAvailable: boolean;
   employeeIds?: string[];
 };
+
+// Review type for Google Reviews API responses
+export type Review = {
+  id: string;
+  author: string;
+  rating: number;
+  text: string;
+  time: string;
+  location: string;
+  profilePhoto?: string;
+  source: string;
+  // Additional fields for UI display
+  customerName?: string;
+  serviceType?: string;
+  date?: string;
+};
+
+// NOTE: AvailableTimeSlot type is defined from the database table - see line 2566
 
 // A/B Testing Tables
 export const abTests = pgTable('ab_tests', {
@@ -2563,5 +2581,5 @@ export const insertAvailableTimeSlotsSchema = createInsertSchema(availableTimeSl
   updatedAt: true,
 });
 
-export type AvailableTimeSlot = typeof availableTimeSlots.$inferSelect;
+export type DbAvailableTimeSlot = typeof availableTimeSlots.$inferSelect;
 export type InsertAvailableTimeSlot = z.infer<typeof insertAvailableTimeSlotsSchema>;

@@ -8,9 +8,10 @@ interface BookingConfirmationCardProps {
   card: BookingConfirmationCardType;
   onAction?: (action: string, payload?: Record<string, unknown>) => void;
   onDismiss?: () => void;
+  isLoading?: boolean;
 }
 
-export function BookingConfirmationCard({ card, onAction, onDismiss }: BookingConfirmationCardProps) {
+export function BookingConfirmationCard({ card, onAction, onDismiss, isLoading }: BookingConfirmationCardProps) {
   const { toast } = useToast();
   const { booking } = card;
 

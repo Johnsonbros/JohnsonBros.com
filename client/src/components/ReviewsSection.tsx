@@ -83,11 +83,11 @@ export default function ReviewsSection() {
               >
                 <div className="flex items-center mb-4">
                   <div className="w-10 h-10 sm:w-12 sm:h-12 bg-johnson-blue rounded-full flex items-center justify-center text-white font-bold text-sm sm:text-base">
-                    {review.customerName.charAt(0)}
+                    {(review.customerName ?? review.author ?? '?').charAt(0)}
                   </div>
                   <div className="ml-3 sm:ml-4">
                     <h4 className="font-semibold text-gray-900 text-sm sm:text-base" data-testid={`review-customer-${review.id}`}>
-                      {review.customerName}
+                      {review.customerName ?? review.author}
                     </h4>
                     <div className="flex text-yellow-400">
                       {[...Array(5)].map((_, i) => (
@@ -107,7 +107,7 @@ export default function ReviewsSection() {
                     {review.serviceType}
                   </span>
                   <span className="text-gray-500" data-testid={`review-time-${review.id}`}>
-                    {formatTimeAgo(review.date)}
+                    {formatTimeAgo(review.date ?? review.time)}
                   </span>
                 </div>
               </div>

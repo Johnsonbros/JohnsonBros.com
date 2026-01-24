@@ -6,7 +6,7 @@ import { eq, desc } from 'drizzle-orm';
 import { interactionLogs } from '@shared/schema';
 import { db } from '../db';
 import OpenAI from 'openai';
-import { Logger } from '../src/logger';
+import { Logger, logError } from '../src/logger';
 import { logInteraction } from './memory';
 import { generateZekePrompt } from './zekePrompt';
 
@@ -70,7 +70,7 @@ export async function getSessionHistory(sessionId: string): Promise<any[]> {
       content: log.content
     }));
   } catch (error) {
-    Logger.error('[ZEKE] Failed to fetch session history:', error);
+    logError('[ZEKE] Failed to fetch session history', error);
     return [];
   }
 }

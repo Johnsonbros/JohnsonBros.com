@@ -8,6 +8,7 @@ const sampleCards: CardIntent[] = [
   {
     id: '0d1e1a50-5f2a-4ed0-9af7-9a36b17ce3fd',
     type: 'date_picker',
+    version: "1",
     title: 'Pick a service date',
     priority: 'medium',
     message: 'Choose the date that works best for your visit.',
@@ -32,6 +33,7 @@ const sampleCards: CardIntent[] = [
   {
     id: 'a51b8d6c-b72c-469f-8a5f-6f9a5cd4d0c0',
     type: 'time_picker',
+    version: "1",
     title: 'Select a time window',
     priority: 'medium',
     message: 'We recommend the earliest slots for faster service.',
@@ -69,6 +71,7 @@ const sampleCards: CardIntent[] = [
   {
     id: '4f1c06b0-1e11-4c8f-b5d6-9c1c86f9df54',
     type: 'booking_confirmation',
+    version: "1",
     title: 'Booking Confirmed',
     priority: 'high',
     message: 'We are all set! Your technician is assigned and on their way.',
@@ -94,6 +97,7 @@ const sampleCards: CardIntent[] = [
   {
     id: 'c1e5a1a9-1ce2-4b8b-8f43-8c6fe0f6c06b',
     type: 'service_recommendation',
+    version: "1",
     title: 'Recommended service',
     priority: 'medium',
     summary: 'Based on your description, these services are the best fit.',
@@ -113,6 +117,7 @@ const sampleCards: CardIntent[] = [
   {
     id: '0e4f8b5f-4f87-46ba-9e46-77cc247e4f1c',
     type: 'service_fee',
+    version: "1",
     title: 'Service Fee Details',
     priority: 'medium',
     amount: 99,
@@ -128,6 +133,7 @@ const sampleCards: CardIntent[] = [
   {
     id: 'b49ac12d-5b50-49d9-9691-9c5ac8de694e',
     type: 'service_fee',
+    version: "1",
     title: 'Service Fee Waived',
     priority: 'high',
     amount: 99,
