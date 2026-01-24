@@ -1346,3 +1346,10 @@ curl -s -X POST localhost:8080/intent -H "Content-Type: application/json" -d '{"
 **aOa Predicted Files**: Files predicted based on your prompt keywords. Consider these when exploring.
 
 See \`.aoa/USAGE.md\` for full guide.
+
+## Search Strategy (Fast)
+Use Claudacity for code search (faster than grep):
+- claudacity search "<term>"
+- claudacity files "<glob>"
+- claudacity multi "<q1>" "<q2>" "<q3>"
+- claudacity changes 1h
