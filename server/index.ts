@@ -7,6 +7,7 @@ import { setupVite, serveStatic, log } from "./vite";
 import { configureSecurityMiddleware, getCsrfToken, csrfProtection } from "./src/security";
 import { EnvValidator } from "./src/envValidator";
 import { setupShutdownHandlers } from "./src/shutdown";
+import { initObservability, addObservabilityErrorHandler, captureException } from "./src/observability";
 
 // Validate environment variables on startup
 EnvValidator.validateOnStartup();
@@ -18,6 +19,9 @@ const app = express();
 
 // Unhandled rejection handler - crash process to maintain fail-fast behavior
 process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
+  const error = reason instanceof Error ? reason : new Error(String(reason));
+  captureException(error, { type: 'unhandledRejection' });
+
   console.error('[UNHANDLED REJECTION]', {
     timestamp: new Date().toISOString(),
     reason: reason instanceof Error ? reason.message : String(reason),
@@ -32,6 +36,8 @@ process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
 
 // Uncaught exception handler
 process.on('uncaughtException', (error: Error) => {
+  captureException(error, { type: 'uncaughtException' });
+
   console.error('[UNCAUGHT EXCEPTION]', {
     timestamp: new Date().toISOString(),
     message: error.message,
@@ -50,6 +56,9 @@ app.set('trust proxy', 1);
 
 // Cookie parser (required for CSRF protection)
 app.use(cookieParser());
+
+// Initialize observability (Sentry, metrics, health checks) - must be early
+initObservability(app);
 
 // Security middleware (helmet, CORS, etc.)
 configureSecurityMiddleware(app);
@@ -166,6 +175,9 @@ app.use((req, res, next) => {
   setTimeout(initializeAdsBridge, 5000);
 
   const server = await registerRoutes(app);
+
+  // Add Sentry error handler before the generic error handler
+  addObservabilityErrorHandler(app);
 
   // Global error handler - must be last middleware
   app.use((err: any, req: Request, res: Response, _next: NextFunction) => {

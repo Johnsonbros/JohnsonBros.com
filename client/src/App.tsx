@@ -37,6 +37,7 @@ const ExperimentsPage = lazy(() => import("@/pages/admin/experiments"));
 const AgentTracingPage = lazy(() => import("@/pages/admin/agent-tracing"));
 const TrainingDataPage = lazy(() => import("@/pages/admin/training-data"));
 const ApiUsagePage = lazy(() => import("@/pages/admin/api-usage"));
+const ObservabilityDashboard = lazy(() => import("@/pages/admin/observability"));
 const ZekeMcpAdmin = lazy(() => import("@/pages/admin/mcp-gateway"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 
@@ -138,6 +139,7 @@ function Router() {
           <Route path="/admin/agent-tracing" component={AgentTracingPage} />
           <Route path="/admin/training-data" component={TrainingDataPage} />
           <Route path="/admin/api-usage" component={ApiUsagePage} />
+          <Route path="/admin/observability" component={ObservabilityDashboard} />
           <Route path="/admin/mcp" component={ZekeMcpAdmin} />
 
           {/* Service Pages */}
