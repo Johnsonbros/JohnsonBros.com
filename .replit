@@ -61,3 +61,4 @@ ADMIN_PHONE_NUMBER = "+16176868763"
 
 [userenv.production]
 MCP_PUBLIC_URL = "https://theabingtonplumber.com/mcp"
+NODE_ENV = "production"
