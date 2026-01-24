@@ -50,13 +50,12 @@ router.post('/sms', async (req: Request, res: Response) => {
     const thread = await getOrCreateDefaultThread(customerId);
     await logMessage(thread.id, 'sms', 'in', messageText, { MessageSid, To });
 
-    const context = await buildThreadContext(customerId, thread.id);
-    const response = await processChat(thread.providerThreadId, messageText, 'sms', context);
+    const response = await processChat(thread.providerThreadId, messageText, 'sms');
 
     await logMessage(thread.id, 'sms', 'out', response.message, { MessageSid });
     res.type('text/xml').send(generateTwiML(response.message));
   } catch (error: any) {
-    Logger.error('[SharedThread SMS] Error processing message:', error);
+    Logger.error('[SharedThread SMS] Error processing message', { error: error?.message || String(error) });
     res.type('text/xml').send(generateTwiML('Sorry, I\'m having trouble right now. Please call us at (617) 479-9911.'));
   }
 });
@@ -107,8 +106,7 @@ router.post('/voice/handle-speech', async (req: Request, res: Response) => {
       return;
     }
 
-    const context = await buildThreadContext(customerId, thread.id);
-    const response = await processChat(thread.providerThreadId, SpeechResult, 'voice', context);
+    const response = await processChat(thread.providerThreadId, SpeechResult, 'voice');
 
     await logMessage(thread.id, 'voice', 'out', response.message, { CallSid });
 
@@ -119,7 +117,7 @@ router.post('/voice/handle-speech', async (req: Request, res: Response) => {
       }),
     );
   } catch (error: any) {
-    Logger.error('[SharedThread Voice] Error processing call:', error);
+    Logger.error('[SharedThread Voice] Error processing call', { error: error?.message || String(error) });
     res
       .type('text/xml')
       .send(

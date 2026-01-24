@@ -569,8 +569,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(eq(voiceDatasetMixes.id, mixId));
 
       res.json({ success: true, message: 'Dataset mix generated', count: allTranscripts.length });
-    } catch (error) {
-      Logger.error('[Mix Generation] Failed:', error);
+    } catch (error: any) {
+      Logger.error('[Mix Generation] Failed', { error: error?.message || String(error) });
       res.status(500).json({ error: 'Failed to generate dataset mix' });
     }
   });
@@ -649,8 +649,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             notes: job.description || generateTestimonialText(job.name || ''),
             isVisible: true
           });
-        } catch (err) {
-          Logger.error('[HCP Webhook] Check-in creation failed:', err);
+        } catch (err: any) {
+          Logger.error('[HCP Webhook] Check-in creation failed', { error: err?.message || String(err) });
         }
       }
 

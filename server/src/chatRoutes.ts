@@ -239,10 +239,9 @@ router.post('/twilio/sms', async (req: Request, res: Response) => {
     // Process through AI chat
     const response = await processChat(sessionId, Body, 'sms');
     
-    Logger.info('SMS response generated', { 
-      from: From, 
-      responseLength: response.message.length,
-      toolsUsed: response.toolsUsed 
+    Logger.info('SMS response generated', {
+      from: From,
+      responseLength: response.message.length
     });
     
     // Return TwiML response

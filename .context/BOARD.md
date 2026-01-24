@@ -1,7 +1,7 @@
 
 # Work Board
 
-> **Updated**: 2026-01-23 | **Phase**: 2 - Feature Verification | **Status**: IN PROGRESS
+> **Updated**: 2026-01-24 | **Phase**: 3 - SEO & Local Ranking | **Status**: IN PROGRESS
 
 ---
 
@@ -25,10 +25,44 @@
 
 | # | Task | Expected Output | Solution Pattern | Status | C | R |
 |---|------|-----------------|------------------|--------|---|---|
-| P2-017 | Commit asset changes | New images + drain-cleaning committed | git add, git commit | **Active** | 🟢 | - |
-| P2-010 | Homepage loads | Johnson Bros. homepage renders | Open localhost:5000 | Queued | 🟢 | - |
-| P2-011 | Check console for errors | No critical errors | Browser DevTools | Queued | 🟡 | - |
-| P2-012 | Test routing | Pages navigate correctly | Click through nav | Queued | 🟢 | - |
+| P3-SEO-001 | Monitor keyword rankings | Track positions for 25 towns | Google Search Console + manual checks | **Active** | 🟢 | - |
+| P3-SEO-002 | Build backlinks | Citations on local directories | Submit to Yelp, Angi, HomeAdvisor | Queued | 🟡 | GH |
+| P3-SEO-003 | Add internal linking | Cross-link between town pages | Update existing pages with related links | Queued | 🟢 | - |
+| P3-SEO-004 | Submit sitemaps | Google/Bing indexing faster | Generate & submit XML sitemaps | Queued | 🟢 | - |
+
+---
+
+## Phase 3: SEO & Local Ranking
+
+### Completed SEO Work (2026-01-24)
+
+| # | Task | Output | Completed |
+|---|------|--------|-----------|
+| SEO-001 | Service Area Pages | 13 new South Shore pages created | 2026-01-24 |
+| SEO-002 | Schema Markup | LocalBusiness + Service schemas on all pages | 2026-01-24 |
+| SEO-003 | Geo Tags | viewport, ICBM, geo.position, geo.region | 2026-01-24 |
+| SEO-004 | FAQ Sections | Unique Q&A for each town | 2026-01-24 |
+| SEO-005 | Reviews Integration | Google reviews displayed per location | 2026-01-24 |
+| SEO-006 | GBP Integration | Quincy (4.8, 320+ reviews) + Abington (5.0, 23 reviews) | 2026-01-24 |
+| SEO-007 | SEO Metadata | All 13 towns in seoMetadata.ts | 2026-01-24 |
+| SEO-008 | Routes Setup | Lazy-loaded routes in App.tsx | 2026-01-24 |
+| SEO-009 | Service Area Index | 25-town grid directory page | 2026-01-24 |
+
+### Towns with SEO Pages (25 total)
+
+**Existing (12):** Quincy, Abington, Rockland, Hanover, Braintree, Weymouth, Hull, Hingham, Scituate, Marshfield, Cohasset, Plymouth
+
+**New (13):** Milton, Randolph, Holbrook, Norwell, Whitman, Stoughton, Canton, Pembroke, Hanson, East Bridgewater, Duxbury, Kingston, Halifax
+
+### Ranking Tasks (Queued)
+
+| # | Task | Expected Output | Solution Pattern | Deps | Status | C | R |
+|---|------|-----------------|------------------|------|--------|---|---|
+| P3-SEO-002 | Build local citations | Listings on 10+ directories | Manual submissions | SEO-001 | Queued | 🟡 | GH |
+| P3-SEO-003 | Internal linking audit | Cross-links between all 25 pages | Automated scan + manual update | SEO-001 | Queued | 🟢 | - |
+| P3-SEO-004 | XML sitemap update | sitemap.xml with all service pages | Generate + submit to GSC | SEO-001 | Queued | 🟢 | - |
+| P3-SEO-005 | Page speed optimization | Core Web Vitals green | Lighthouse audit + fixes | SEO-001 | Queued | 🟡 | - |
+| P3-SEO-006 | Mobile usability check | All pages mobile-friendly | Google Mobile Test | SEO-001 | Queued | 🟢 | - |
 
 ---
 
@@ -79,19 +113,19 @@ Test what works without full integrations. Focus on features that don't require 
 
 | # | Task | Expected Output | Solution Pattern | Deps | Status | C | R |
 |---|------|-----------------|------------------|------|--------|---|---|
-| P2-017 | Commit asset changes | 7 new images + drain-cleaning committed | git add, git commit | - | **Active** | 🟢 | - |
-| P2-010 | Homepage loads | Johnson Bros. homepage renders | Open localhost:5000 | P2-007 | Queued | 🟢 | - |
-| P2-011 | Check console for errors | No critical errors | Browser DevTools | P2-010 | Queued | 🟡 | - |
-| P2-012 | Test routing | Pages navigate correctly | Click through nav | P2-010 | Queued | 🟢 | - |
+| P2-017 | Commit asset changes | 7 new images + drain-cleaning committed | git add, git commit | - | **Done** | 🟢 | - |
+| P2-010 | Homepage loads | Johnson Bros. homepage renders | Open localhost:5000 | P2-007 | **Done** | 🟢 | - |
+| P2-011 | Check console for errors | No critical errors | Browser DevTools | P2-010 | **Done** | 🟢 | - |
+| P2-012 | Test routing | Pages navigate correctly | Click through nav | P2-010 | **Done** | 🟢 | - |
 
 ### Tier 4: Feature Testing (No API Keys)
 
 | # | Task | Expected Output | Solution Pattern | Deps | Status | C | R |
 |---|------|-----------------|------------------|------|--------|---|---|
-| P2-013 | Test blog system | Blog posts display | Navigate to /blog | P2-010 | Queued | 🟡 | - |
-| P2-014 | Test admin login | Admin panel accessible | Navigate to /admin | P2-010 | Queued | 🟡 | - |
-| P2-015 | Test static pages | About, Services render | Navigate pages | P2-010 | Queued | 🟢 | - |
-| P2-016 | Test form rendering | Forms display correctly | View booking/contact | P2-010 | Queued | 🟢 | - |
+| P2-013 | Test blog system | Blog posts display | Navigate to /blog | P2-010 | **Done** | 🟢 | - |
+| P2-014 | Test admin login | Admin panel accessible | Navigate to /admin | P2-010 | **Done** | 🟢 | - |
+| P2-015 | Test static pages | About, Services render | Navigate pages | P2-010 | **Done** | 🟢 | - |
+| P2-016 | Test form rendering | Forms display correctly | View booking/contact | P2-010 | **Done** | 🟢 | - |
 
 ---
 
@@ -114,10 +148,11 @@ Test what works without full integrations. Focus on features that don't require 
 |-------|-------|--------|------------|
 | 0 | Setup & Analysis | Done | - |
 | 1 | MVP Local Launch | Done | - |
-| 2 | Feature Verification | **Active** (Tier 3) | - |
+| 2 | Feature Verification | Done | - |
 | 2.5 | aOa Integration | Done | - |
-| 3 | Integration Setup | Backlog | Phase 2 completion |
-| 4 | Production Hardening | Backlog | Phase 3 completion |
+| 3 | SEO & Local Ranking | **Active** | - |
+| 4 | Integration Setup | Backlog | Phase 3 completion |
+| 5 | Production Hardening | Backlog | Phase 4 completion |
 
 ---
 
@@ -147,6 +182,12 @@ Test what works without full integrations. Focus on features that don't require 
 
 | # | Task | Output | Completed |
 |---|------|--------|-----------|
+| SEO-ALL | SEO Service Area Pages | 13 new South Shore pages with schema, geo tags, FAQs, reviews | 2026-01-24 |
+| GBP-INT | Google Business Profile | Quincy (4.8/320+) + Abington (5.0/23) with Maps links, badges | 2026-01-24 |
+| META-001 | SEO Metadata | All 13 towns added to seoMetadata.ts | 2026-01-24 |
+| ROUTE-001 | Routes & Directory | Lazy-loaded routes + 25-town grid index | 2026-01-24 |
+| BUG-001 | Competitor Tracking Fix | Drizzle ORM query chaining bug fixed, PE alert added | 2026-01-24 |
+| P2-010-016 | Frontend Verification | All Tier 3 & 4 tests passed | 2026-01-24 |
 | - | Asset cleanup | Removed attached_assets bloat, moved to client/src/assets | 2026-01-23 |
 | - | Fix startup issues | Added dotenv, fixed duplicate export | 2026-01-23 |
 | P2-001 | Verify Node.js | v22.19.0 | 2026-01-22 |

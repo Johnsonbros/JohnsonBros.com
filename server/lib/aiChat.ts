@@ -69,8 +69,8 @@ export async function getSessionHistory(sessionId: string): Promise<any[]> {
       role: log.direction === 'inbound' ? 'user' : 'assistant',
       content: log.content
     }));
-  } catch (error) {
-    Logger.error('[ZEKE] Failed to fetch session history:', error);
+  } catch (error: any) {
+    Logger.error('[ZEKE] Failed to fetch session history', { error: error?.message || String(error) });
     return [];
   }
 }

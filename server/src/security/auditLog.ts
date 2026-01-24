@@ -164,13 +164,10 @@ export function auditMiddleware(): RequestHandler {
     }
 
     // Capture the original end function
-    const originalEnd = res.end;
+    const originalEnd = res.end.bind(res);
 
     // Override end to log after response is sent
-    res.end = function(this: Response, ...args: Parameters<typeof originalEnd>) {
-      // Restore original function
-      res.end = originalEnd;
-
+    (res.end as any) = function(chunk?: any, encoding?: any, cb?: any) {
       // Determine success based on status code
       const success = res.statusCode >= 200 && res.statusCode < 400;
 
@@ -200,7 +197,7 @@ export function auditMiddleware(): RequestHandler {
       });
 
       // Call the original end function
-      return originalEnd.apply(this, args);
+      return originalEnd(chunk, encoding, cb);
     };
 
     next();
@@ -317,7 +314,7 @@ export function logDataAccess(
  * Helper to log GDPR/privacy events
  */
 export function logPrivacyEvent(
-  action: 'data_export' | 'data_deletion_request' | 'data_deletion_complete' | 'consent_update',
+  action: 'data_export' | 'data_deletion_request' | 'data_deletion_complete' | 'consent_update' | 'customer_view',
   req: Request,
   metadata?: Record<string, unknown>
 ): void {

@@ -43,8 +43,8 @@ export async function updateZekeKpis() {
       }
     });
 
-    Logger.info('[ZEKE] KPIs updated for', today.toDateString());
+    Logger.info(`[ZEKE] KPIs updated for ${today.toDateString()}`);
   } catch (error: any) {
-    Logger.error('[ZEKE] Failed to update KPIs:', error.message);
+    Logger.error('[ZEKE] Failed to update KPIs', { error: error?.message || String(error) });
   }
 }
