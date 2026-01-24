@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { configureSecurityMiddleware, getCsrfToken, csrfProtection } from "./src/security";
+import { getErrorHandler, getSecurityConfig } from "./src/security/index";
 import { EnvValidator } from "./src/envValidator";
 import { setupShutdownHandlers } from "./src/shutdown";
 
@@ -13,6 +14,9 @@ EnvValidator.validateOnStartup();
 
 // Setup graceful shutdown handlers
 setupShutdownHandlers();
+
+// Log security configuration on startup
+console.log('[SECURITY] Security configuration:', getSecurityConfig());
 
 const app = express();
 
@@ -73,6 +77,7 @@ app.use((req, res, next) => {
     '/api/v1/customers/search', // Customer lookup (read-only, rate-limited)
     '/api/v1/leads',          // Lead creation from chat widget (rate-limited)
     '/api/v1/analytics',      // Web vitals and analytics (telemetry only)
+    '/api/compliance/consent', // Cookie consent (public, no auth)
     '/mcp',                   // MCP endpoint for AI assistants (external clients)
     '/.well-known',           // Discovery endpoints
     '/api/mcp',               // MCP API endpoints
@@ -168,30 +173,8 @@ app.use((req, res, next) => {
   const server = await registerRoutes(app);
 
   // Global error handler - must be last middleware
-  app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-
-    // Log error with context
-    console.error('[ERROR]', {
-      timestamp: new Date().toISOString(),
-      method: req.method,
-      path: req.path,
-      status,
-      message,
-      stack: err.stack,
-      ...(err.details && { details: err.details }),
-    });
-
-    // Send error response
-    res.status(status).json({
-      message: status === 500 && app.get("env") === "production" 
-        ? "An internal server error occurred" 
-        : message,
-      // Removed stack trace exposure for production security
-      ...(app.get("env") === "development" && { stack: err.stack })
-    });
-  });
+  // Uses the security error sanitizer to prevent information leakage
+  app.use(getErrorHandler());
 
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route

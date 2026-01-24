@@ -41,6 +41,7 @@ import { loadConfig } from "./src/config";
 import { scheduleLeadFollowUp, startScheduledSmsProcessor } from "./lib/smsBookingAgent";
 import { callMcpTool } from "./lib/mcpClient";
 import { sendSMS } from "./lib/twilio";
+import complianceRoutes from "./src/complianceRoutes";
 
 // Housecall Pro API client
 const HOUSECALL_API_BASE = 'https://api.housecallpro.com';
@@ -362,6 +363,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Twilio SMS and Voice webhook routes
   app.use('/api/v1/twilio', twilioWebhooks);
+
+  // Compliance routes (cookie consent, privacy/GDPR)
+  app.use('/api/compliance', complianceRoutes);
   
   app.get('/api/v1/voice-training/export/:datasetId', authenticate, async (req, res) => {
     try {
