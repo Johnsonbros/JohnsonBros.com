@@ -48,15 +48,26 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Download build artifacts
+      - name: Download build artifacts from CI workflow
+        id: download-artifact
+        if: github.event_name == 'workflow_run'
         uses: actions/download-artifact@v4
         with:
           name: dist
           path: dist/
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ github.event.workflow_run.id }}
         continue-on-error: true
 
-      - name: Build if no artifact
-        if: failure()
+      - name: Setup Node.js
+        if: steps.download-artifact.outcome != 'success' || github.event_name == 'workflow_dispatch'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Build application
+        if: steps.download-artifact.outcome != 'success' || github.event_name == 'workflow_dispatch'
         run: |
           npm ci
           npm run build
