@@ -2655,3 +2655,183 @@ export const insertDataDeletionRequestSchema = createInsertSchema(dataDeletionRe
 
 export type DataDeletionRequest = typeof dataDeletionRequests.$inferSelect;
 export type InsertDataDeletionRequest = z.infer<typeof insertDataDeletionRequestSchema>;
+
+// ============================================
+// COMPETITOR TRACKING SYSTEM
+// ============================================
+
+// Track competitor companies
+export const competitors = pgTable('competitors', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull(),
+  domain: text('domain').notNull().unique(),
+  website: text('website').notNull(),
+  phone: text('phone'),
+  address: text('address'),
+  city: text('city'),
+  state: text('state').default('MA'),
+
+  // Classification
+  type: text('type').notNull().default('local'), // 'local', 'regional', 'national', 'pe_backed'
+  peOwner: text('pe_owner'), // Private equity owner if applicable
+  yearEstablished: integer('year_established'),
+
+  // Service offering flags
+  offersPlumbing: boolean('offers_plumbing').default(true),
+  offersHeating: boolean('offers_heating').default(false),
+  offersCooling: boolean('offers_cooling').default(false),
+  offersElectrical: boolean('offers_electrical').default(false),
+  offersDrainCleaning: boolean('offers_drain_cleaning').default(false),
+  offersEmergency: boolean('offers_emergency').default(false),
+
+  // Competitive intel
+  reviewCount: integer('review_count'),
+  avgRating: real('avg_rating'),
+  googleBusinessUrl: text('google_business_url'),
+  yelpUrl: text('yelp_url'),
+
+  // Tracking
+  isActive: boolean('is_active').default(true).notNull(),
+  isPriority: boolean('is_priority').default(false).notNull(), // High priority to track
+  notes: text('notes'),
+  metadata: json('metadata'),
+
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  domainIdx: uniqueIndex('competitor_domain_idx').on(table.domain),
+  typeIdx: index('competitor_type_idx').on(table.type),
+  isPriorityIdx: index('competitor_is_priority_idx').on(table.isPriority),
+}));
+
+// Track keywords we want to rank for
+export const seoKeywords = pgTable('seo_keywords', {
+  id: serial('id').primaryKey(),
+  keyword: text('keyword').notNull().unique(),
+  category: text('category').notNull(), // 'plumbing', 'heating', 'drain', 'emergency', 'location'
+  searchVolume: integer('search_volume'), // Monthly search volume estimate
+  difficulty: integer('difficulty'), // 1-100 difficulty score
+  intent: text('intent'), // 'transactional', 'informational', 'local'
+  isPrimary: boolean('is_primary').default(false).notNull(), // Primary target keywords
+  targetUrl: text('target_url'), // Our page that should rank
+  notes: text('notes'),
+  isActive: boolean('is_active').default(true).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  keywordIdx: uniqueIndex('seo_keyword_idx').on(table.keyword),
+  categoryIdx: index('seo_keyword_category_idx').on(table.category),
+  isPrimaryIdx: index('seo_keyword_is_primary_idx').on(table.isPrimary),
+}));
+
+// Track competitor ranking positions over time
+export const competitorKeywordRankings = pgTable('competitor_keyword_rankings', {
+  id: serial('id').primaryKey(),
+  keywordId: integer('keyword_id').notNull().references(() => seoKeywords.id),
+  domain: text('domain').notNull(), // Which domain (ours or competitor)
+  position: integer('position'), // 1-100+, null if not found
+  url: text('url'), // The specific URL that's ranking
+  snippet: text('snippet'), // Search result snippet/description
+  checkDate: timestamp('check_date').defaultNow().notNull(),
+  metadata: json('metadata'),
+}, (table) => ({
+  competitorKeywordDomainIdx: index('competitor_ranking_keyword_domain_idx').on(table.keywordId, table.domain),
+  competitorCheckDateIdx: index('competitor_ranking_check_date_idx').on(table.checkDate),
+  competitorPositionIdx: index('competitor_ranking_position_idx').on(table.position),
+}));
+
+// Competitor content/page analysis
+export const competitorPages = pgTable('competitor_pages', {
+  id: serial('id').primaryKey(),
+  competitorId: integer('competitor_id').notNull().references(() => competitors.id),
+  url: text('url').notNull(),
+  title: text('title'),
+  metaDescription: text('meta_description'),
+  h1: text('h1'),
+  wordCount: integer('word_count'),
+  targetKeyword: text('target_keyword'),
+
+  // Content analysis
+  hasPhone: boolean('has_phone').default(false),
+  hasForm: boolean('has_form').default(false),
+  hasPricing: boolean('has_pricing').default(false),
+  hasReviews: boolean('has_reviews').default(false),
+  hasVideo: boolean('has_video').default(false),
+  hasFaq: boolean('has_faq').default(false),
+
+  // SEO signals
+  lastCrawled: timestamp('last_crawled'),
+  isIndexed: boolean('is_indexed').default(true),
+
+  notes: text('notes'),
+  metadata: json('metadata'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  competitorUrlIdx: uniqueIndex('competitor_page_url_idx').on(table.competitorId, table.url),
+  targetKeywordIdx: index('competitor_page_keyword_idx').on(table.targetKeyword),
+}));
+
+// Track PE-backed company acquisitions and expansions
+export const peActivityLog = pgTable('pe_activity_log', {
+  id: serial('id').primaryKey(),
+  peCompany: text('pe_company').notNull(), // e.g., 'Wrench Group', 'Apex Service Partners'
+  activityType: text('activity_type').notNull(), // 'acquisition', 'expansion', 'funding', 'market_entry'
+  targetCompany: text('target_company'),
+  targetLocation: text('target_location'),
+  announcementDate: timestamp('announcement_date'),
+  sourceUrl: text('source_url'),
+  summary: text('summary'),
+  threatLevel: text('threat_level'), // 'low', 'medium', 'high', 'critical'
+  notes: text('notes'),
+  metadata: json('metadata'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  peCompanyIdx: index('pe_activity_company_idx').on(table.peCompany),
+  activityTypeIdx: index('pe_activity_type_idx').on(table.activityType),
+  threatLevelIdx: index('pe_activity_threat_idx').on(table.threatLevel),
+}));
+
+// Insert schemas
+export const insertCompetitorSchema = createInsertSchema(competitors).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertSeoKeywordSchema = createInsertSchema(seoKeywords).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertCompetitorKeywordRankingSchema = createInsertSchema(competitorKeywordRankings).omit({
+  id: true,
+});
+
+export const insertCompetitorPageSchema = createInsertSchema(competitorPages).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPeActivityLogSchema = createInsertSchema(peActivityLog).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Type exports
+export type Competitor = typeof competitors.$inferSelect;
+export type InsertCompetitor = z.infer<typeof insertCompetitorSchema>;
+
+export type SeoKeyword = typeof seoKeywords.$inferSelect;
+export type InsertSeoKeyword = z.infer<typeof insertSeoKeywordSchema>;
+
+export type CompetitorKeywordRanking = typeof competitorKeywordRankings.$inferSelect;
+export type InsertCompetitorKeywordRanking = z.infer<typeof insertCompetitorKeywordRankingSchema>;
+
+export type CompetitorPage = typeof competitorPages.$inferSelect;
+export type InsertCompetitorPage = z.infer<typeof insertCompetitorPageSchema>;
+
+export type PeActivityLog = typeof peActivityLog.$inferSelect;
+export type InsertPeActivityLog = z.infer<typeof insertPeActivityLogSchema>;

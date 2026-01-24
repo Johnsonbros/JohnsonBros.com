@@ -9,6 +9,7 @@ import {
   apiUsage,
   InsertAdminTask, InsertAdminDocument, InsertAiChatMessage
 } from '@shared/schema';
+import competitorRoutes from './competitorRoutes';
 import { eq, desc, and, gte, lte, sql, or, like, inArray, isNull, ne } from 'drizzle-orm';
 import {
   hashPassword, verifyPassword, createSession, authenticate,
@@ -1921,5 +1922,10 @@ router.get('/usage/by-channel', authenticate, requirePermission('reports:view'),
     res.status(500).json({ error: 'Failed to fetch channel usage' });
   }
 });
+
+// ==============================================
+// COMPETITOR TRACKING ROUTES
+// ==============================================
+router.use('/competitors', competitorRoutes);
 
 export default router;
