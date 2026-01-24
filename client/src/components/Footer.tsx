@@ -184,9 +184,18 @@ export default function Footer({ onBookService }: FooterProps) {
           <p className="text-gray-400 text-sm" data-testid="footer-copyright">
             © 2025 Johnson Bros. Plumbing & Drain Cleaning / N.J. Services Inc. All rights reserved.
           </p>
-          <div className="flex space-x-6 mt-4 md:mt-0">
-            <a href="#" className="text-gray-400 hover:text-white text-sm transition-colors">Privacy Policy</a>
-            <a href="#" className="text-gray-400 hover:text-white text-sm transition-colors">Terms of Service</a>
+          <div className="flex flex-wrap justify-center md:justify-end gap-4 sm:gap-6 mt-4 md:mt-0">
+            <Link href="/privacy-policy" className="text-gray-400 hover:text-white text-sm transition-colors">Privacy Policy</Link>
+            <Link href="/terms-of-service" className="text-gray-400 hover:text-white text-sm transition-colors">Terms of Service</Link>
+            <button
+              type="button"
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent('showCookieConsent'));
+              }}
+              className="text-gray-400 hover:text-white text-sm transition-colors"
+            >
+              Cookie Preferences
+            </button>
           </div>
         </div>
       </div>

@@ -2565,3 +2565,93 @@ export const insertAvailableTimeSlotsSchema = createInsertSchema(availableTimeSl
 
 export type AvailableTimeSlot = typeof availableTimeSlots.$inferSelect;
 export type InsertAvailableTimeSlot = z.infer<typeof insertAvailableTimeSlotsSchema>;
+
+// ============================================
+// SECURITY AUDIT LOGS
+// ============================================
+
+export const auditLogs = pgTable('audit_logs', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  timestamp: timestamp('timestamp').defaultNow().notNull(),
+  userId: text('user_id'),
+  action: text('action').notNull(), // 'login', 'logout', 'view_customer', 'data_export', etc.
+  resource: text('resource'), // 'customer:123', 'booking:456', etc.
+  ip: text('ip'),
+  userAgent: text('user_agent'),
+  success: boolean('success').notNull(),
+  metadata: json('metadata'),
+}, (table) => ({
+  timestampIdx: index('audit_logs_timestamp_idx').on(table.timestamp),
+  userIdIdx: index('audit_logs_user_id_idx').on(table.userId),
+  actionIdx: index('audit_logs_action_idx').on(table.action),
+  successIdx: index('audit_logs_success_idx').on(table.success),
+}));
+
+export const insertAuditLogSchema = createInsertSchema(auditLogs).omit({
+  id: true,
+  timestamp: true,
+});
+
+export type AuditLog = typeof auditLogs.$inferSelect;
+export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
+
+// ============================================
+// COOKIE CONSENT RECORDS
+// ============================================
+
+export const cookieConsents = pgTable('cookie_consents', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  visitorId: text('visitor_id').notNull(), // anonymous visitor ID from cookie
+  userId: text('user_id'), // authenticated user ID (if logged in)
+  necessary: boolean('necessary').default(true).notNull(), // always true
+  analytics: boolean('analytics').default(false).notNull(),
+  marketing: boolean('marketing').default(false).notNull(),
+  version: text('version').default('1.0').notNull(), // consent version for tracking policy changes
+  ip: text('ip'),
+  userAgent: text('user_agent'),
+  consentedAt: timestamp('consented_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  visitorIdIdx: uniqueIndex('cookie_consents_visitor_id_idx').on(table.visitorId),
+  userIdIdx: index('cookie_consents_user_id_idx').on(table.userId),
+  consentedAtIdx: index('cookie_consents_consented_at_idx').on(table.consentedAt),
+}));
+
+export const insertCookieConsentSchema = createInsertSchema(cookieConsents).omit({
+  id: true,
+  consentedAt: true,
+  updatedAt: true,
+});
+
+export type CookieConsent = typeof cookieConsents.$inferSelect;
+export type InsertCookieConsent = z.infer<typeof insertCookieConsentSchema>;
+
+// ============================================
+// DATA DELETION REQUESTS (GDPR Right to be Forgotten)
+// ============================================
+
+export const dataDeletionRequests = pgTable('data_deletion_requests', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text('user_id').notNull(),
+  email: text('email').notNull(),
+  status: text('status').default('pending').notNull(), // pending, processing, completed, cancelled
+  requestedAt: timestamp('requested_at').defaultNow().notNull(),
+  scheduledDeletionAt: timestamp('scheduled_deletion_at').notNull(), // 30 days after request
+  completedAt: timestamp('completed_at'),
+  ip: text('ip'),
+  userAgent: text('user_agent'),
+  metadata: json('metadata'), // stores what data was deleted
+}, (table) => ({
+  userIdIdx: index('data_deletion_user_id_idx').on(table.userId),
+  statusIdx: index('data_deletion_status_idx').on(table.status),
+  scheduledIdx: index('data_deletion_scheduled_idx').on(table.scheduledDeletionAt),
+}));
+
+export const insertDataDeletionRequestSchema = createInsertSchema(dataDeletionRequests).omit({
+  id: true,
+  requestedAt: true,
+  completedAt: true,
+});
+
+export type DataDeletionRequest = typeof dataDeletionRequests.$inferSelect;
+export type InsertDataDeletionRequest = z.infer<typeof insertDataDeletionRequestSchema>;
