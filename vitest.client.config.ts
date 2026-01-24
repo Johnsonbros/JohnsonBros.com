@@ -1,17 +1,20 @@
 import { defineConfig } from "vitest/config";
 import path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   resolve: {
     alias: {
-      "@": path.resolve(import.meta.dirname, "client", "src"),
-      "@shared": path.resolve(import.meta.dirname, "shared"),
+      "@": path.resolve(__dirname, "client", "src"),
+      "@shared": path.resolve(__dirname, "shared"),
       "@johnsonbros/unified-cards": path.resolve(
-        import.meta.dirname,
+        __dirname,
         "shared",
         "unified-cards",
       ),
-      "@assets": path.resolve(import.meta.dirname, "client", "src", "assets"),
+      "@assets": path.resolve(__dirname, "client", "src", "assets"),
     },
   },
   test: {
