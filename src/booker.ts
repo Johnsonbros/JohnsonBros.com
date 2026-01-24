@@ -9,6 +9,17 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { parse as parseYaml } from "yaml";
 import { CapacityCalculator } from "../server/src/capacity.js";
+import {
+  formatBookingConfirmation,
+  formatAvailabilityResponse,
+  formatQuoteResponse,
+  formatEmergencyResponse,
+  formatServicesResponse,
+  formatLeadResponse,
+  formatOutOfServiceAreaResponse,
+  formatMCPResponse,
+  formatMCPError,
+} from "./lib/mcpResponse.js";
 
 const log = pino({ name: "jb-booker", level: process.env.LOG_LEVEL || "info" });
 
@@ -730,6 +741,20 @@ async function loadWidgetTemplate(filename: string) {
   return readFile(new URL(filename, TEMPLATE_ROOT), "utf8");
 }
 
+// Common widget metadata for OpenAI ChatGPT integration
+const WIDGET_META_BASE = {
+  "openai/widgetPrefersBorder": true,
+  "openai/widgetDomain": WIDGET_DOMAIN,
+  "openai/widgetAccessible": true, // Allow widget to call tools via window.openai.callTool
+  "openai/visibility": "public",
+  "openai/widgetCSP": {
+    connect_domains: [WIDGET_DOMAIN],
+    resource_domains: [WIDGET_DOMAIN],
+    redirect_domains: [],
+    frame_domains: [],
+  },
+};
+
 server.resource(
   "booking-confirmation-widget",
   "ui://widget/v2/booking-confirmation.html",
@@ -739,10 +764,7 @@ server.resource(
       uri: "ui://widget/v2/booking-confirmation.html",
       mimeType: "text/html+skybridge",
       text: await loadWidgetTemplate("booking-confirmation.html"),
-      _meta: {
-        "openai/widgetPrefersBorder": true,
-        "openai/widgetDomain": WIDGET_DOMAIN
-      }
+      _meta: { ...WIDGET_META_BASE }
     }]
   })
 );
@@ -756,10 +778,7 @@ server.resource(
       uri: "ui://widget/v2/availability.html",
       mimeType: "text/html+skybridge",
       text: await loadWidgetTemplate("availability.html"),
-      _meta: {
-        "openai/widgetPrefersBorder": true,
-        "openai/widgetDomain": WIDGET_DOMAIN
-      }
+      _meta: { ...WIDGET_META_BASE }
     }]
   })
 );
@@ -773,10 +792,7 @@ server.resource(
       uri: "ui://widget/v2/services.html",
       mimeType: "text/html+skybridge",
       text: await loadWidgetTemplate("services.html"),
-      _meta: {
-        "openai/widgetPrefersBorder": true,
-        "openai/widgetDomain": WIDGET_DOMAIN
-      }
+      _meta: { ...WIDGET_META_BASE }
     }]
   })
 );
@@ -790,10 +806,7 @@ server.resource(
       uri: "ui://widget/v2/quote.html",
       mimeType: "text/html+skybridge",
       text: await loadWidgetTemplate("quote.html"),
-      _meta: {
-        "openai/widgetPrefersBorder": true,
-        "openai/widgetDomain": WIDGET_DOMAIN
-      }
+      _meta: { ...WIDGET_META_BASE }
     }]
   })
 );
@@ -807,10 +820,7 @@ server.resource(
       uri: "ui://widget/v2/emergency.html",
       mimeType: "text/html+skybridge",
       text: await loadWidgetTemplate("emergency.html"),
-      _meta: {
-        "openai/widgetPrefersBorder": true,
-        "openai/widgetDomain": WIDGET_DOMAIN
-      }
+      _meta: { ...WIDGET_META_BASE }
     }]
   })
 );
@@ -824,10 +834,7 @@ server.resource(
       uri: "ui://widget/v2/date-picker.html",
       mimeType: "text/html+skybridge",
       text: await loadWidgetTemplate("date-picker.html"),
-      _meta: {
-        "openai/widgetPrefersBorder": true,
-        "openai/widgetDomain": WIDGET_DOMAIN
-      }
+      _meta: { ...WIDGET_META_BASE }
     }]
   })
 );
@@ -841,10 +848,7 @@ server.resource(
       uri: "ui://widget/v2/time-picker.html",
       mimeType: "text/html+skybridge",
       text: await loadWidgetTemplate("time-picker.html"),
-      _meta: {
-        "openai/widgetPrefersBorder": true,
-        "openai/widgetDomain": WIDGET_DOMAIN
-      }
+      _meta: { ...WIDGET_META_BASE }
     }]
   })
 );
@@ -858,10 +862,7 @@ server.resource(
       uri: "ui://widget/v2/lead-capture.html",
       mimeType: "text/html+skybridge",
       text: await loadWidgetTemplate("lead-capture.html"),
-      _meta: {
-        "openai/widgetPrefersBorder": true,
-        "openai/widgetDomain": WIDGET_DOMAIN
-      }
+      _meta: { ...WIDGET_META_BASE }
     }]
   })
 );
@@ -875,10 +876,7 @@ server.resource(
       uri: "ui://widget/v2/service-fee.html",
       mimeType: "text/html+skybridge",
       text: await loadWidgetTemplate("service-fee.html"),
-      _meta: {
-        "openai/widgetPrefersBorder": true,
-        "openai/widgetDomain": WIDGET_DOMAIN
-      }
+      _meta: { ...WIDGET_META_BASE }
     }]
   })
 );
@@ -1247,27 +1245,12 @@ IMPORTANT: All required fields must be provided. Phone must be a valid 10-digit 
           log.error({ correlationId, error: err.message }, "Failed to create out-of-area lead");
         }
 
-        return {
-          content: [{
-            type: "text",
-            text: JSON.stringify({
-              success: false,
-              out_of_service_area: true,
-              error_code: "OUT_OF_SERVICE_AREA",
-              zip_provided: input.zip,
-              message: `We're sorry, but ZIP code ${input.zip} is outside our service area. ${getServiceAreaMessage()}`,
-              lead_created: leadCreated,
-              next_steps: "We've noted your request and our office will contact you to discuss options. For immediate assistance, please call (617) 479-9911.",
-              service_area_info: {
-                counties: ["Norfolk", "Suffolk", "Plymouth"],
-                state: "Massachusetts",
-                example_cities: ["Quincy", "Braintree", "Weymouth", "Abington", "Rockland", "Plymouth", "Hingham"]
-              },
-              phone: "(617) 479-9911",
-              correlation_id: correlationId
-            }, null, 2)
-          }]
-        };
+        // Return OpenAI-compliant out-of-service-area response
+        return formatOutOfServiceAreaResponse({
+          zipCode: input.zip,
+          leadCreated,
+          correlationId,
+        });
       }
 
       // Step 1: fetch booking windows
@@ -1355,26 +1338,22 @@ IMPORTANT: All required fields must be provided. Phone must be a valid 10-digit 
 
       log.info({ jobId: (job as any).id, correlationId }, "MCP booking completed with built-in Housecall Pro notifications");
 
-      const result = {
-        success: true,
-        job_id: (job as any).id,
-        appointment_id: appointmentCreated?.id || null,
-        scheduled_start: chosen.window.start_time,
-        scheduled_end: chosen.window.end_time,
-        arrival_window_minutes: arrival_window,
-        summary: `Booked for ${toYmd(chosen.window.start_time)} (${input.time_preference})`,
-        customer_id: customer.id,
-        correlation_id: correlationId,
-        matched_preference: chosen.matchedPreference
-      };
+      log.info({ jobId: (job as any).id, correlationId }, "book_service_call: success");
 
-      log.info({ result, correlationId }, "book_service_call: success");
-
-      return {
-        content: [
-          { type: "text", text: JSON.stringify(result, null, 2) }
-        ]
-      };
+      // Return OpenAI-compliant three-part response
+      return formatBookingConfirmation({
+        jobId: (job as any).id,
+        scheduledStart: chosen.window.start_time,
+        scheduledEnd: chosen.window.end_time,
+        arrivalWindowMinutes: arrival_window,
+        customerId: customer.id,
+        customerName: `${input.first_name} ${input.last_name}`,
+        address: `${input.street}, ${input.city}, ${input.state} ${input.zip}`,
+        serviceDescription: input.description,
+        phone: maskPhone(input.phone),
+        correlationId,
+        matchedPreference: chosen.matchedPreference,
+      });
       
     } catch (err: any) {
       // Comprehensive error handling with structured responses
@@ -1667,33 +1646,26 @@ TIP: Use 'get_capacity' first to understand overall scheduling availability befo
           }).format(new Date(w.start_time))
         }));
 
-      const result = {
-        success: true,
-        available_slots: availableWindows,
+      log.info({
+        slots_found: availableWindows.length,
         service_type: input.serviceType,
         date: input.date,
-        time_preference: input.time_preference,
-        total_slots: availableWindows.length,
-        message: availableWindows.length > 0 
-          ? `Found ${availableWindows.length} available slots for ${input.serviceType} on ${input.date}`
-          : `No slots available for ${input.time_preference} preference on ${input.date}. Try 'any' time preference for more options.`,
-        correlation_id: correlationId
-      };
-
-      log.info({ 
-        result: { 
-          slots_found: availableWindows.length, 
-          service_type: input.serviceType,
-          date: input.date
-        }, 
-        correlationId 
+        correlationId
       }, "search_availability: success");
 
-      return {
-        content: [
-          { type: "text", text: JSON.stringify(result, null, 2) }
-        ]
-      };
+      // Return OpenAI-compliant three-part response
+      return formatAvailabilityResponse({
+        availableSlots: availableWindows.map(w => ({
+          date: input.date,
+          start_time: w.start_time,
+          end_time: w.end_time,
+          formatted_time: w.formatted_time,
+        })),
+        serviceType: input.serviceType,
+        date: input.date,
+        timePreference: input.time_preference,
+        correlationId,
+      });
       
     } catch (err: any) {
       // Comprehensive error handling
@@ -2194,37 +2166,26 @@ RETURNS: Service name, price range (min/max in USD), estimated duration, urgency
       const adjustedMin = Math.round(recommendedService.priceRange.min * priceMultiplier);
       const adjustedMax = Math.round(recommendedService.priceRange.max * priceMultiplier);
 
-      const result = {
-        success: true,
+      log.info({
         service: recommendedService.name,
-        description: recommendedService.description,
-        estimated_price_range: {
-          min: adjustedMin,
-          max: adjustedMax,
-          currency: "USD"
-        },
-        estimated_duration: recommendedService.estimatedDuration,
-        urgency_level: input.urgency,
-        property_type: input.property_type,
-        notes: [
-          urgencyNote,
-          "Final price depends on actual scope of work after on-site assessment.",
-          "We offer a $99 diagnostic fee that's waived if you proceed with the repair.",
-          "All work comes with our satisfaction guarantee."
-        ].filter(Boolean),
-        next_steps: input.urgency === "emergency" 
-          ? "For emergencies, call us directly at (617) 555-0123 or book now for immediate dispatch."
-          : "Book an appointment to get an exact quote after our technician assesses the issue.",
-        correlation_id: correlationId
-      };
+        priceRange: { min: adjustedMin, max: adjustedMax },
+        correlationId
+      }, "get_quote: success");
 
-      log.info({ result, correlationId }, "get_quote: success");
-
-      return {
-        content: [
-          { type: "text", text: JSON.stringify(result, null, 2) }
-        ]
-      };
+      // Return OpenAI-compliant three-part response
+      return formatQuoteResponse({
+        serviceName: recommendedService.name,
+        serviceId: recommendedService.id,
+        priceRange: recommendedService.priceRange,
+        estimatedDuration: recommendedService.estimatedDuration,
+        urgencyMultiplier: input.urgency === "emergency" ? 1.5 : input.urgency === "urgent" ? 1.25 : 1,
+        propertyMultiplier: input.property_type === "commercial" ? 1.2 : 1,
+        finalRange: { min: adjustedMin, max: adjustedMax },
+        diagnosticFee: 99,
+        category: recommendedService.category,
+        issueDescription: input.issue_description,
+        correlationId,
+      });
       
     } catch (err: any) {
       log.error({ error: err.message, correlationId }, "get_quote: error");
@@ -2383,33 +2344,18 @@ IMPORTANT: For gas leaks, always advise leaving the house and calling 911 first.
         };
       }
 
-      const result = {
-        success: true,
-        type: "emergency_help",
-        id: randomUUID(),
+      log.info({ emergency_type: guidance.title, urgency: guidance.urgency, correlationId }, "emergency_help: success");
+
+      // Return OpenAI-compliant three-part response
+      return formatEmergencyResponse({
+        emergencyType: input.emergency_type,
         title: guidance.title,
-        message: guidance.callToAction,
-        severity: guidance.urgency,
-        instructions: guidance.immediateSteps,
-        contactLabel: "Call Now",
-        contactPhone: "(617) 479-9911",
-        cta: {
-          label: "Call Now",
-          action: "OPEN_CALL_MODAL",
-          payload: { phone: "(617) 479-9911" }
-        },
-        correlation_id: correlationId
-      };
-
-      log.info({ result: { emergency_type: guidance.title, urgency: guidance.urgency }, correlationId }, "emergency_help: success");
-
-      const textResponse = `I've found some emergency guidance for ${input.emergency_type}. Please follow these steps immediately.\n\nImmediate steps to take:\n${guidance.immediateSteps.map(i => `- ${i}`).join('\n')}\n\nPlease call us immediately at 617-479-9911 for 24/7 emergency dispatch.\n\n\`\`\`card_intent\n${JSON.stringify(result, null, 2)}\n\`\`\``;
-
-      return {
-        content: [
-          { type: "text", text: formatMcpResponse(textResponse, channel) }
-        ]
-      };
+        immediateSteps: guidance.immediateSteps,
+        doNotDo: guidance.doNotDo,
+        urgency: guidance.urgency,
+        callToAction: guidance.callToAction,
+        correlationId,
+      });
       
     } catch (err: any) {
       log.error({ error: err.message, correlationId }, "emergency_help: error");
@@ -2523,47 +2469,22 @@ RETURNS: List of services with price ranges and durations, plus business contact
         );
       }
 
-      const result = {
-        success: true,
-        total_services: services.length,
+      log.info({ service_count: services.length, correlationId }, "get_services: success");
+
+      // Return OpenAI-compliant three-part response
+      return formatServicesResponse({
         services: services.map(s => ({
           id: s.id,
           name: s.name,
           description: s.description,
-          price_min: s.priceRange.min,
-          price_max: s.priceRange.max,
-          price_range: `$${s.priceRange.min} - $${s.priceRange.max}`,
-          estimated_duration: s.estimatedDuration,
+          priceRange: s.priceRange,
           estimatedDuration: s.estimatedDuration,
           category: s.category,
-          is_emergency: s.isEmergency || false,
-          isEmergency: s.isEmergency || false
+          isEmergency: s.isEmergency || false,
         })),
-        categories: ["emergency", "maintenance", "repair", "installation", "specialty"],
-        business: {
-          name: "Johnson Bros. Plumbing",
-          phone: "(617) 479-9911",
-          service_area: "Quincy, Greater Boston, and the South Shore",
-          emergency_available: true,
-          licensed_insured: true
-        },
-        business_info: {
-          name: "Johnson Bros. Plumbing",
-          phone: "(617) 479-9911",
-          service_area: "Quincy, Greater Boston, and the South Shore",
-          emergency_available: true,
-          licensed_insured: true
-        },
-        correlation_id: correlationId
-      };
-
-      log.info({ result: { service_count: services.length }, correlationId }, "get_services: success");
-
-      return {
-        content: [
-          { type: "text", text: JSON.stringify(result, null, 2) }
-        ]
-      };
+        category: input.category,
+        correlationId,
+      });
       
     } catch (err: any) {
       log.error({ error: err.message, correlationId }, "get_services: error");
@@ -3411,25 +3332,18 @@ RESPONSE TIME: Office typically responds within 1-2 business hours. Emergency re
         }
       }
 
-      const result = {
-        success: true,
-        lead_id: leadId,
-        customer_id: customerId,
-        message: `Thank you, ${input.first_name}! We've received your request and our office will call you back ${input.preferred_callback_time || "as soon as possible"}.`,
-        urgency: input.urgency,
-        next_steps: input.urgency === "emergency" 
-          ? "For emergencies, you can also reach us immediately at (617) 479-9911."
-          : "Our team typically responds within 1-2 business hours.",
-        correlation_id: correlationId
-      };
-
       log.info({ correlationId, lead_id: leadId, customer_id: customerId }, "create_lead: success");
 
-      return {
-        content: [
-          { type: "text", text: JSON.stringify(result, null, 2) }
-        ]
-      };
+      // Return OpenAI-compliant three-part response
+      return formatLeadResponse({
+        leadId: leadId || undefined,
+        customerId,
+        customerName: `${input.first_name} ${input.last_name}`,
+        phone: maskPhone(input.phone) || input.phone,
+        issueDescription: input.issue_description,
+        callbackRequested: true,
+        correlationId,
+      });
 
     } catch (err: any) {
       log.error({ error: err.message, correlationId }, "create_lead: error");

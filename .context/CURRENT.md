@@ -1,13 +1,13 @@
 # JohnsonBros - Current Session
 
-> **Session**: 06 | **Date**: 2026-01-24
-> **Phase**: 3 - SEO & Local Ranking | **Status**: IN PROGRESS | **Confidence**: Green
+> **Session**: 07 | **Date**: 2026-01-24
+> **Phase**: 3 - SEO & Local Ranking + MCP Improvements | **Status**: IN PROGRESS | **Confidence**: Green
 
 ---
 
 ## Now
 
-SEO service area pages complete (25 towns). Monitoring keyword rankings and preparing next steps for local SEO dominance.
+Implemented OpenAI-compliant MCP response format for ChatGPT inline booking. Ready for ChatGPT integration testing.
 
 ## Active
 
@@ -15,9 +15,30 @@ SEO service area pages complete (25 towns). Monitoring keyword rankings and prep
 |---|------|------------------|---|---|
 | P3-SEO-001 | Monitor keyword rankings | Google Search Console + manual SERP checks | Green | - |
 | P3-SEO-002 | Build local citations | Submit to Yelp, Angi, HomeAdvisor, etc. | Yellow | GH |
-| P3-SEO-003 | Internal linking audit | Cross-link all 25 town pages | Green | - |
+| P3-MCP-001 | Test ChatGPT widget integration | Deploy to staging, test with ChatGPT Developer Mode | Green | - |
 
-## Just Completed (Session 06)
+## Just Completed (Session 07)
+
+### MCP Server OpenAI Compliance
+- Created `src/lib/mcpResponse.ts` - OpenAI three-part response formatter
+- Updated 7 key tool handlers to use new format:
+  - `book_service_call` - Booking confirmations with widget metadata
+  - `search_availability` - Date picker integration
+  - `get_quote` - Quote card with CTA
+  - `emergency_help` - Emergency instructions card
+  - `get_services` - Services listing
+  - `create_lead` - Lead capture confirmation
+  - Out-of-service-area responses
+- Enhanced widget resources with OpenAI metadata:
+  - `openai/widgetAccessible` - Enable `window.openai.callTool()`
+  - `openai/widgetCSP` - Content Security Policy
+  - `openai/visibility` - Public visibility
+- All responses now follow OpenAI's three-part structure:
+  - `structuredContent` - Data for model + widget (kept small)
+  - `content` - Narrative text for model response
+  - `_meta` - Private data for widget only
+
+## Completed (Session 06)
 
 - 13 new South Shore service area pages created:
   - Milton, Randolph, Holbrook, Norwell, Whitman, Stoughton, Canton
