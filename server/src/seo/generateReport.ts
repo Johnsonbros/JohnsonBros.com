@@ -40,7 +40,7 @@ export interface AggregatedReport {
  * Run all validations and aggregate results
  */
 export async function runAllValidations(
-  baseUrl: string = 'http://localhost:5000',
+  baseUrl: string = 'https://thejohnsonbros.com',
   options: {
     skipRedirects?: boolean;
     skipSchema?: boolean;
@@ -497,7 +497,7 @@ export async function saveReport(
 
 // CLI execution
 if (import.meta.url.endsWith(process.argv[1]?.replace(/^file:\/\//, '') || '')) {
-  const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
+  const baseUrl = process.env.BASE_URL || 'https://thejohnsonbros.com';
   const outputPath = join(process.cwd(), 'seo-report.html');
 
   // Parse CLI args for skipping validations

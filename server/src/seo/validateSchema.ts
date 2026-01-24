@@ -343,7 +343,7 @@ export async function getPagesToValidate(baseUrl: string): Promise<Array<{ path:
  * Run schema validation on all pages
  */
 export async function validateAllSchemas(
-  baseUrl: string = 'http://localhost:5000'
+  baseUrl: string = 'https://thejohnsonbros.com'
 ): Promise<SchemaValidationReport> {
   const results: SchemaValidationResult[] = [];
 
@@ -399,7 +399,7 @@ export function getRequiredFields(): typeof SCHEMA_REQUIRED_FIELDS {
 
 // CLI execution
 if (import.meta.url.endsWith(process.argv[1]?.replace(/^file:\/\//, '') || '')) {
-  const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
+  const baseUrl = process.env.BASE_URL || 'https://thejohnsonbros.com';
 
   validateAllSchemas(baseUrl)
     .then(report => {

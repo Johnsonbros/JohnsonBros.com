@@ -253,7 +253,7 @@ function findDuplicates(urls: string[]): string[] {
  * Run sitemap validation
  */
 export async function validateSitemap(
-  baseUrl: string = 'http://localhost:5000'
+  baseUrl: string = 'https://thejohnsonbros.com'
 ): Promise<SitemapValidationReport> {
   const sitemapUrl = `${baseUrl}/sitemap.xml`;
   const report: SitemapValidationReport = {
@@ -364,7 +364,7 @@ export function getExpectedCounts(): typeof EXPECTED_COUNTS {
 
 // CLI execution
 if (import.meta.url.endsWith(process.argv[1]?.replace(/^file:\/\//, '') || '')) {
-  const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
+  const baseUrl = process.env.BASE_URL || 'https://thejohnsonbros.com';
 
   validateSitemap(baseUrl)
     .then(report => {

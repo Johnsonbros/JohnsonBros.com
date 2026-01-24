@@ -334,7 +334,7 @@ async function loadBaseline(baselinePath: string): Promise<PerformanceReport | n
  * Run performance measurements on all pages
  */
 export async function measurePerformance(
-  baseUrl: string = 'http://localhost:5000',
+  baseUrl: string = 'https://thejohnsonbros.com',
   thresholds: PerformanceThresholds = DEFAULT_THRESHOLDS,
   pages: string[] = PAGES_TO_MEASURE
 ): Promise<PerformanceReport> {
@@ -405,7 +405,7 @@ export function getPagesToMeasure(): string[] {
 
 // CLI execution
 if (import.meta.url.endsWith(process.argv[1]?.replace(/^file:\/\//, '') || '')) {
-  const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
+  const baseUrl = process.env.BASE_URL || 'https://thejohnsonbros.com';
 
   measurePerformance(baseUrl)
     .then(report => {

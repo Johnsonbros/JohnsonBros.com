@@ -145,7 +145,7 @@ async function validateRedirect(
  * Run all redirect validations
  */
 export async function validateAllRedirects(
-  baseUrl: string = 'http://localhost:5000'
+  baseUrl: string = 'https://thejohnsonbros.com'
 ): Promise<RedirectValidationReport> {
   const redirectMap = getRedirectMap();
   const results: RedirectValidationResult[] = [];
@@ -223,7 +223,7 @@ export function getPatternTestCases(): typeof PATTERN_TEST_CASES {
 
 // CLI execution
 if (import.meta.url.endsWith(process.argv[1]?.replace(/^file:\/\//, '') || '')) {
-  const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
+  const baseUrl = process.env.BASE_URL || 'https://thejohnsonbros.com';
 
   validateAllRedirects(baseUrl)
     .then(report => {
