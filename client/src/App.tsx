@@ -18,6 +18,7 @@ import BookingModalEnhanced from "@/components/BookingModalEnhanced";
 import Home from "@/pages/home";
 import { JobCompletionNotifications } from "@/components/JobCompletionNotifications";
 import { CustomChatWidget } from "@/components/CustomChatWidget";
+import { CanonicalTag } from "@/components/CanonicalTag";
 
 // Lazy load VideoCallPopup - not critical for initial render
 const VideoCallPopup = lazy(() => import("@/components/VideoCallPopup").then(module => ({ default: module.VideoCallPopup })));
@@ -107,6 +108,7 @@ function ScrollToTop() {
 function Router() {
   return (
     <>
+      <CanonicalTag />
       <ScrollToTop />
       <Suspense
         fallback={(
