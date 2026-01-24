@@ -1,0 +1,70 @@
+# ============================================================================
+# Johnson Bros Plumbing - Docker Ignore File
+# Excludes files from Docker build context
+# ============================================================================
+
+# Dependencies
+node_modules
+
+# Version control
+.git
+.gitignore
+
+# Environment files (use env_file in docker-compose instead)
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+logs/
+
+# Test files and coverage
+coverage/
+.nyc_output/
+**/*.test.ts
+**/*.spec.ts
+tests/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Documentation (not needed in production image)
+*.md
+!README.md
+docs/
+
+# Development files
+.aoa/
+.claude/
+.context/
+.replit
+
+# Screenshots and test assets
+*.png
+*.jpg
+*.jpeg
+*.gif
+attached_assets/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build artifacts (we build inside Docker)
+dist/
+
+# Certificates (should be mounted or managed separately)
+certs/
+
+# Playwright test files
+playwright-report/
+test-results/
+
+# Misc
+*.tgz
+*.tar.gz
