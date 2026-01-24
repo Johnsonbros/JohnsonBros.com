@@ -1,393 +1,362 @@
-import crypto from 'crypto';
+import { z } from 'zod';
 import { Logger } from './logger';
 
-interface EnvVariable {
-  name: string;
-  required: boolean;
-  defaultValue?: string | (() => string);
-  validator?: (value: string) => boolean;
-  description: string;
-  example?: string;
-}
+// ============================================================================
+// ENVIRONMENT VARIABLE SCHEMA DEFINITIONS
+// ============================================================================
 
-interface ValidationResult {
+/**
+ * CRITICAL variables - Application won't start without these
+ */
+const criticalEnvSchema = z.object({
+  DATABASE_URL: z.string()
+    .url('DATABASE_URL must be a valid URL')
+    .refine(
+      (val) => val.startsWith('postgresql://') || val.startsWith('postgres://'),
+      'DATABASE_URL must be a PostgreSQL connection string'
+    ),
+  SESSION_SECRET: z.string()
+    .min(32, 'SESSION_SECRET must be at least 32 characters for security'),
+  NODE_ENV: z.enum(['development', 'staging', 'production'])
+    .default('development'),
+});
+
+/**
+ * REQUIRED variables - Core features will be broken without these
+ */
+const requiredEnvSchema = z.object({
+  HOUSECALL_PRO_API_KEY: z.string()
+    .min(10, 'HOUSECALL_PRO_API_KEY must be at least 10 characters')
+    .optional(),
+  HCP_COMPANY_API_KEY: z.string()
+    .min(10, 'HCP_COMPANY_API_KEY must be at least 10 characters')
+    .optional(),
+  GOOGLE_MAPS_API_KEY: z.string()
+    .refine(
+      (val) => val.startsWith('AIza'),
+      'GOOGLE_MAPS_API_KEY must start with "AIza"'
+    ),
+  TWILIO_ACCOUNT_SID: z.string()
+    .refine(
+      (val) => val.startsWith('AC'),
+      'TWILIO_ACCOUNT_SID must start with "AC"'
+    ),
+  TWILIO_AUTH_TOKEN: z.string()
+    .min(20, 'TWILIO_AUTH_TOKEN must be at least 20 characters'),
+  OPENAI_API_KEY: z.string()
+    .refine(
+      (val) => val.startsWith('sk-'),
+      'OPENAI_API_KEY must start with "sk-"'
+    ),
+}).refine(
+  (data) => data.HOUSECALL_PRO_API_KEY || data.HCP_COMPANY_API_KEY,
+  'Either HOUSECALL_PRO_API_KEY or HCP_COMPANY_API_KEY must be set'
+);
+
+/**
+ * OPTIONAL variables - Enhanced features only
+ */
+const optionalEnvSchema = z.object({
+  // Monitoring & Error tracking
+  SENTRY_DSN: z.string().url().optional(),
+  VITE_SENTRY_DSN: z.string().url().optional(),
+
+  // Site configuration
+  SITE_URL: z.string().url().optional(),
+
+  // Google Service Account
+  GOOGLE_SERVICE_ACCOUNT_EMAIL: z.string().email().optional(),
+
+  // Google Analytics
+  GA4_PROPERTY_ID: z.string().optional(),
+
+  // Google Ads Configuration
+  GOOGLE_ADS_CLIENT_ID: z.string().optional(),
+  GOOGLE_ADS_CLIENT_SECRET: z.string().optional(),
+  GOOGLE_ADS_DEVELOPER_TOKEN: z.string().optional(),
+  GOOGLE_ADS_CUSTOMER_ID: z.string().optional(),
+  GOOGLE_ADS_REFRESH_TOKEN: z.string().optional(),
+  GOOGLE_ADS_BRAND_CAMPAIGN_ID: z.string().optional(),
+  GOOGLE_ADS_DISCOVERY_CAMPAIGN_ID: z.string().optional(),
+
+  // Additional optional services
+  PORT: z.string().regex(/^\d+$/).transform(Number).optional(),
+  MCP_PORT: z.string().regex(/^\d+$/).transform(Number).optional(),
+  LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).optional(),
+  APP_VERSION: z.string().optional(),
+  COMPANY_TZ: z.string().optional(),
+  CORS_ORIGIN: z.string().optional(),
+
+  // Twilio additional config
+  TWILIO_PHONE_NUMBER: z.string().regex(/^\+\d{10,15}$/).optional(),
+
+  // Admin config
+  SUPER_ADMIN_EMAIL: z.string().email().optional(),
+  SUPER_ADMIN_PASSWORD: z.string().min(8).optional(),
+  SUPER_ADMIN_NAME: z.string().optional(),
+
+  // Google Maps variants
+  VITE_GOOGLE_MAPS_API_KEY: z.string().optional(),
+  GOOGLE_PLACES_API_KEY: z.string().optional(),
+
+  // Security
+  INTERNAL_SECRET: z.string().min(32).optional(),
+  HOUSECALL_WEBHOOK_SECRET: z.string().min(16).optional(),
+  WEBHOOK_URL: z.string().url().optional(),
+
+  // HousecallPro additional
+  HOUSECALL_COMPANY_ID: z.string().optional(),
+  DEFAULT_DISPATCH_EMPLOYEE_IDS: z.string().optional(),
+  HCP_API_BASE: z.string().url().optional(),
+});
+
+// ============================================================================
+// VALIDATION TYPES
+// ============================================================================
+
+export type CriticalEnv = z.infer<typeof criticalEnvSchema>;
+export type RequiredEnv = z.infer<typeof requiredEnvSchema>;
+export type OptionalEnv = z.infer<typeof optionalEnvSchema>;
+
+export interface ValidationResult {
   valid: boolean;
   errors: string[];
   warnings: string[];
 }
 
-export class EnvValidator {
-  private static readonly ENV_VARIABLES: EnvVariable[] = [
-    // ========= REQUIRED VARIABLES =========
-    {
-      name: 'DATABASE_URL',
-      required: true,
-      description: 'PostgreSQL connection string',
-      validator: (val) => val.startsWith('postgresql://') || val.startsWith('postgres://'),
-      example: 'postgresql://user:pass@host:5432/dbname'
-    },
-    {
-      name: 'HOUSECALL_PRO_API_KEY',
-      required: false, // Not required if HCP_COMPANY_API_KEY is set
-      description: 'HousecallPro API key for integration',
-      example: '0cf80db929c04b6d95fb3d5e7118caae'
-    },
-    {
-      name: 'HCP_COMPANY_API_KEY',
-      required: false, // Alternative to HOUSECALL_PRO_API_KEY
-      description: 'Alternative HousecallPro company API key',
-      example: 'your_company_api_key_here'
-    },
-    {
-      name: 'SESSION_SECRET',
-      required: false, // Will generate in dev, required in prod
-      description: 'Secret key for session encryption',
-      defaultValue: () => {
-        if (process.env.NODE_ENV !== 'production') {
-          const secret = crypto.randomBytes(32).toString('hex');
-          Logger.warn(`Generated development SESSION_SECRET. Set this in production!`);
-          return secret;
-        }
-        return '';
-      },
-      validator: (val) => val.length >= 32,
-      example: 'minimum-32-character-secure-random-string'
-    },
+export interface EnvSummary {
+  environment: string;
+  hasDatabase: boolean;
+  hasHousecallAPI: boolean;
+  hasGoogleMaps: boolean;
+  hasTwilio: boolean;
+  hasOpenAI: boolean;
+  hasSessionSecret: boolean;
+  hasSentry: boolean;
+  hasGoogleAds: boolean;
+  port: number;
+  version: string;
+}
 
-    // ========= GOOGLE SERVICES =========
-    {
-      name: 'GOOGLE_MAPS_API_KEY',
-      required: false,
-      description: 'Google Maps API key for server-side geocoding',
-      example: 'AIzaSy...'
-    },
-    {
-      name: 'VITE_GOOGLE_MAPS_API_KEY',
-      required: false,
-      description: 'Google Maps API key for client-side map display',
-      defaultValue: () => process.env.GOOGLE_MAPS_API_KEY || '',
-      example: 'AIzaSy...'
-    },
-    {
-      name: 'GOOGLE_PLACES_API_KEY',
-      required: false,
-      description: 'Google Places API key for location autocomplete',
-      defaultValue: () => process.env.GOOGLE_MAPS_API_KEY || '',
-      example: 'AIzaSy...'
-    },
+// ============================================================================
+// VALIDATION FUNCTIONS
+// ============================================================================
 
-    // ========= TWILIO CONFIGURATION =========
-    {
-      name: 'TWILIO_ACCOUNT_SID',
-      required: false,
-      description: 'Twilio account SID for SMS notifications',
-      validator: (val) => val.startsWith('AC'),
-      example: 'ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
-    },
-    {
-      name: 'TWILIO_AUTH_TOKEN',
-      required: false,
-      description: 'Twilio authentication token',
-      example: 'your_auth_token'
-    },
-    {
-      name: 'TWILIO_PHONE_NUMBER',
-      required: false,
-      description: 'Twilio phone number for sending SMS',
-      validator: (val) => /^\+\d{10,15}$/.test(val),
-      example: '+12025551234'
-    },
+/**
+ * Validates CRITICAL environment variables.
+ * These are absolutely required - the app will not start without them.
+ */
+function validateCriticalEnv(): { success: boolean; errors: string[] } {
+  const errors: string[] = [];
 
-    // ========= ADMIN CONFIGURATION =========
-    {
-      name: 'SUPER_ADMIN_EMAIL',
-      required: false,
-      description: 'Initial super admin email',
-      validator: (val) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val),
-      defaultValue: () => process.env.ADMIN_EMAIL || 'admin@example.com',
-      example: 'admin@yourdomain.com'
-    },
-    {
-      name: 'SUPER_ADMIN_PASSWORD',
-      required: false,
-      description: 'Initial super admin password',
-      defaultValue: () => process.env.ADMIN_DEFAULT_PASSWORD || 'changeme123',
-      validator: (val) => val.length >= 8,
-      example: 'secure_password_123!'
-    },
-    {
-      name: 'SUPER_ADMIN_NAME',
-      required: false,
-      description: 'Super admin display name',
-      defaultValue: 'Admin User',
-      example: 'John Doe'
-    },
+  // Check DATABASE_URL
+  if (!process.env.DATABASE_URL) {
+    errors.push('CRITICAL: DATABASE_URL is required - application cannot start');
+  } else {
+    const urlResult = criticalEnvSchema.shape.DATABASE_URL.safeParse(process.env.DATABASE_URL);
+    if (!urlResult.success) {
+      errors.push(`CRITICAL: DATABASE_URL - ${urlResult.error.errors[0]?.message}`);
+    }
+  }
 
-    // ========= SECURITY & CORS =========
-    {
-      name: 'CORS_ORIGIN',
-      required: false,
-      description: 'Comma-separated list of allowed CORS origins',
-      defaultValue: () => process.env.NODE_ENV === 'production' ? '' : '*',
-      example: 'https://yourdomain.com,https://www.yourdomain.com'
-    },
-    {
-      name: 'SECURE_COOKIES',
-      required: false,
-      description: 'Use secure cookies (HTTPS only)',
-      defaultValue: () => process.env.NODE_ENV === 'production' ? 'true' : 'false',
-      validator: (val) => ['true', 'false'].includes(val.toLowerCase()),
-      example: 'true'
-    },
-    {
-      name: 'SESSION_DURATION',
-      required: false,
-      description: 'Session duration in milliseconds',
-      defaultValue: '86400000', // 24 hours
-      validator: (val) => !isNaN(parseInt(val)),
-      example: '86400000'
-    },
-    {
-      name: 'INTERNAL_SECRET',
-      required: false,
-      description: 'Secret for internal server-to-server API calls',
-      validator: (val) => val.length >= 32,
-      example: 'minimum-32-character-secure-random-string'
-    },
+  // Check SESSION_SECRET
+  if (!process.env.SESSION_SECRET) {
+    // In development, we can auto-generate
+    if (process.env.NODE_ENV !== 'production') {
+      const crypto = require('crypto');
+      process.env.SESSION_SECRET = crypto.randomBytes(32).toString('hex');
+      Logger.warn('[ENV] Generated development SESSION_SECRET. Set this explicitly in production!');
+    } else {
+      errors.push('CRITICAL: SESSION_SECRET is required in production - application cannot start');
+    }
+  } else if (process.env.SESSION_SECRET.length < 32) {
+    errors.push('CRITICAL: SESSION_SECRET must be at least 32 characters');
+  }
 
-    // ========= WEBHOOK CONFIGURATION =========
-    {
-      name: 'HOUSECALL_WEBHOOK_SECRET',
-      required: false,
-      description: 'Secret for verifying HousecallPro webhook signatures',
-      validator: (val) => val.length >= 16,
-      defaultValue: () => {
-        if (process.env.NODE_ENV !== 'production') {
-          return crypto.randomBytes(16).toString('hex');
-        }
-        return '';
-      },
-      example: 'your_webhook_secret'
-    },
-    {
-      name: 'WEBHOOK_URL',
-      required: false,
-      description: 'Custom webhook URL if different from auto-detected',
-      validator: (val) => val.startsWith('https://') || val.startsWith('http://'),
-      example: 'https://yourdomain.com/api/webhooks/housecall'
-    },
+  // Check NODE_ENV
+  const nodeEnv = process.env.NODE_ENV || 'development';
+  if (!['development', 'staging', 'production'].includes(nodeEnv)) {
+    errors.push(`CRITICAL: NODE_ENV must be one of: development, staging, production (got: ${nodeEnv})`);
+  }
 
-    // ========= SITE CONFIGURATION =========
-    {
-      name: 'SITE_URL',
-      required: false,
-      description: 'Base URL of the site for sitemap generation',
-      defaultValue: 'https://johnsonbrosplumbing.com',
-      validator: (val) => val.startsWith('https://') || val.startsWith('http://'),
-      example: 'https://yourdomain.com'
-    },
-    {
-      name: 'COMPANY_TZ',
-      required: false,
-      description: 'Company timezone',
-      defaultValue: 'America/New_York',
-      example: 'America/Los_Angeles'
-    },
-    {
-      name: 'HOUSECALL_COMPANY_ID',
-      required: false,
-      description: 'HousecallPro company identifier',
-      example: 'com_abc123'
-    },
-    {
-      name: 'DEFAULT_DISPATCH_EMPLOYEE_IDS',
-      required: false,
-      description: 'Comma-separated list of default employee IDs for dispatch',
-      example: 'emp_123,emp_456'
-    },
+  return { success: errors.length === 0, errors };
+}
 
-    // ========= LOGGING & MONITORING =========
-    {
-      name: 'LOG_LEVEL',
-      required: false,
-      description: 'Application log level',
-      defaultValue: () => process.env.NODE_ENV === 'production' ? 'info' : 'debug',
-      validator: (val) => ['debug', 'info', 'warn', 'error'].includes(val.toLowerCase()),
-      example: 'info'
-    },
-    {
-      name: 'DEBUG_LOGS',
-      required: false,
-      description: 'Enable debug logging in production',
-      defaultValue: 'false',
-      validator: (val) => ['true', 'false'].includes(val.toLowerCase()),
-      example: 'false'
-    },
-    {
-      name: 'APP_VERSION',
-      required: false,
-      description: 'Application version for monitoring',
-      defaultValue: '1.0.0',
-      example: '1.2.3'
-    },
+/**
+ * Validates REQUIRED environment variables.
+ * Core features will not work without these.
+ * In development, these generate warnings instead of errors.
+ */
+function validateRequiredEnv(): { success: boolean; errors: string[]; warnings: string[] } {
+  const isProduction = process.env.NODE_ENV === 'production';
+  const errors: string[] = [];
+  const warnings: string[] = [];
+  const addIssue = (message: string) => {
+    if (isProduction) {
+      errors.push(message);
+    } else {
+      warnings.push(message);
+    }
+  };
 
-    // ========= MCP CONFIGURATION =========
-    {
-      name: 'MCP_PORT',
-      required: false,
-      description: 'Port for Model Context Protocol server',
-      defaultValue: '3001',
-      validator: (val) => !isNaN(parseInt(val)) && parseInt(val) > 0 && parseInt(val) < 65536,
-      example: '3001'
-    },
+  // Check HousecallPro API key (one of two required)
+  const hasHCPKey = !!(process.env.HOUSECALL_PRO_API_KEY || process.env.HCP_COMPANY_API_KEY);
+  if (!hasHCPKey) {
+    addIssue('REQUIRED: Either HOUSECALL_PRO_API_KEY or HCP_COMPANY_API_KEY must be set');
+  }
 
-    // ========= API CONFIGURATION =========
-    {
-      name: 'HCP_API_BASE',
-      required: false,
-      description: 'HousecallPro API base URL',
-      defaultValue: 'https://api.housecallpro.com',
-      validator: (val) => val.startsWith('https://') || val.startsWith('http://'),
-      example: 'https://api.housecallpro.com'
-    },
+  // Check Google Maps API key
+  if (!process.env.GOOGLE_MAPS_API_KEY) {
+    addIssue('REQUIRED: GOOGLE_MAPS_API_KEY is required for geocoding and maps');
+  } else if (!process.env.GOOGLE_MAPS_API_KEY.startsWith('AIza')) {
+    addIssue('REQUIRED: GOOGLE_MAPS_API_KEY should start with "AIza"');
+  }
 
-    // ========= GOOGLE ADS (OPTIONAL) =========
-    {
-      name: 'GOOGLE_ADS_CLIENT_ID',
-      required: false,
-      description: 'Google Ads OAuth client ID',
-      example: '123456789.apps.googleusercontent.com'
-    },
-    {
-      name: 'GOOGLE_ADS_CLIENT_SECRET',
-      required: false,
-      description: 'Google Ads OAuth client secret',
-      example: 'your_client_secret'
-    },
-    {
-      name: 'GOOGLE_ADS_DEVELOPER_TOKEN',
-      required: false,
-      description: 'Google Ads API developer token',
-      example: 'your_developer_token'
-    },
+  // Check Twilio
+  if (!process.env.TWILIO_ACCOUNT_SID) {
+    addIssue('REQUIRED: TWILIO_ACCOUNT_SID is required for SMS notifications');
+  } else if (!process.env.TWILIO_ACCOUNT_SID.startsWith('AC')) {
+    addIssue('REQUIRED: TWILIO_ACCOUNT_SID should start with "AC"');
+  }
 
-    // ========= PLATFORM SPECIFIC =========
-    {
-      name: 'NODE_ENV',
-      required: false,
-      description: 'Node environment',
-      defaultValue: 'development',
-      validator: (val) => ['development', 'production', 'test'].includes(val),
-      example: 'production'
-    },
-    {
-      name: 'PORT',
-      required: false,
-      description: 'Server port (usually auto-set by platform)',
-      defaultValue: '5000',
-      validator: (val) => !isNaN(parseInt(val)) && parseInt(val) > 0 && parseInt(val) < 65536,
-      example: '5000'
-    },
+  if (!process.env.TWILIO_AUTH_TOKEN) {
+    addIssue('REQUIRED: TWILIO_AUTH_TOKEN is required for SMS notifications');
+  } else if (process.env.TWILIO_AUTH_TOKEN.length < 20) {
+    addIssue('REQUIRED: TWILIO_AUTH_TOKEN appears to be too short');
+  }
+
+  // Check OpenAI
+  if (!process.env.OPENAI_API_KEY) {
+    addIssue('REQUIRED: OPENAI_API_KEY is required for AI chat features');
+  } else if (!process.env.OPENAI_API_KEY.startsWith('sk-')) {
+    addIssue('REQUIRED: OPENAI_API_KEY should start with "sk-"');
+  }
+
+  return { success: errors.length === 0, errors, warnings };
+}
+
+/**
+ * Validates OPTIONAL environment variables.
+ * Missing these just logs info messages.
+ */
+function validateOptionalEnv(): { info: string[] } {
+  const info: string[] = [];
+
+  const optionalChecks = [
+    { key: 'SENTRY_DSN', feature: 'error tracking' },
+    { key: 'SITE_URL', feature: 'canonical URLs and sitemap generation' },
+    { key: 'GOOGLE_SERVICE_ACCOUNT_EMAIL', feature: 'Google service account integration' },
+    { key: 'GA4_PROPERTY_ID', feature: 'Google Analytics 4' },
+    { key: 'GOOGLE_ADS_CLIENT_ID', feature: 'Google Ads automation' },
   ];
 
+  for (const check of optionalChecks) {
+    if (!process.env[check.key]) {
+      info.push(`OPTIONAL: ${check.key} not set - ${check.feature} disabled`);
+    }
+  }
+
+  // Set defaults for optional values
+  if (!process.env.PORT) {
+    process.env.PORT = '5000';
+  }
+  if (!process.env.MCP_PORT) {
+    process.env.MCP_PORT = '3001';
+  }
+  if (!process.env.LOG_LEVEL) {
+    process.env.LOG_LEVEL = process.env.NODE_ENV === 'production' ? 'info' : 'debug';
+  }
+  if (!process.env.APP_VERSION) {
+    process.env.APP_VERSION = '1.0.0';
+  }
+  if (!process.env.COMPANY_TZ) {
+    process.env.COMPANY_TZ = 'America/New_York';
+  }
+
+  // Set VITE_GOOGLE_MAPS_API_KEY from GOOGLE_MAPS_API_KEY if not set
+  if (!process.env.VITE_GOOGLE_MAPS_API_KEY && process.env.GOOGLE_MAPS_API_KEY) {
+    process.env.VITE_GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
+  }
+
+  return { info };
+}
+
+/**
+ * Main validation function - validates all environment variables
+ * and returns a comprehensive result.
+ */
+export function validateEnvironment(): ValidationResult {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+
+  // Validate critical (will prevent startup if missing)
+  const criticalResult = validateCriticalEnv();
+  errors.push(...criticalResult.errors);
+
+  // Validate required (errors in prod, warnings in dev)
+  const requiredResult = validateRequiredEnv();
+  errors.push(...requiredResult.errors);
+  warnings.push(...requiredResult.warnings);
+
+  // Validate optional (info only)
+  const optionalResult = validateOptionalEnv();
+
+  // Log optional info messages at debug level
+  if (process.env.NODE_ENV !== 'production') {
+    for (const msg of optionalResult.info) {
+      Logger.debug(`[ENV] ${msg}`);
+    }
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors,
+    warnings,
+  };
+}
+
+/**
+ * Returns a summary of the current environment configuration.
+ * Safe to expose in health checks (no secrets).
+ */
+export function getEnvSummary(): EnvSummary {
+  return {
+    environment: process.env.NODE_ENV || 'development',
+    hasDatabase: !!process.env.DATABASE_URL,
+    hasHousecallAPI: !!(process.env.HOUSECALL_PRO_API_KEY || process.env.HCP_COMPANY_API_KEY),
+    hasGoogleMaps: !!process.env.GOOGLE_MAPS_API_KEY,
+    hasTwilio: !!(process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN),
+    hasOpenAI: !!process.env.OPENAI_API_KEY,
+    hasSessionSecret: !!process.env.SESSION_SECRET,
+    hasSentry: !!process.env.SENTRY_DSN,
+    hasGoogleAds: !!process.env.GOOGLE_ADS_CLIENT_ID,
+    port: parseInt(process.env.PORT || '5000', 10),
+    version: process.env.APP_VERSION || '1.0.0',
+  };
+}
+
+// ============================================================================
+// LEGACY COMPATIBILITY - EnvValidator class
+// ============================================================================
+
+/**
+ * EnvValidator class for backwards compatibility with existing code.
+ * New code should use validateEnvironment() and getEnvSummary() directly.
+ */
+export class EnvValidator {
   /**
    * Validates all environment variables and returns a result
    */
   public static validate(): ValidationResult {
-    const errors: string[] = [];
-    const warnings: string[] = [];
-    const isProduction = process.env.NODE_ENV === 'production';
-
-    // Check for HousecallPro API key (one of two must be present)
-    const hasHCPKey = !!(process.env.HOUSECALL_PRO_API_KEY || process.env.HCP_COMPANY_API_KEY);
-    if (!hasHCPKey) {
-      errors.push('Missing HousecallPro API key: Set either HOUSECALL_PRO_API_KEY or HCP_COMPANY_API_KEY');
-    }
-
-    // Validate each environment variable
-    for (const envVar of this.ENV_VARIABLES) {
-      const value = process.env[envVar.name];
-
-      // Check if required variable is missing
-      if (envVar.required && !value) {
-        errors.push(`Missing required environment variable: ${envVar.name} - ${envVar.description}`);
-        if (envVar.example) {
-          errors.push(`  Example: ${envVar.name}=${envVar.example}`);
-        }
-        continue;
-      }
-
-      // Apply default value if not set
-      if (!value && envVar.defaultValue) {
-        const defaultVal = typeof envVar.defaultValue === 'function' 
-          ? envVar.defaultValue() 
-          : envVar.defaultValue;
-        
-        if (defaultVal) {
-          process.env[envVar.name] = defaultVal;
-          
-          // Warn about defaults in production for sensitive vars
-          if (isProduction && ['SESSION_SECRET', 'SUPER_ADMIN_PASSWORD', 'HOUSECALL_WEBHOOK_SECRET'].includes(envVar.name)) {
-            warnings.push(`Using default value for ${envVar.name} in production - this should be explicitly set!`);
-          }
-        }
-      }
-
-      // Validate the value if validator exists and value is present
-      if (value && envVar.validator) {
-        if (!envVar.validator(value)) {
-          errors.push(`Invalid value for ${envVar.name}: "${value}" - ${envVar.description}`);
-          if (envVar.example) {
-            errors.push(`  Example: ${envVar.name}=${envVar.example}`);
-          }
-        }
-      }
-
-      // Production-specific validations
-      if (isProduction) {
-        // Warn about missing recommended production variables
-        if (!value && ['HOUSECALL_WEBHOOK_SECRET', 'CORS_ORIGIN', 'SITE_URL'].includes(envVar.name)) {
-          warnings.push(`Missing recommended production variable: ${envVar.name} - ${envVar.description}`);
-        }
-
-        // Error for required production variables
-        if (!value && envVar.name === 'SESSION_SECRET') {
-          errors.push(`${envVar.name} is required in production for security!`);
-        }
-
-        // Warn about insecure defaults
-        if (value === 'changeme123' && envVar.name === 'SUPER_ADMIN_PASSWORD') {
-          warnings.push('Using default admin password in production - change this immediately!');
-        }
-      }
-    }
-
-    // Check for deprecated environment variables
-    const deprecatedVars = {
-      'GOOGLE_ADS_DEV_TOKEN': 'Use GOOGLE_ADS_DEVELOPER_TOKEN instead',
-      'GOOGLE_ADS_MANAGER_ID': 'Use GOOGLE_ADS_CUSTOMER_ID instead',
-      'GOOGLE_ADS_ACCOUNT_ID': 'Use GOOGLE_ADS_CUSTOMER_ID instead'
-    };
-
-    for (const [oldVar, message] of Object.entries(deprecatedVars)) {
-      if (process.env[oldVar]) {
-        warnings.push(`Deprecated environment variable ${oldVar}: ${message}`);
-      }
-    }
-
-    return {
-      valid: errors.length === 0,
-      errors,
-      warnings
-    };
+    return validateEnvironment();
   }
 
   /**
    * Validates environment on startup and logs results
    */
   public static validateOnStartup(): void {
-    const result = this.validate();
-    
+    const result = validateEnvironment();
+
     // Log warnings
     result.warnings.forEach(warning => {
       Logger.warn(`[ENV] ${warning}`);
@@ -397,7 +366,7 @@ export class EnvValidator {
     if (!result.valid) {
       Logger.error('[ENV] Environment validation failed:');
       result.errors.forEach(error => {
-        Logger.error(`[ENV] ${error}`);
+        Logger.error(`[ENV]   ${error}`);
       });
 
       // In production, exit if critical variables are missing
@@ -409,19 +378,9 @@ export class EnvValidator {
       }
     } else {
       Logger.info('[ENV] Environment validation successful');
-      
+
       // Log configuration summary (without exposing secrets)
-      const summary = {
-        environment: process.env.NODE_ENV || 'development',
-        hasDatabase: !!process.env.DATABASE_URL,
-        hasHousecallAPI: !!(process.env.HOUSECALL_PRO_API_KEY || process.env.HCP_COMPANY_API_KEY),
-        hasGoogleMaps: !!process.env.GOOGLE_MAPS_API_KEY,
-        hasTwilio: !!process.env.TWILIO_ACCOUNT_SID,
-        hasWebhookSecret: !!process.env.HOUSECALL_WEBHOOK_SECRET,
-        hasSessionSecret: !!process.env.SESSION_SECRET,
-        port: process.env.PORT || '5000'
-      };
-      
+      const summary = getEnvSummary();
       Logger.info('[ENV] Configuration summary:', summary);
     }
   }
@@ -432,46 +391,44 @@ export class EnvValidator {
   public static generateEnvTemplate(): string {
     const lines: string[] = ['# Generated Environment Configuration'];
     lines.push(`# Generated at: ${new Date().toISOString()}`);
+    lines.push(`# Environment: ${process.env.NODE_ENV || 'development'}`);
     lines.push('# =======================================\n');
 
-    const categories: Record<string, string[]> = {
-      'Core Configuration': ['DATABASE_URL', 'HOUSECALL_PRO_API_KEY', 'HCP_COMPANY_API_KEY', 'SESSION_SECRET'],
-      'Google Services': ['GOOGLE_MAPS_API_KEY', 'VITE_GOOGLE_MAPS_API_KEY', 'GOOGLE_PLACES_API_KEY'],
-      'Communication': ['TWILIO_ACCOUNT_SID', 'TWILIO_AUTH_TOKEN', 'TWILIO_PHONE_NUMBER'],
-      'Admin': ['SUPER_ADMIN_EMAIL', 'SUPER_ADMIN_PASSWORD', 'SUPER_ADMIN_NAME'],
-      'Security': ['CORS_ORIGIN', 'SECURE_COOKIES', 'SESSION_DURATION', 'INTERNAL_SECRET'],
-      'Webhooks': ['HOUSECALL_WEBHOOK_SECRET', 'WEBHOOK_URL'],
-      'Site': ['SITE_URL', 'COMPANY_TZ', 'HOUSECALL_COMPANY_ID'],
-      'Monitoring': ['LOG_LEVEL', 'DEBUG_LOGS', 'APP_VERSION'],
-      'Other': []
+    const categories: Record<string, { name: string; description: string; example?: string }[]> = {
+      'CRITICAL - Required for Startup': [
+        { name: 'DATABASE_URL', description: 'PostgreSQL connection string', example: 'postgresql://user:pass@host:5432/db' },
+        { name: 'SESSION_SECRET', description: 'Session encryption key (min 32 chars)', example: 'generate-with-openssl-rand-hex-32' },
+        { name: 'NODE_ENV', description: 'Environment mode', example: 'production' },
+      ],
+      'REQUIRED - Core Features': [
+        { name: 'HOUSECALL_PRO_API_KEY', description: 'HousecallPro API key' },
+        { name: 'GOOGLE_MAPS_API_KEY', description: 'Google Maps API key', example: 'AIza...' },
+        { name: 'TWILIO_ACCOUNT_SID', description: 'Twilio account SID', example: 'AC...' },
+        { name: 'TWILIO_AUTH_TOKEN', description: 'Twilio auth token' },
+        { name: 'OPENAI_API_KEY', description: 'OpenAI API key', example: 'sk-...' },
+      ],
+      'OPTIONAL - Enhanced Features': [
+        { name: 'SENTRY_DSN', description: 'Sentry error tracking DSN' },
+        { name: 'SITE_URL', description: 'Site URL for canonical links', example: 'https://yourdomain.com' },
+        { name: 'GOOGLE_ADS_CLIENT_ID', description: 'Google Ads client ID' },
+        { name: 'PORT', description: 'Server port', example: '5000' },
+        { name: 'LOG_LEVEL', description: 'Logging level', example: 'info' },
+      ],
     };
 
-    // Get all categorized variables
-    const allCategorizedVars: string[] = [];
-    for (const vars of Object.values(categories)) {
-      if (Array.isArray(vars)) {
-        allCategorizedVars.push(...vars);
-      }
-    }
-    
-    for (const [category, varNames] of Object.entries(categories)) {
+    for (const [category, vars] of Object.entries(categories)) {
       lines.push(`# ${category}`);
       lines.push('# ' + '='.repeat(category.length));
-      
-      const categoryVars = varNames.length > 0 
-        ? this.ENV_VARIABLES.filter(v => varNames.includes(v.name))
-        : this.ENV_VARIABLES.filter(v => !allCategorizedVars.includes(v.name));
 
-      for (const envVar of categoryVars) {
-        const value = process.env[envVar.name];
-        lines.push(`# ${envVar.description}`);
-        
+      for (const varDef of vars) {
+        const value = process.env[varDef.name];
+        lines.push(`# ${varDef.description}`);
+
         if (value) {
-          // Mask sensitive values
-          const maskedValue = this.maskSensitiveValue(envVar.name, value);
-          lines.push(`${envVar.name}=${maskedValue}`);
+          const maskedValue = this.maskSensitiveValue(varDef.name, value);
+          lines.push(`${varDef.name}=${maskedValue}`);
         } else {
-          lines.push(`# ${envVar.name}=${envVar.example || 'your_value_here'}`);
+          lines.push(`# ${varDef.name}=${varDef.example || 'your_value_here'}`);
         }
         lines.push('');
       }
@@ -484,18 +441,15 @@ export class EnvValidator {
    * Masks sensitive values for display
    */
   private static maskSensitiveValue(name: string, value: string): string {
-    const sensitivePatterns = ['SECRET', 'PASSWORD', 'TOKEN', 'KEY', 'AUTH'];
-    
-    if (sensitivePatterns.some(pattern => name.includes(pattern))) {
+    const sensitivePatterns = ['SECRET', 'PASSWORD', 'TOKEN', 'KEY', 'AUTH', 'DSN'];
+
+    if (sensitivePatterns.some(pattern => name.toUpperCase().includes(pattern))) {
       if (value.length <= 8) {
         return '***';
       }
       return value.substring(0, 4) + '***' + value.substring(value.length - 4);
     }
-    
+
     return value;
   }
 }
-
-// Export for use in other modules
-export { ValidationResult };

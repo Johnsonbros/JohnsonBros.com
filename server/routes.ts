@@ -23,6 +23,7 @@ import { GoogleAdsBridge } from "./src/ads/bridge";
 import { HousecallProClient } from "./src/housecall";
 import rateLimit from "express-rate-limit";
 import adminRoutes from "./src/adminRoutes";
+import observabilityRoutes from "./src/observabilityRoutes";
 import abTestingRoutes from "./src/abTestingRoutes";
 import conversionRoutes from "./src/conversionRoutes";
 import experimentManagementRoutes from "./src/experimentManagement";
@@ -41,6 +42,7 @@ import { loadConfig } from "./src/config";
 import { scheduleLeadFollowUp, startScheduledSmsProcessor } from "./lib/smsBookingAgent";
 import { callMcpTool } from "./lib/mcpClient";
 import { sendSMS } from "./lib/twilio";
+import complianceRoutes from "./src/complianceRoutes";
 
 // Housecall Pro API client
 const HOUSECALL_API_BASE = 'https://api.housecallpro.com';
@@ -344,7 +346,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin routes stay at /api/admin (not versioned) for backward compatibility
   // Ensure authentication for all admin routes
   app.use('/api/admin', authenticate, adminLimiter, adminRoutes);
-  
+
+  // Observability routes (error tracking, metrics, alerts)
+  app.use('/api/admin/observability', observabilityRoutes);
+
   // A/B Testing routes (public endpoints for tracking, admin endpoints for management)
   app.use(abTestingRoutes);
   
@@ -362,6 +367,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Twilio SMS and Voice webhook routes
   app.use('/api/v1/twilio', twilioWebhooks);
+
+  // Compliance routes (cookie consent, privacy/GDPR)
+  app.use('/api/compliance', complianceRoutes);
   
   app.get('/api/v1/voice-training/export/:datasetId', authenticate, async (req, res) => {
     try {

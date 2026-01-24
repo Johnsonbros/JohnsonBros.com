@@ -19,6 +19,8 @@ import Home from "@/pages/home";
 import { JobCompletionNotifications } from "@/components/JobCompletionNotifications";
 import { CustomChatWidget } from "@/components/CustomChatWidget";
 import { CanonicalTag } from "@/components/CanonicalTag";
+import { CookieConsent } from "@/components/CookieConsent";
+import { bootstrapAnalytics } from "@/lib/analytics";
 
 // Lazy load VideoCallPopup - not critical for initial render
 const VideoCallPopup = lazy(() => import("@/components/VideoCallPopup").then(module => ({ default: module.VideoCallPopup })));
@@ -37,6 +39,7 @@ const ExperimentsPage = lazy(() => import("@/pages/admin/experiments"));
 const AgentTracingPage = lazy(() => import("@/pages/admin/agent-tracing"));
 const TrainingDataPage = lazy(() => import("@/pages/admin/training-data"));
 const ApiUsagePage = lazy(() => import("@/pages/admin/api-usage"));
+const ObservabilityDashboard = lazy(() => import("@/pages/admin/observability"));
 const ZekeMcpAdmin = lazy(() => import("@/pages/admin/mcp-gateway"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 
@@ -95,6 +98,10 @@ const CustomerPortal = lazy(() => import("@/pages/customer-portal"));
 const CardGalleryPage = lazy(() => import("@/pages/card-gallery"));
 const ChatWidgetCardsPage = lazy(() => import("@/pages/chat-widget-cards"));
 
+// Legal/Compliance Pages
+const PrivacyPolicyPage = lazy(() => import("@/pages/privacy-policy"));
+const TermsOfServicePage = lazy(() => import("@/pages/terms-of-service"));
+
 function ScrollToTop() {
   const [location] = useLocation();
 
@@ -129,6 +136,8 @@ function Router() {
           <Route path="/cards" component={CardGalleryPage} />
           <Route path="/chat-widget-cards" component={ChatWidgetCardsPage} />
           <Route path="/reviews" component={ReviewsPage} />
+          <Route path="/privacy-policy" component={PrivacyPolicyPage} />
+          <Route path="/terms-of-service" component={TermsOfServicePage} />
           <Route path="/webhooks" component={Webhooks} />
           <Route path="/check-ins" component={CheckIns} />
           <Route path="/admin/login" component={AdminLogin} />
@@ -138,6 +147,7 @@ function Router() {
           <Route path="/admin/agent-tracing" component={AgentTracingPage} />
           <Route path="/admin/training-data" component={TrainingDataPage} />
           <Route path="/admin/api-usage" component={ApiUsagePage} />
+          <Route path="/admin/observability" component={ObservabilityDashboard} />
           <Route path="/admin/mcp" component={ZekeMcpAdmin} />
 
           {/* Service Pages */}
@@ -294,10 +304,10 @@ function Router() {
           {/* Membership & Special Pages */}
           <Route path="/plumbing-membership-program-quincy-ma" component={FamilyDiscount} />
           <Route path="/plumbing-membership-program-quincy-ma/" component={FamilyDiscount} />
-          <Route path="/privacy" component={AboutUs} />
-          <Route path="/privacy/" component={AboutUs} />
-          <Route path="/terms-of-service" component={AboutUs} />
-          <Route path="/terms-of-service/" component={AboutUs} />
+          <Route path="/privacy" component={PrivacyPolicyPage} />
+          <Route path="/privacy/" component={PrivacyPolicyPage} />
+          <Route path="/terms" component={TermsOfServicePage} />
+          <Route path="/terms/" component={TermsOfServicePage} />
           <Route path="/career" component={AboutUs} />
           <Route path="/career/" component={AboutUs} />
           <Route path="/open-job-positions" component={AboutUs} />
@@ -374,6 +384,11 @@ function AppContent() {
   useEffect(() => {
     setBookingOpen(isBookingModalOpen);
   }, [isBookingModalOpen, setBookingOpen]);
+
+  // Initialize analytics on mount
+  useEffect(() => {
+    bootstrapAnalytics();
+  }, []);
 
   return (
     <>
@@ -474,6 +489,9 @@ function AppContent() {
           </div>
           
           <CardSurfaceLayer />
+
+          {/* Cookie Consent Banner - GDPR/CCPA Compliance */}
+          <CookieConsent />
     </>
   );
 }
