@@ -76,10 +76,9 @@ Implemented OpenAI-compliant MCP response format for ChatGPT inline booking. Rea
 
 | Region | Towns | Status |
 |--------|-------|--------|
-| Core | Quincy, Braintree, Weymouth | Live |
-| North Shore | Milton, Randolph, Holbrook, Canton, Stoughton | Live (New) |
-| South Shore | Rockland, Abington, Hanover, Whitman, Hanson, East Bridgewater | Live |
-| Coastal | Hull, Hingham, Cohasset, Scituate, Marshfield, Norwell, Duxbury | Live |
+| **Primary** | Quincy, Milton, Weymouth, Braintree, Abington, Rockland, Hingham, Norwell | Live |
+| South Shore | Randolph, Holbrook, Canton, Stoughton, Hanover, Whitman, Hanson, East Bridgewater | Live |
+| Coastal | Hull, Cohasset, Scituate, Marshfield, Duxbury | Live |
 | Plymouth Area | Plymouth, Pembroke, Kingston, Halifax | Live |
 
 ---
