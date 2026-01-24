@@ -8,6 +8,7 @@ import { configureSecurityMiddleware, getCsrfToken, csrfProtection } from "./src
 import { EnvValidator } from "./src/envValidator";
 import { setupShutdownHandlers } from "./src/shutdown";
 import { startSeoSyncScheduler } from "./src/seo/syncScheduler";
+import { startGmbSchedulers } from "./src/gmb/gmbScheduler";
 
 // Validate environment variables on startup
 EnvValidator.validateOnStartup();
@@ -216,6 +217,9 @@ app.use((req, res, next) => {
 
     // Start SEO sync scheduler
     startSeoSyncScheduler();
+
+    // Start GMB schedulers (review sync, auto-posting, auto-responses)
+    startGmbSchedulers();
   });
 
   // Start MCP Server automatically (only if not already running)

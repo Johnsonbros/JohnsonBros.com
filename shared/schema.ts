@@ -2650,3 +2650,152 @@ export const insertSeoAlertSchema = createInsertSchema(seoAlerts).omit({
 
 export type SeoAlert = typeof seoAlerts.$inferSelect;
 export type InsertSeoAlert = z.infer<typeof insertSeoAlertSchema>;
+
+// ============================================
+// GOOGLE MY BUSINESS - POSTS
+// ============================================
+
+export const gmbPosts = pgTable('gmb_posts', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  googlePostId: text('google_post_id'), // ID from Google after posting
+  type: text('type').notNull(), // 'update', 'offer', 'event', 'job_photo'
+  title: text('title'),
+  content: text('content').notNull(),
+  callToAction: text('call_to_action'), // 'BOOK', 'CALL', 'LEARN_MORE', etc.
+  ctaUrl: text('cta_url'),
+  imageUrl: text('image_url'),
+  imageMediaKey: text('image_media_key'), // Google's media key after upload
+  scheduledFor: timestamp('scheduled_for'),
+  publishedAt: timestamp('published_at'),
+  status: text('status').notNull().default('draft'), // 'draft', 'scheduled', 'published', 'failed'
+  errorMessage: text('error_message'),
+  jobId: text('job_id'), // Optional link to HousecallPro job for job photos
+  metadata: jsonb('metadata'),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+}, (table) => ({
+  statusIdx: index('gmb_posts_status_idx').on(table.status),
+  scheduledIdx: index('gmb_posts_scheduled_idx').on(table.scheduledFor),
+  typeIdx: index('gmb_posts_type_idx').on(table.type),
+  createdAtIdx: index('gmb_posts_created_at_idx').on(table.createdAt),
+}));
+
+export const insertGmbPostSchema = createInsertSchema(gmbPosts).omit({
+  id: true,
+  googlePostId: true,
+  imageMediaKey: true,
+  publishedAt: true,
+  errorMessage: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type GmbPost = typeof gmbPosts.$inferSelect;
+export type InsertGmbPost = z.infer<typeof insertGmbPostSchema>;
+
+// ============================================
+// GOOGLE MY BUSINESS - REVIEWS
+// ============================================
+
+export const gmbReviews = pgTable('gmb_reviews', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  googleReviewId: text('google_review_id').notNull().unique(),
+  reviewerName: text('reviewer_name').notNull(),
+  reviewerPhotoUrl: text('reviewer_photo_url'),
+  starRating: integer('star_rating').notNull(), // 1-5
+  comment: text('comment'),
+  reviewCreatedAt: timestamp('review_created_at').notNull(),
+  responseText: text('response_text'),
+  responseCreatedAt: timestamp('response_created_at'),
+  autoResponded: boolean('auto_responded').default(false).notNull(),
+  needsResponse: boolean('needs_response').default(true).notNull(),
+  sentiment: text('sentiment'), // 'positive', 'neutral', 'negative'
+  topics: jsonb('topics'), // Array of detected topics
+  metadata: jsonb('metadata'),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+}, (table) => ({
+  googleReviewIdIdx: index('gmb_reviews_google_id_idx').on(table.googleReviewId),
+  starRatingIdx: index('gmb_reviews_star_rating_idx').on(table.starRating),
+  needsResponseIdx: index('gmb_reviews_needs_response_idx').on(table.needsResponse),
+  createdAtIdx: index('gmb_reviews_created_at_idx').on(table.createdAt),
+}));
+
+export const insertGmbReviewSchema = createInsertSchema(gmbReviews).omit({
+  id: true,
+  responseText: true,
+  responseCreatedAt: true,
+  autoResponded: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type GmbReview = typeof gmbReviews.$inferSelect;
+export type InsertGmbReview = z.infer<typeof insertGmbReviewSchema>;
+
+// ============================================
+// GOOGLE MY BUSINESS - REVIEW RESPONSE TEMPLATES
+// ============================================
+
+export const gmbResponseTemplates = pgTable('gmb_response_templates', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  name: text('name').notNull(),
+  starRating: integer('star_rating'), // null = any rating
+  sentiment: text('sentiment'), // null = any sentiment
+  template: text('template').notNull(),
+  useCount: integer('use_count').default(0).notNull(),
+  isActive: boolean('is_active').default(true).notNull(),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+}, (table) => ({
+  starRatingIdx: index('gmb_response_templates_star_idx').on(table.starRating),
+  isActiveIdx: index('gmb_response_templates_active_idx').on(table.isActive),
+}));
+
+export const insertGmbResponseTemplateSchema = createInsertSchema(gmbResponseTemplates).omit({
+  id: true,
+  useCount: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type GmbResponseTemplate = typeof gmbResponseTemplates.$inferSelect;
+export type InsertGmbResponseTemplate = z.infer<typeof insertGmbResponseTemplateSchema>;
+
+// ============================================
+// GOOGLE MY BUSINESS - JOB PHOTOS
+// ============================================
+
+export const gmbJobPhotos = pgTable('gmb_job_photos', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  jobId: text('job_id').notNull(), // HousecallPro job ID
+  customerId: text('customer_id'),
+  photoUrl: text('photo_url').notNull(),
+  thumbnailUrl: text('thumbnail_url'),
+  caption: text('caption'),
+  category: text('category'), // 'before', 'after', 'during', 'team'
+  uploadedToGoogle: boolean('uploaded_to_google').default(false).notNull(),
+  googleMediaKey: text('google_media_key'),
+  postId: text('post_id').references(() => gmbPosts.id),
+  approved: boolean('approved').default(false).notNull(),
+  approvedAt: timestamp('approved_at'),
+  approvedBy: text('approved_by'),
+  metadata: jsonb('metadata'),
+  createdAt: timestamp('created_at').defaultNow(),
+}, (table) => ({
+  jobIdIdx: index('gmb_job_photos_job_id_idx').on(table.jobId),
+  approvedIdx: index('gmb_job_photos_approved_idx').on(table.approved),
+  uploadedIdx: index('gmb_job_photos_uploaded_idx').on(table.uploadedToGoogle),
+  createdAtIdx: index('gmb_job_photos_created_at_idx').on(table.createdAt),
+}));
+
+export const insertGmbJobPhotoSchema = createInsertSchema(gmbJobPhotos).omit({
+  id: true,
+  uploadedToGoogle: true,
+  googleMediaKey: true,
+  approvedAt: true,
+  createdAt: true,
+});
+
+export type GmbJobPhoto = typeof gmbJobPhotos.$inferSelect;
+export type InsertGmbJobPhoto = z.infer<typeof insertGmbJobPhotoSchema>;

@@ -24,6 +24,7 @@ import { HousecallProClient } from "./src/housecall";
 import rateLimit from "express-rate-limit";
 import adminRoutes from "./src/adminRoutes";
 import seoAdminRoutes from "./src/seoAdminRoutes";
+import gmbAdminRoutes from "./src/gmbAdminRoutes";
 import abTestingRoutes from "./src/abTestingRoutes";
 import conversionRoutes from "./src/conversionRoutes";
 import experimentManagementRoutes from "./src/experimentManagement";
@@ -348,6 +349,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // SEO Monitoring routes (authenticated)
   app.use('/api/admin/seo', authenticate, adminLimiter, seoAdminRoutes);
+
+  // Google My Business routes (authenticated)
+  app.use('/api/admin/gmb', authenticate, adminLimiter, gmbAdminRoutes);
 
   // A/B Testing routes (public endpoints for tracking, admin endpoints for management)
   app.use(abTestingRoutes);
