@@ -7,6 +7,7 @@ import { setupVite, serveStatic, log } from "./vite";
 import { configureSecurityMiddleware, getCsrfToken, csrfProtection } from "./src/security";
 import { EnvValidator } from "./src/envValidator";
 import { setupShutdownHandlers } from "./src/shutdown";
+import { startSeoSyncScheduler } from "./src/seo/syncScheduler";
 
 // Validate environment variables on startup
 EnvValidator.validateOnStartup();
@@ -212,6 +213,9 @@ app.use((req, res, next) => {
     host: "0.0.0.0",
   }, () => {
     log(`serving on port ${port}`);
+
+    // Start SEO sync scheduler
+    startSeoSyncScheduler();
   });
 
   // Start MCP Server automatically (only if not already running)

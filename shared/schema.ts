@@ -2563,5 +2563,90 @@ export const insertAvailableTimeSlotsSchema = createInsertSchema(availableTimeSl
   updatedAt: true,
 });
 
-export type AvailableTimeSlot = typeof availableTimeSlots.$inferSelect;
+export type AvailableTimeSlotRecord = typeof availableTimeSlots.$inferSelect;
 export type InsertAvailableTimeSlot = z.infer<typeof insertAvailableTimeSlotsSchema>;
+
+// ============================================
+// SEO METRICS TRACKING
+// ============================================
+
+export const seoMetrics = pgTable('seo_metrics', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  date: timestamp('date').notNull(),
+  indexedPages: integer('indexed_pages'),
+  totalClicks: integer('total_clicks'),
+  totalImpressions: integer('total_impressions'),
+  averageCtr: real('average_ctr'),
+  averagePosition: real('average_position'),
+  crawlErrors: integer('crawl_errors'),
+  metadata: jsonb('metadata'),
+  createdAt: timestamp('created_at').defaultNow(),
+}, (table) => ({
+  dateIdx: index('seo_metrics_date_idx').on(table.date),
+  createdAtIdx: index('seo_metrics_created_at_idx').on(table.createdAt),
+}));
+
+export const insertSeoMetricsSchema = createInsertSchema(seoMetrics).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type SeoMetrics = typeof seoMetrics.$inferSelect;
+export type InsertSeoMetrics = z.infer<typeof insertSeoMetricsSchema>;
+
+// ============================================
+// INDEX COVERAGE TRACKING
+// ============================================
+
+export const indexCoverage = pgTable('index_coverage', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  url: text('url').notNull(),
+  status: text('status').notNull(), // 'indexed', 'crawled', 'excluded', 'error'
+  lastCrawled: timestamp('last_crawled'),
+  errorType: text('error_type'),
+  checkedAt: timestamp('checked_at').defaultNow(),
+}, (table) => ({
+  urlIdx: index('index_coverage_url_idx').on(table.url),
+  statusIdx: index('index_coverage_status_idx').on(table.status),
+  checkedAtIdx: index('index_coverage_checked_at_idx').on(table.checkedAt),
+}));
+
+export const insertIndexCoverageSchema = createInsertSchema(indexCoverage).omit({
+  id: true,
+  checkedAt: true,
+});
+
+export type IndexCoverage = typeof indexCoverage.$inferSelect;
+export type InsertIndexCoverage = z.infer<typeof insertIndexCoverageSchema>;
+
+// ============================================
+// SEO ALERTS
+// ============================================
+
+export const seoAlerts = pgTable('seo_alerts', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  type: text('type').notNull(), // 'ranking_drop', 'crawl_error', 'deindexed', 'traffic_drop'
+  severity: text('severity').notNull(), // 'warning', 'error', 'critical'
+  title: text('title').notNull(),
+  description: text('description'),
+  url: text('url'),
+  metadata: jsonb('metadata'),
+  dismissed: boolean('dismissed').default(false).notNull(),
+  dismissedAt: timestamp('dismissed_at'),
+  createdAt: timestamp('created_at').defaultNow(),
+}, (table) => ({
+  typeIdx: index('seo_alerts_type_idx').on(table.type),
+  severityIdx: index('seo_alerts_severity_idx').on(table.severity),
+  dismissedIdx: index('seo_alerts_dismissed_idx').on(table.dismissed),
+  createdAtIdx: index('seo_alerts_created_at_idx').on(table.createdAt),
+}));
+
+export const insertSeoAlertSchema = createInsertSchema(seoAlerts).omit({
+  id: true,
+  dismissed: true,
+  dismissedAt: true,
+  createdAt: true,
+});
+
+export type SeoAlert = typeof seoAlerts.$inferSelect;
+export type InsertSeoAlert = z.infer<typeof insertSeoAlertSchema>;

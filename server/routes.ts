@@ -23,6 +23,7 @@ import { GoogleAdsBridge } from "./src/ads/bridge";
 import { HousecallProClient } from "./src/housecall";
 import rateLimit from "express-rate-limit";
 import adminRoutes from "./src/adminRoutes";
+import seoAdminRoutes from "./src/seoAdminRoutes";
 import abTestingRoutes from "./src/abTestingRoutes";
 import conversionRoutes from "./src/conversionRoutes";
 import experimentManagementRoutes from "./src/experimentManagement";
@@ -344,7 +345,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin routes stay at /api/admin (not versioned) for backward compatibility
   // Ensure authentication for all admin routes
   app.use('/api/admin', authenticate, adminLimiter, adminRoutes);
-  
+
+  // SEO Monitoring routes (authenticated)
+  app.use('/api/admin/seo', authenticate, adminLimiter, seoAdminRoutes);
+
   // A/B Testing routes (public endpoints for tracking, admin endpoints for management)
   app.use(abTestingRoutes);
   
