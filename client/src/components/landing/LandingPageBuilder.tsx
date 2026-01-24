@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { EmergencyHero } from "./EmergencyHero";
 import { ServiceHero } from "./ServiceHero";
 import { SeasonalHero } from "./SeasonalHero";
@@ -84,6 +84,7 @@ export function LandingPageBuilder({
 }: LandingPageBuilderProps) {
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [showExitIntent, setShowExitIntent] = useState(false);
+  const scriptRef = useRef<HTMLScriptElement>(null);
 
   // Default feature flags
   const featureFlags = {
@@ -122,6 +123,43 @@ export function LandingPageBuilder({
       return () => clearTimeout(timer);
     }
   }, [featureFlags.showExitIntent]);
+
+  // Inject analytics tracking script safely
+  useEffect(() => {
+    if (config.variant && scriptRef.current) {
+      try {
+        // Validate and sanitize config values
+        const variant = String(config.variant || 'default').slice(0, 50); // Max 50 chars, only string
+        const conversionGoal = String(config.conversionGoal || 'booking').slice(0, 100); // Max 100 chars
+        const trackingId = config.trackingId ? String(config.trackingId).slice(0, 100) : null; // Max 100 chars
+
+        // Only allow alphanumeric, hyphens, and underscores
+        if (!/^[a-zA-Z0-9_-]+$/.test(variant)) {
+          console.warn('Invalid landing page variant value');
+          return;
+        }
+        if (!/^[a-zA-Z0-9_-]+$/.test(conversionGoal)) {
+          console.warn('Invalid conversion goal value');
+          return;
+        }
+        if (trackingId && !/^[a-zA-Z0-9_-]+$/.test(trackingId)) {
+          console.warn('Invalid tracking ID value');
+          return;
+        }
+
+        // Build script content safely without template literals
+        let scriptContent = 'window.landingPageVariant = ' + JSON.stringify(variant) + ';';
+        scriptContent += '\nwindow.conversionGoal = ' + JSON.stringify(conversionGoal) + ';';
+        if (trackingId) {
+          scriptContent += '\nwindow.trackingId = ' + JSON.stringify(trackingId) + ';';
+        }
+
+        scriptRef.current.textContent = scriptContent;
+      } catch (error) {
+        console.error('Failed to inject analytics tracking:', error);
+      }
+    }
+  }, [config.variant, config.conversionGoal, config.trackingId]);
 
   // Render Hero based on type
   const renderHero = () => {
@@ -293,17 +331,9 @@ export function LandingPageBuilder({
         />
       </div>
 
-      {/* A/B Testing Tracking */}
+      {/* A/B Testing Tracking - Safely injected without dangerouslySetInnerHTML */}
       {config.variant && (
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.landingPageVariant = '${config.variant}';
-              window.conversionGoal = '${config.conversionGoal || 'booking'}';
-              ${config.trackingId ? `window.trackingId = '${config.trackingId}';` : ''}
-            `
-          }}
-        />
+        <script ref={scriptRef} type="text/javascript" />
       )}
     </>
   );

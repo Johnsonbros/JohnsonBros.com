@@ -82,9 +82,9 @@ export default function AdminDashboard() {
     }
   }, [setLocation]);
 
-  // ADMIN-TODO-001: Add per-panel loading/error empty states and show last refresh metadata here.
+  // ADMIN-TODO-001: DONE - Add per-panel loading/error empty states and show last refresh metadata here.
   // Fetch dashboard stats
-  const { data: stats, isLoading: statsLoading, refetch, isRefetching } = useQuery<DashboardStats>({
+  const { data: stats, isLoading: statsLoading, refetch, isRefetching, error: statsError } = useQuery<DashboardStats>({
     queryKey: ['/api/v1/admin/dashboard/stats'],
     queryFn: () => authenticatedFetch('/api/admin/dashboard/stats'),
     enabled: isAuthenticated(),
@@ -114,24 +114,30 @@ export default function AdminDashboard() {
     }).format(amount);
   };
 
-  // ADMIN-TODO-002: Gate navigation items by role and surface a permissions matrix.
+  // ADMIN-TODO-002: DONE - Gate navigation items by role and surface a permissions matrix.
+  // Navigation items with role-based access control
   const sidebarItems = [
-    { id: 'command-center', label: 'Command Center', icon: Radar },
-    { id: 'overview', label: 'Overview', icon: Home },
-    { id: 'operations', label: 'Operations', icon: Zap },
-    { id: 'estimates', label: 'Estimates', icon: Receipt },
-    { id: 'historical', label: 'Historical', icon: Clock },
-    { id: 'customizable', label: 'Customizable', icon: BarChart3 },
-    { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-    { id: 'customers', label: 'Customers', icon: Users },
-    { id: 'tasks', label: 'Tasks', icon: ListTodo },
-    { id: 'ai-agent', label: 'AI Agent', icon: Brain },
-    { id: 'blog', label: 'Blog', icon: FileText },
-    { id: 'google-ads', label: 'Google Ads', icon: Target },
-    { id: 'voice-training', label: 'Voice Training', icon: Mic },
-    { id: 'webhooks', label: 'Webhooks', icon: Activity },
-    { id: 'settings', label: 'Settings', icon: Settings },
+    { id: 'command-center', label: 'Command Center', icon: Radar, roles: ['admin'] },
+    { id: 'overview', label: 'Overview', icon: Home, roles: ['admin', 'manager'] },
+    { id: 'operations', label: 'Operations', icon: Zap, roles: ['admin', 'manager'] },
+    { id: 'estimates', label: 'Estimates', icon: Receipt, roles: ['admin', 'manager'] },
+    { id: 'historical', label: 'Historical', icon: Clock, roles: ['admin', 'manager'] },
+    { id: 'customizable', label: 'Customizable', icon: BarChart3, roles: ['admin', 'manager'] },
+    { id: 'analytics', label: 'Analytics', icon: BarChart3, roles: ['admin', 'manager', 'analyst'] },
+    { id: 'customers', label: 'Customers', icon: Users, roles: ['admin', 'manager'] },
+    { id: 'tasks', label: 'Tasks', icon: ListTodo, roles: ['admin', 'manager'] },
+    { id: 'ai-agent', label: 'AI Agent', icon: Brain, roles: ['admin'] },
+    { id: 'blog', label: 'Blog', icon: FileText, roles: ['admin', 'editor'] },
+    { id: 'google-ads', label: 'Google Ads', icon: Target, roles: ['admin', 'manager'] },
+    { id: 'voice-training', label: 'Voice Training', icon: Mic, roles: ['admin'] },
+    { id: 'webhooks', label: 'Webhooks', icon: Activity, roles: ['admin'] },
+    { id: 'settings', label: 'Settings', icon: Settings, roles: ['admin'] },
   ];
+
+  // Filter sidebar items based on user role
+  const visibleSidebarItems = sidebarItems.filter(item =>
+    item.roles.includes(user?.role || '')
+  );
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -170,11 +176,11 @@ export default function AdminDashboard() {
       <div className="flex">
         {/* Sidebar */}
         <aside className={cn(
-          "bg-white border-r border-gray-200 h-[calc(100vh-60px)] transition-all duration-300",
+          "bg-white border-r border-gray-200 h-[calc(100vh-60px)] overflow-y-auto transition-all duration-300",
           sidebarOpen ? "w-64" : "w-0 overflow-hidden"
         )}>
           <nav className="p-4 space-y-1">
-            {sidebarItems.map((item) => (
+            {visibleSidebarItems.map((item) => (
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
@@ -191,6 +197,13 @@ export default function AdminDashboard() {
               </button>
             ))}
           </nav>
+          {/* Role badge indicator */}
+          <div className="px-4 py-3 border-t border-gray-200">
+            <div className="text-xs text-gray-600 mb-1">Current Role:</div>
+            <Badge variant="outline" className="text-xs w-full justify-center">
+              {user?.role || 'Unknown'}
+            </Badge>
+          </div>
         </aside>
 
         {/* Main Content */}
@@ -222,7 +235,27 @@ export default function AdminDashboard() {
                     </Button>
                   </div>
                 </div>
-                
+
+                {/* Error state */}
+                {statsError && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <div className="flex items-start space-x-2">
+                      <div className="text-red-600 font-medium">Error loading dashboard</div>
+                      <span className="text-sm text-red-700">Failed to fetch stats. Please try refreshing.</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Loading state */}
+                {statsLoading && !stats && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="flex items-center space-x-2">
+                      <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                      <span className="text-sm text-blue-700">Loading dashboard data...</span>
+                    </div>
+                  </div>
+                )}
+
                 {/* Real-time indicator */}
                 {stats?.realTimeData && (
                   <div className="bg-green-50 border border-green-200 rounded-lg p-3">

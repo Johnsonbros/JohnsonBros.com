@@ -64,7 +64,7 @@ interface RevenueMetrics {
 export default function RevenueAnalytics() {
   const { data: metrics, isLoading, refetch } = useQuery<RevenueMetrics>({
     queryKey: ['/api/v1/admin/revenue-metrics'],
-    queryFn: () => authenticatedFetch('/api/admin/revenue-metrics'),
+    queryFn: () => authenticatedFetch('/api/v1/admin/revenue-metrics'),
     refetchInterval: 300000, // Refresh every 5 minutes
   });
 

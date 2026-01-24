@@ -1,4 +1,6 @@
-// Structured logging utility
+// Structured logging utility with Sentry integration
+import type { SeverityLevel } from '@sentry/node';
+
 export interface LogContext {
   requestId?: string;
   upstream?: string;
@@ -19,11 +21,11 @@ export function normalizeError(error: unknown): { message: string; stack?: strin
       stack: error.stack,
     };
   }
-  
+
   if (typeof error === 'string') {
     return { message: error };
   }
-  
+
   return { message: String(error) };
 }
 
@@ -34,12 +36,24 @@ export function getErrorMessage(error: unknown): string {
   if (error instanceof Error) {
     return error.message;
   }
-  
+
   if (typeof error === 'string') {
     return error;
   }
-  
+
   return String(error);
+}
+
+/**
+ * Get Sentry instance if available (lazy import to avoid circular deps)
+ */
+function getSentryModule() {
+  try {
+    const observability = require('./observability');
+    return observability;
+  } catch {
+    return null;
+  }
 }
 
 export class Logger {
@@ -59,7 +73,8 @@ export class Logger {
     };
 
     const output = JSON.stringify(logEntry);
-    
+
+    // Output to console
     switch (level) {
       case 'error':
         console.error(output);
@@ -74,6 +89,23 @@ export class Logger {
         break;
       default:
         console.log(output);
+    }
+
+    // Send to Sentry if enabled and it's an error or warning
+    if ((level === 'error' || level === 'warn') && process.env.SENTRY_DSN) {
+      this.captureToSentry(message, level, context);
+    }
+  }
+
+  private static captureToSentry(message: string, level: 'error' | 'warn', context?: LogContext) {
+    try {
+      const sentry = getSentryModule();
+      if (!sentry || !sentry.isSentryInitialized()) return;
+
+      const sentryLevel: SeverityLevel = level === 'error' ? 'error' : 'warning';
+      sentry.captureMessage(message, sentryLevel, context);
+    } catch {
+      // Silently fail - don't let Sentry failures break logging
     }
   }
 
@@ -95,13 +127,27 @@ export class Logger {
 }
 
 /**
- * Convenience helper for logging errors with proper type normalization
+ * Convenience helper for logging errors with proper type normalization and Sentry capture
  */
 export function logError(message: string, error: unknown, context?: LogContext) {
   const normalized = normalizeError(error);
+
+  // Log to console and Sentry
   Logger.error(message, {
     ...context,
     error: normalized.message,
     stack: normalized.stack,
   });
+
+  // Also capture the Error object to Sentry for better stack traces
+  if (process.env.SENTRY_DSN && error instanceof Error) {
+    try {
+      const sentry = getSentryModule();
+      if (sentry && sentry.isSentryInitialized()) {
+        sentry.captureException(error, { message, ...context });
+      }
+    } catch {
+      // Silently fail - don't let Sentry failures break error logging
+    }
+  }
 }

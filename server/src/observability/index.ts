@@ -22,6 +22,9 @@ export {
   sentryErrorHandler,
   sentryRequestContext,
   isSentryInitialized,
+  withSentryCapture,
+  recordOperation,
+  recordSentryExternalCall,
 } from './sentry';
 
 // Metrics exports
@@ -69,7 +72,7 @@ export {
 } from './alerts';
 
 // Import for unified initialization
-import { initSentry, sentryErrorHandler } from './sentry';
+import { initSentry, sentryErrorHandler, sentryRequestContext } from './sentry';
 import { metricsMiddleware, startMetricsCollection, createMetricsRouter } from './metrics';
 import { uptimeRouter, startSelfMonitoring, registerHealthCheck } from './uptime';
 import { startAlertMonitor } from './alerts';
@@ -81,6 +84,11 @@ import { sql } from 'drizzle-orm';
  *
  * This should be called early in the application startup,
  * after creating the Express app but before registering routes.
+ * This initializes:
+ * - Sentry for error tracking and performance monitoring
+ * - Prometheus metrics collection
+ * - Uptime monitoring and health checks
+ * - Alert monitoring system
  */
 export function initObservability(app: Express): void {
   const startTime = Date.now();
@@ -89,29 +97,37 @@ export function initObservability(app: Express): void {
     // 1. Initialize Sentry (must be first for error tracking)
     initSentry(app);
 
-    // 2. Add metrics middleware (must be early to capture all requests)
+    // 2. Add Sentry request context middleware (early to track all requests)
+    app.use(sentryRequestContext());
+
+    // 3. Add metrics middleware (must be early to capture all requests)
     app.use(metricsMiddleware());
 
-    // 3. Register health check endpoints
+    // 4. Register health check endpoints
     app.use('/health', uptimeRouter);
 
-    // 4. Register metrics endpoints
+    // 5. Register metrics endpoints
     const metricsRouter = createMetricsRouter();
     app.use('/health', metricsRouter);
 
-    // 5. Register default health checks
+    // 6. Register default health checks
     registerDefaultHealthChecks();
 
-    // 6. Start background monitoring
+    // 7. Start background monitoring
     startMetricsCollection();
     startSelfMonitoring();
     startAlertMonitor();
 
     const duration = Date.now() - startTime;
-    Logger.info('Observability initialized', { durationMs: duration });
+    Logger.info('Observability initialized', {
+      durationMs: duration,
+      sentry_enabled: !!process.env.SENTRY_DSN,
+      metrics_enabled: process.env.ENABLE_METRICS !== 'false',
+    });
   } catch (error) {
     Logger.error('Failed to initialize observability', {
       error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
     });
     // Don't throw - observability failures shouldn't crash the app
   }

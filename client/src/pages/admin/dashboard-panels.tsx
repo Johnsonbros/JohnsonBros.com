@@ -1559,6 +1559,10 @@ export function HistoricalAnalyticsPanel() {
 export function SettingsPanel() {
   const user = getAdminUser();
   const { toast } = useToast();
+  const [activityFilterAction, setActivityFilterAction] = useState<string>('');
+  const [activityFilterEntity, setActivityFilterEntity] = useState<string>('');
+  const [savedViewName, setSavedViewName] = useState<string>('');
+  const [savedViews, setSavedViews] = useState<Array<{ name: string; action: string; entity: string }>>([]);
 
   const { data: authData } = useQuery<AuthMeResponse>({
     queryKey: ['/api/admin/auth/me'],
@@ -1566,12 +1570,48 @@ export function SettingsPanel() {
     enabled: isAuthenticated(),
   });
 
-  // ADMIN-TODO-005: Add advanced filters and saved views for activity logs.
+  // ADMIN-TODO-005: DONE - Add advanced filters and saved views for activity logs.
   const { data: activityLogs, isLoading } = useQuery<ActivityLog[]>({
     queryKey: ['/api/admin/activity-logs'],
-    queryFn: () => authenticatedFetch('/api/admin/activity-logs?limit=8'),
+    queryFn: () => authenticatedFetch('/api/admin/activity-logs?limit=50'),
     enabled: isAuthenticated(),
   });
+
+  // Filter activity logs based on selected criteria
+  const filteredLogs = useMemo(() => {
+    return (activityLogs || []).filter(log => {
+      if (activityFilterAction && log.action !== activityFilterAction) return false;
+      if (activityFilterEntity && log.entityType !== activityFilterEntity) return false;
+      return true;
+    });
+  }, [activityLogs, activityFilterAction, activityFilterEntity]);
+
+  // Get unique actions and entity types for filter dropdowns
+  const uniqueActions = useMemo(() => {
+    return [...new Set((activityLogs || []).map(log => log.action))].sort();
+  }, [activityLogs]);
+
+  const uniqueEntityTypes = useMemo(() => {
+    return [...new Set((activityLogs || []).map(log => log.entityType).filter((e): e is string => Boolean(e)))].sort();
+  }, [activityLogs]);
+
+  // Save current filter as a view
+  const saveCurrentView = () => {
+    if (!savedViewName.trim()) {
+      toast({ title: 'Name required', description: 'Please enter a name for this view', variant: 'destructive' });
+      return;
+    }
+    setSavedViews([...savedViews, { name: savedViewName, action: activityFilterAction, entity: activityFilterEntity }]);
+    setSavedViewName('');
+    toast({ title: 'View saved', description: `"${savedViewName}" has been saved` });
+  };
+
+  // Load a saved view
+  const loadSavedView = (view: typeof savedViews[0]) => {
+    setActivityFilterAction(view.action);
+    setActivityFilterEntity(view.entity);
+    toast({ title: 'View loaded', description: `Loaded "${view.name}"` });
+  };
 
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
 
@@ -1714,9 +1754,83 @@ export function SettingsPanel() {
       <Card>
         <CardHeader>
           <CardTitle>Recent Activity</CardTitle>
-          <CardDescription>Latest admin actions tracked in the system.</CardDescription>
+          <CardDescription>Latest admin actions tracked in the system. Filter and save views for quick access.</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          {/* Filters */}
+          <div className="space-y-3 p-4 bg-gray-50 rounded-lg">
+            <div className="flex flex-col md:flex-row gap-3">
+              <div className="flex-1 min-w-0">
+                <label className="text-sm font-medium text-gray-700 mb-1 block">Filter by Action</label>
+                <Select value={activityFilterAction} onValueChange={setActivityFilterAction}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="All actions" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All actions</SelectItem>
+                    {uniqueActions.map(action => (
+                      <SelectItem key={action} value={action}>{action}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex-1 min-w-0">
+                <label className="text-sm font-medium text-gray-700 mb-1 block">Filter by Entity</label>
+                <Select value={activityFilterEntity} onValueChange={setActivityFilterEntity}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="All entities" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All entities</SelectItem>
+                    {uniqueEntityTypes.map(entity => (
+                      <SelectItem key={entity} value={entity}>{entity}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex-1 min-w-0">
+                <label className="text-sm font-medium text-gray-700 mb-1 block">Save View As</label>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="View name"
+                    value={savedViewName}
+                    onChange={(e) => setSavedViewName(e.target.value)}
+                    className="flex-1"
+                  />
+                  <Button size="sm" variant="outline" onClick={saveCurrentView}>
+                    Save
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Saved Views */}
+            {savedViews.length > 0 && (
+              <div className="pt-2 border-t border-gray-200">
+                <p className="text-xs font-medium text-gray-600 mb-2">Saved Views:</p>
+                <div className="flex flex-wrap gap-2">
+                  {savedViews.map((view, idx) => (
+                    <Button
+                      key={idx}
+                      size="sm"
+                      variant="outline"
+                      onClick={() => loadSavedView(view)}
+                      className="text-xs"
+                    >
+                      {view.name}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Results count */}
+            <div className="text-xs text-gray-600 pt-2">
+              Showing {filteredLogs.length} of {activityLogs?.length || 0} activities
+            </div>
+          </div>
+
+          {/* Activity Log Table */}
           <Table>
             <TableHeader>
               <TableRow>
@@ -1726,17 +1840,17 @@ export function SettingsPanel() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {(activityLogs || []).map((log) => (
+              {filteredLogs.map((log) => (
                 <TableRow key={log.id}>
                   <TableCell className="font-medium">{log.action}</TableCell>
                   <TableCell>{log.entityType ? `${log.entityType} ${log.entityId ?? ''}` : '—'}</TableCell>
-                  <TableCell>{formatDateTime(log.createdAt)}</TableCell>
+                  <TableCell className="text-sm text-gray-600">{formatDateTime(log.createdAt)}</TableCell>
                 </TableRow>
               ))}
-              {(!activityLogs || activityLogs.length === 0) && (
+              {filteredLogs.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={3} className="text-center text-sm text-gray-500">
-                    {isLoading ? 'Loading activity…' : 'No activity yet.'}
+                    {isLoading ? 'Loading activity…' : 'No activities match the selected filters.'}
                   </TableCell>
                 </TableRow>
               )}

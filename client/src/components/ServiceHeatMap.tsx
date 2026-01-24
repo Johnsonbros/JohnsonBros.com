@@ -33,9 +33,9 @@ export function ServiceHeatMap({ onBookService }: ServiceHeatMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   
   const { data: heatMapSnapshot, isLoading } = useQuery<HeatMapSnapshot | null>({
-    queryKey: ['/api/heatmap/snapshot'],
+    queryKey: ['/api/v1/heatmap/snapshot'],
     queryFn: async () => {
-      const response = await fetch('/api/heatmap/snapshot', { credentials: 'include' });
+      const response = await fetch('/api/v1/heatmap/snapshot', { credentials: 'include' });
       if (response.status === 404) {
         return null;
       }

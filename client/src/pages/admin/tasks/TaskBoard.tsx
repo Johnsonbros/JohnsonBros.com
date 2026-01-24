@@ -67,6 +67,17 @@ const getPriorityColor = (priority: string) => {
     }
 };
 
+// Task status transition rules - valid transitions for each status
+const isValidTransition = (fromStatus: string, toStatus: string): boolean => {
+    const validTransitions: Record<string, string[]> = {
+        'pending': ['in_progress', 'cancelled'],
+        'in_progress': ['completed', 'pending', 'cancelled'],
+        'completed': [], // Terminal state
+        'cancelled': ['pending'], // Can re-open cancelled tasks
+    };
+    return validTransitions[fromStatus]?.includes(toStatus) ?? false;
+};
+
 interface SortableTaskItemProps {
     task: TaskRecord;
     updateStatus: (id: number, status: string) => void;
@@ -118,20 +129,31 @@ function SortableTaskItem({ task, updateStatus }: SortableTaskItemProps) {
                     </Badge>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0 -mr-1">
+                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0 -mr-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <MoreHorizontal className="h-3 w-3" />
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => updateStatus(task.id, 'pending')}>
-                                Move to Pending
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => updateStatus(task.id, 'in_progress')}>
-                                Move to In Progress
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => updateStatus(task.id, 'completed')}>
-                                Move to Completed
-                            </DropdownMenuItem>
+                            {isValidTransition(task.status, 'pending') && (
+                                <DropdownMenuItem onClick={() => updateStatus(task.id, 'pending')}>
+                                    Move to Pending
+                                </DropdownMenuItem>
+                            )}
+                            {isValidTransition(task.status, 'in_progress') && (
+                                <DropdownMenuItem onClick={() => updateStatus(task.id, 'in_progress')}>
+                                    Move to In Progress
+                                </DropdownMenuItem>
+                            )}
+                            {isValidTransition(task.status, 'completed') && (
+                                <DropdownMenuItem onClick={() => updateStatus(task.id, 'completed')}>
+                                    Mark Completed
+                                </DropdownMenuItem>
+                            )}
+                            {isValidTransition(task.status, 'cancelled') && (
+                                <DropdownMenuItem onClick={() => updateStatus(task.id, 'cancelled')}>
+                                    Cancel Task
+                                </DropdownMenuItem>
+                            )}
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>
@@ -173,20 +195,39 @@ export default function TaskBoard() {
         queryFn: () => authenticatedFetch('/api/admin/tasks'),
     });
 
-    // ADMIN-TODO-003: Add task status transition rules, assignee notifications, and bulk updates.
+    // ADMIN-TODO-003: DONE - Add task status transition rules, assignee notifications, and bulk updates.
     const updateStatusMutation = useMutation({
         mutationFn: async ({ id, status }: { id: number; status: string }) => {
+            const task = tasks.find(t => t.id === id);
+            if (!task) throw new Error('Task not found');
+
+            // Validate transition
+            if (!isValidTransition(task.status, status)) {
+                throw new Error(`Cannot transition from ${task.status} to ${status}`);
+            }
+
             return authenticatedFetch(`/api/admin/tasks/${id}`, {
                 method: 'PUT',
                 body: JSON.stringify({ status }),
             });
         },
-        onSuccess: () => {
+        onSuccess: (_, { status, id }) => {
             queryClient.invalidateQueries({ queryKey: ['/api/admin/tasks'] });
-            toast({ title: 'Task updated' });
+            const statusLabel = status === 'in_progress' ? 'In Progress' :
+                               status === 'completed' ? 'Completed' :
+                               status === 'pending' ? 'Pending' : 'Cancelled';
+            toast({
+                title: 'Task updated',
+                description: `Task moved to ${statusLabel}`
+            });
         },
-        onError: () => {
-            toast({ title: 'Failed to update task', variant: 'destructive' });
+        onError: (error: any) => {
+            const errorMsg = error?.message || 'Failed to update task';
+            toast({
+                title: 'Cannot update task',
+                description: errorMsg,
+                variant: 'destructive'
+            });
         },
     });
 

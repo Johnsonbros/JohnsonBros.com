@@ -649,4 +649,44 @@ export class HousecallProClient {
       throw error;
     }
   }
+
+  /**
+   * Register webhook subscription for the company associated with the API key.
+   * Webhooks are disabled by default and must be subscribed per company.
+   * The webhook URL is configured in the HousecallPro developer dashboard, not via API.
+   */
+  async registerWebhookSubscription(): Promise<{ success: boolean; message: string }> {
+    Logger.info('[HousecallProClient] Registering webhook subscription');
+
+    try {
+      await this.callAPI('/webhooks/subscription', {}, { method: 'POST', body: {} });
+      Logger.info('[HousecallProClient] Webhook subscription registered successfully');
+      return {
+        success: true,
+        message: 'Webhook subscription enabled. Events will be sent to the URL configured in HousecallPro dashboard.'
+      };
+    } catch (error) {
+      Logger.error('[HousecallProClient] Failed to register webhook subscription', { error: (error as Error).message });
+      throw error;
+    }
+  }
+
+  /**
+   * Unregister webhook subscription to stop receiving events for the company.
+   */
+  async unregisterWebhookSubscription(): Promise<{ success: boolean; message: string }> {
+    Logger.info('[HousecallProClient] Unregistering webhook subscription');
+
+    try {
+      await this.callAPI('/webhooks/subscription', {}, { method: 'DELETE', body: {} });
+      Logger.info('[HousecallProClient] Webhook subscription unregistered successfully');
+      return {
+        success: true,
+        message: 'Webhook subscription disabled. You will no longer receive events.'
+      };
+    } catch (error) {
+      Logger.error('[HousecallProClient] Failed to unregister webhook subscription', { error: (error as Error).message });
+      throw error;
+    }
+  }
 }

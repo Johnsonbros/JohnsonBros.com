@@ -82,7 +82,7 @@ const CHANNEL_COLORS = {
 } as const;
 
 export default function ApiUsageDashboard() {
-  // ADMIN-TODO-004: Add exportable reports and a unified date-range picker.
+  // ADMIN-TODO-004: DONE - Add exportable reports and a unified date-range picker.
   const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d'>('30d');
 
   const getDates = () => {
@@ -193,6 +193,52 @@ export default function ApiUsageDashboard() {
 
   const isLoading = summaryLoading || dailyLoading || channelLoading;
 
+  // Export report as CSV
+  const exportReport = () => {
+    if (!summary || !daily || !channel) return;
+
+    const csvContent = [
+      ['API Usage Report'],
+      [`Generated: ${new Date().toLocaleString()}`],
+      [`Period: ${startDate} to ${endDate}`],
+      [''],
+      ['SUMMARY'],
+      ['Total Spend (USD)', summary.grandTotalDollars],
+      ['Total Requests', summary.byService.reduce((sum, s) => sum + s.requestCount, 0)],
+      [''],
+      ['BREAKDOWN BY SERVICE'],
+      ['Service', 'Cost (USD)', 'Requests', 'Units'],
+      ...summary.byService.map(s => [
+        s.service,
+        s.totalCostDollars,
+        s.requestCount,
+        s.totalUnits
+      ]),
+      [''],
+      ['BREAKDOWN BY CHANNEL'],
+      ['Channel', 'Cost (USD)', 'Requests'],
+      ...channel.channelTotals.map(c => [
+        c.channel,
+        c.totalCostDollars,
+        c.requestCount
+      ]),
+    ];
+
+    const csv = csvContent.map(row =>
+      row.map(cell => `"${cell}"`).join(',')
+    ).join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `api-usage-report-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  };
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex justify-between items-center">
@@ -206,37 +252,65 @@ export default function ApiUsageDashboard() {
           <Button
             variant="outline"
             size="sm"
+            onClick={exportReport}
+            disabled={isLoading || !summary}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Export CSV
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => {
               refetchSummary();
             }}
+            disabled={isLoading}
           >
-            <RefreshCw className="h-4 w-4 mr-2" />
+            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
         </div>
       </div>
 
       {/* Date Range Selector */}
-      <div className="flex gap-2">
-        <Button
-          variant={dateRange === '7d' ? 'default' : 'outline'}
-          onClick={() => setDateRange('7d')}
-        >
-          Last 7 Days
-        </Button>
-        <Button
-          variant={dateRange === '30d' ? 'default' : 'outline'}
-          onClick={() => setDateRange('30d')}
-        >
-          Last 30 Days
-        </Button>
-        <Button
-          variant={dateRange === '90d' ? 'default' : 'outline'}
-          onClick={() => setDateRange('90d')}
-        >
-          Last 90 Days
-        </Button>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Calendar className="h-5 w-5" />
+            Date Range
+          </CardTitle>
+          <CardDescription>
+            {dateRange === '7d' && 'Last 7 days'}
+            {dateRange === '30d' && 'Last 30 days'}
+            {dateRange === '90d' && 'Last 90 days'} • {startDate.split('T')[0]} to {endDate.split('T')[0]}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-2 flex-wrap">
+            <Button
+              variant={dateRange === '7d' ? 'default' : 'outline'}
+              onClick={() => setDateRange('7d')}
+              size="sm"
+            >
+              Last 7 Days
+            </Button>
+            <Button
+              variant={dateRange === '30d' ? 'default' : 'outline'}
+              onClick={() => setDateRange('30d')}
+              size="sm"
+            >
+              Last 30 Days
+            </Button>
+            <Button
+              variant={dateRange === '90d' ? 'default' : 'outline'}
+              onClick={() => setDateRange('90d')}
+              size="sm"
+            >
+              Last 90 Days
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Total Spend Card */}
       <Card>

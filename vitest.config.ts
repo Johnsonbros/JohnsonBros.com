@@ -18,6 +18,8 @@ export default defineConfig({
       // Node test runner files (use `node --test` instead of vitest)
       "server/tests/geocoding.test.ts",
       "server/tests/sharedThread.test.ts",
+      "server/tests/alerts.test.ts",
+      "server/tests/sentry-integration.test.ts",
     ],
   },
 });

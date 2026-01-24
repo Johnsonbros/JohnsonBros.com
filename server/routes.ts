@@ -319,7 +319,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/v1/admin/zeke', zekeAdminRouter);
 
   // SEO Automation Endpoint (Cron Trigger)
-  app.post('/api/admin/seo/trigger', authenticate, async (req, res) => {
+  app.post('/api/v1/admin/seo/trigger', authenticate, async (req, res) => {
     try {
       // Run in background
       runFullSeoPipeline().catch(err => Logger.error('[SEO Route] Pipeline background error:', err));
@@ -330,7 +330,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin MCP Registry
-  app.get("/api/admin/mcp/tools", (req, res) => {
+  app.get("/api/v1/admin/mcp/tools", (req, res) => {
     res.json(adminGateway.listNamespacedTools());
   });
 
@@ -369,6 +369,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/v1/twilio', twilioWebhooks);
 
   // Compliance routes (cookie consent, privacy/GDPR)
+  app.use('/api/v1/compliance', complianceRoutes);
+  // Backward compatibility alias
   app.use('/api/compliance', complianceRoutes);
   
   app.get('/api/v1/voice-training/export/:datasetId', authenticate, async (req, res) => {
@@ -596,6 +598,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Card action dispatch routes
+  app.use('/api/v1/actions', actionsRoutes);
+  // Backward compatibility alias
   app.use('/api/actions', actionsRoutes);
 
   // Housecall Pro Webhooks
@@ -2316,7 +2320,7 @@ $50 REFERRAL CREDIT APPLIES - New customer receives $50 credit toward any servic
   });
 
   // DEBUG: Raw HCP API responses
-  app.get('/api/debug/hcp-data/:date', debugLimiter, async (req, res) => {
+  app.get('/api/v1/debug/hcp-data/:date', debugLimiter, async (req, res) => {
     try {
       const { date } = req.params; // Format: YYYY-MM-DD
       const targetDate = new Date(date + 'T00:00:00.000Z');
@@ -3124,7 +3128,7 @@ Sitemap: ${siteUrl}/sitemap.xml
   });
 
   // Debug endpoint to see raw HCP job data
-  app.get('/api/debug/jobs/:date', debugLimiter, async (req, res) => {
+  app.get('/api/v1/debug/jobs/:date', debugLimiter, async (req, res) => {
     try {
       const { date } = req.params;
       const targetDate = new Date(date);
@@ -3257,7 +3261,7 @@ Sitemap: ${siteUrl}/sitemap.xml
   });
 
   // Get webhook events dashboard data
-  app.get('/api/webhooks/events', webhookLimiter, async (req, res) => {
+  app.get('/api/v1/webhooks/events', webhookLimiter, async (req, res) => {
     try {
       const limit = parseInt(req.query.limit as string) || 50;
       const category = req.query.category as string;
@@ -3274,7 +3278,7 @@ Sitemap: ${siteUrl}/sitemap.xml
   });
 
   // Get webhook event details with processed data and tags
-  app.get('/api/webhooks/events/:eventId', webhookLimiter, async (req, res) => {
+  app.get('/api/v1/webhooks/events/:eventId', webhookLimiter, async (req, res) => {
     try {
       const eventId = parseInt(req.params.eventId);
       const data = await webhookProcessor.getProcessedDataWithTags(eventId);
@@ -3291,7 +3295,7 @@ Sitemap: ${siteUrl}/sitemap.xml
   });
 
   // Get webhook analytics
-  app.get('/api/webhooks/analytics', webhookLimiter, async (req, res) => {
+  app.get('/api/v1/webhooks/analytics', webhookLimiter, async (req, res) => {
     try {
       const days = parseInt(req.query.days as string) || 30;
       const endDate = new Date();
@@ -3308,7 +3312,7 @@ Sitemap: ${siteUrl}/sitemap.xml
   });
 
   // Get webhook configuration status
-  app.get('/api/webhooks/config', webhookLimiter, async (req, res) => {
+  app.get('/api/v1/webhooks/config', webhookLimiter, async (req, res) => {
     try {
       const hasSecret = !!process.env.HOUSECALL_WEBHOOK_SECRET;
       const webhookUrl = process.env.WEBHOOK_URL || `https://${req.headers.host}/api/webhooks/housecall`;
@@ -3340,7 +3344,7 @@ Sitemap: ${siteUrl}/sitemap.xml
   });
   
   // Subscribe to webhooks for a company
-  app.post('/api/webhooks/subscribe', webhookLimiter, async (req, res) => {
+  app.post('/api/v1/webhooks/subscribe', webhookLimiter, async (req, res) => {
     try {
       const { companyId, eventTypes } = req.body;
       
@@ -3357,13 +3361,15 @@ Sitemap: ${siteUrl}/sitemap.xml
         webhookUrl,
         eventTypes
       );
-      
-      // TODO: Call Housecall Pro API to register webhook subscription
-      // This would require the actual endpoint from their API
-      
+
+      // Call HousecallPro API to register webhook subscription
+      const hcpClient = HousecallProClient.getInstance();
+      const hcpResult = await hcpClient.registerWebhookSubscription();
+
       res.json({
         success: true,
         subscription,
+        hcpRegistration: hcpResult,
         message: 'Webhook subscription registered successfully',
         note: 'Remember to configure HOUSECALL_WEBHOOK_SECRET environment variable with the signing secret from Housecall Pro'
       });
@@ -3374,7 +3380,7 @@ Sitemap: ${siteUrl}/sitemap.xml
   });
 
   // Test webhook endpoint (for development/testing)
-  app.post('/api/webhooks/test', webhookLimiter, async (req, res) => {
+  app.post('/api/v1/webhooks/test', webhookLimiter, async (req, res) => {
     try {
       const testEvent = {
         id: `test-${Date.now()}`,
@@ -3427,7 +3433,7 @@ Sitemap: ${siteUrl}/sitemap.xml
   const { heatMapService } = await import('./src/heatmap');
 
   // Import historical job data from Housecall Pro (ADMIN ONLY)
-  app.post('/api/admin/heatmap/import', adminLimiter, authenticate, async (req, res) => {
+  app.post('/api/v1/admin/heatmap/import', adminLimiter, authenticate, async (req, res) => {
     try {
       const { startDate } = req.body;
       const apiKey = process.env.HOUSECALL_PRO_API_KEY;
@@ -3454,7 +3460,7 @@ Sitemap: ${siteUrl}/sitemap.xml
   });
 
   // Get heat map data for admin dashboard (real-time) (ADMIN ONLY)
-  app.get('/api/admin/heatmap/data', adminLimiter, authenticate, async (req, res) => {
+  app.get('/api/v1/admin/heatmap/data', adminLimiter, authenticate, async (req, res) => {
     try {
       const daysBack = parseInt(req.query.days as string) || 730;
       const data = await heatMapService.getHeatMapData(daysBack);
@@ -3470,7 +3476,7 @@ Sitemap: ${siteUrl}/sitemap.xml
   });
 
   // Get heat map statistics (ADMIN ONLY)
-  app.get('/api/admin/heatmap/stats', adminLimiter, authenticate, async (req, res) => {
+  app.get('/api/v1/admin/heatmap/stats', adminLimiter, authenticate, async (req, res) => {
     try {
       const stats = await heatMapService.getStatistics();
       res.json(stats);
@@ -3481,7 +3487,7 @@ Sitemap: ${siteUrl}/sitemap.xml
   });
 
   // Get recent check-ins for activity feed
-  app.get('/api/checkins', publicReadLimiter, async (req, res) => {
+  app.get('/api/v1/checkins', publicReadLimiter, async (req, res) => {
     try {
       const limit = parseInt(req.query.limit as string) || 20;
       const checkIns = await heatMapService.getRecentCheckIns(limit);
@@ -3497,7 +3503,7 @@ Sitemap: ${siteUrl}/sitemap.xml
   });
 
   // Generate heat map snapshot (ADMIN ONLY)
-  app.post('/api/admin/heatmap/snapshot', adminLimiter, authenticate, async (req, res) => {
+  app.post('/api/v1/admin/heatmap/snapshot', adminLimiter, authenticate, async (req, res) => {
     try {
       const { imageUrl, imageData } = req.body;
       
@@ -3519,7 +3525,7 @@ Sitemap: ${siteUrl}/sitemap.xml
   });
 
   // Get active heat map snapshot for public display
-  app.get('/api/heatmap/snapshot', publicReadLimiter, async (req, res) => {
+  app.get('/api/v1/heatmap/snapshot', publicReadLimiter, async (req, res) => {
     try {
       const snapshot = await heatMapService.getActiveSnapshot();
       
@@ -3540,7 +3546,7 @@ Sitemap: ${siteUrl}/sitemap.xml
   });
 
   // Update job intensities (background job) (ADMIN ONLY)
-  app.post('/api/admin/heatmap/update-intensities', adminLimiter, authenticate, async (req, res) => {
+  app.post('/api/v1/admin/heatmap/update-intensities', adminLimiter, authenticate, async (req, res) => {
     try {
       await heatMapService.updateIntensities();
       res.json({ success: true, message: 'Intensities updated successfully' });
@@ -3812,7 +3818,7 @@ Sitemap: ${siteUrl}/sitemap.xml
   });
 
   // MCP Manifest Endpoint (public)
-  app.get('/api/mcp/manifest', mcpLimiter, mcpLoggingMiddleware, async (req, res) => {
+  app.get('/api/v1/mcp/manifest', mcpLimiter, mcpLoggingMiddleware, async (req, res) => {
     try {
       const manifest = {
         name: "Johnson Bros. Plumbing MCP Server",
@@ -4010,7 +4016,7 @@ Sitemap: ${siteUrl}/sitemap.xml
   });
 
   // MCP Documentation Endpoint (public)
-  app.get('/api/mcp/docs', mcpLimiter, mcpLoggingMiddleware, async (req, res) => {
+  app.get('/api/v1/mcp/docs', mcpLimiter, mcpLoggingMiddleware, async (req, res) => {
     try {
       const authDocs = mcpAuthToken
         ? {
@@ -4109,7 +4115,7 @@ Sitemap: ${siteUrl}/sitemap.xml
   });
 
   // Direct HTTP API endpoint for search_availability
-  app.get('/api/mcp/search_availability', mcpLimiter, mcpLoggingMiddleware, async (req, res) => {
+  app.get('/api/v1/mcp/search_availability', mcpLimiter, mcpLoggingMiddleware, async (req, res) => {
     try {
       const { date, serviceType, time_preference = 'any', show_for_days = 7 } = req.query;
       
@@ -4218,7 +4224,7 @@ Sitemap: ${siteUrl}/sitemap.xml
     "emergency_help",
   ]);
 
-  app.post('/api/mcp/:toolName', mcpLimiter, mcpLoggingMiddleware, async (req, res) => {
+  app.post('/api/v1/mcp/:toolName', mcpLimiter, mcpLoggingMiddleware, async (req, res) => {
     const { toolName } = req.params;
 
     if (!widgetToolAllowList.has(toolName)) {
@@ -4442,7 +4448,7 @@ Sitemap: ${siteUrl}/sitemap.xml
   });
 
   // Revenue metrics endpoint
-  app.get('/api/admin/revenue-metrics', authenticate, async (req, res) => {
+  app.get('/api/v1/admin/revenue-metrics', authenticate, async (req, res) => {
     try {
       // Get subscription metrics
       const subscriptions = await storage.getSubscriptions();
@@ -4568,6 +4574,94 @@ Sitemap: ${siteUrl}/sitemap.xml
       console.error('Error fetching revenue metrics:', error);
       res.status(500).json({ error: 'Failed to fetch revenue metrics' });
     }
+  });
+
+  // ========== BACKWARD COMPATIBILITY ROUTES ==========
+  // Redirect old /api/* routes to /api/v1/* for existing clients
+  // These ensure no breaking changes for applications still using unversioned endpoints
+
+  app.get('/api/webhooks/config', webhookLimiter, (req, res) => {
+    res.redirect(301, '/api/v1/webhooks/config');
+  });
+
+  app.get('/api/webhooks/events', webhookLimiter, (req, res) => {
+    res.redirect(301, `/api/v1/webhooks/events${req.url.split('?')[1] ? '?' + req.url.split('?')[1] : ''}`);
+  });
+
+  app.get('/api/webhooks/events/:eventId', webhookLimiter, (req, res) => {
+    res.redirect(301, `/api/v1/webhooks/events/${req.params.eventId}`);
+  });
+
+  app.get('/api/webhooks/analytics', webhookLimiter, (req, res) => {
+    res.redirect(301, `/api/v1/webhooks/analytics${req.url.split('?')[1] ? '?' + req.url.split('?')[1] : ''}`);
+  });
+
+  app.post('/api/webhooks/subscribe', webhookLimiter, (req, res) => {
+    res.redirect(307, '/api/v1/webhooks/subscribe');
+  });
+
+  app.post('/api/webhooks/test', webhookLimiter, (req, res) => {
+    res.redirect(307, '/api/v1/webhooks/test');
+  });
+
+  app.get('/api/checkins', publicReadLimiter, (req, res) => {
+    res.redirect(301, `/api/v1/checkins${req.url.split('?')[1] ? '?' + req.url.split('?')[1] : ''}`);
+  });
+
+  app.get('/api/heatmap/snapshot', publicReadLimiter, (req, res) => {
+    res.redirect(301, '/api/v1/heatmap/snapshot');
+  });
+
+  app.get('/api/debug/hcp-data/:date', debugLimiter, (req, res) => {
+    res.redirect(301, `/api/v1/debug/hcp-data/${req.params.date}`);
+  });
+
+  app.get('/api/debug/jobs/:date', debugLimiter, (req, res) => {
+    res.redirect(301, `/api/v1/debug/jobs/${req.params.date}`);
+  });
+
+  app.post('/api/admin/heatmap/import', adminLimiter, authenticate, (req, res) => {
+    res.redirect(307, '/api/v1/admin/heatmap/import');
+  });
+
+  app.get('/api/admin/heatmap/data', adminLimiter, authenticate, (req, res) => {
+    res.redirect(301, '/api/v1/admin/heatmap/data');
+  });
+
+  app.get('/api/admin/heatmap/stats', adminLimiter, authenticate, (req, res) => {
+    res.redirect(301, '/api/v1/admin/heatmap/stats');
+  });
+
+  app.post('/api/admin/heatmap/snapshot', adminLimiter, authenticate, (req, res) => {
+    res.redirect(307, '/api/v1/admin/heatmap/snapshot');
+  });
+
+  app.post('/api/admin/heatmap/update-intensities', adminLimiter, authenticate, (req, res) => {
+    res.redirect(307, '/api/v1/admin/heatmap/update-intensities');
+  });
+
+  app.post('/api/admin/seo/trigger', authenticate, (req, res) => {
+    res.redirect(307, '/api/v1/admin/seo/trigger');
+  });
+
+  app.get('/api/admin/revenue-metrics', authenticate, (req, res) => {
+    res.redirect(301, '/api/v1/admin/revenue-metrics');
+  });
+
+  app.get('/api/mcp/manifest', mcpLimiter, mcpLoggingMiddleware, (req, res) => {
+    res.redirect(301, '/api/v1/mcp/manifest');
+  });
+
+  app.get('/api/mcp/docs', mcpLimiter, mcpLoggingMiddleware, (req, res) => {
+    res.redirect(301, '/api/v1/mcp/docs');
+  });
+
+  app.get('/api/mcp/search_availability', mcpLimiter, mcpLoggingMiddleware, (req, res) => {
+    res.redirect(301, `/api/v1/mcp/search_availability${req.url.split('?')[1] ? '?' + req.url.split('?')[1] : ''}`);
+  });
+
+  app.post('/api/mcp/:toolName', mcpLimiter, mcpLoggingMiddleware, (req, res) => {
+    res.redirect(307, `/api/v1/mcp/${req.params.toolName}`);
   });
 
   const httpServer = createServer(app);

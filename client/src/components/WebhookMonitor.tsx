@@ -75,7 +75,7 @@ export default function WebhookMonitor() {
   const { data: config } = useQuery<WebhookConfig>({
     queryKey: ['/api/v1/webhooks/config'],
     queryFn: async () => {
-      const response = await fetch('/api/webhooks/config');
+      const response = await fetch('/api/v1/webhooks/config');
       if (!response.ok) throw new Error('Failed to fetch config');
       return response.json();
     },
@@ -85,9 +85,9 @@ export default function WebhookMonitor() {
   const { data: events = [], isLoading: eventsLoading, refetch: refetchEvents } = useQuery<WebhookEvent[]>({
     queryKey: ['/api/v1/webhooks/events', selectedCategory],
     queryFn: async () => {
-      const url = selectedCategory === 'all' 
-        ? '/api/webhooks/events?limit=100'
-        : `/api/webhooks/events?category=${selectedCategory}&limit=100`;
+      const url = selectedCategory === 'all'
+        ? '/api/v1/webhooks/events?limit=100'
+        : `/api/v1/webhooks/events?category=${selectedCategory}&limit=100`;
       const response = await fetch(url);
       if (!response.ok) throw new Error('Failed to fetch events');
       return response.json();
@@ -98,7 +98,7 @@ export default function WebhookMonitor() {
   const { data: analytics = [], isLoading: analyticsLoading } = useQuery<WebhookAnalytics[]>({
     queryKey: ['/api/v1/webhooks/analytics'],
     queryFn: async () => {
-      const response = await fetch('/api/webhooks/analytics?days=7');
+      const response = await fetch('/api/v1/webhooks/analytics?days=7');
       if (!response.ok) throw new Error('Failed to fetch analytics');
       return response.json();
     },
@@ -107,7 +107,7 @@ export default function WebhookMonitor() {
   // Test webhook function
   const testWebhook = async (eventType: string) => {
     try {
-      const response = await fetch('/api/webhooks/test', {
+      const response = await fetch('/api/v1/webhooks/test', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ event_type: eventType })

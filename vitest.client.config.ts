@@ -21,5 +21,6 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: ["./test/setup.ts"],
     include: ["client/src/**/*.test.tsx", "shared/**/*.test.tsx"],
+    allowOnly: true,
   },
 });

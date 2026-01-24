@@ -162,7 +162,7 @@ async function sendSlackAlert(alert: Alert): Promise<boolean> {
 }
 
 /**
- * Send alert via email (placeholder - would integrate with email service)
+ * Send alert via email using Twilio SendGrid
  */
 async function sendEmailAlert(alert: Alert): Promise<boolean> {
   const emailTo = process.env.ALERT_EMAIL_TO;
@@ -171,16 +171,205 @@ async function sendEmailAlert(alert: Alert): Promise<boolean> {
   // Only send email for critical alerts
   if (alert.level !== 'critical') return false;
 
-  // Log that email would be sent (implement actual email sending as needed)
-  Logger.info('Email alert would be sent', {
-    to: emailTo,
-    subject: `[${alert.level.toUpperCase()}] ${alert.type}`,
-    alertId: alert.id,
-  });
+  try {
+    // Use Twilio SendGrid API through the Twilio SDK
+    const sendgridApiKey = process.env.SENDGRID_API_KEY;
+    if (!sendgridApiKey) {
+      Logger.warn('SendGrid API key not configured for email alerts', { alertId: alert.id });
+      return false;
+    }
 
-  // TODO: Implement actual email sending with Twilio SendGrid or similar
-  // For now, return true to indicate the intent was recorded
-  return true;
+    // Build the email content
+    const subject = `[CRITICAL] ${alert.type} - Johnson Bros Monitoring`;
+    const htmlContent = formatEmailBody(alert);
+
+    // Send email using SendGrid API directly
+    const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${sendgridApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        personalizations: [
+          {
+            to: [{ email: emailTo }],
+            subject: subject,
+          },
+        ],
+        from: {
+          email: process.env.ALERT_EMAIL_FROM || 'alerts@johnsonbrosplumbing.com',
+          name: 'Johnson Bros Monitoring',
+        },
+        content: [
+          {
+            type: 'text/html',
+            value: htmlContent,
+          },
+          {
+            type: 'text/plain',
+            value: formatPlainTextBody(alert),
+          },
+        ],
+        replyTo: {
+          email: process.env.ALERT_REPLY_TO || 'admin@johnsonbrosplumbing.com',
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      Logger.error('Failed to send email alert via SendGrid', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorText,
+        alertId: alert.id,
+      });
+      return false;
+    }
+
+    Logger.info('Email alert sent successfully', {
+      to: emailTo,
+      subject,
+      alertId: alert.id,
+    });
+
+    return true;
+  } catch (error) {
+    Logger.error('Email alert error', {
+      error: error instanceof Error ? error.message : String(error),
+      alertId: alert.id,
+    });
+    return false;
+  }
+}
+
+/**
+ * Format alert data as HTML email body
+ */
+function formatEmailBody(alert: Alert): string {
+  const levelColor = LEVEL_COLORS[alert.level];
+  const timestamp = alert.timestamp.toISOString();
+
+  let contextHtml = '';
+  if (alert.context) {
+    contextHtml = '<tr><td colspan="2"><strong>Context:</strong></td></tr>';
+    for (const [key, value] of Object.entries(alert.context)) {
+      if (typeof value === 'string' || typeof value === 'number') {
+        const displayKey = key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1');
+        contextHtml += `
+          <tr>
+            <td style="padding: 5px; text-align: right;"><strong>${displayKey}:</strong></td>
+            <td style="padding: 5px;">${String(value)}</td>
+          </tr>
+        `;
+      }
+    }
+  }
+
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; background: #f5f5f5; }
+          .header { background-color: ${levelColor}; color: white; padding: 20px; border-radius: 4px; margin-bottom: 20px; }
+          .header h1 { margin: 0; font-size: 24px; }
+          .header p { margin: 5px 0 0 0; opacity: 0.9; }
+          .content { background: white; padding: 20px; border-radius: 4px; margin-bottom: 20px; }
+          .content h2 { color: ${levelColor}; margin-top: 0; }
+          table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+          td { padding: 8px; border-bottom: 1px solid #eee; }
+          .footer { text-align: center; color: #666; font-size: 12px; }
+          .alert-level { display: inline-block; padding: 2px 8px; background-color: ${levelColor}; color: white; border-radius: 3px; font-weight: bold; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>Critical Alert: ${alert.type}</h1>
+            <p>Johnson Bros Monitoring System</p>
+          </div>
+
+          <div class="content">
+            <h2>Alert Details</h2>
+            <table>
+              <tr>
+                <td style="text-align: right;"><strong>Level:</strong></td>
+                <td><span class="alert-level">${alert.level.toUpperCase()}</span></td>
+              </tr>
+              <tr>
+                <td style="text-align: right;"><strong>Time:</strong></td>
+                <td>${timestamp}</td>
+              </tr>
+              <tr>
+                <td style="text-align: right;"><strong>Environment:</strong></td>
+                <td>${process.env.NODE_ENV || 'production'}</td>
+              </tr>
+              <tr>
+                <td colspan="2"><strong>Message:</strong></td>
+              </tr>
+              <tr>
+                <td colspan="2" style="background-color: #f9f9f9; padding: 10px;">${alert.message}</td>
+              </tr>
+              ${contextHtml}
+            </table>
+
+            <div style="margin-top: 20px; padding: 15px; background-color: #f0f0f0; border-left: 4px solid ${levelColor}; border-radius: 3px;">
+              <p style="margin: 0; font-size: 13px;"><strong>Alert ID:</strong> ${alert.id}</p>
+              <p style="margin: 5px 0 0 0; font-size: 13px;"><strong>Channels:</strong> ${alert.channels.join(', ')}</p>
+            </div>
+          </div>
+
+          <div class="footer">
+            <p>This is an automated alert from Johnson Bros Monitoring System.</p>
+            <p>Please do not reply to this email. Contact admin@johnsonbrosplumbing.com for support.</p>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+}
+
+/**
+ * Format alert data as plain text email body
+ */
+function formatPlainTextBody(alert: Alert): string {
+  const timestamp = alert.timestamp.toISOString();
+  const environment = process.env.NODE_ENV || 'production';
+
+  let contextText = '';
+  if (alert.context) {
+    contextText = '\nContext:\n';
+    for (const [key, value] of Object.entries(alert.context)) {
+      if (typeof value === 'string' || typeof value === 'number') {
+        const displayKey = key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1');
+        contextText += `  ${displayKey}: ${String(value)}\n`;
+      }
+    }
+  }
+
+  return `
+CRITICAL ALERT FROM JOHNSON BROS MONITORING SYSTEM
+====================================================
+
+Alert Type: ${alert.type}
+Level: ${alert.level.toUpperCase()}
+Time: ${timestamp}
+Environment: ${environment}
+
+Message:
+${alert.message}
+${contextText}
+
+Alert ID: ${alert.id}
+Channels: ${alert.channels.join(', ')}
+
+====================================================
+This is an automated alert. Please do not reply to this email.
+Contact admin@johnsonbrosplumbing.com for support.
+  `.trim();
 }
 
 /**

@@ -34,7 +34,7 @@ export default function AdminHeatMap() {
   // Import historical data mutation
   const importMutation = useMutation({
     mutationFn: async (startDate: string) => {
-      return await apiRequest('POST', '/api/admin/heatmap/import', {
+      return await apiRequest('POST', '/api/v1/admin/heatmap/import', {
         startDate
       });
     },
@@ -61,7 +61,7 @@ export default function AdminHeatMap() {
       // Capture the map as an image (simplified - in production use html2canvas or similar)
       const imageUrl = `/assets/heatmap-snapshot-${Date.now()}.png`;
 
-      return await apiRequest('POST', '/api/admin/heatmap/snapshot', {
+      return await apiRequest('POST', '/api/v1/admin/heatmap/snapshot', {
         imageUrl
       });
     },
@@ -83,7 +83,7 @@ export default function AdminHeatMap() {
   // Update intensities mutation
   const updateIntensitiesMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest('POST', '/api/admin/heatmap/update-intensities');
+      return await apiRequest('POST', '/api/v1/admin/heatmap/update-intensities');
     },
     onSuccess: () => {
       toast({
