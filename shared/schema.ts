@@ -2835,3 +2835,47 @@ export type InsertCompetitorPage = z.infer<typeof insertCompetitorPageSchema>;
 
 export type PeActivityLog = typeof peActivityLog.$inferSelect;
 export type InsertPeActivityLog = z.infer<typeof insertPeActivityLogSchema>;
+
+// ============================================
+// COMPETITOR ALERTS SYSTEM
+// ============================================
+
+export const competitorAlerts = pgTable('competitor_alerts', {
+  id: serial('id').primaryKey(),
+  alertType: text('alert_type').notNull(), // 'pe_acquisition', 'new_competitor', 'ranking_change', 'expansion'
+  severity: text('severity').notNull().default('medium'), // 'low', 'medium', 'high', 'critical'
+  title: text('title').notNull(),
+  summary: text('summary').notNull(),
+
+  // Related entities
+  competitorId: integer('competitor_id').references(() => competitors.id),
+  peCompany: text('pe_company'),
+  sourceUrl: text('source_url'),
+
+  // Alert status
+  isRead: boolean('is_read').default(false).notNull(),
+  isAcknowledged: boolean('is_acknowledged').default(false).notNull(),
+  acknowledgedBy: text('acknowledged_by'),
+  acknowledgedAt: timestamp('acknowledged_at'),
+
+  // Notification tracking
+  emailSent: boolean('email_sent').default(false),
+  smsSent: boolean('sms_sent').default(false),
+
+  metadata: json('metadata'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  alertTypeIdx: index('competitor_alerts_type_idx').on(table.alertType),
+  severityIdx: index('competitor_alerts_severity_idx').on(table.severity),
+  isReadIdx: index('competitor_alerts_is_read_idx').on(table.isRead),
+  createdAtIdx: index('competitor_alerts_created_at_idx').on(table.createdAt),
+}));
+
+export const insertCompetitorAlertSchema = createInsertSchema(competitorAlerts).omit({
+  id: true,
+  createdAt: true,
+  acknowledgedAt: true,
+});
+
+export type CompetitorAlert = typeof competitorAlerts.$inferSelect;
+export type InsertCompetitorAlert = z.infer<typeof insertCompetitorAlertSchema>;

@@ -21,6 +21,17 @@ import {
   initializeCompetitorTracking,
 } from './competitorTracking';
 import {
+  getUnreadAlerts,
+  getCriticalAlerts,
+  getAlertStats,
+  markAlertRead,
+  acknowledgeAlert,
+  runPeMonitorCheck,
+  createTestAlerts,
+  processNewsItem,
+  getSearchQueries,
+} from './peMonitor';
+import {
   insertCompetitorSchema,
   insertSeoKeywordSchema,
   insertCompetitorKeywordRankingSchema,
@@ -237,6 +248,146 @@ router.post('/pe-activity', async (req: Request, res: Response, next: NextFuncti
     if (error instanceof z.ZodError) {
       return res.status(400).json({ success: false, error: 'Validation error', details: error.errors });
     }
+    next(error);
+  }
+});
+
+// ==============================================
+// PE MONITORING & ALERTS
+// ==============================================
+
+/**
+ * GET /api/admin/competitors/alerts
+ * Get all alerts with stats
+ */
+router.get('/alerts', async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const stats = await getAlertStats();
+    res.json({ success: true, data: stats });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * GET /api/admin/competitors/alerts/unread
+ * Get unread alerts
+ */
+router.get('/alerts/unread', async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const alerts = await getUnreadAlerts();
+    res.json({ success: true, data: alerts });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * GET /api/admin/competitors/alerts/critical
+ * Get critical alerts from last N days
+ */
+router.get('/alerts/critical', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const days = parseInt(req.query.days as string, 10) || 7;
+    const alerts = await getCriticalAlerts(days);
+    res.json({ success: true, data: alerts });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * POST /api/admin/competitors/alerts/:id/read
+ * Mark alert as read
+ */
+router.post('/alerts/:id/read', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const alertId = parseInt(req.params.id, 10);
+    if (isNaN(alertId)) {
+      return res.status(400).json({ success: false, error: 'Invalid alert ID' });
+    }
+    await markAlertRead(alertId);
+    res.json({ success: true, message: 'Alert marked as read' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * POST /api/admin/competitors/alerts/:id/acknowledge
+ * Acknowledge an alert
+ */
+router.post('/alerts/:id/acknowledge', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const alertId = parseInt(req.params.id, 10);
+    const { acknowledgedBy } = req.body;
+    if (isNaN(alertId)) {
+      return res.status(400).json({ success: false, error: 'Invalid alert ID' });
+    }
+    await acknowledgeAlert(alertId, acknowledgedBy || 'admin');
+    res.json({ success: true, message: 'Alert acknowledged' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * POST /api/admin/competitors/monitor/check
+ * Trigger a PE monitoring check
+ */
+router.post('/monitor/check', async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await runPeMonitorCheck();
+    res.json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * GET /api/admin/competitors/monitor/queries
+ * Get the search queries used for monitoring
+ */
+router.get('/monitor/queries', async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const queries = getSearchQueries();
+    res.json({ success: true, data: queries });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * POST /api/admin/competitors/monitor/process-news
+ * Process a news item for PE activity
+ */
+router.post('/monitor/process-news', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { title, description, url, publishedAt } = req.body;
+    if (!title || !description || !url) {
+      return res.status(400).json({ success: false, error: 'title, description, and url are required' });
+    }
+    const created = await processNewsItem({
+      title,
+      description,
+      url,
+      publishedAt: publishedAt ? new Date(publishedAt) : undefined,
+    });
+    res.json({ success: true, alertCreated: created });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * POST /api/admin/competitors/alerts/test
+ * Create test alerts for demonstration
+ */
+router.post('/alerts/test', async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const count = await createTestAlerts();
+    res.json({ success: true, data: { alertsCreated: count } });
+  } catch (error) {
     next(error);
   }
 });
