@@ -84,6 +84,32 @@ const SCHEMA_REQUIRED_FIELDS: Record<string, string[]> = {
 };
 
 /**
+ * Business locations for LocalBusiness validation
+ * Two Google Business Profile locations
+ */
+export const BUSINESS_LOCATIONS = [
+  {
+    name: 'Quincy Office',
+    streetAddress: '75 East Elm Ave',
+    city: 'Quincy',
+    state: 'MA',
+    postalCode: '02170',
+  },
+  {
+    name: 'Abington Office',
+    streetAddress: '55 Brighton St',
+    city: 'Abington',
+    state: 'MA',
+    postalCode: '02351',
+  },
+] as const;
+
+/**
+ * Business phone number
+ */
+export const BUSINESS_PHONE = '(617) 479-9911';
+
+/**
  * Extract JSON-LD scripts from HTML
  */
 export function extractJsonLd(html: string): Array<Record<string, unknown>> {
@@ -178,6 +204,28 @@ function validateSchemaFields(
           errors.push(`BreadcrumbList.itemListElement[${i}] missing position or name`);
         }
       }
+    }
+  }
+
+  // Special validation for LocalBusiness address
+  if (schemaType === 'LocalBusiness' && schema.address) {
+    const address = schema.address as Record<string, unknown>;
+    const streetAddress = (address.streetAddress as string || '').toLowerCase();
+    const addressLocality = (address.addressLocality as string || '').toLowerCase();
+
+    // Check if address matches one of our business locations
+    const validLocation = BUSINESS_LOCATIONS.some(loc =>
+      streetAddress.includes(loc.streetAddress.toLowerCase()) &&
+      addressLocality.includes(loc.city.toLowerCase())
+    );
+
+    if (!validLocation && streetAddress && addressLocality) {
+      // Only warn, don't fail - address might be formatted differently
+      Logger.debug('LocalBusiness address may not match known locations', {
+        streetAddress,
+        addressLocality,
+        knownLocations: BUSINESS_LOCATIONS.map(l => `${l.streetAddress}, ${l.city}`),
+      });
     }
   }
 

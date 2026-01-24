@@ -11,6 +11,8 @@ import {
   extractJsonLd,
   getSchemaRequirements,
   getRequiredFields,
+  BUSINESS_LOCATIONS,
+  BUSINESS_PHONE,
 } from '../../src/seo/validateSchema';
 
 describe('JSON-LD Extraction', () => {
@@ -302,5 +304,38 @@ describe('AggregateRating Schema Structure', () => {
     expect(ratingSchema['@type']).toBe('AggregateRating');
     expect(ratingSchema.ratingValue).toBeDefined();
     expect(ratingSchema.reviewCount).toBeDefined();
+  });
+});
+
+describe('Business Locations Configuration', () => {
+  it('should have two business locations defined', () => {
+    expect(BUSINESS_LOCATIONS).toHaveLength(2);
+  });
+
+  it('should have Quincy office location', () => {
+    const quincyOffice = BUSINESS_LOCATIONS.find(loc => loc.city === 'Quincy');
+    expect(quincyOffice).toBeDefined();
+    expect(quincyOffice?.streetAddress).toBe('75 East Elm Ave');
+    expect(quincyOffice?.state).toBe('MA');
+    expect(quincyOffice?.postalCode).toBe('02170');
+  });
+
+  it('should have Abington office location', () => {
+    const abingtonOffice = BUSINESS_LOCATIONS.find(loc => loc.city === 'Abington');
+    expect(abingtonOffice).toBeDefined();
+    expect(abingtonOffice?.streetAddress).toBe('55 Brighton St');
+    expect(abingtonOffice?.state).toBe('MA');
+    expect(abingtonOffice?.postalCode).toBe('02351');
+  });
+
+  it('should have business phone number defined', () => {
+    expect(BUSINESS_PHONE).toBe('(617) 479-9911');
+  });
+
+  it('should have valid Massachusetts postal codes', () => {
+    BUSINESS_LOCATIONS.forEach(loc => {
+      expect(loc.postalCode).toMatch(/^02\d{3}$/);
+      expect(loc.state).toBe('MA');
+    });
   });
 });
