@@ -177,6 +177,138 @@ function Router() {
           <Route path="/service/emergency-plumbing-landing" component={EmergencyPlumbingServiceLanding} />
           <Route path="/service/sewer-line-landing" component={SewerLineServiceLanding} />
 
+          {/* ============================================
+              LEGACY WORDPRESS ROUTES (SEO Migration)
+              These preserve old URLs for search engine ranking
+              DO NOT REMOVE until 90+ days after migration
+              ============================================ */}
+
+          {/* Main Category Pages */}
+          <Route path="/about-us" component={AboutUs} />
+          <Route path="/about-us/about-me" component={AboutUs} />
+          <Route path="/about-us/our-team" component={AboutUs} />
+          <Route path="/about-us/location" component={Contact} />
+          <Route path="/about-us/get-quote" component={AIBooking} />
+          <Route path="/book-service" component={AIBooking} />
+          <Route path="/booking" component={AIBooking} />
+          <Route path="/category/blog" component={Blog} />
+          <Route path="/category/blog/" component={Blog} />
+          <Route path="/check-in/blog-grid" component={Blog} />
+
+          {/* Plumbing Service Pages */}
+          <Route path="/plumbing" component={GeneralPlumbing} />
+          <Route path="/plumbing/" component={GeneralPlumbing} />
+          <Route path="/plumbing/toilet-repair-install-quincy-ma" component={GeneralPlumbing} />
+          <Route path="/plumbing/toilet-repair-install-quincy-ma/" component={GeneralPlumbing} />
+          <Route path="/plumbing/symmons-shower-valve-installation-repair-quincy-ma" component={GeneralPlumbing} />
+          <Route path="/plumbing/symmons-shower-valve-installation-repair-quincy-ma/" component={GeneralPlumbing} />
+          <Route path="/plumbing/dishwasher-installation-quincy" component={GeneralPlumbing} />
+          <Route path="/plumbing/dishwasher-installation-quincy/" component={GeneralPlumbing} />
+          <Route path="/plumbing/shower-tub-repair-installation" component={GeneralPlumbing} />
+          <Route path="/plumbing/shower-tub-repair-installation/" component={GeneralPlumbing} />
+          <Route path="/plumbing/repiping-services-quincy-ma" component={PipeRepair} />
+          <Route path="/plumbing/repiping-services-quincy-ma/" component={PipeRepair} />
+          <Route path="/plumbing/faucet-repair-installation-quincy-ma" component={GeneralPlumbing} />
+          <Route path="/plumbing/faucet-repair-installation-quincy-ma/" component={GeneralPlumbing} />
+          <Route path="/plumbing/garbage-disposal-repair-installation-quincy-ma" component={GeneralPlumbing} />
+          <Route path="/plumbing/garbage-disposal-repair-installation-quincy-ma/" component={GeneralPlumbing} />
+          <Route path="/plumbing/plumbing-inspection-quincy-ma" component={GeneralPlumbing} />
+          <Route path="/plumbing/plumbing-inspection-quincy-ma/" component={GeneralPlumbing} />
+          <Route path="/plumbing/streamlabs-massachusetts-installer" component={GeneralPlumbing} />
+          <Route path="/plumbing/streamlabs-massachusetts-installer/" component={GeneralPlumbing} />
+          <Route path="/service" component={GeneralPlumbing} />
+          <Route path="/service/" component={GeneralPlumbing} />
+          <Route path="/service-2" component={GeneralPlumbing} />
+          <Route path="/service-2/" component={GeneralPlumbing} />
+
+          {/* Heating Service Pages */}
+          <Route path="/heating" component={HeatingServices} />
+          <Route path="/heating/" component={HeatingServices} />
+          <Route path="/heating/water-heater-replacement-services-quincy-ma" component={WaterHeater} />
+          <Route path="/heating/water-heater-replacement-services-quincy-ma/" component={WaterHeater} />
+          <Route path="/heating/tankless-water-heater-installation-quincy-ma" component={WaterHeater} />
+          <Route path="/heating/tankless-water-heater-installation-quincy-ma/" component={WaterHeater} />
+          <Route path="/heating/tankless-boiler-quincy-ma" component={HeatingServices} />
+          <Route path="/heating/tankless-boiler-quincy-ma/" component={HeatingServices} />
+          <Route path="/heating/furnace-replacement-quincy-ma" component={HeatingServices} />
+          <Route path="/heating/furnace-replacement-quincy-ma/" component={HeatingServices} />
+          <Route path="/heating/furnace-repair-quincy-ma-reliable-heating-services-near-you" component={HeatingServices} />
+          <Route path="/heating/furnace-repair-quincy-ma-reliable-heating-services-near-you/" component={HeatingServices} />
+          <Route path="/heating/heat-pump-installation-quincy-ma" component={HeatingServices} />
+          <Route path="/heating/heat-pump-installation-quincy-ma/" component={HeatingServices} />
+          <Route path="/heating/viessmann-boiler-repair-quincy-ma-reliable-heating-services" component={HeatingServices} />
+          <Route path="/heating/viessmann-boiler-repair-quincy-ma-reliable-heating-services/" component={HeatingServices} />
+
+          {/* Drain Cleaning Pages */}
+          <Route path="/drain-cleaning-quincy-ma" component={DrainCleaning} />
+          <Route path="/drain-cleaning-quincy-ma/" component={DrainCleaning} />
+          <Route path="/drain-cleaning-quincy-ma/toilet-clog" component={DrainCleaning} />
+          <Route path="/drain-cleaning-quincy-ma/toilet-clog/" component={DrainCleaning} />
+          <Route path="/drain-cleaning-quincy-ma/tub-shower-drain-clog" component={DrainCleaning} />
+          <Route path="/drain-cleaning-quincy-ma/tub-shower-drain-clog/" component={DrainCleaning} />
+          <Route path="/drain-cleaning-quincy-ma/drain-camera-inspection-quincy-ma" component={DrainCleaning} />
+          <Route path="/drain-cleaning-quincy-ma/drain-camera-inspection-quincy-ma/" component={DrainCleaning} />
+          <Route path="/drain-cleaning-quincy-ma/unclog-bathroom-sink-quincy-ma" component={DrainCleaning} />
+          <Route path="/drain-cleaning-quincy-ma/unclog-bathroom-sink-quincy-ma/" component={DrainCleaning} />
+          <Route path="/main-drain-clog-quincy-ma" component={DrainCleaning} />
+          <Route path="/main-drain-clog-quincy-ma/" component={DrainCleaning} />
+          <Route path="/bathroom-drain-clog-quincy" component={DrainCleaning} />
+          <Route path="/bathroom-drain-clog-quincy/" component={DrainCleaning} />
+          <Route path="/kitchen-drain-clog-quincy-ma" component={DrainCleaning} />
+          <Route path="/kitchen-drain-clog-quincy-ma/" component={DrainCleaning} />
+
+          {/* Emergency Plumbing Pages */}
+          <Route path="/emergency-plumbing-quincy-ma" component={EmergencyPlumbing} />
+          <Route path="/emergency-plumbing-quincy-ma/" component={EmergencyPlumbing} />
+          <Route path="/emergency-plumbing-quincy-ma/gas-leak-quincy" component={EmergencyPlumbing} />
+          <Route path="/emergency-plumbing-quincy-ma/gas-leak-quincy/" component={EmergencyPlumbing} />
+          <Route path="/emergency-plumbing-quincy-ma/frozen-pipes" component={EmergencyPlumbing} />
+          <Route path="/emergency-plumbing-quincy-ma/frozen-pipes/" component={EmergencyPlumbing} />
+          <Route path="/emergency-plumbing-quincy-ma/no-hot-water" component={EmergencyPlumbing} />
+          <Route path="/emergency-plumbing-quincy-ma/no-hot-water/" component={EmergencyPlumbing} />
+          <Route path="/emergency-plumbing-quincy-ma/no-heat" component={EmergencyPlumbing} />
+          <Route path="/emergency-plumbing-quincy-ma/no-heat/" component={EmergencyPlumbing} />
+          <Route path="/emergency-plumbing-quincy-ma/drain-clog-emergencies" component={EmergencyPlumbing} />
+          <Route path="/emergency-plumbing-quincy-ma/drain-clog-emergencies/" component={EmergencyPlumbing} />
+
+          {/* New Construction Pages */}
+          <Route path="/new-construction" component={NewConstruction} />
+          <Route path="/new-construction/" component={NewConstruction} />
+          <Route path="/new-construction/residential-new-construction" component={NewConstruction} />
+          <Route path="/new-construction/residential-new-construction/" component={NewConstruction} />
+          <Route path="/new-construction/commercial-new-construction" component={NewConstruction} />
+          <Route path="/new-construction/commercial-new-construction/" component={NewConstruction} />
+
+          {/* Service Area Pages (Legacy long-form URLs) */}
+          <Route path="/service-areas/plumber-in-abington-ma-trusted-local-plumbing-drain-cleaning-services" component={AbingtonPlumbing} />
+          <Route path="/service-areas/plumber-in-abington-ma-trusted-local-plumbing-drain-cleaning-services/" component={AbingtonPlumbing} />
+          <Route path="/service-areas/plumber-in-abington-ma-trusted-local-plumbing-drain-cleaning-services/drain-cleaning-abington-ma" component={AbingtonPlumbing} />
+          <Route path="/service-areas/plumber-in-abington-ma-trusted-local-plumbing-drain-cleaning-services/drain-cleaning-abington-ma/" component={AbingtonPlumbing} />
+          <Route path="/service-areas/plumber-in-abington-ma-trusted-local-plumbing-drain-cleaning-services/abington-emergency-plumbing" component={AbingtonPlumbing} />
+          <Route path="/service-areas/plumber-in-abington-ma-trusted-local-plumbing-drain-cleaning-services/abington-emergency-plumbing/" component={AbingtonPlumbing} />
+          <Route path="/service-areas/plumber-in-abington-ma-trusted-local-plumbing-drain-cleaning-services/abington-plumber" component={AbingtonPlumbing} />
+          <Route path="/service-areas/plumber-in-abington-ma-trusted-local-plumbing-drain-cleaning-services/abington-plumber/" component={AbingtonPlumbing} />
+
+          {/* Membership & Special Pages */}
+          <Route path="/plumbing-membership-program-quincy-ma" component={FamilyDiscount} />
+          <Route path="/plumbing-membership-program-quincy-ma/" component={FamilyDiscount} />
+          <Route path="/privacy" component={AboutUs} />
+          <Route path="/privacy/" component={AboutUs} />
+          <Route path="/terms-of-service" component={AboutUs} />
+          <Route path="/terms-of-service/" component={AboutUs} />
+          <Route path="/career" component={AboutUs} />
+          <Route path="/career/" component={AboutUs} />
+          <Route path="/open-job-positions" component={AboutUs} />
+          <Route path="/open-job-positions/" component={AboutUs} />
+          <Route path="/newsletter" component={Home} />
+          <Route path="/newsletter/" component={Home} />
+          <Route path="/yelp" component={ReviewsPage} />
+          <Route path="/yelp/" component={ReviewsPage} />
+          <Route path="/zeke" component={AIBooking} />
+          <Route path="/zeke/" component={AIBooking} />
+
+          {/* End Legacy Routes */}
+
           <Route component={NotFound} />
         </Switch>
       </Suspense>
