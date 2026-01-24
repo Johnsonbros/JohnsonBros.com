@@ -1,0 +1,38 @@
+# Johnson Bros. Plumbing & Drain Cleaning
+# https://thejohnsonbros.com
+#
+# Robots.txt - Search Engine Crawler Directives
+
+# Allow all crawlers
+User-agent: *
+
+# Allow crawling of all public pages
+Allow: /
+
+# Block admin and internal paths
+Disallow: /admin/
+Disallow: /api/
+Disallow: /webhooks
+Disallow: /check-ins
+Disallow: /cards
+Disallow: /chat-widget-cards
+Disallow: /customer-portal
+Disallow: /my-plan
+
+# Block temporary/test pages
+Disallow: /*?*  # Block query string URLs (prevents duplicate content)
+
+# Allow important assets for rendering
+Allow: /assets/
+Allow: /*.js$
+Allow: /*.css$
+Allow: /*.png$
+Allow: /*.jpg$
+Allow: /*.webp$
+Allow: /*.svg$
+
+# Sitemap location
+Sitemap: https://thejohnsonbros.com/sitemap.xml
+
+# Crawl-delay (optional - be nice to servers)
+# Crawl-delay: 1
