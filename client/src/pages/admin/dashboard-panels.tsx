@@ -1113,6 +1113,449 @@ export function WebhooksPanel() {
   );
 }
 
+// Estimates Pipeline Panel
+interface EstimatePipelineData {
+  pipeline: Array<{ status: string; count: number; totalValue: number }>;
+  recent: Array<{
+    id: number;
+    hcpEstimateId: string;
+    customerName: string | null;
+    estimateName: string | null;
+    status: string;
+    totalAmount: number | null;
+    syncedAt: string;
+  }>;
+  conversionRate: number;
+  totalEstimates: number;
+}
+
+export function EstimatesPanel() {
+  const { data, isLoading, refetch } = useQuery<EstimatePipelineData>({
+    queryKey: ['/api/admin/hcp/estimates/pipeline'],
+    queryFn: () => authenticatedFetch('/api/admin/hcp/estimates/pipeline'),
+    enabled: isAuthenticated(),
+    refetchInterval: 300000, // 5 minutes
+  });
+
+  const formatCurrency = (cents: number | null) => {
+    if (!cents) return '$0';
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+    }).format(cents / 100);
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'accepted': return 'bg-green-100 text-green-800';
+      case 'declined': return 'bg-red-100 text-red-800';
+      case 'sent': return 'bg-blue-100 text-blue-800';
+      case 'viewed': return 'bg-purple-100 text-purple-800';
+      case 'draft': return 'bg-gray-100 text-gray-800';
+      case 'expired': return 'bg-orange-100 text-orange-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const pipelineOrder = ['draft', 'sent', 'viewed', 'accepted', 'declined', 'expired'];
+  const sortedPipeline = data?.pipeline?.sort((a, b) =>
+    pipelineOrder.indexOf(a.status) - pipelineOrder.indexOf(b.status)
+  ) || [];
+
+  const totalValue = sortedPipeline.reduce((sum, p) => sum + (p.totalValue || 0), 0);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Estimates Pipeline</h2>
+          <p className="text-sm text-gray-600">Track estimates from draft to conversion.</p>
+        </div>
+        <Button onClick={() => refetch()} size="sm" variant="outline">
+          Refresh
+        </Button>
+      </div>
+
+      {/* Pipeline Overview */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        {sortedPipeline.map((item) => (
+          <Card key={item.status}>
+            <CardContent className="p-4">
+              <div className="text-center">
+                <Badge className={cn('mb-2', getStatusColor(item.status))}>
+                  {item.status}
+                </Badge>
+                <p className="text-2xl font-bold">{item.count}</p>
+                <p className="text-xs text-gray-500">{formatCurrency(item.totalValue)}</p>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Metrics Row */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-gray-600">Conversion Rate (30d)</p>
+            <p className="text-3xl font-bold text-green-600">{data?.conversionRate || 0}%</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-gray-600">Total Pipeline Value</p>
+            <p className="text-3xl font-bold">{formatCurrency(totalValue)}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-gray-600">Total Estimates</p>
+            <p className="text-3xl font-bold">{data?.totalEstimates || 0}</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Recent Estimates */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Estimates</CardTitle>
+          <CardDescription>Latest estimate activity from HousecallPro.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Customer</TableHead>
+                <TableHead>Estimate</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Value</TableHead>
+                <TableHead>Synced</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {(data?.recent || []).map((estimate) => (
+                <TableRow key={estimate.id}>
+                  <TableCell className="font-medium">{estimate.customerName || 'Unknown'}</TableCell>
+                  <TableCell>{estimate.estimateName || estimate.hcpEstimateId}</TableCell>
+                  <TableCell>
+                    <Badge className={getStatusColor(estimate.status)}>{estimate.status}</Badge>
+                  </TableCell>
+                  <TableCell>{formatCurrency(estimate.totalAmount)}</TableCell>
+                  <TableCell>{formatDateTime(estimate.syncedAt)}</TableCell>
+                </TableRow>
+              ))}
+              {(!data?.recent || data.recent.length === 0) && (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center text-sm text-gray-500">
+                    {isLoading ? 'Loading estimates…' : 'No estimates found. Trigger a sync to load data.'}
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+interface DailyStatsRecord {
+  id: number;
+  date: string;
+  jobsScheduled: number | null;
+  jobsCompleted: number | null;
+  jobsCancelled: number | null;
+  jobsInProgress: number | null;
+  revenueCompleted: number | null;
+  revenueScheduled: number | null;
+  averageJobValue: number | null;
+  estimatesSent: number | null;
+  estimatesAccepted: number | null;
+  estimatesDeclined: number | null;
+  estimateConversionRate: number | null;
+  estimatesValue: number | null;
+  emergencyJobs: number | null;
+  newCustomers: number | null;
+  uniqueTechs: number | null;
+  syncedAt: string;
+}
+
+interface DailyStatsResponse {
+  stats: DailyStatsRecord[];
+  totals: {
+    totalRevenue: number;
+    totalJobs: number;
+    totalEstimates: number;
+    totalEstimatesAccepted: number;
+    totalEmergencies: number;
+  };
+  period: {
+    start: string;
+    end: string;
+    days: number;
+  };
+}
+
+export function HistoricalAnalyticsPanel() {
+  const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d'>('30d');
+
+  const getDateRange = () => {
+    const now = new Date();
+    const days = dateRange === '7d' ? 7 : dateRange === '30d' ? 30 : 90;
+    const start = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+    return {
+      startDate: start.toISOString(),
+      endDate: now.toISOString(),
+    };
+  };
+
+  const { startDate, endDate } = getDateRange();
+
+  const { data, isLoading, refetch } = useQuery<DailyStatsResponse>({
+    queryKey: ['/api/admin/hcp/daily-stats', dateRange],
+    queryFn: () =>
+      authenticatedFetch(`/api/admin/hcp/daily-stats?startDate=${startDate}&endDate=${endDate}`),
+    enabled: isAuthenticated(),
+    refetchInterval: 600000, // 10 minutes
+  });
+
+  const formatCurrency = (cents: number | null) => {
+    if (!cents) return '$0';
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+    }).format(cents / 100);
+  };
+
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+  // Calculate averages for comparison
+  const avgDailyRevenue = data?.totals?.totalRevenue && data.period?.days
+    ? data.totals.totalRevenue / data.period.days
+    : 0;
+  const avgDailyJobs = data?.totals?.totalJobs && data.period?.days
+    ? data.totals.totalJobs / data.period.days
+    : 0;
+
+  // Find max values for relative scaling
+  const maxRevenue = Math.max(...(data?.stats || []).map(d => d.revenueCompleted || 0), 1);
+  const maxJobs = Math.max(...(data?.stats || []).map(d => d.jobsCompleted || 0), 1);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Historical Analytics</h2>
+          <p className="text-sm text-gray-600">Track trends over time with HousecallPro data.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Select value={dateRange} onValueChange={(v) => setDateRange(v as '7d' | '30d' | '90d')}>
+            <SelectTrigger className="w-32">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="7d">Last 7 days</SelectItem>
+              <SelectItem value="30d">Last 30 days</SelectItem>
+              <SelectItem value="90d">Last 90 days</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button onClick={() => refetch()} size="sm" variant="outline">
+            Refresh
+          </Button>
+        </div>
+      </div>
+
+      {/* Period Summary Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-gray-600">Total Revenue</p>
+            <p className="text-2xl font-bold text-green-600">
+              {isLoading ? '—' : formatCurrency(data?.totals?.totalRevenue || 0)}
+            </p>
+            <p className="text-xs text-gray-500">Avg: {formatCurrency(avgDailyRevenue)}/day</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-gray-600">Jobs Completed</p>
+            <p className="text-2xl font-bold text-blue-600">
+              {isLoading ? '—' : data?.totals?.totalJobs || 0}
+            </p>
+            <p className="text-xs text-gray-500">Avg: {avgDailyJobs.toFixed(1)}/day</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-gray-600">Estimates Sent</p>
+            <p className="text-2xl font-bold text-purple-600">
+              {isLoading ? '—' : data?.totals?.totalEstimates || 0}
+            </p>
+            <p className="text-xs text-gray-500">
+              Accepted: {data?.totals?.totalEstimatesAccepted || 0}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-gray-600">Emergency Jobs</p>
+            <p className="text-2xl font-bold text-orange-600">
+              {isLoading ? '—' : data?.totals?.totalEmergencies || 0}
+            </p>
+            <p className="text-xs text-gray-500">{data?.period?.days || 0} days tracked</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Revenue Trend */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Revenue Trend</CardTitle>
+          <CardDescription>Daily completed revenue over the selected period.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="h-48 flex items-center justify-center text-gray-500">Loading...</div>
+          ) : data?.stats?.length ? (
+            <div className="h-48 flex items-end gap-1 px-2">
+              {data.stats.map((day, i) => {
+                const height = ((day.revenueCompleted || 0) / maxRevenue) * 100;
+                return (
+                  <div key={i} className="flex-1 flex flex-col items-center group relative">
+                    <div
+                      className="w-full bg-green-500 rounded-t transition-all hover:bg-green-600"
+                      style={{ height: `${Math.max(height, 2)}%` }}
+                    />
+                    <span className="text-xs text-gray-500 mt-1 hidden md:block">
+                      {formatDate(day.date)}
+                    </span>
+                    <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none">
+                      {formatDate(day.date)}: {formatCurrency(day.revenueCompleted)}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="h-48 flex items-center justify-center text-gray-500">
+              No data available. Trigger a sync to load historical data.
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Jobs Trend */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Jobs Completed</CardTitle>
+          <CardDescription>Daily job completions over the selected period.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="h-48 flex items-center justify-center text-gray-500">Loading...</div>
+          ) : data?.stats?.length ? (
+            <div className="h-48 flex items-end gap-1 px-2">
+              {data.stats.map((day, i) => {
+                const height = ((day.jobsCompleted || 0) / maxJobs) * 100;
+                return (
+                  <div key={i} className="flex-1 flex flex-col items-center group relative">
+                    <div
+                      className="w-full bg-blue-500 rounded-t transition-all hover:bg-blue-600"
+                      style={{ height: `${Math.max(height, 2)}%` }}
+                    />
+                    <span className="text-xs text-gray-500 mt-1 hidden md:block">
+                      {formatDate(day.date)}
+                    </span>
+                    <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none">
+                      {formatDate(day.date)}: {day.jobsCompleted || 0} jobs
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="h-48 flex items-center justify-center text-gray-500">
+              No data available. Trigger a sync to load historical data.
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Daily Breakdown Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Daily Breakdown</CardTitle>
+          <CardDescription>Detailed metrics for each day in the selected period.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead className="text-right">Revenue</TableHead>
+                  <TableHead className="text-right">Jobs</TableHead>
+                  <TableHead className="text-right">Estimates</TableHead>
+                  <TableHead className="text-right">Conv. Rate</TableHead>
+                  <TableHead className="text-right">Emergency</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(data?.stats || []).slice(-14).reverse().map((day) => (
+                  <TableRow key={day.id}>
+                    <TableCell className="font-medium">
+                      {new Date(day.date).toLocaleDateString('en-US', {
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric',
+                      })}
+                    </TableCell>
+                    <TableCell className="text-right text-green-600 font-medium">
+                      {formatCurrency(day.revenueCompleted)}
+                    </TableCell>
+                    <TableCell className="text-right">{day.jobsCompleted || 0}</TableCell>
+                    <TableCell className="text-right">
+                      {day.estimatesSent || 0}
+                      {(day.estimatesAccepted || 0) > 0 && (
+                        <span className="text-green-600 ml-1">(+{day.estimatesAccepted})</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {day.estimateConversionRate != null
+                        ? `${(day.estimateConversionRate * 100).toFixed(0)}%`
+                        : '—'}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {(day.emergencyJobs || 0) > 0 ? (
+                        <Badge className="bg-orange-100 text-orange-800">{day.emergencyJobs}</Badge>
+                      ) : (
+                        '—'
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {(!data?.stats || data.stats.length === 0) && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center text-sm text-gray-500">
+                      {isLoading
+                        ? 'Loading daily stats…'
+                        : 'No data available. Trigger a sync from the Estimates panel.'}
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 export function SettingsPanel() {
   const user = getAdminUser();
   const { toast } = useToast();

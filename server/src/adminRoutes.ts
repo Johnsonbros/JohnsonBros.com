@@ -6,7 +6,7 @@ import {
   aiChatSessions, aiChatMessages, googleAdsCampaigns,
   websiteAnalytics, dashboardWidgets, adminActivityLogs,
   webhookEvents, webhookAnalytics, customers, blogPosts,
-  apiUsage,
+  apiUsage, hcpJobs, hcpEstimates, hcpDailyStats, hcpSyncLog,
   InsertAdminTask, InsertAdminDocument, InsertAiChatMessage
 } from '@shared/schema';
 import competitorRoutes from './competitorRoutes';
@@ -1920,6 +1920,210 @@ router.get('/usage/by-channel', authenticate, requirePermission('reports:view'),
   } catch (error) {
     console.error('Channel usage error:', error);
     res.status(500).json({ error: 'Failed to fetch channel usage' });
+  }
+});
+
+// ==============================================
+// HCP SYNC & CACHED DATA ROUTES
+// ==============================================
+
+// Get sync status
+router.get('/hcp/sync/status', authenticate, requirePermission('dashboard.view'), async (req, res) => {
+  try {
+    const { getHCPSyncService } = await import('./hcpSync');
+    const syncService = getHCPSyncService();
+    const status = await syncService.getSyncStatus();
+    res.json(status);
+  } catch (error) {
+    console.error('HCP sync status error:', error);
+    res.status(500).json({ error: 'Failed to get sync status' });
+  }
+});
+
+// Trigger manual sync
+router.post('/hcp/sync/trigger', authenticate, requirePermission('settings.edit'), async (req, res) => {
+  try {
+    const { getHCPSyncService } = await import('./hcpSync');
+    const syncService = getHCPSyncService();
+    const results = await syncService.syncAll();
+    await logActivity((req as any).user?.id, 'hcp_sync_triggered', 'sync', undefined, { results }, req.ip);
+    res.json({ success: true, results });
+  } catch (error) {
+    console.error('HCP sync trigger error:', error);
+    res.status(500).json({ error: 'Failed to trigger sync' });
+  }
+});
+
+// Get cached jobs with filters
+router.get('/hcp/jobs', authenticate, requirePermission('dashboard.view'), async (req, res) => {
+  try {
+    const { startDate, endDate, status, limit = '100', offset = '0' } = req.query;
+
+    let query = db.select().from(hcpJobs);
+
+    const conditions = [];
+    if (startDate) {
+      conditions.push(gte(hcpJobs.scheduledStart, new Date(startDate as string)));
+    }
+    if (endDate) {
+      conditions.push(lte(hcpJobs.scheduledStart, new Date(endDate as string)));
+    }
+    if (status) {
+      conditions.push(eq(hcpJobs.workStatus, status as string));
+    }
+
+    const jobs = await db.query.hcpJobs.findMany({
+      where: conditions.length > 0 ? and(...conditions) : undefined,
+      orderBy: (job, { desc }) => [desc(job.scheduledStart)],
+      limit: parseInt(limit as string),
+      offset: parseInt(offset as string),
+    });
+
+    const totalCount = await db.select({ count: sql<number>`count(*)` })
+      .from(hcpJobs)
+      .then(r => r[0]?.count || 0);
+
+    res.json({
+      jobs,
+      total: totalCount,
+      limit: parseInt(limit as string),
+      offset: parseInt(offset as string),
+    });
+  } catch (error) {
+    console.error('HCP jobs fetch error:', error);
+    res.status(500).json({ error: 'Failed to fetch jobs' });
+  }
+});
+
+// Get cached estimates with filters
+router.get('/hcp/estimates', authenticate, requirePermission('dashboard.view'), async (req, res) => {
+  try {
+    const { startDate, endDate, status, limit = '100', offset = '0' } = req.query;
+
+    const conditions = [];
+    if (startDate) {
+      conditions.push(gte(hcpEstimates.scheduledStart, new Date(startDate as string)));
+    }
+    if (endDate) {
+      conditions.push(lte(hcpEstimates.scheduledStart, new Date(endDate as string)));
+    }
+    if (status) {
+      conditions.push(eq(hcpEstimates.status, status as string));
+    }
+
+    const estimates = await db.query.hcpEstimates.findMany({
+      where: conditions.length > 0 ? and(...conditions) : undefined,
+      orderBy: (est, { desc }) => [desc(est.scheduledStart)],
+      limit: parseInt(limit as string),
+      offset: parseInt(offset as string),
+    });
+
+    const totalCount = await db.select({ count: sql<number>`count(*)` })
+      .from(hcpEstimates)
+      .then(r => r[0]?.count || 0);
+
+    res.json({
+      estimates,
+      total: totalCount,
+      limit: parseInt(limit as string),
+      offset: parseInt(offset as string),
+    });
+  } catch (error) {
+    console.error('HCP estimates fetch error:', error);
+    res.status(500).json({ error: 'Failed to fetch estimates' });
+  }
+});
+
+// Get daily stats for historical analytics
+router.get('/hcp/daily-stats', authenticate, requirePermission('dashboard.view'), async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+
+    const start = startDate
+      ? new Date(startDate as string)
+      : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000); // Default 30 days
+    const end = endDate ? new Date(endDate as string) : new Date();
+
+    const stats = await db.query.hcpDailyStats.findMany({
+      where: and(
+        gte(hcpDailyStats.date, start),
+        lte(hcpDailyStats.date, end)
+      ),
+      orderBy: (stat, { asc }) => [asc(stat.date)],
+    });
+
+    // Calculate period totals
+    const totals = stats.reduce((acc, day) => ({
+      totalRevenue: acc.totalRevenue + (day.revenueCompleted || 0),
+      totalJobs: acc.totalJobs + (day.jobsCompleted || 0),
+      totalEstimates: acc.totalEstimates + (day.estimatesSent || 0),
+      totalEstimatesAccepted: acc.totalEstimatesAccepted + (day.estimatesAccepted || 0),
+      totalEmergencies: acc.totalEmergencies + (day.emergencyJobs || 0),
+    }), {
+      totalRevenue: 0,
+      totalJobs: 0,
+      totalEstimates: 0,
+      totalEstimatesAccepted: 0,
+      totalEmergencies: 0,
+    });
+
+    res.json({
+      stats,
+      totals,
+      period: {
+        start: start.toISOString(),
+        end: end.toISOString(),
+        days: stats.length,
+      },
+    });
+  } catch (error) {
+    console.error('HCP daily stats error:', error);
+    res.status(500).json({ error: 'Failed to fetch daily stats' });
+  }
+});
+
+// Get estimates pipeline summary
+router.get('/hcp/estimates/pipeline', authenticate, requirePermission('dashboard.view'), async (req, res) => {
+  try {
+    // Get counts by status
+    const pipeline = await db.select({
+      status: hcpEstimates.status,
+      count: sql<number>`count(*)`,
+      totalValue: sql<number>`sum(${hcpEstimates.totalAmount})`,
+    })
+      .from(hcpEstimates)
+      .groupBy(hcpEstimates.status);
+
+    // Get recent estimates
+    const recent = await db.query.hcpEstimates.findMany({
+      orderBy: (est, { desc }) => [desc(est.syncedAt)],
+      limit: 10,
+    });
+
+    // Calculate conversion rate (last 30 days)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const conversionStats = await db.select({
+      total: sql<number>`count(*)`,
+      accepted: sql<number>`count(*) filter (where ${hcpEstimates.status} = 'accepted')`,
+    })
+      .from(hcpEstimates)
+      .where(gte(hcpEstimates.hcpCreatedAt, thirtyDaysAgo));
+
+    const conversionRate = conversionStats[0]?.total > 0
+      ? (conversionStats[0].accepted / conversionStats[0].total) * 100
+      : 0;
+
+    res.json({
+      pipeline,
+      recent,
+      conversionRate: Math.round(conversionRate * 10) / 10,
+      totalEstimates: conversionStats[0]?.total || 0,
+    });
+  } catch (error) {
+    console.error('HCP estimates pipeline error:', error);
+    res.status(500).json({ error: 'Failed to fetch estimates pipeline' });
   }
 });
 

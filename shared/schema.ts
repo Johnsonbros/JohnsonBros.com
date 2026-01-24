@@ -2879,3 +2879,180 @@ export const insertCompetitorAlertSchema = createInsertSchema(competitorAlerts).
 
 export type CompetitorAlert = typeof competitorAlerts.$inferSelect;
 export type InsertCompetitorAlert = z.infer<typeof insertCompetitorAlertSchema>;
+
+// ============================================
+// HOUSECALLPRO DATA CACHE
+// ============================================
+
+// Cached HCP Jobs - local storage to reduce API calls
+export const hcpJobs = pgTable('hcp_jobs', {
+  id: serial('id').primaryKey(),
+  hcpJobId: text('hcp_job_id').notNull().unique(),
+  customerId: text('customer_id'),
+  customerName: text('customer_name'),
+  customerPhone: text('customer_phone'),
+  customerEmail: text('customer_email'),
+
+  // Address
+  addressStreet: text('address_street'),
+  addressCity: text('address_city'),
+  addressState: text('address_state'),
+  addressZip: text('address_zip'),
+
+  // Job details
+  jobName: text('job_name'),
+  jobDescription: text('job_description'),
+  invoiceNumber: text('invoice_number'),
+  workStatus: text('work_status').notNull(), // scheduled, in_progress, completed, cancelled
+
+  // Financial
+  totalAmount: integer('total_amount').default(0), // in cents
+  outstandingBalance: integer('outstanding_balance').default(0),
+
+  // Schedule
+  scheduledStart: timestamp('scheduled_start'),
+  scheduledEnd: timestamp('scheduled_end'),
+  completedAt: timestamp('completed_at'),
+
+  // Assignments
+  assignedTechIds: json('assigned_tech_ids').$type<string[]>().default([]),
+  assignedTechNames: json('assigned_tech_names').$type<string[]>().default([]),
+
+  // Tags and metadata
+  tags: json('tags').$type<string[]>().default([]),
+  isEmergency: boolean('is_emergency').default(false),
+  source: text('source'), // online, phone, referral, etc.
+
+  // Sync tracking
+  hcpCreatedAt: timestamp('hcp_created_at'),
+  hcpUpdatedAt: timestamp('hcp_updated_at'),
+  syncedAt: timestamp('synced_at').defaultNow().notNull(),
+  rawData: json('raw_data').$type<Record<string, any>>(),
+}, (table) => ({
+  hcpJobIdIdx: uniqueIndex('hcp_jobs_hcp_id_idx').on(table.hcpJobId),
+  workStatusIdx: index('hcp_jobs_status_idx').on(table.workStatus),
+  scheduledStartIdx: index('hcp_jobs_scheduled_idx').on(table.scheduledStart),
+  customerIdIdx: index('hcp_jobs_customer_idx').on(table.customerId),
+  syncedAtIdx: index('hcp_jobs_synced_idx').on(table.syncedAt),
+}));
+
+// Cached HCP Estimates
+export const hcpEstimates = pgTable('hcp_estimates', {
+  id: serial('id').primaryKey(),
+  hcpEstimateId: text('hcp_estimate_id').notNull().unique(),
+  customerId: text('customer_id'),
+  customerName: text('customer_name'),
+  customerPhone: text('customer_phone'),
+  customerEmail: text('customer_email'),
+
+  // Address
+  addressStreet: text('address_street'),
+  addressCity: text('address_city'),
+  addressState: text('address_state'),
+  addressZip: text('address_zip'),
+
+  // Estimate details
+  estimateName: text('estimate_name'),
+  estimateNumber: text('estimate_number'),
+  status: text('status').notNull(), // draft, sent, viewed, accepted, declined, expired
+
+  // Financial
+  totalAmount: integer('total_amount').default(0), // in cents
+
+  // Schedule
+  scheduledStart: timestamp('scheduled_start'),
+  sentAt: timestamp('sent_at'),
+  viewedAt: timestamp('viewed_at'),
+  respondedAt: timestamp('responded_at'),
+  expiresAt: timestamp('expires_at'),
+
+  // Conversion tracking
+  convertedToJobId: text('converted_to_job_id'),
+  convertedAt: timestamp('converted_at'),
+
+  // Sync tracking
+  hcpCreatedAt: timestamp('hcp_created_at'),
+  hcpUpdatedAt: timestamp('hcp_updated_at'),
+  syncedAt: timestamp('synced_at').defaultNow().notNull(),
+  rawData: json('raw_data').$type<Record<string, any>>(),
+}, (table) => ({
+  hcpEstimateIdIdx: uniqueIndex('hcp_estimates_hcp_id_idx').on(table.hcpEstimateId),
+  statusIdx: index('hcp_estimates_status_idx').on(table.status),
+  scheduledStartIdx: index('hcp_estimates_scheduled_idx').on(table.scheduledStart),
+  customerIdIdx: index('hcp_estimates_customer_idx').on(table.customerId),
+  syncedAtIdx: index('hcp_estimates_synced_idx').on(table.syncedAt),
+}));
+
+// HCP Sync Log - track sync operations
+export const hcpSyncLog = pgTable('hcp_sync_log', {
+  id: serial('id').primaryKey(),
+  syncType: text('sync_type').notNull(), // jobs, estimates, customers, full
+  status: text('status').notNull(), // started, completed, failed
+  recordsProcessed: integer('records_processed').default(0),
+  recordsCreated: integer('records_created').default(0),
+  recordsUpdated: integer('records_updated').default(0),
+  errorMessage: text('error_message'),
+  durationMs: integer('duration_ms'),
+  startedAt: timestamp('started_at').defaultNow().notNull(),
+  completedAt: timestamp('completed_at'),
+}, (table) => ({
+  syncTypeIdx: index('hcp_sync_type_idx').on(table.syncType),
+  statusIdx: index('hcp_sync_status_idx').on(table.status),
+  startedAtIdx: index('hcp_sync_started_idx').on(table.startedAt),
+}));
+
+// HCP Daily Stats - aggregated daily metrics for historical analytics
+export const hcpDailyStats = pgTable('hcp_daily_stats', {
+  id: serial('id').primaryKey(),
+  date: timestamp('date').notNull(),
+
+  // Job metrics
+  jobsScheduled: integer('jobs_scheduled').default(0),
+  jobsCompleted: integer('jobs_completed').default(0),
+  jobsCancelled: integer('jobs_cancelled').default(0),
+  jobsInProgress: integer('jobs_in_progress').default(0),
+
+  // Revenue metrics (in cents)
+  revenueCompleted: integer('revenue_completed').default(0),
+  revenueScheduled: integer('revenue_scheduled').default(0),
+  averageJobValue: integer('average_job_value').default(0),
+
+  // Estimate metrics
+  estimatesSent: integer('estimates_sent').default(0),
+  estimatesAccepted: integer('estimates_accepted').default(0),
+  estimatesDeclined: integer('estimates_declined').default(0),
+  estimateConversionRate: real('estimate_conversion_rate').default(0),
+  estimatesValue: integer('estimates_value').default(0),
+
+  // Capacity metrics
+  capacityUtilization: real('capacity_utilization').default(0),
+  availableWindows: integer('available_windows').default(0),
+  bookedWindows: integer('booked_windows').default(0),
+
+  // Customer metrics
+  newCustomers: integer('new_customers').default(0),
+  repeatCustomers: integer('repeat_customers').default(0),
+
+  // Emergency metrics
+  emergencyJobs: integer('emergency_jobs').default(0),
+
+  // Sync tracking
+  syncedAt: timestamp('synced_at').defaultNow().notNull(),
+}, (table) => ({
+  dateIdx: uniqueIndex('hcp_daily_stats_date_idx').on(table.date),
+  syncedAtIdx: index('hcp_daily_stats_synced_idx').on(table.syncedAt),
+}));
+
+export const insertHcpJobSchema = createInsertSchema(hcpJobs).omit({ id: true, syncedAt: true });
+export const insertHcpEstimateSchema = createInsertSchema(hcpEstimates).omit({ id: true, syncedAt: true });
+export const insertHcpSyncLogSchema = createInsertSchema(hcpSyncLog).omit({ id: true, startedAt: true });
+export const insertHcpDailyStatsSchema = createInsertSchema(hcpDailyStats).omit({ id: true, syncedAt: true });
+
+export type HcpJob = typeof hcpJobs.$inferSelect;
+export type InsertHcpJob = z.infer<typeof insertHcpJobSchema>;
+export type HcpEstimate = typeof hcpEstimates.$inferSelect;
+export type InsertHcpEstimate = z.infer<typeof insertHcpEstimateSchema>;
+export type HcpSyncLog = typeof hcpSyncLog.$inferSelect;
+export type InsertHcpSyncLog = z.infer<typeof insertHcpSyncLogSchema>;
+export type HcpDailyStats = typeof hcpDailyStats.$inferSelect;
+export type InsertHcpDailyStats = z.infer<typeof insertHcpDailyStatsSchema>;

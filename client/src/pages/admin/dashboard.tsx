@@ -7,10 +7,10 @@ import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { DatasetManager } from '@/components/admin/DatasetManager';
 import { VoiceInbox } from '@/components/admin/VoiceInbox';
 import {
-  BarChart3, Users, FileText, Settings, LogOut, 
+  BarChart3, Users, FileText, Settings, LogOut,
   Home, DollarSign, CheckCircle,
   Clock, Activity, Brain, Target, Bell, ListTodo, Menu, X, RefreshCw,
-  Loader2, Zap, Radar, Cpu, MapPin, ShieldCheck, Mic
+  Loader2, Zap, Radar, Cpu, MapPin, ShieldCheck, Mic, Receipt
 } from 'lucide-react';
 import { authenticatedFetch, logout, getAdminUser, isAuthenticated } from '@/lib/auth';
 import { cn } from '@/lib/utils';
@@ -25,6 +25,8 @@ import {
   GoogleAdsPanel,
   WebhooksPanel,
   SettingsPanel,
+  EstimatesPanel,
+  HistoricalAnalyticsPanel,
 } from './dashboard-panels';
 import { Badge } from '@/components/ui/badge';
 
@@ -117,6 +119,8 @@ export default function AdminDashboard() {
     { id: 'command-center', label: 'Command Center', icon: Radar },
     { id: 'overview', label: 'Overview', icon: Home },
     { id: 'operations', label: 'Operations', icon: Zap },
+    { id: 'estimates', label: 'Estimates', icon: Receipt },
+    { id: 'historical', label: 'Historical', icon: Clock },
     { id: 'customizable', label: 'Customizable', icon: BarChart3 },
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
     { id: 'customers', label: 'Customers', icon: Users },
@@ -606,6 +610,14 @@ export default function AdminDashboard() {
 
             <TabsContent value="operations">
               <OperationsDashboard />
+            </TabsContent>
+
+            <TabsContent value="estimates">
+              <EstimatesPanel />
+            </TabsContent>
+
+            <TabsContent value="historical">
+              <HistoricalAnalyticsPanel />
             </TabsContent>
 
             <TabsContent value="customizable">
