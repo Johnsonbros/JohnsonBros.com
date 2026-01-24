@@ -58,13 +58,114 @@ export async function getCompetitors(options?: { priorityOnly?: boolean; type?: 
 }
 
 /**
- * Initialize with known competitors from the Boston market
+ * Initialize with known competitors from the South Shore market
+ * Updated Jan 2026 with PE-backed threats and local competitors
  */
 export async function seedCompetitors() {
   const knownCompetitors: InsertCompetitor[] = [
-    // Local competitors (main threats)
+    // ========================================
+    // PE-BACKED COMPETITORS (CRITICAL THREATS)
+    // ========================================
     {
-      name: 'Aspinwall Plumbing, Heating & Air Conditioning',
+      name: 'Sila Services (Boston Standard)',
+      domain: 'boston.sila.com',
+      website: 'https://boston.sila.com',
+      city: 'Mattapan',
+      type: 'pe_backed',
+      peOwner: 'Goldman Sachs Alternatives',
+      yearEstablished: 2008,
+      offersPlumbing: true,
+      offersHeating: true,
+      offersCooling: true,
+      offersElectrical: true,
+      offersEmergency: true,
+      isPriority: true,
+      notes: 'CRITICAL: Goldman Sachs PE owned. Acquired Boston Standard & New England Ductless Jan 2022. 13 brands across Northeast. Owns Wildcat Plumbing (Weymouth).',
+    },
+    {
+      name: 'GEM Plumbing & Heating',
+      domain: 'askgem.com',
+      website: 'https://askgem.com',
+      city: 'Lincoln',
+      state: 'RI',
+      type: 'pe_backed',
+      peOwner: 'HomeX / New Mountain Capital',
+      yearEstablished: 1949,
+      offersPlumbing: true,
+      offersHeating: true,
+      offersCooling: true,
+      offersElectrical: true,
+      offersEmergency: true,
+      isPriority: true,
+      notes: 'CRITICAL: 700 employees, 500 trucks. MA locations: Plymouth, Taunton, Walpole, Falmouth, Harwich, Yarmouth, Bellingham, Fall River. Expanding into South Shore.',
+    },
+    {
+      name: 'Wildcat Plumbing',
+      domain: 'wildcatplumbingservices.com',
+      website: 'https://www.wildcatplumbingservices.com',
+      phone: '833-620-3192',
+      address: '100 Old Country Way',
+      city: 'Weymouth',
+      type: 'pe_backed',
+      peOwner: 'Sila Group / Goldman Sachs',
+      offersPlumbing: true,
+      offersDrainCleaning: true,
+      offersEmergency: true,
+      isPriority: true,
+      notes: 'Part of Sila Group. Direct South Shore competitor in Weymouth. 15+ years experience.',
+    },
+    {
+      name: 'Full Swing Plumbing (fka Pilgrim)',
+      domain: 'callfullswing.com',
+      website: 'https://callfullswing.com',
+      address: '77 Accord Park Dr D14',
+      city: 'Norwell',
+      type: 'pe_backed',
+      yearEstablished: 2015,
+      offersPlumbing: true,
+      offersHeating: true,
+      offersCooling: true,
+      offersEmergency: true,
+      isPriority: true,
+      notes: 'Rebranded from Pilgrim Plumbing. Suspected PE investment. Norwell = South Shore territory.',
+    },
+
+    // ========================================
+    // DIRECT LOCAL THREATS (SAME TERRITORY)
+    // ========================================
+    {
+      name: 'Trust 1 Services',
+      domain: 'trust1services.com',
+      website: 'https://www.trust1services.com',
+      phone: '617-420-1358',
+      address: '11-17 Newbury St, Ste 2',
+      city: 'Quincy',
+      type: 'local',
+      yearEstablished: 2018,
+      offersPlumbing: true,
+      offersHeating: true,
+      offersCooling: true,
+      offersEmergency: true,
+      isPriority: true,
+      notes: 'DIRECT COMPETITOR IN QUINCY! Also Hanover location. 900+ 5-star reviews. Aggressive marketing. Serves Weymouth, Braintree, Hingham, Hull, Cohasset.',
+    },
+    {
+      name: 'Gouthro Plumbing & Heating',
+      domain: 'gouthroplumbing.com',
+      website: 'http://gouthroplumbing.com',
+      phone: '781-878-9113',
+      address: '500 Washington St',
+      city: 'Abington',
+      type: 'local',
+      yearEstablished: 1970,
+      offersPlumbing: true,
+      offersHeating: true,
+      offersEmergency: true,
+      isPriority: true,
+      notes: 'DIRECT COMPETITOR IN ABINGTON! 55+ years. Family-owned. Same Google Maps territory.',
+    },
+    {
+      name: 'Aspinwall Plumbing, Heating & Air',
       domain: 'aspinwallplumbing.com',
       website: 'https://www.aspinwallplumbing.com',
       phone: '617-539-7672',
@@ -110,6 +211,39 @@ export async function seedCompetitors() {
       notes: 'BBB A+ rated. Aggressive title tags (#1 in...). 400+ reviews claimed.',
     },
     {
+      name: 'Compass Plumbing & Heating',
+      domain: 'compassplumbinginc.com',
+      website: 'https://compassplumbinginc.com',
+      phone: '508-238-3479',
+      city: 'West Bridgewater',
+      type: 'local',
+      yearEstablished: 1994,
+      offersPlumbing: true,
+      offersHeating: true,
+      offersEmergency: true,
+      isPriority: false,
+      notes: 'Serves South Shore since 1994. Small family business. Boston to South Shore coverage.',
+    },
+
+    // ========================================
+    // REGIONAL PLAYERS
+    // ========================================
+    {
+      name: 'Yellow Dog Plumbing',
+      domain: 'callyellowdog.com',
+      website: 'https://callyellowdog.com',
+      phone: '781-222-0869',
+      address: '19 Kearney Rd',
+      city: 'Needham',
+      type: 'local',
+      offersPlumbing: true,
+      offersHeating: true,
+      offersCooling: true,
+      offersEmergency: true,
+      isPriority: false,
+      notes: 'Newton/Needham area. Family-owned. Serves Milton. Less threat - more northwest focused.',
+    },
+    {
       name: 'Coastal Heating & Air Conditioning',
       domain: 'coastalahr.com',
       website: 'https://coastalahr.com',
@@ -135,7 +269,10 @@ export async function seedCompetitors() {
       isPriority: false,
       notes: '24/7 service. Gas line specialists.',
     },
-    // National chains
+
+    // ========================================
+    // NATIONAL CHAINS
+    // ========================================
     {
       name: 'Roto-Rooter',
       domain: 'rotorooter.com',
@@ -161,18 +298,6 @@ export async function seedCompetitors() {
       offersEmergency: true,
       isPriority: false,
       notes: '50+ years. Franchise model.',
-    },
-    // Regional players
-    {
-      name: 'Power Plumbing & Heating',
-      domain: 'powerplumbingboston.com',
-      website: 'https://powerplumbingboston.com',
-      city: 'Boston',
-      type: 'regional',
-      offersPlumbing: true,
-      offersHeating: true,
-      isPriority: false,
-      notes: 'Serves Greater Boston Metro Area, Quincy and South Shore.',
     },
   ];
 
@@ -500,9 +625,62 @@ export async function getRecentPeActivity(days = 90) {
 
 /**
  * Seed known PE companies and their activity
+ * Updated Jan 2026 with Sila (Goldman Sachs) and GEM (New Mountain Capital)
  */
 export async function seedPeActivity() {
   const knownActivity: InsertPeActivityLog[] = [
+    // ========================================
+    // CRITICAL - ALREADY IN OUR TERRITORY
+    // ========================================
+    {
+      peCompany: 'Goldman Sachs Alternatives (Sila Group)',
+      activityType: 'acquisition',
+      targetCompany: 'Boston Standard Company + New England Ductless',
+      targetLocation: 'Mattapan, MA / Milton, MA',
+      announcementDate: new Date('2022-01-01'),
+      summary: 'Goldman Sachs PE acquired Sila Services. Sila owns Boston Standard, New England Ductless, Wildcat Plumbing (Weymouth). 13 brands across Northeast.',
+      threatLevel: 'critical',
+      sourceUrl: 'https://www.prnewswire.com/news-releases/sila-acquires-boston-standard-company-and-new-england-ductless-301468738.html',
+      notes: 'CRITICAL: Goldman Sachs money. Already operating in South Shore via Wildcat Plumbing (Weymouth). Aggressive expansion.',
+    },
+    {
+      peCompany: 'New Mountain Capital (HomeX/GEM)',
+      activityType: 'expansion',
+      targetCompany: 'GEM Plumbing & Heating',
+      targetLocation: 'Plymouth, Taunton, Walpole, Fall River, Cape Cod',
+      summary: 'GEM has 700 employees, 500 trucks. Massachusetts locations expanding toward South Shore. Rhode Island headquarters.',
+      threatLevel: 'critical',
+      sourceUrl: 'https://askgem.com',
+      notes: 'CRITICAL: Massive scale. MA locations already in Plymouth, Taunton, Walpole = encircling South Shore. Watch for Quincy/Braintree expansion.',
+    },
+    {
+      peCompany: 'Unknown PE (Full Swing/Pilgrim)',
+      activityType: 'acquisition',
+      targetCompany: 'Pilgrim Plumbing → Full Swing Plumbing',
+      targetLocation: 'Norwell, MA',
+      announcementDate: new Date('2024-01-01'),
+      summary: 'Pilgrim Plumbing rebranded to Full Swing. Suspected PE investment based on rebrand pattern.',
+      threatLevel: 'high',
+      notes: 'Norwell is South Shore. Rebrand + "MVP for comfort" messaging = PE playbook.',
+    },
+
+    // ========================================
+    // HIGH THREAT - NEARBY ACTIVITY
+    // ========================================
+    {
+      peCompany: 'Heritage Holding',
+      activityType: 'acquisition',
+      targetCompany: 'Winchester Mechanical',
+      targetLocation: 'Boston area',
+      announcementDate: new Date('2024-08-01'),
+      summary: 'Boston-based PE firm acquired Winchester Mechanical in Aug 2024.',
+      threatLevel: 'high',
+      notes: 'LOCAL PE FIRM actively acquiring in Boston market. Could target South Shore.',
+    },
+
+    // ========================================
+    // MEDIUM THREAT - NOT YET IN BOSTON
+    // ========================================
     {
       peCompany: 'Wrench Group',
       activityType: 'expansion',
@@ -512,7 +690,7 @@ export async function seedPeActivity() {
       notes: 'Watch for Boston market entry. Would be major threat.',
     },
     {
-      peCompany: 'Apex Service Partners',
+      peCompany: 'Apex Service Partners (Alpine)',
       activityType: 'expansion',
       targetLocation: 'Coast-to-coast network',
       summary: '80+ brands, 8,000+ technicians. Alpine-backed. NOT confirmed in Boston.',
@@ -520,21 +698,11 @@ export async function seedPeActivity() {
       notes: 'Aggressive acquirer. Watch for Northeast expansion.',
     },
     {
-      peCompany: 'Redwood Services',
+      peCompany: 'Redwood Services (OMERS)',
       activityType: 'funding',
-      summary: 'OMERS Private Equity backed. 60+ locations. $500M revenue target.',
+      summary: 'OMERS Private Equity backed. 60+ locations. $500M revenue target. Zero to $400M in 4 years.',
       threatLevel: 'medium',
-      notes: 'Fast growing - zero to $400M in 4 years.',
-    },
-    {
-      peCompany: 'Heritage Holding',
-      activityType: 'acquisition',
-      targetCompany: 'Winchester Mechanical',
-      targetLocation: 'Boston area',
-      announcementDate: new Date('2024-08-01'),
-      summary: 'Boston-based PE firm acquired Winchester Mechanical in Aug 2024.',
-      threatLevel: 'high',
-      notes: 'LOCAL PE FIRM actively acquiring in Boston market. Direct threat.',
+      notes: 'Fast growing. Watch for Northeast entry.',
     },
     {
       peCompany: 'Investcorp',
