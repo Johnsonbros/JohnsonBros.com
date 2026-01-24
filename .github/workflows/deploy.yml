@@ -1,0 +1,219 @@
+# ============================================================================
+# Johnson Bros Plumbing - Deployment Pipeline
+# Deploys to staging/production after successful CI
+# ============================================================================
+
+name: Deploy
+
+on:
+  # Auto-deploy after CI passes on main
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+
+  # Manual deployment trigger
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deploy environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+      skip_backup:
+        description: 'Skip backup (not recommended)'
+        required: false
+        default: 'false'
+        type: boolean
+
+# Only one deployment at a time
+concurrency:
+  group: deploy-${{ github.event.inputs.environment || 'staging' }}
+  cancel-in-progress: false
+
+jobs:
+  # ============================================================================
+  # Deploy
+  # ============================================================================
+  deploy:
+    name: Deploy to ${{ github.event.inputs.environment || 'staging' }}
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    environment: ${{ github.event.inputs.environment || 'staging' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+        continue-on-error: true
+
+      - name: Build if no artifact
+        if: failure()
+        run: |
+          npm ci
+          npm run build
+
+      - name: Prepare deployment package
+        run: |
+          # Create deployment package
+          mkdir -p deploy-package
+          cp -r dist deploy-package/
+          cp -r config deploy-package/
+          cp package*.json deploy-package/
+          cp drizzle.config.ts deploy-package/
+          cp ecosystem.config.js deploy-package/ 2>/dev/null || true
+
+          # Create deployment info file
+          cat > deploy-package/DEPLOY_INFO.json << EOF
+          {
+            "commit": "${{ github.sha }}",
+            "branch": "${{ github.ref_name }}",
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "environment": "${{ github.event.inputs.environment || 'staging' }}",
+            "actor": "${{ github.actor }}"
+          }
+          EOF
+
+          echo "Deployment package contents:"
+          ls -la deploy-package/
+
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_SSH_PORT || 22 }}
+          script_stop: true
+          script: |
+            set -e
+
+            DEPLOY_DIR="${{ secrets.DEPLOY_DIR || '/var/www/johnsonbros' }}"
+            BACKUP_DIR="$DEPLOY_DIR/backups"
+            CURRENT_DIR="$DEPLOY_DIR/current"
+            RELEASES_DIR="$DEPLOY_DIR/releases"
+            RELEASE_NAME="release-$(date +%Y%m%d-%H%M%S)-${{ github.sha }}"
+
+            echo "=== Starting deployment ==="
+            echo "Environment: ${{ github.event.inputs.environment || 'staging' }}"
+            echo "Commit: ${{ github.sha }}"
+
+            # Create directories if they don't exist
+            mkdir -p "$BACKUP_DIR" "$RELEASES_DIR"
+
+            # Create backup of current deployment (unless skipped)
+            if [ "${{ github.event.inputs.skip_backup }}" != "true" ] && [ -d "$CURRENT_DIR" ]; then
+              BACKUP_NAME="backup-$(date +%Y%m%d-%H%M%S)"
+              echo "Creating backup: $BACKUP_NAME"
+              cp -r "$CURRENT_DIR" "$BACKUP_DIR/$BACKUP_NAME"
+
+              # Keep only last 5 backups
+              cd "$BACKUP_DIR"
+              ls -dt backup-* 2>/dev/null | tail -n +6 | xargs rm -rf 2>/dev/null || true
+            fi
+
+            # Prepare new release directory
+            NEW_RELEASE="$RELEASES_DIR/$RELEASE_NAME"
+            mkdir -p "$NEW_RELEASE"
+            cd "$DEPLOY_DIR"
+
+            # Pull latest code
+            echo "Fetching latest code..."
+            git fetch origin ${{ github.ref_name }}
+            git checkout ${{ github.sha }}
+
+            # Install production dependencies
+            echo "Installing dependencies..."
+            npm ci --only=production
+
+            # Copy built files to release
+            cp -r dist "$NEW_RELEASE/"
+            cp -r config "$NEW_RELEASE/"
+            cp -r node_modules "$NEW_RELEASE/"
+            cp package*.json "$NEW_RELEASE/"
+
+            # Copy environment file
+            if [ -f "$DEPLOY_DIR/.env.production" ]; then
+              cp "$DEPLOY_DIR/.env.production" "$NEW_RELEASE/.env"
+            fi
+
+            # Run database migrations
+            echo "Running database migrations..."
+            cd "$NEW_RELEASE"
+            npm run db:push || echo "Migration warning - continuing..."
+
+            # Atomic symlink swap
+            echo "Switching to new release..."
+            ln -sfn "$NEW_RELEASE" "$DEPLOY_DIR/current.new"
+            mv -Tf "$DEPLOY_DIR/current.new" "$CURRENT_DIR"
+
+            # Restart application with zero-downtime
+            echo "Restarting application..."
+            if command -v pm2 &> /dev/null; then
+              pm2 reload johnsonbros --update-env || pm2 start "$CURRENT_DIR/dist/index.js" --name johnsonbros
+            else
+              # Fallback: direct node restart (will cause brief downtime)
+              pkill -f "node.*dist/index.js" || true
+              cd "$CURRENT_DIR"
+              nohup node dist/index.js > /dev/null 2>&1 &
+            fi
+
+            # Wait for application to start
+            echo "Waiting for application to start..."
+            sleep 5
+
+            # Health check
+            echo "Running health check..."
+            MAX_RETRIES=5
+            RETRY_COUNT=0
+            while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+              if curl -sf http://localhost:5000/health > /dev/null; then
+                echo "Health check passed!"
+                break
+              fi
+              RETRY_COUNT=$((RETRY_COUNT + 1))
+              echo "Health check attempt $RETRY_COUNT failed, retrying..."
+              sleep 3
+            done
+
+            if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+              echo "Health check failed after $MAX_RETRIES attempts!"
+              echo "Initiating automatic rollback..."
+
+              # Find most recent backup
+              LATEST_BACKUP=$(ls -dt "$BACKUP_DIR"/backup-* 2>/dev/null | head -1)
+              if [ -n "$LATEST_BACKUP" ]; then
+                ln -sfn "$LATEST_BACKUP" "$DEPLOY_DIR/current.new"
+                mv -Tf "$DEPLOY_DIR/current.new" "$CURRENT_DIR"
+                pm2 reload johnsonbros --update-env 2>/dev/null || true
+                echo "Rolled back to: $LATEST_BACKUP"
+              fi
+              exit 1
+            fi
+
+            # Cleanup old releases (keep last 5)
+            cd "$RELEASES_DIR"
+            ls -dt release-* 2>/dev/null | tail -n +6 | xargs rm -rf 2>/dev/null || true
+
+            echo "=== Deployment complete ==="
+
+      - name: Notify on success
+        if: success()
+        run: |
+          echo "Deployment successful!"
+          echo "Environment: ${{ github.event.inputs.environment || 'staging' }}"
+          echo "Commit: ${{ github.sha }}"
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "::error::Deployment failed! Check logs for details."
+          echo "Consider running manual rollback if needed."

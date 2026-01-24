@@ -1,0 +1,80 @@
+# ============================================================================
+# Johnson Bros Plumbing - Docker Compose Configuration
+# Production deployment orchestration
+# ============================================================================
+
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: johnsonbros-app
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env.production
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    volumes:
+      # Persist logs
+      - ./logs:/app/logs
+    networks:
+      - johnsonbros-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Optional: MCP Server (uncomment if running separately)
+  # mcp:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.mcp
+  #   container_name: johnsonbros-mcp
+  #   ports:
+  #     - "3001:3001"
+  #   env_file:
+  #     - .env.production
+  #   environment:
+  #     - NODE_ENV=production
+  #     - MCP_PORT=3001
+  #   restart: unless-stopped
+  #   depends_on:
+  #     app:
+  #       condition: service_healthy
+  #   networks:
+  #     - johnsonbros-network
+
+  # Optional: Redis for session store (uncomment if needed)
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: johnsonbros-redis
+  #   restart: unless-stopped
+  #   volumes:
+  #     - redis-data:/data
+  #   networks:
+  #     - johnsonbros-network
+  #   healthcheck:
+  #     test: ["CMD", "redis-cli", "ping"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+
+networks:
+  johnsonbros-network:
+    driver: bridge
+
+# volumes:
+#   redis-data:
