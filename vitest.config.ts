@@ -11,5 +11,11 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["src/**/*.test.ts", "server/**/*.test.ts"],
+    exclude: [
+      "**/node_modules/**",
+      // Node test runner files (use `node --test` instead of vitest)
+      "server/tests/geocoding.test.ts",
+      "server/tests/sharedThread.test.ts",
+    ],
   },
 });

@@ -26,7 +26,12 @@ Object.defineProperty(window, "ResizeObserver", {
 });
 
 Object.defineProperty(navigator, "clipboard", {
+  writable: true,
+  configurable: true,
   value: {
     writeText: async () => {},
+    readText: async () => "",
+    write: async () => {},
+    read: async () => [],
   },
 });

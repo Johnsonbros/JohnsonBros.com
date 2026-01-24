@@ -11,7 +11,7 @@ export default defineConfig({
         "shared",
         "unified-cards",
       ),
-      "@assets": path.resolve(import.meta.dirname, "attached_assets"),
+      "@assets": path.resolve(import.meta.dirname, "client", "src", "assets"),
     },
   },
   test: {
