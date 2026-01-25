@@ -6,6 +6,7 @@ import { Phone, MapPin, CheckCircle, Clock, Shield, Star, ExternalLink } from "l
 import { Link } from "wouter";
 import { LocalBusinessSchema, ServiceAreaSchema, FAQSchema, BreadcrumbSchema, ReviewSchema } from "@/components/schema-markup";
 import { serviceAreaMetadata, generateSocialMetaTags } from "@/lib/seoMetadata";
+import { NearbyServiceAreas } from "@/components/NearbyServiceAreas";
 
 // Official Google Business Profile Data
 const ABINGTON_OFFICE = {
@@ -254,7 +255,10 @@ export default function AbingtonPlumbing() {
             </div>
           </section>
 
-          <section className="py-16 bg-white">
+          {/* Nearby Areas */}
+          <NearbyServiceAreas currentArea="abington" />
+
+          <section className="py-16 bg-gray-50">
             <div className="container mx-auto px-4">
               <div className="max-w-4xl mx-auto text-center">
                 <h2 className="text-3xl sm:text-4xl font-bold mb-6">Schedule Plumbing Service in Abington</h2>
