@@ -24,7 +24,8 @@ interface CheckIn {
 export default function CheckInsPage() {
   const { data: checkInsData, isLoading } = useQuery<{ checkIns: CheckIn[]; count: number }>({
     queryKey: ['/api/v1/checkins'],
-    refetchInterval: 15000, // Refresh every 15 seconds
+    refetchInterval: 60000, // Refresh every 60 seconds
+    refetchIntervalInBackground: false,
   });
 
   const getStatusColor = (status: string) => {

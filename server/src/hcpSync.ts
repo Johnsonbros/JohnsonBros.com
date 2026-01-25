@@ -118,9 +118,9 @@ export class HCPSyncService {
   }
 
   /**
-   * Start periodic sync (every 5 minutes)
+   * Start periodic sync (every 30 minutes)
    */
-  startPeriodicSync(intervalMs = 5 * 60 * 1000): void {
+  startPeriodicSync(intervalMs = 30 * 60 * 1000): void {
     if (this.syncInterval) {
       clearInterval(this.syncInterval);
     }

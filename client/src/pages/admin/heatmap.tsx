@@ -17,7 +17,8 @@ export default function AdminHeatMap() {
   // Fetch heat map data
   const { data: heatMapData } = useQuery<{ dataPoints: Array<{ lat: number; lng: number; intensity: number }>, count: number }>({
     queryKey: ['/api/v1/admin/heatmap/data'],
-    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchInterval: 120000, // Refresh every 2 minutes
+    refetchIntervalInBackground: false,
   });
 
   // Fetch statistics
@@ -28,7 +29,8 @@ export default function AdminHeatMap() {
     activeDataPoints: number;
   }>({
     queryKey: ['/api/v1/admin/heatmap/stats'],
-    refetchInterval: 30000,
+    refetchInterval: 120000, // Refresh every 2 minutes
+    refetchIntervalInBackground: false,
   });
 
   // Import historical data mutation

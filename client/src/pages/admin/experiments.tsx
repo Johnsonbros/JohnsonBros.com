@@ -118,7 +118,8 @@ export default function ExperimentsPage() {
   // Fetch experiments
   const { data: experiments, isLoading: experimentsLoading } = useQuery<ABTest[]>({
     queryKey: ['/api/v1/experiments'],
-    refetchInterval: 30000 // Refresh every 30 seconds
+    refetchInterval: 120000, // Refresh every 2 minutes
+    refetchIntervalInBackground: false,
   });
 
   // Fetch conversion funnels

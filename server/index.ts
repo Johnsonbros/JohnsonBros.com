@@ -160,14 +160,14 @@ app.use((req, res, next) => {
       await adsBridge.applyCapacityRules();
       console.log('Initial capacity check and ads sync completed');
 
-      // Schedule periodic ads sync (every 5 minutes)
+      // Schedule periodic ads sync (every 30 minutes)
       const adsSyncInterval = setInterval(async () => {
         try {
           await adsBridge.applyCapacityRules();
         } catch (error) {
           console.error('Error applying ads rules:', error);
         }
-      }, 5 * 60 * 1000);
+      }, 30 * 60 * 1000);
 
       // Store interval for potential cleanup
       (global as any).__adsSyncInterval = adsSyncInterval;

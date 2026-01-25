@@ -166,7 +166,8 @@ export default function ObservabilityDashboard() {
   const { data: overview, isLoading, error, refetch } = useQuery<DashboardOverview>({
     queryKey: ['observability-overview', dateRange],
     queryFn: () => authenticatedFetch(`/api/admin/observability/overview?hours=${getHours()}`),
-    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchInterval: 120000, // Refresh every 2 minutes
+    refetchIntervalInBackground: false,
   });
 
   // Acknowledge alert mutation
