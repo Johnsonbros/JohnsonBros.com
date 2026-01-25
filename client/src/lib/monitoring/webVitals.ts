@@ -225,8 +225,10 @@ class WebVitalsMonitor {
               });
             }
 
-            // Track API calls
-            if (resourceEntry.name.includes('/api/')) {
+            // Track API calls (excluding analytics endpoints to prevent feedback loop)
+            if (resourceEntry.name.includes('/api/') &&
+                !resourceEntry.name.includes('/api/v1/analytics/') &&
+                !resourceEntry.name.includes('/api/v1/monitoring/')) {
               this.trackAPIPerformance(resourceEntry);
             }
           }
@@ -326,8 +328,55 @@ class WebVitalsMonitor {
 
 export const webVitalsMonitor = WebVitalsMonitor.getInstance();
 
-// Helper function to send metrics to analytics
+// Dedupe/throttle state for sendToAnalytics
+const sentMetrics = new Map<string, { timestamp: number; value: number }>();
+const METRIC_THROTTLE_MS = 5000; // Don't resend same metric within 5 seconds
+const VALUE_CHANGE_THRESHOLD = 0.05; // 5% change required to resend
+
+// Sampling: only send vitals for a percentage of sessions
+// Default: 10% in dev, 100% in prod (configurable via VITE_WEB_VITALS_SAMPLE_RATE)
+const DEFAULT_SAMPLE_RATE = import.meta.env.DEV ? 0.1 : 1.0;
+const SAMPLE_RATE = parseFloat(import.meta.env.VITE_WEB_VITALS_SAMPLE_RATE || String(DEFAULT_SAMPLE_RATE));
+const SESSION_SAMPLED = Math.random() < SAMPLE_RATE;
+
+// Helper function to send metrics to analytics (with dedupe + sampling)
 export function sendToAnalytics(metric: VitalMetric) {
+  // Sampling: skip sending if this session is not sampled
+  if (!SESSION_SAMPLED) {
+    return;
+  }
+
+  // Build a stable key for deduplication
+  const key = `${metric.name}:${metric.id || ''}:${metric.navigationType || ''}`;
+  const now = Date.now();
+  const previous = sentMetrics.get(key);
+
+  // Check if we should skip this metric
+  if (previous) {
+    const timeSinceLastSend = now - previous.timestamp;
+    const valueChangeRatio = Math.abs(metric.value - previous.value) / (previous.value || 1);
+
+    // Skip if: sent recently AND value hasn't changed significantly
+    if (timeSinceLastSend < METRIC_THROTTLE_MS && valueChangeRatio < VALUE_CHANGE_THRESHOLD) {
+      if (import.meta.env.DEV) {
+        console.log(`[WebVitals] Skipping duplicate metric: ${key} (sent ${timeSinceLastSend}ms ago)`);
+      }
+      return;
+    }
+  }
+
+  // Record this send
+  sentMetrics.set(key, { timestamp: now, value: metric.value });
+
+  // Prevent memory leak: clean up old entries (keep last 50)
+  if (sentMetrics.size > 50) {
+    const entries = Array.from(sentMetrics.entries());
+    entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
+    for (let i = 0; i < entries.length - 50; i++) {
+      sentMetrics.delete(entries[i][0]);
+    }
+  }
+
   // Google Analytics implementation
   if (window.gtag) {
     window.gtag('event', 'web_vitals', {
@@ -341,7 +390,7 @@ export function sendToAnalytics(metric: VitalMetric) {
 
   // Use sendBeacon for reliability during page unload, fall back to fetch
   const data = JSON.stringify(metric);
-  
+
   if (navigator.sendBeacon) {
     // sendBeacon is more reliable for analytics during page unload
     const blob = new Blob([data], { type: 'application/json' });

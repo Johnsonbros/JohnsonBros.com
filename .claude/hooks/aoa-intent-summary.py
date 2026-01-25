@@ -8,18 +8,13 @@ Output: ⚡ aOa 87% │ 877 intents │ 0.1ms │ editing python searching
         Accuracy is FIRST - bright and visible
 """
 
+import sys
 import json
 import os
-import sys
 import time
 from pathlib import Path
-from urllib.error import URLError
 from urllib.request import Request, urlopen
-
-# Fix Windows encoding for Unicode output (emojis, etc.)
-if sys.platform == 'win32':
-    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
-    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+from urllib.error import URLError
 
 AOA_URL = os.environ.get("AOA_URL", "http://localhost:8080")
 
@@ -129,9 +124,8 @@ def get_recent_files(records: list) -> list:
     files = set()
     for record in records[:10]:
         for f in record.get('files', []):
-            # Must be absolute path (Unix / or Windows C:/), not a pattern, and have a file extension
-            is_absolute = f.startswith('/') or (len(f) > 2 and f[1] == ':')
-            if (is_absolute and
+            # Must be absolute path, not a pattern, and have a file extension
+            if (f.startswith('/') and
                 not f.startswith('pattern:') and
                 '.' in os.path.basename(f)):  # Has extension = is a file
                 files.add(f)
