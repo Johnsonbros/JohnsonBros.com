@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Phone, MapPin, CheckCircle, Clock, Shield } from "lucide-react";
 import { Link } from "wouter";
 import { LocalBusinessSchema } from "@/components/schema-markup";
+import { NearbyServiceAreas } from "@/components/NearbyServiceAreas";
 
 export default function HinghamPlumbing() {
   return (
@@ -185,22 +186,7 @@ export default function HinghamPlumbing() {
           </section>
 
           {/* Nearby Areas */}
-          <section className="py-16 bg-white">
-            <div className="container mx-auto px-4">
-              <div className="max-w-6xl mx-auto">
-                <h2 className="text-3xl sm:text-4xl font-bold text-center mb-8">
-                  We Also Serve Nearby Communities
-                </h2>
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 text-center">
-                  {["Cohasset", "Hull", "Weymouth", "Quincy", "Scituate", "Norwell", "Rockland", "Hanover"].map((city) => (
-                    <Link key={city} href={`/service-areas/${city.toLowerCase()}`} className="text-johnson-blue hover:text-johnson-teal font-medium">
-                      {city}
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </section>
+          <NearbyServiceAreas currentArea="hingham" />
 
           {/* CTA */}
           <section className="py-16 bg-gradient-to-br from-johnson-blue to-johnson-teal text-white">

@@ -6,6 +6,7 @@ import { Phone, MapPin, CheckCircle, Clock, Shield } from "lucide-react";
 import { Link } from "wouter";
 import { LocalBusinessSchema, ServiceAreaSchema, FAQSchema, BreadcrumbSchema, ReviewSchema } from "@/components/schema-markup";
 import { serviceAreaMetadata, generateSocialMetaTags } from "@/lib/seoMetadata";
+import { NearbyServiceAreas } from "@/components/NearbyServiceAreas";
 
 export default function HansonPlumbing() {
   const pageMetadata = serviceAreaMetadata['hanson'];
@@ -95,14 +96,7 @@ export default function HansonPlumbing() {
               </div>
             </div>
           </section>
-          <section className="py-16 bg-white">
-            <div className="container mx-auto px-4 max-w-6xl">
-              <h2 className="text-3xl font-bold text-center mb-8">We Also Serve Nearby Communities</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 text-center">
-                {["Whitman", "Rockland", "Pembroke", "Halifax", "East Bridgewater", "Abington"].map((c) => (<Link key={c} href={`/service-areas/${c.toLowerCase().replace(' ', '-')}`} className="text-johnson-blue hover:text-johnson-teal font-medium">{c}</Link>))}
-              </div>
-            </div>
-          </section>
+          <NearbyServiceAreas currentArea="hanson" />
           <section className="py-16 bg-gradient-to-br from-johnson-blue to-johnson-teal text-white">
             <div className="container mx-auto px-4 text-center">
               <h2 className="text-3xl sm:text-4xl font-bold mb-6">Need a Plumber in Hanson Today?</h2>

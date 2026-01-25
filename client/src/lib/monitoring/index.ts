@@ -10,7 +10,30 @@ export interface MonitoringConfig {
   enableDebugMode?: boolean;
 }
 
+// Module-level flag to ensure single initialization
+let monitoringInitialized = false;
+let monitoringResult: {
+  sentry: typeof sentryClient;
+  analytics: typeof analytics;
+  webVitals: typeof webVitalsMonitor;
+} | null = null;
+
 export function initializeMonitoring(config: MonitoringConfig = {}) {
+  // SSR guard
+  if (typeof window === 'undefined') {
+    return { sentry: sentryClient, analytics, webVitals: webVitalsMonitor };
+  }
+
+  // Idempotent: return cached result if already initialized
+  if (monitoringInitialized && monitoringResult) {
+    if (import.meta.env.DEV) {
+      console.log('[Monitoring] initializeMonitoring called again; skipping re-init');
+    }
+    return monitoringResult;
+  }
+
+  monitoringInitialized = true;
+
   const {
     enableSentry = !!import.meta.env.VITE_SENTRY_DSN,
     enableAnalytics = !!import.meta.env.VITE_GA_MEASUREMENT_ID,
@@ -87,11 +110,13 @@ export function initializeMonitoring(config: MonitoringConfig = {}) {
     console.log('[Monitoring] Debug mode enabled - monitoring tools available at window.__monitoring');
   }
 
-  return {
+  monitoringResult = {
     sentry: sentryClient,
     analytics,
     webVitals: webVitalsMonitor,
   };
+
+  return monitoringResult;
 }
 
 // Export all monitoring utilities

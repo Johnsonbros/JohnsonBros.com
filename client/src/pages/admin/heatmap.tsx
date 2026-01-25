@@ -279,7 +279,7 @@ export default function AdminHeatMap() {
         <CardHeader>
           <CardTitle>Live Heat Map</CardTitle>
           <CardDescription>
-            Real-time visualization updates every 30 seconds. Red areas indicate high service density.
+            Real-time visualization updates every 2 minutes. Red areas indicate high service density.
           </CardDescription>
         </CardHeader>
         <CardContent>

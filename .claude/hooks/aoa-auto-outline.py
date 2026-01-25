@@ -8,12 +8,14 @@ This caches the file's structure (functions, classes, methods) for prediction.
 Fire-and-forget, non-blocking, <10ms.
 """
 
-import json
-import os
 import sys
-from concurrent.futures import ThreadPoolExecutor
+import json
+import re
+import os
 from pathlib import Path
 from urllib.request import Request, urlopen
+from urllib.error import URLError
+from concurrent.futures import ThreadPoolExecutor
 
 # Supported extensions for structural outline
 # These are languages with meaningful structure (functions, classes, etc.)
@@ -44,7 +46,7 @@ def trigger_outline(file_path: str) -> None:
         url = f"{AOA_URL}/outline?file={file_path}"
         req = Request(url, method='GET')
         req.add_header('User-Agent', 'aoa-auto-outline/1.0')
-        with urlopen(req, timeout=5):
+        with urlopen(req, timeout=5) as resp:
             pass  # Just trigger, don't need response
     except Exception:
         pass  # Fire and forget
