@@ -21,7 +21,8 @@ interface ServiceFeeCardProps {
 export function ServiceFeeCard({ card, onAction, onDismiss }: ServiceFeeCardProps) {
   const { data: capacity } = useQuery<CapacityData>({
     queryKey: ['/api/v1/capacity/today'],
-    refetchOnWindowFocus: true,
+    staleTime: 5 * 60 * 1000, // 5 minutes - share cache with other capacity queries
+    refetchOnWindowFocus: false,
   });
 
   const amount = card.amount ?? 99;

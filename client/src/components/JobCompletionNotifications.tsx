@@ -28,7 +28,7 @@ export function JobCompletionNotifications() {
 
   const { data: recentJobs = [] } = useQuery<RecentJob[]>({
     queryKey: ["/api/v1/social-proof/recent-jobs"],
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false, // Reduce unnecessary API calls
   });
 
   useEffect(() => {

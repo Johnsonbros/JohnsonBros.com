@@ -42,7 +42,7 @@ export default function GoogleReviewsSection() {
   
   const { data: googleData, isLoading, error } = useQuery<GoogleReviewsData>({
     queryKey: ["/api/v1/google-reviews"],
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false, // Reviews don't change frequently
     enabled: shouldFetch,
     staleTime: 5 * 60 * 1000,
   });

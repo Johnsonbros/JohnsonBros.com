@@ -28,7 +28,7 @@ export function RecentJobsWidget() {
   
   const { data: recentJobs = [], isLoading } = useQuery<RecentJob[]>({
     queryKey: ["/api/v1/social-proof/recent-jobs"],
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false, // Reduce unnecessary API calls
     enabled: shouldFetch,
     staleTime: 5 * 60 * 1000,
   });

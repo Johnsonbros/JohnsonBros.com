@@ -40,10 +40,12 @@ interface CapacityData {
 }
 
 export default function CapacityHero({ onBookService }: HeroSectionProps) {
-  // Fetch capacity data
+  // Fetch capacity data - use staleTime to reduce API calls
+  // Capacity state changes slowly, 5 min staleTime is sufficient
   const { data: capacity, isLoading } = useQuery<CapacityData>({
     queryKey: ['/api/v1/capacity/today'],
-    refetchOnWindowFocus: true,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false, // Don't spam API on tab switches
   });
 
   const handleBookNow = () => {

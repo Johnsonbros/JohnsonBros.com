@@ -23,10 +23,13 @@ export function UrgencyIndicator({
   const [recentBookings, setRecentBookings] = useState(4);
   const [pulseAnimation, setPulseAnimation] = useState(false);
 
-  // Fetch capacity data
+  // Fetch capacity data - use long staleTime to reduce API calls
+  // Server caches for 30s, so staleTime of 5 minutes is fine for UI
   const { data: capacityData } = useQuery({
     queryKey: ['/api/v1/capacity/today'],
-    refetchInterval: 60000 // Refresh every minute
+    staleTime: 5 * 60 * 1000, // 5 minutes - capacity doesn't change that fast
+    refetchOnWindowFocus: false, // Don't refetch on tab switch
+    // Removed refetchInterval - unnecessary polling was causing too many API calls
   });
 
   // Simulate real-time viewer count changes

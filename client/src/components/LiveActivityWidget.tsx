@@ -16,7 +16,7 @@ interface LiveActivity {
 export function LiveActivityWidget() {
   const { data: activities = [], isLoading } = useQuery<LiveActivity[]>({
     queryKey: ["/api/v1/social-proof/live-activity"],
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false, // Reduce unnecessary API calls
   });
 
   if (isLoading) {

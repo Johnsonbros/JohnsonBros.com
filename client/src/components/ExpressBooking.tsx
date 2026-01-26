@@ -58,13 +58,14 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
       const response = await apiRequest("GET", url);
       return response.json();
     },
-    refetchOnWindowFocus: true,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
   });
 
   // Check if we should show today or tomorrow based on available slots
-  const shouldShowTomorrow = todayCapacity?.overall.state === 'NEXT_DAY' || 
+  const shouldShowTomorrow = todayCapacity?.overall.state === 'NEXT_DAY' ||
     (todayCapacity?.unique_express_windows?.length === 0);
-  
+
   // Fetch tomorrow's capacity data if today has no slots (using v1 API endpoint)
   const { data: tomorrowCapacity } = useQuery<CapacityData>({
     queryKey: ['/api/v1/capacity/tomorrow', userZip],
@@ -74,7 +75,8 @@ export default function ExpressBooking({ onBookService }: HeroSectionProps) {
       return response.json();
     },
     enabled: shouldShowTomorrow,
-    refetchOnWindowFocus: true,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
   });
 
   useEffect(() => {

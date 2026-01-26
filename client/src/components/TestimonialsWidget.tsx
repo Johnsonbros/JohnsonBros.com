@@ -16,7 +16,7 @@ interface Testimonial {
 export function TestimonialsWidget() {
   const { data: testimonials = [], isLoading } = useQuery<Testimonial[]>({
     queryKey: ["/api/v1/social-proof/testimonials"],
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false, // Reduce unnecessary API calls
   });
 
   if (isLoading) {

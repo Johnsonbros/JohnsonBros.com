@@ -44,7 +44,7 @@ export default function Header({ onBookService }: HeaderProps) {
   // Fetch real-time Google reviews data
   const { data: reviewsData } = useQuery<GoogleReviewsData>({
     queryKey: ["/api/v1/google-reviews"],
-    refetchInterval: 1000 * 60 * 30, // Refresh every 30 minutes
+    staleTime: 10 * 60 * 1000, // 10 minutes - reviews rarely change
     refetchOnWindowFocus: true,
   });
 
