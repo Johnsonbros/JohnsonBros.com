@@ -69,7 +69,7 @@
 |---|------|-----------------|------------------|------|--------|---|---|
 | P3-SEO-002 | Build local citations | Listings on 10+ directories | Manual submissions | SEO-001 | **Strategy Ready** | 🟢 | - |
 | P3-SEO-004 | XML sitemap update | sitemap.xml with all service pages | Generate + submit to GSC | SEO-001 | **Done** | 🟢 | - |
-| P3-SEO-005 | Page speed optimization | Core Web Vitals green | Lighthouse audit + fixes | SEO-001 | **Strategy Ready** | 🟢 | - |
+| P3-SEO-005 | Page speed optimization | Core Web Vitals green | Vite chunks + image compression | SEO-001 | **Bundle Done** | 🟢 | - |
 | P3-SEO-006 | Mobile usability check | All pages mobile-friendly | Google Mobile Test | SEO-001 | Queued | 🟢 | - |
 
 ---
