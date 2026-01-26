@@ -8,10 +8,19 @@ interface HeroSectionProps {
   onBookService: () => void;
 }
 
+type CapacityState =
+  | 'SAME_DAY_FEE_WAIVED'
+  | 'LIMITED_SAME_DAY'
+  | 'NEXT_DAY'
+  | 'EMERGENCY_ONLY'
+  | 'WEEKEND_EMERGENCY'
+  | 'HOLIDAY'
+  | 'AFTER_CUTOFF';
+
 interface CapacityData {
   overall: {
     score: number;
-    state: 'SAME_DAY_FEE_WAIVED' | 'LIMITED_SAME_DAY' | 'NEXT_DAY';
+    state: CapacityState;
   };
   tech: {
     nate: { score: number; open_windows: string[] };
@@ -22,8 +31,10 @@ interface CapacityData {
     headline: string;
     subhead: string;
     cta: string;
-    badge?: string;
+    cta_secondary?: string;
+    badge?: string | null;
     urgent: boolean;
+    banner?: string;
   };
   expires_at: string;
 }
@@ -153,8 +164,18 @@ export default function CapacityHero({ onBookService }: HeroSectionProps) {
               </Button>
             </div>
 
+            {/* Capacity Banner - for states with special messaging */}
+            {capacity?.ui_copy?.banner && (
+              <div className="mt-4 bg-yellow-500/20 border border-yellow-500/50 rounded-lg p-3">
+                <p className="text-sm font-medium text-yellow-100 flex items-center">
+                  <AlertCircle className="mr-2 h-4 w-4 flex-shrink-0" />
+                  {capacity.ui_copy.banner}
+                </p>
+              </div>
+            )}
+
             {/* Availability Indicator */}
-            {capacity && (
+            {capacity && !capacity.ui_copy?.banner && (
               <div className="mt-4 text-sm text-blue-100">
                 {capacity.overall.state === 'SAME_DAY_FEE_WAIVED' && (
                   <span className="flex items-center">
@@ -174,6 +195,24 @@ export default function CapacityHero({ onBookService }: HeroSectionProps) {
                     Next available: Tomorrow
                   </span>
                 )}
+                {capacity.overall.state === 'WEEKEND_EMERGENCY' && (
+                  <span className="flex items-center">
+                    <Phone className="mr-2 h-4 w-4" />
+                    Weekend hours - Book for Monday or call for emergency
+                  </span>
+                )}
+                {capacity.overall.state === 'HOLIDAY' && (
+                  <span className="flex items-center">
+                    <Calendar className="mr-2 h-4 w-4" />
+                    Holiday hours - Book for next business day
+                  </span>
+                )}
+                {capacity.overall.state === 'AFTER_CUTOFF' && (
+                  <span className="flex items-center">
+                    <Clock className="mr-2 h-4 w-4" />
+                    Same-day closed - Book tomorrow or call for availability
+                  </span>
+                )}
               </div>
             )}
           </div>
@@ -189,15 +228,24 @@ export default function CapacityHero({ onBookService }: HeroSectionProps) {
             {/* Floating Service Badge - Dynamic based on state */}
             <div className="absolute -bottom-3 -left-3 sm:-bottom-6 sm:-left-6 bg-white p-3 sm:p-6 rounded-xl shadow-lg">
               <div className="text-center">
-                <div className="text-2xl sm:text-3xl font-bold text-johnson-blue" data-testid="service-fee">
-                  {showFeeWaived ? 'FREE' : '$99'}
-                </div>
-                <div className="text-xs sm:text-sm text-gray-600">
-                  {showFeeWaived ? 'Emergency Fee' : 'Service Fee'}
-                </div>
-                <div className="text-xs text-green-600 font-medium">
-                  {showFeeWaived ? 'Waived Today!' : 'Applied to repair cost'}
-                </div>
+                {showFeeWaived ? (
+                  <>
+                    <div className="text-sm text-gray-400 line-through">$99</div>
+                    <div className="text-2xl sm:text-3xl font-bold text-green-600" data-testid="service-fee">
+                      FREE
+                    </div>
+                    <div className="text-xs sm:text-sm text-gray-600">Service Fee</div>
+                    <div className="text-xs text-green-600 font-medium">Waived Today!</div>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-2xl sm:text-3xl font-bold text-johnson-blue" data-testid="service-fee">
+                      $99
+                    </div>
+                    <div className="text-xs sm:text-sm text-gray-600">Service Fee</div>
+                    <div className="text-xs text-gray-500 font-medium">Applied to repair cost</div>
+                  </>
+                )}
               </div>
             </div>
           </div>
