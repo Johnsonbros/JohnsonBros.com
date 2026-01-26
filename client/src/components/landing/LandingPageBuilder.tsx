@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useLocation } from "wouter";
 import { EmergencyHero } from "./EmergencyHero";
 import { ServiceHero } from "./ServiceHero";
 import { SeasonalHero } from "./SeasonalHero";
@@ -20,6 +21,8 @@ import ServiceAreaSection from "@/components/ServiceAreaSection";
 import ReviewsSection from "@/components/ReviewsSection";
 import ServicesSection from "@/components/ServicesSection";
 import { Separator } from "@/components/ui/separator";
+import { trackEvent, trackPageView, trackConversion, trackBookingEvent } from "@/lib/analytics";
+import { getLandingPageByPath } from "@/config/landingPages";
 
 type HeroType = 'emergency' | 'service' | 'seasonal' | 'location';
 type TrustModule = 'badges' | 'socialProof' | 'guarantees' | 'team';
@@ -85,6 +88,12 @@ export function LandingPageBuilder({
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [showExitIntent, setShowExitIntent] = useState(false);
   const scriptRef = useRef<HTMLScriptElement>(null);
+  const pageLoadTime = useRef(Date.now());
+  const hasTrackedScroll = useRef(false);
+  const [location] = useLocation();
+
+  // Get landing page metadata from registry
+  const landingPageMeta = getLandingPageByPath(location);
 
   // Default feature flags
   const featureFlags = {
@@ -95,14 +104,127 @@ export function LandingPageBuilder({
     ...config.featureFlags
   };
 
-  // Handle booking
-  const handleBookService = () => {
+  // Parse UTM parameters from URL
+  const getUtmParams = useCallback(() => {
+    const params = new URLSearchParams(window.location.search);
+    return {
+      utm_source: params.get('utm_source') || 'direct',
+      utm_medium: params.get('utm_medium') || 'none',
+      utm_campaign: params.get('utm_campaign') || 'none',
+      utm_content: params.get('utm_content') || undefined,
+      utm_term: params.get('utm_term') || undefined,
+      gclid: params.get('gclid') || undefined, // Google Ads click ID
+      fbclid: params.get('fbclid') || undefined, // Meta click ID
+    };
+  }, []);
+
+  // Track landing page view on mount
+  useEffect(() => {
+    const utmParams = getUtmParams();
+
+    // Track page view with landing page context
+    trackPageView(location, config.title);
+
+    // Track landing page specific event with full context
+    trackEvent('landing_page_view', {
+      event_category: 'Landing Page',
+      page_id: landingPageMeta?.id || config.trackingId || location,
+      page_name: landingPageMeta?.name || config.title,
+      page_path: location,
+      conversion_goal: config.conversionGoal,
+      variant: config.variant || 'default',
+      ...utmParams,
+    });
+
+    // Store session data for attribution
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.setItem('landing_page', JSON.stringify({
+        id: landingPageMeta?.id || config.trackingId,
+        path: location,
+        variant: config.variant,
+        conversionGoal: config.conversionGoal,
+        entryTime: new Date().toISOString(),
+        utmParams,
+      }));
+    }
+  }, [location, config.title, config.trackingId, config.conversionGoal, config.variant, landingPageMeta, getUtmParams]);
+
+  // Track scroll depth (25%, 50%, 75%, 100%)
+  useEffect(() => {
+    const trackScrollDepth = () => {
+      if (hasTrackedScroll.current) return;
+
+      const scrollPercent = Math.round(
+        (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100
+      );
+
+      const milestones = [25, 50, 75, 100];
+      for (const milestone of milestones) {
+        if (scrollPercent >= milestone) {
+          trackEvent('scroll_depth', {
+            event_category: 'Engagement',
+            page_id: landingPageMeta?.id || config.trackingId,
+            scroll_depth: milestone,
+            variant: config.variant,
+          });
+        }
+      }
+
+      if (scrollPercent >= 100) {
+        hasTrackedScroll.current = true;
+      }
+    };
+
+    window.addEventListener('scroll', trackScrollDepth, { passive: true });
+    return () => window.removeEventListener('scroll', trackScrollDepth);
+  }, [landingPageMeta, config.trackingId, config.variant]);
+
+  // Track time on page when user leaves
+  useEffect(() => {
+    const trackTimeOnPage = () => {
+      const timeOnPage = Math.round((Date.now() - pageLoadTime.current) / 1000);
+      trackEvent('time_on_page', {
+        event_category: 'Engagement',
+        page_id: landingPageMeta?.id || config.trackingId,
+        time_seconds: timeOnPage,
+        variant: config.variant,
+      });
+    };
+
+    window.addEventListener('beforeunload', trackTimeOnPage);
+    return () => window.removeEventListener('beforeunload', trackTimeOnPage);
+  }, [landingPageMeta, config.trackingId, config.variant]);
+
+  // Handle booking with tracking
+  const handleBookService = useCallback(() => {
+    // Track CTA click
+    trackEvent('cta_click', {
+      event_category: 'Conversion',
+      page_id: landingPageMeta?.id || config.trackingId,
+      cta_text: landingPageMeta?.primaryCTA || 'Book Service',
+      conversion_goal: config.conversionGoal,
+      variant: config.variant,
+    });
+
+    // Track booking started
+    trackBookingEvent('started', {
+      serviceType: config.hero.props?.serviceName || 'general',
+    });
+
     if (customBookHandler) {
       customBookHandler();
     } else {
       setIsBookingModalOpen(true);
     }
-  };
+  }, [customBookHandler, landingPageMeta, config.trackingId, config.conversionGoal, config.variant, config.hero.props?.serviceName]);
+
+  // Track booking modal close (potential abandonment)
+  const handleBookingModalClose = useCallback(() => {
+    trackBookingEvent('abandoned', {
+      serviceType: config.hero.props?.serviceName || 'general',
+    });
+    setIsBookingModalOpen(false);
+  }, [config.hero.props?.serviceName]);
 
   // Auto-open booking modal after delay
   useEffect(() => {
@@ -327,7 +449,7 @@ export function LandingPageBuilder({
         {/* Booking Modal */}
         <BookingModal
           isOpen={isBookingModalOpen}
-          onClose={() => setIsBookingModalOpen(false)}
+          onClose={handleBookingModalClose}
         />
       </div>
 

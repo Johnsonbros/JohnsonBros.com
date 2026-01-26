@@ -1924,6 +1924,96 @@ router.get('/usage/by-channel', authenticate, requirePermission('reports:view'),
 });
 
 // ==============================================
+// LANDING PAGE ANALYTICS ROUTES
+// ==============================================
+
+/**
+ * GET /api/admin/landing-pages/analytics
+ * Get analytics for landing pages
+ * Note: This integrates with GTM/GA4 data via the dataLayer.
+ * In production, connect to Google Analytics Data API or BigQuery.
+ * Query params: pageId (optional), startDate, endDate
+ */
+router.get('/landing-pages/analytics', authenticate, requirePermission('reports:view'), async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    const start = startDate ? new Date(startDate as string) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const end = endDate ? new Date(endDate as string) : new Date();
+
+    // Get aggregate website analytics for the date range
+    const analyticsData = await db.select({
+      date: websiteAnalytics.date,
+      pageViews: websiteAnalytics.pageViews,
+      uniqueVisitors: websiteAnalytics.uniqueVisitors,
+      bounceRate: websiteAnalytics.bounceRate,
+      avgSessionDuration: websiteAnalytics.avgSessionDuration,
+      conversionRate: websiteAnalytics.conversionRate,
+      topPages: websiteAnalytics.topPages,
+      trafficSources: websiteAnalytics.trafficSources,
+    })
+      .from(websiteAnalytics)
+      .where(
+        and(
+          gte(websiteAnalytics.date, start),
+          lte(websiteAnalytics.date, end)
+        )
+      )
+      .orderBy(desc(websiteAnalytics.date));
+
+    // Aggregate totals
+    const totals = analyticsData.reduce((acc, row) => {
+      acc.pageViews += row.pageViews || 0;
+      acc.uniqueVisitors += row.uniqueVisitors || 0;
+      acc.bounceRateSum += row.bounceRate || 0;
+      acc.sessionDurationSum += row.avgSessionDuration || 0;
+      acc.conversionRateSum += row.conversionRate || 0;
+      acc.count++;
+      return acc;
+    }, { pageViews: 0, uniqueVisitors: 0, bounceRateSum: 0, sessionDurationSum: 0, conversionRateSum: 0, count: 0 });
+
+    res.json({
+      startDate: start.toISOString(),
+      endDate: end.toISOString(),
+      summary: {
+        totalPageViews: totals.pageViews,
+        totalUniqueVisitors: totals.uniqueVisitors,
+        avgBounceRate: totals.count > 0 ? (totals.bounceRateSum / totals.count).toFixed(1) : '0.0',
+        avgSessionDuration: totals.count > 0 ? Math.round(totals.sessionDurationSum / totals.count) : 0,
+        avgConversionRate: totals.count > 0 ? (totals.conversionRateSum / totals.count).toFixed(2) : '0.00',
+      },
+      daily: analyticsData,
+      note: 'For per-page landing page analytics, connect to Google Analytics Data API. Frontend tracking is sent to GTM/GA4 via dataLayer.',
+    });
+  } catch (error) {
+    console.error('Landing page analytics error:', error);
+    res.status(500).json({ error: 'Failed to fetch landing page analytics' });
+  }
+});
+
+/**
+ * GET /api/admin/landing-pages/registry
+ * Get the landing page registry configuration
+ * Returns all registered landing pages with their metadata
+ */
+router.get('/landing-pages/registry', authenticate, requirePermission('reports:view'), async (req, res) => {
+  // Landing page registry is defined in client/src/config/landingPages.ts
+  // This endpoint returns a summary for API access
+  const registry = [
+    { id: 'emergency-plumbing', path: '/landing/emergency', status: 'active', conversionGoal: 'emergency-booking' },
+    { id: 'emergency-plumbing-service', path: '/service/emergency-plumbing-landing', status: 'active', conversionGoal: 'emergency-service-booking' },
+    { id: 'drain-cleaning', path: '/landing/drain-cleaning', status: 'active', conversionGoal: 'drain-cleaning-booking' },
+    { id: 'drain-cleaning-service', path: '/service/drain-cleaning-landing', status: 'active', conversionGoal: 'drain-service-booking' },
+    { id: 'water-heater', path: '/service/water-heater-landing', status: 'active', conversionGoal: 'water-heater-booking' },
+    { id: 'sewer-line', path: '/service/sewer-line-landing', status: 'active', conversionGoal: 'sewer-booking' },
+    { id: 'pipe-repair', path: '/service/pipe-repair-landing', status: 'active', conversionGoal: 'pipe-repair-booking' },
+    { id: 'winter-prep', path: '/landing/winter-prep', status: 'active', conversionGoal: 'winter-prep-booking' },
+    { id: 'gables-condo', path: '/landing/gables-condo', status: 'active', conversionGoal: 'gables-booking' },
+  ];
+
+  res.json({ pages: registry, configFile: 'client/src/config/landingPages.ts' });
+});
+
+// ==============================================
 // HCP SYNC & CACHED DATA ROUTES
 // ==============================================
 
