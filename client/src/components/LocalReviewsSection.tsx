@@ -24,14 +24,14 @@ export function LocalReviewsSection({ town, reviews }: LocalReviewsSectionProps)
             Real reviews from your neighbors
           </p>
 
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid sm:grid-cols-2 gap-4 sm:gap-6">
             {reviews.map((review, index) => (
               <div
                 key={index}
-                className="bg-white p-6 rounded-lg shadow-sm"
+                className="bg-white p-4 sm:p-6 rounded-lg shadow-sm"
               >
-                <div className="flex items-start gap-4">
-                  <Quote className="h-8 w-8 text-johnson-blue/20 flex-shrink-0" />
+                <div className="flex items-start gap-3 sm:gap-4">
+                  <Quote className="h-6 w-6 sm:h-8 sm:w-8 text-johnson-blue/20 flex-shrink-0" />
                   <div>
                     <div className="flex items-center gap-1 mb-2">
                       {[...Array(5)].map((_, i) => (

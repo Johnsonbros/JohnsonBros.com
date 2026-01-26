@@ -133,7 +133,7 @@ export default function RandolphPlumbing() {
                   Complete Plumbing Services in Randolph, MA
                 </h2>
 
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
                   {[
                     { title: "Emergency Plumbing", desc: "24/7 emergency service for burst pipes, leaks, and urgent repairs", link: "/services/general-plumbing" },
                     { title: "Drain Cleaning", desc: "Professional drain and sewer cleaning for homes and businesses", link: "/services/drain-cleaning" },
@@ -164,7 +164,7 @@ export default function RandolphPlumbing() {
                   Why Randolph Residents Choose Johnson Bros. Plumbing
                 </h2>
 
-                <div className="grid md:grid-cols-3 gap-8">
+                <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8">
                   {[
                     {
                       icon: Clock,
@@ -201,7 +201,7 @@ export default function RandolphPlumbing() {
                   Common Plumbing Issues in Randolph Homes
                 </h2>
 
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid sm:grid-cols-2 gap-4 sm:gap-6">
                   {[
                     { issue: "Aging Pipe Systems", desc: "Many Randolph homes have pipes that need updating for reliability" },
                     { issue: "Sewer Line Problems", desc: "Tree roots and aging infrastructure cause sewer issues" },

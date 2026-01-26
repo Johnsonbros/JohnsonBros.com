@@ -116,7 +116,7 @@ export default function ScituatePlumbing() {
                   Plumbing Services in Scituate
                 </h2>
 
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
                   {[
                     { title: "Emergency Plumbing", desc: "24/7 emergency repairs for coastal properties", link: "/services/emergency-plumbing" },
                     { title: "Drain Cleaning", desc: "Professional drain and sewer cleaning", link: "/services/drain-cleaning" },
@@ -146,7 +146,7 @@ export default function ScituatePlumbing() {
                   Why Scituate Residents Choose Johnson Bros.
                 </h2>
 
-                <div className="grid md:grid-cols-3 gap-8">
+                <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8">
                   {[
                     {
                       icon: Clock,
@@ -206,7 +206,7 @@ export default function ScituatePlumbing() {
                   Common Plumbing Concerns in Scituate
                 </h2>
 
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid sm:grid-cols-2 gap-4 sm:gap-6">
                   {[
                     { issue: "Salt Air Corrosion", desc: "Coastal exposure can wear down pipes and fixtures." },
                     { issue: "Storm Surge Backups", desc: "Heavy rains and surge conditions affecting drains." },

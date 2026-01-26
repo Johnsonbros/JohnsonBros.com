@@ -116,7 +116,7 @@ export default function HanoverPlumbing() {
                   Hanover Plumbing & Heating Services
                 </h2>
 
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
                   {[
                     { title: "Emergency Plumbing", desc: "24/7 response for leaks, bursts, and backups", link: "/services/emergency-plumbing" },
                     { title: "Drain Cleaning", desc: "Kitchen, bathroom, and main line cleaning", link: "/services/drain-cleaning" },
@@ -146,7 +146,7 @@ export default function HanoverPlumbing() {
                   Why Hanover Homeowners Choose Us
                 </h2>
 
-                <div className="grid md:grid-cols-3 gap-8">
+                <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8">
                   {[
                     {
                       icon: Clock,
@@ -206,7 +206,7 @@ export default function HanoverPlumbing() {
                   Common Plumbing Issues in Hanover Homes
                 </h2>
 
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid sm:grid-cols-2 gap-4 sm:gap-6">
                   {[
                     { issue: "Well & Water Pressure", desc: "Pressure fluctuations and system maintenance for some properties." },
                     { issue: "Sump Pump Failures", desc: "Basement flooding concerns during heavy storms." },

@@ -116,7 +116,7 @@ export default function HullPlumbing() {
                   Plumbing Services in Hull
                 </h2>
 
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
                   {[
                     { title: "Emergency Plumbing", desc: "24/7 response for leaks, burst pipes, and backups", link: "/services/emergency-plumbing" },
                     { title: "Drain Cleaning", desc: "Main line and drain cleaning for coastal properties", link: "/services/drain-cleaning" },
@@ -146,7 +146,7 @@ export default function HullPlumbing() {
                   Why Hull Residents Choose Johnson Bros.
                 </h2>
 
-                <div className="grid md:grid-cols-3 gap-8">
+                <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8">
                   {[
                     {
                       icon: Clock,
@@ -206,7 +206,7 @@ export default function HullPlumbing() {
                   Common Plumbing Issues in Hull
                 </h2>
 
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid sm:grid-cols-2 gap-4 sm:gap-6">
                   {[
                     { issue: "Salt Air Corrosion", desc: "Coastal conditions can speed up pipe and fixture wear." },
                     { issue: "Seasonal Winterization", desc: "Vacation homes need shut-down and start-up service." },

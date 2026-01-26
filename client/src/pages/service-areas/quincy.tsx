@@ -125,9 +125,9 @@ export default function QuincyPlumbing() {
                 </p>
 
                 {/* Google Rating Badge */}
-                <div className="flex items-center justify-center gap-2 mb-4">
-                  <div className="flex items-center gap-1 bg-white/20 px-4 py-2 rounded-full">
-                    <Star className="h-5 w-5 text-yellow-400 fill-yellow-400" />
+                <div className="flex flex-wrap items-center justify-center gap-2 mb-4">
+                  <div className="flex items-center gap-1 bg-white/20 px-3 sm:px-4 py-2 rounded-full text-sm sm:text-base">
+                    <Star className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-400 fill-yellow-400" />
                     <span className="font-bold">{QUINCY_OFFICE.rating}</span>
                     <span className="text-blue-100">({QUINCY_OFFICE.reviewCount}+ reviews)</span>
                   </div>
@@ -180,7 +180,7 @@ export default function QuincyPlumbing() {
                   Complete Plumbing Services in Quincy, MA
                 </h2>
                 
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
                   {[
                     { title: "Emergency Plumbing", desc: "24/7 emergency service for burst pipes, leaks, and urgent repairs", link: "/services/general-plumbing" },
                     { title: "Drain Cleaning", desc: "Professional drain and sewer cleaning for homes and businesses", link: "/services/drain-cleaning" },
@@ -211,7 +211,7 @@ export default function QuincyPlumbing() {
                   Why Quincy Residents Choose Johnson Bros. Plumbing
                 </h2>
                 
-                <div className="grid md:grid-cols-3 gap-8">
+                <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8">
                   {[
                     {
                       icon: Clock,
@@ -279,7 +279,7 @@ export default function QuincyPlumbing() {
                   Quincy's mix of historic homes and modern construction creates unique plumbing challenges. We're experts at handling:
                 </p>
                 
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid sm:grid-cols-2 gap-4 sm:gap-6">
                   {[
                     { issue: "Old Galvanized Pipe Replacement", desc: "Many Quincy homes built before 1960 have galvanized pipes that need replacement" },
                     { issue: "Sewer Line Issues", desc: "Tree roots and aging infrastructure can cause sewer line problems in established neighborhoods" },

@@ -116,7 +116,7 @@ export default function RocklandPlumbing() {
                   Plumbing Services in Rockland
                 </h2>
 
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
                   {[
                     { title: "Emergency Plumbing", desc: "24/7 service for burst pipes and critical repairs", link: "/services/emergency-plumbing" },
                     { title: "Drain Cleaning", desc: "Clog removal and sewer line cleaning", link: "/services/drain-cleaning" },
@@ -146,7 +146,7 @@ export default function RocklandPlumbing() {
                   Why Rockland Homeowners Trust Us
                 </h2>
 
-                <div className="grid md:grid-cols-3 gap-8">
+                <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8">
                   {[
                     {
                       icon: Clock,
@@ -206,7 +206,7 @@ export default function RocklandPlumbing() {
                   Common Plumbing Issues in Rockland
                 </h2>
 
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid sm:grid-cols-2 gap-4 sm:gap-6">
                   {[
                     { issue: "Root Intrusions", desc: "Tree roots causing blockages in older sewer lines." },
                     { issue: "Low Water Pressure", desc: "Mineral buildup and aging pipes reducing flow." },

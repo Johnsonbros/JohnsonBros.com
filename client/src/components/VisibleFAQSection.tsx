@@ -33,9 +33,9 @@ export function VisibleFAQSection({ town, faqs }: VisibleFAQSectionProps) {
               >
                 <button
                   onClick={() => setOpenIndex(openIndex === index ? null : index)}
-                  className="w-full px-6 py-4 text-left flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition-colors"
+                  className="w-full px-4 sm:px-6 py-3 sm:py-4 text-left flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition-colors"
                 >
-                  <span className="font-semibold text-gray-900 pr-4">
+                  <span className="font-semibold text-gray-900 pr-4 text-sm sm:text-base">
                     {faq.question}
                   </span>
                   {openIndex === index ? (
@@ -45,8 +45,8 @@ export function VisibleFAQSection({ town, faqs }: VisibleFAQSectionProps) {
                   )}
                 </button>
                 {openIndex === index && (
-                  <div className="px-6 py-4 bg-white">
-                    <p className="text-gray-600 leading-relaxed">{faq.answer}</p>
+                  <div className="px-4 sm:px-6 py-3 sm:py-4 bg-white">
+                    <p className="text-gray-600 leading-relaxed text-sm sm:text-base">{faq.answer}</p>
                   </div>
                 )}
               </div>

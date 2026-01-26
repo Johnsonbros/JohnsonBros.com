@@ -116,7 +116,7 @@ export default function CohassetPlumbing() {
                   Plumbing Services in Cohasset
                 </h2>
 
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
                   {[
                     { title: "Emergency Plumbing", desc: "24/7 repairs for leaks, flooding, and backups", link: "/services/emergency-plumbing" },
                     { title: "Drain Cleaning", desc: "Professional drain and sewer cleaning", link: "/services/drain-cleaning" },
@@ -146,7 +146,7 @@ export default function CohassetPlumbing() {
                   Why Cohasset Residents Choose Johnson Bros.
                 </h2>
 
-                <div className="grid md:grid-cols-3 gap-8">
+                <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8">
                   {[
                     {
                       icon: Clock,
@@ -206,7 +206,7 @@ export default function CohassetPlumbing() {
                   Common Plumbing Issues in Cohasset
                 </h2>
 
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid sm:grid-cols-2 gap-4 sm:gap-6">
                   {[
                     { issue: "Corrosion", desc: "Coastal salt air can accelerate pipe corrosion." },
                     { issue: "Sewer Backups", desc: "Older sewer lines that need cleaning or replacement." },

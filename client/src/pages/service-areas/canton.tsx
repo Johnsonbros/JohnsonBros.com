@@ -176,9 +176,9 @@ export default function CantonPlumbing() {
                 </p>
 
                 {/* Google Rating Badge */}
-                <div className="flex items-center justify-center gap-2 mb-4">
-                  <div className="flex items-center gap-1 bg-white/20 px-4 py-2 rounded-full">
-                    <Star className="h-5 w-5 text-yellow-400 fill-yellow-400" />
+                <div className="flex flex-wrap items-center justify-center gap-2 mb-4">
+                  <div className="flex items-center gap-1 bg-white/20 px-3 sm:px-4 py-2 rounded-full text-sm sm:text-base">
+                    <Star className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-400 fill-yellow-400" />
                     <span className="font-bold">{CANTON_OFFICE.rating}</span>
                     <span className="text-blue-100">({CANTON_OFFICE.reviewCount}+ reviews)</span>
                   </div>
@@ -186,17 +186,19 @@ export default function CantonPlumbing() {
                     href={CANTON_OFFICE.googleMapsUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-1 bg-white/20 px-4 py-2 rounded-full hover:bg-white/30 transition-colors"
+                    className="flex items-center gap-1 bg-white/20 px-3 sm:px-4 py-2 rounded-full hover:bg-white/30 transition-colors text-sm sm:text-base"
                   >
                     <ExternalLink className="h-4 w-4" />
-                    <span>View on Google Maps</span>
+                    <span className="hidden sm:inline">View on Google Maps</span>
+                    <span className="sm:hidden">Map</span>
                   </a>
                 </div>
 
                 {/* Service Info */}
-                <p className="text-blue-100 mb-6">
+                <p className="text-blue-100 mb-6 text-sm sm:text-base">
                   <MapPin className="h-4 w-4 inline mr-1" />
-                  Serving Canton from {CANTON_OFFICE.address} | {CANTON_OFFICE.hours}
+                  <span className="hidden sm:inline">Serving Canton from {CANTON_OFFICE.address} | {CANTON_OFFICE.hours}</span>
+                  <span className="sm:hidden">Serving Canton | {CANTON_OFFICE.hours}</span>
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -231,7 +233,7 @@ export default function CantonPlumbing() {
                   Complete Plumbing Services in Canton, MA
                 </h2>
 
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
                   {[
                     { title: "Emergency Plumbing", desc: "24/7 emergency service for burst pipes, leaks, and urgent repairs in Canton", link: "/services/general-plumbing" },
                     { title: "Drain Cleaning", desc: "Professional drain and sewer cleaning for Canton homes and businesses", link: "/services/drain-cleaning" },
@@ -262,7 +264,7 @@ export default function CantonPlumbing() {
                   Why Canton Residents Choose Johnson Bros. Plumbing
                 </h2>
 
-                <div className="grid md:grid-cols-3 gap-8">
+                <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8">
                   {[
                     {
                       icon: Clock,
@@ -316,13 +318,13 @@ export default function CantonPlumbing() {
                 <h2 className="text-3xl sm:text-4xl font-bold text-center mb-8">
                   Common Plumbing Issues in Canton Homes
                 </h2>
-                <p className="text-lg text-gray-600 text-center mb-8">
+                <p className="text-base sm:text-lg text-gray-600 text-center mb-8">
                   Canton's established neighborhoods from the 1950s-1970s have unique plumbing challenges. We're experts at handling:
                 </p>
 
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid sm:grid-cols-2 gap-4 sm:gap-6">
                   {commonIssues.map((item, idx) => (
-                    <div key={idx} className="bg-white p-6 rounded-lg">
+                    <div key={idx} className="bg-white p-4 sm:p-6 rounded-lg">
                       <h3 className="text-lg font-semibold mb-2 text-johnson-blue">{item.issue}</h3>
                       <p className="text-gray-600">{item.desc}</p>
                     </div>

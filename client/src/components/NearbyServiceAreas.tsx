@@ -22,12 +22,12 @@ export function NearbyServiceAreas({ currentArea, className = "" }: NearbyServic
           <h2 className="text-3xl sm:text-4xl font-bold text-center mb-8">
             We Also Serve Nearby Communities
           </h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 text-center">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-4 text-center">
             {nearbyTowns.map((town) => (
               <Link
                 key={town}
                 href={`/service-areas/${town.toLowerCase().replace(/ /g, '-')}`}
-                className="text-johnson-blue hover:text-johnson-teal font-medium p-2 rounded hover:bg-gray-50 transition-colors"
+                className="text-johnson-blue hover:text-johnson-teal font-medium p-2 sm:p-3 rounded hover:bg-gray-50 transition-colors text-sm sm:text-base"
               >
                 {town}
               </Link>
