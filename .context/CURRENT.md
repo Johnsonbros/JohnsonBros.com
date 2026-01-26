@@ -1,13 +1,36 @@
 # JohnsonBros - Current Session
 
-> **Session**: 08 | **Date**: 2026-01-25
+> **Session**: 10 | **Date**: 2026-01-26
 > **Phase**: 3 - SEO & Local Ranking | **Status**: IN PROGRESS | **Confidence**: Green
 
 ---
 
 ## Now
 
-Completed internal linking system. All 25 service area pages now have standardized cross-linking via centralized NearbyServiceAreas component.
+Running parallel tasks:
+- **P2.5-008**: Tagging ~228 client files for aOa semantic search (haiku agent)
+- **P3-SEO-001**: Creating keyword ranking tracking plan (haiku agent)
+
+## Session 10 Summary
+
+**aOa Configuration Fixed:**
+- Added `/home:/wslhome:ro` volume mount to Docker for WSL paths
+- Set `CODEBASE_PATH` to JohnsonBros.com in aOa .env
+- Index now working: **498 files, 39K symbols, sub-ms search**
+
+**Parallel Task Execution:**
+- Launched P2.5-008 (tag client files) and P3-SEO-001 (keyword tracking) in parallel
+- 131 analysis: No 🔴 blockers, P3-SEO-002 (citations) needs GH research when ready
+
+## Session 09 Summary (Previous)
+
+**Docker Desktop Troubleshooting:**
+- Docker Desktop was crashing due to Windows disk space issues
+- Cleared disk space to resolve the issue
+
+**aOa Status Verification:**
+- aOa runs locally only (not in Docker for this repo)
+- Health check confirmed: Docker container, Redis, and Index all operational
 
 ## Active
 

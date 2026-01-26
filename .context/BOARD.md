@@ -1,8 +1,8 @@
 
 # Work Board
 
-> **Updated**: 2026-01-25 | **Phase**: 3 - SEO & Local Ranking | **Status**: IN PROGRESS
-> **Session**: 08 | **Key Achievement**: Internal Linking System Complete
+> **Updated**: 2026-01-26 | **Phase**: 3 - SEO & Local Ranking | **Status**: IN PROGRESS
+> **Session**: 10 | **Key Achievement**: aOa WSL mount fixed, 498 files indexed
 
 ---
 
@@ -26,9 +26,9 @@
 
 | # | Task | Expected Output | Solution Pattern | Status | C | R |
 |---|------|-----------------|------------------|--------|---|---|
-| P3-SEO-001 | Monitor keyword rankings | Track positions for 25 towns | Google Search Console + manual checks | **Active** | 🟢 | - |
-| P3-SEO-002 | Build backlinks | Citations on local directories | Submit to Yelp, Angi, HomeAdvisor | Queued | 🟡 | GH |
-| P3-SEO-004 | Submit sitemaps | Google/Bing indexing faster | Generate & submit XML sitemaps | Queued | 🟢 | - |
+| P3-SEO-001 | Monitor keyword rankings | Track positions for 25 towns | Google Search Console + manual checks | **Done** | 🟢 | - |
+| P3-SEO-002 | Build backlinks | Citations on local directories | Submit to Yelp, Angi, HomeAdvisor | **Strategy Ready** | 🟢 | GH |
+| P3-SEO-004 | Submit sitemaps | Google/Bing indexing faster | Generate & submit XML sitemaps | **Done** | 🟢 | - |
 
 ---
 
@@ -62,9 +62,9 @@
 
 | # | Task | Expected Output | Solution Pattern | Deps | Status | C | R |
 |---|------|-----------------|------------------|------|--------|---|---|
-| P3-SEO-002 | Build local citations | Listings on 10+ directories | Manual submissions | SEO-001 | Queued | 🟡 | GH |
-| P3-SEO-004 | XML sitemap update | sitemap.xml with all service pages | Generate + submit to GSC | SEO-001 | Queued | 🟢 | - |
-| P3-SEO-005 | Page speed optimization | Core Web Vitals green | Lighthouse audit + fixes | SEO-001 | Queued | 🟡 | - |
+| P3-SEO-002 | Build local citations | Listings on 10+ directories | Manual submissions | SEO-001 | **Strategy Ready** | 🟢 | - |
+| P3-SEO-004 | XML sitemap update | sitemap.xml with all service pages | Generate + submit to GSC | SEO-001 | **Done** | 🟢 | - |
+| P3-SEO-005 | Page speed optimization | Core Web Vitals green | Lighthouse audit + fixes | SEO-001 | **Strategy Ready** | 🟢 | - |
 | P3-SEO-006 | Mobile usability check | All pages mobile-friendly | Google Mobile Test | SEO-001 | Queued | 🟢 | - |
 
 ---
@@ -75,17 +75,18 @@ Enable fast codebase search and semantic tagging for AI-optimized development.
 
 | # | Task | Expected Output | Solution Pattern | Deps | Status | C | R |
 |---|------|-----------------|------------------|------|--------|---|---|
-| P2.5-001 | Verify aOa health | All services green | `aoa health` | - | Done | 🟢 | - |
+| P2.5-001 | Verify aOa health | All services green (Docker, Redis, Index) | `aoa health` - runs locally only | - | Done | 🟢 | - |
 | P2.5-002 | Add aOa to AGENTS.md | aOa callout block | Edit frontmatter | - | Done | 🟢 | - |
 | P2.5-003 | Add aOa to 131.md | aOa callout block | Edit frontmatter | - | Done | 🟢 | - |
 | P2.5-004 | Add aOa to beacon.md | aOa callout block | Edit frontmatter | - | Done | 🟢 | - |
 | P2.5-005 | Add aOa to gh.md | aOa callout block | Edit frontmatter | - | Done | 🟢 | - |
 | P2.5-006 | Add aOa to skills | aOa callout blocks | Edit frontmatter | - | Done | 🟢 | - |
 | P2.5-007 | Tag server files | ~65 files tagged | `aoa intent store` | - | Done | 🟢 | - |
-| P2.5-008 | Tag client files | ~228 files tagged | `aoa intent store` | - | Active | 🟢 | - |
+| P2.5-008 | Tag client files | ~228 files tagged | `aoa intent store` | - | **In Progress** | 🟢 | - |
 | P2.5-009 | Tag config files | ~20 files tagged | `aoa intent store` | - | Done | 🟢 | - |
 | P2.5-010 | Tag documentation | ~15 files tagged | `aoa intent store` | - | Done | 🟢 | - |
 | P2.5-011 | Verify semantic search | `aoa intent files <tag>` works | Test searches | P2.5-008 | Queued | 🟢 | - |
+| P2.5-012 | Confirm aOa architecture | aOa runs locally, not in Docker | Verified 2026-01-25 | - | Done | 🟢 | - |
 
 ---
 
@@ -168,6 +169,8 @@ Test what works without full integrations. Focus on features that don't require 
 | Database | Docker :5433 | ✅ Docker :5433 |
 | Frontend | Running | ✅ Vite HMR active |
 | Node.js | - | ✅ v22.19.0 |
+| aOa | - | ✅ Local only (not containerized) |
+| Docker Desktop | - | ✅ Running (disk space cleared) |
 
 ### API Integrations
 
@@ -185,6 +188,8 @@ Test what works without full integrations. Focus on features that don't require 
 
 | # | Task | Output | Completed |
 |---|------|--------|-----------|
+| SYS-001 | Docker Desktop fix | Cleared Windows disk space, Docker running | 2026-01-25 |
+| P2.5-012 | aOa architecture verification | Confirmed aOa runs locally only (not containerized) | 2026-01-25 |
 | P3-SEO-003 | Internal Linking System | NearbyServiceAreas component + serviceAreaAdjacency.ts + 25 pages standardized | 2026-01-25 |
 | SEO-ALL | SEO Service Area Pages | 13 new South Shore pages with schema, geo tags, FAQs, reviews | 2026-01-24 |
 | GBP-INT | Google Business Profile | Quincy (4.8/320+) + Abington (5.0/23) with Maps links, badges | 2026-01-24 |
