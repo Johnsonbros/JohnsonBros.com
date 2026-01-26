@@ -2,7 +2,7 @@
 # Work Board
 
 > **Updated**: 2026-01-26 | **Phase**: 3 - SEO & Local Ranking | **Status**: IN PROGRESS
-> **Session**: 11 | **Key Achievement**: Capacity system enhanced with weekend/holiday modes
+> **Session**: 12 | **Key Achievement**: Bundle optimization (50% reduction), mobile usability, aOa tagging complete
 
 ---
 
@@ -87,10 +87,10 @@ Enable fast codebase search and semantic tagging for AI-optimized development.
 | P2.5-005 | Add aOa to gh.md | aOa callout block | Edit frontmatter | - | Done | 🟢 | - |
 | P2.5-006 | Add aOa to skills | aOa callout blocks | Edit frontmatter | - | Done | 🟢 | - |
 | P2.5-007 | Tag server files | ~65 files tagged | `aoa intent store` | - | Done | 🟢 | - |
-| P2.5-008 | Tag client files | ~228 files tagged | `aoa intent store` | - | **In Progress** | 🟢 | - |
+| P2.5-008 | Tag client files | 251 files tagged | `aoa intent store` | - | **Done** | 🟢 | - |
 | P2.5-009 | Tag config files | ~20 files tagged | `aoa intent store` | - | Done | 🟢 | - |
 | P2.5-010 | Tag documentation | ~15 files tagged | `aoa intent store` | - | Done | 🟢 | - |
-| P2.5-011 | Verify semantic search | `aoa intent files <tag>` works | Test searches | P2.5-008 | Queued | 🟢 | - |
+| P2.5-011 | Verify semantic search | `aoa intent files <tag>` works | Test searches | P2.5-008 | **Done** | 🟢 | - |
 | P2.5-012 | Confirm aOa architecture | aOa runs locally, not in Docker | Verified 2026-01-25 | - | Done | 🟢 | - |
 
 ---
