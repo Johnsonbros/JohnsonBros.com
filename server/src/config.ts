@@ -50,8 +50,10 @@ export interface CapacityConfig {
       headline: string;
       subhead: string;
       cta: string;
-      badge: string;
+      cta_secondary?: string;
+      badge: string | null;
       urgent: boolean;
+      banner?: string;
     };
   };
   fee_waive: {
@@ -61,6 +63,14 @@ export interface CapacityConfig {
     utm_campaign: string;
   };
   booking_windows?: BookingWindow[];
+  business_hours?: {
+    same_day_cutoff_hour: number;
+    weekend_start_day: number;
+    weekend_start_hour: number;
+    weekend_end_day: number;
+    weekend_end_hour: number;
+  };
+  holidays_2026?: string[];
 }
 
 let cachedConfig: CapacityConfig | null = null;

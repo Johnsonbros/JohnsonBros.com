@@ -370,6 +370,32 @@ colors:
   background_white: "#ffffff"
   accent_red: "#d32f2f"
 
+# Business hours configuration
+business_hours:
+  # Same-day booking cutoff (EST)
+  same_day_cutoff_hour: 12  # 12:00 PM noon
+
+  # Weekend mode: Fri 5PM - Mon 8AM
+  weekend_start_day: 5   # Friday
+  weekend_start_hour: 17 # 5:00 PM
+  weekend_end_day: 1     # Monday
+  weekend_end_hour: 8    # 8:00 AM
+
+# 2026 US Federal Holidays (observed dates)
+# Format: MM-DD
+holidays_2026:
+  - "01-01"  # New Year's Day
+  - "01-19"  # MLK Day (3rd Monday of January)
+  - "02-16"  # Presidents' Day (3rd Monday of February)
+  - "05-25"  # Memorial Day (last Monday of May)
+  - "07-03"  # Independence Day (observed - falls on Saturday)
+  - "09-07"  # Labor Day (1st Monday of September)
+  - "10-12"  # Columbus Day (2nd Monday of October)
+  - "11-11"  # Veterans Day
+  - "11-26"  # Thanksgiving (4th Thursday of November)
+  - "11-27"  # Day after Thanksgiving
+  - "12-25"  # Christmas Day
+
 # UI copy for each state
 ui_copy:
   SAME_DAY_FEE_WAIVED:
@@ -396,6 +422,29 @@ ui_copy:
     cta: "Call (617) 479-9911"
     badge: "Emergency Service"
     urgent: true
+  WEEKEND_EMERGENCY:
+    headline: "Weekend Emergency Service"
+    subhead: "For emergencies, call us directly. Otherwise, book for Monday."
+    cta: "Book Monday"
+    cta_secondary: "Call for Emergency"
+    badge: "Weekend Hours"
+    urgent: false
+    banner: "Same day booking is closed for the weekend. For emergencies, call (617) 479-9911 directly."
+  HOLIDAY:
+    headline: "Holiday Schedule"
+    subhead: "Book your service for the next business day"
+    cta: "Book Next Available"
+    badge: "Holiday Hours"
+    urgent: false
+    banner: "We're closed for the holiday. Book now for the next available business day."
+  AFTER_CUTOFF:
+    headline: "Same-Day Booking Closed"
+    subhead: "Book for tomorrow or call for last-minute availability"
+    cta: "Book Tomorrow"
+    cta_secondary: "Call for Same-Day"
+    badge: null
+    urgent: false
+    banner: "Same day booking is now closed. Call us directly at (617) 479-9911 to check for last-minute availability."
 
 # Fee waiver configuration
 fee_waive:

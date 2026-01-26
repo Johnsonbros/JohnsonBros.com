@@ -18,7 +18,7 @@ export interface TechCapacity {
 
 export interface OverallCapacity {
   score: number;
-  state: 'SAME_DAY_FEE_WAIVED' | 'LIMITED_SAME_DAY' | 'NEXT_DAY' | 'EMERGENCY_ONLY';
+  state: 'SAME_DAY_FEE_WAIVED' | 'LIMITED_SAME_DAY' | 'NEXT_DAY' | 'EMERGENCY_ONLY' | 'WEEKEND_EMERGENCY' | 'HOLIDAY' | 'AFTER_CUTOFF';
 }
 
 export interface ExpressWindow {
@@ -451,6 +451,16 @@ export class CapacityCalculator {
     const estNow = new Date(estString);
     // Get day of week in EST timezone (getDay() respects timezone from estString)
     const dayOfWeek = estNow.getDay(); // Sunday = 0, Monday = 1, etc.
+
+    // Check for weekend mode (Fri 5PM - Mon 8AM EST)
+    const businessHours = config.business_hours || {
+      same_day_cutoff_hour: 12,
+      weekend_start_day: 5,
+      weekend_start_hour: 17,
+      weekend_end_day: 1,
+      weekend_end_hour: 8,
+    };
+
     const estHours = parseInt(now.toLocaleTimeString('en-US', { 
       timeZone: 'America/New_York', 
       hour12: false,
@@ -462,23 +472,41 @@ export class CapacityCalculator {
       minute: '2-digit' 
     }));
     const currentTime = estHours + (estMinutes / 60);
-    
-    // Determine if we're in express booking hours (8am-12pm any day)
-    const isBeforeNoon = currentTime < 12; // Before 12 PM (noon)
-    
-    // Determine state based on availability first, then time-based rules
+
+    // Determine if we're before the same-day booking cutoff
+    const cutoffHour = businessHours.same_day_cutoff_hour || 12;
+    const isBeforeCutoff = currentTime < cutoffHour;
+
+    // Check for weekend mode: Fri 5PM - Mon 8AM EST
+    const isWeekend = this.isWeekendMode(dayOfWeek, currentTime, businessHours);
+
+    // Check for holiday
+    const isHoliday = this.isHoliday(estNow, config.holidays_2026 || []);
+
+    // Determine state based on time-based rules first, then availability
     let state: OverallCapacity['state'];
 
-    // First check if there are actual available windows TODAY
-    if (!hasWindowsToday || isPastLastWindow || !hasAvailableTechs) {
-      // No slots available today - show NEXT_DAY state
-      // Frontend will fetch tomorrow's capacity and show appropriate UI
+    // Priority 1: Weekend mode (Fri 5PM - Mon 8AM)
+    if (isWeekend) {
+      state = 'WEEKEND_EMERGENCY';
+      Logger.debug(`[Capacity] Weekend mode active - showing WEEKEND_EMERGENCY`);
+    }
+    // Priority 2: Holiday
+    else if (isHoliday) {
+      state = 'HOLIDAY';
+      Logger.debug(`[Capacity] Holiday detected - showing HOLIDAY`);
+    }
+    // Priority 3: After same-day cutoff (show banner, but can still book tomorrow)
+    else if (!isBeforeCutoff) {
+      state = 'AFTER_CUTOFF';
+      Logger.debug(`[Capacity] After ${cutoffHour}:00 cutoff - showing AFTER_CUTOFF`);
+    }
+    // Priority 4: No availability today
+    else if (!hasWindowsToday || isPastLastWindow || !hasAvailableTechs) {
       state = 'NEXT_DAY';
-    } else if (!isBeforeNoon) {
-      // After noon - show NEXT_DAY state (even if slots available today)
-      // This enforces the 12 PM cutoff for same-day bookings
-      state = 'NEXT_DAY';
-    } else if (overallScore >= config.thresholds.same_day_fee_waived) {
+    }
+    // Priority 5: Capacity-based states
+    else if (overallScore >= config.thresholds.same_day_fee_waived) {
       state = 'SAME_DAY_FEE_WAIVED';
     } else if (overallScore >= config.thresholds.limited_same_day) {
       state = 'LIMITED_SAME_DAY';
@@ -486,9 +514,8 @@ export class CapacityCalculator {
       state = 'NEXT_DAY';
     }
 
-    // Handle force_state override (removed - we'll use actual time-based logic)
     // Logging for debugging time-based states
-    Logger.debug(`[Capacity] Time check: ${estHours}:${estMinutes} EST, Day: ${dayOfWeek}, State: ${state}`);
+    Logger.debug(`[Capacity] Time: ${estHours}:${estMinutes} EST, Day: ${dayOfWeek}, Weekend: ${isWeekend}, Holiday: ${isHoliday}, State: ${state}`);
 
     return {
       score: overallScore,
@@ -508,6 +535,56 @@ export class CapacityCalculator {
       result.setUTCHours(hours, minutes || 0, 0, 0);
       return result;
     }
+  }
+
+  /**
+   * Check if current time is in weekend mode (Fri 5PM - Mon 8AM EST)
+   * During weekend mode, show emergency banner + allow Monday booking
+   */
+  private isWeekendMode(
+    dayOfWeek: number, // 0=Sun, 1=Mon, ..., 5=Fri, 6=Sat
+    currentTime: number, // decimal hours (e.g., 17.5 = 5:30 PM)
+    businessHours: {
+      weekend_start_day: number;
+      weekend_start_hour: number;
+      weekend_end_day: number;
+      weekend_end_hour: number;
+    }
+  ): boolean {
+    const { weekend_start_day, weekend_start_hour, weekend_end_day, weekend_end_hour } = businessHours;
+
+    // Saturday (6) or Sunday (0) - always weekend mode
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+      return true;
+    }
+
+    // Friday (5) after 5 PM
+    if (dayOfWeek === weekend_start_day && currentTime >= weekend_start_hour) {
+      return true;
+    }
+
+    // Monday (1) before 8 AM
+    if (dayOfWeek === weekend_end_day && currentTime < weekend_end_hour) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Check if the given date is a holiday
+   * @param date - Date object in EST
+   * @param holidays - Array of "MM-DD" strings from config
+   */
+  private isHoliday(date: Date, holidays: string[]): boolean {
+    if (!holidays || holidays.length === 0) return false;
+
+    // Format date as MM-DD
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateStr = `${month}-${day}`;
+
+    return holidays.includes(dateStr);
   }
 
   private consolidateTimeSlots(expressWindows: string[], techCapacities: any, targetDate: Date): ExpressWindow[] {
