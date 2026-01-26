@@ -77,10 +77,11 @@ export default function NewConstructionPlumbing() {
                 </h2>
                 <div className="mb-12">
                   <div className="relative rounded-lg overflow-hidden shadow-lg">
-                    <img 
-                      src={newConstructionImg} 
-                      alt="Commercial new construction plumbing installation showing professional piping work" 
+                    <img
+                      src={newConstructionImg}
+                      alt="Commercial new construction plumbing installation showing professional piping work"
                       className="w-full h-96 object-cover"
+                      loading="lazy"
                       data-testid="img-new-construction"
                     />
                     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">

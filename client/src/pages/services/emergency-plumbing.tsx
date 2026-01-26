@@ -123,10 +123,11 @@ export default function EmergencyPlumbing() {
           </h2>
           <div className="grid md:grid-cols-2 gap-8 mb-12">
             <div className="relative rounded-lg overflow-hidden shadow-lg">
-              <img 
-                src={emergencyWaterHeaterImg} 
-                alt="Emergency water heater leak requiring immediate repair" 
+              <img
+                src={emergencyWaterHeaterImg}
+                alt="Emergency water heater leak requiring immediate repair"
                 className="w-full h-64 object-cover"
+                loading="lazy"
                 data-testid="img-emergency-water-heater"
               />
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
@@ -134,10 +135,11 @@ export default function EmergencyPlumbing() {
               </div>
             </div>
             <div className="relative rounded-lg overflow-hidden shadow-lg">
-              <img 
-                src={coldShowerImg} 
-                alt="No hot water emergency requiring immediate plumber response" 
+              <img
+                src={coldShowerImg}
+                alt="No hot water emergency requiring immediate plumber response"
                 className="w-full h-64 object-cover"
+                loading="lazy"
                 data-testid="img-cold-shower"
               />
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">

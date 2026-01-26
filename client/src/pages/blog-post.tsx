@@ -187,10 +187,11 @@ export default function BlogPostPage() {
                 </div>
 
                 {post.featuredImage && (
-                  <img 
-                    src={post.featuredImage} 
+                  <img
+                    src={post.featuredImage}
                     alt={post.title}
                     className="w-full rounded-lg shadow-lg"
+                    loading="lazy"
                   />
                 )}
               </header>

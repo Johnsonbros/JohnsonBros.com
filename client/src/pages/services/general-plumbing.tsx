@@ -77,10 +77,11 @@ export default function GeneralPlumbing() {
                 </h2>
                 <div className="mb-12 max-w-3xl mx-auto">
                   <div className="relative rounded-lg overflow-hidden shadow-lg">
-                    <img 
-                      src={faucetImg} 
-                      alt="Professional faucet installation showing quality plumbing work" 
+                    <img
+                      src={faucetImg}
+                      alt="Professional faucet installation showing quality plumbing work"
                       className="w-full h-80 object-cover"
+                      loading="lazy"
                       data-testid="img-faucet-installation"
                     />
                     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">

@@ -35,10 +35,11 @@ function FeaturedPostCard({ post }: { post: BlogPost }) {
       <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-johnson-blue to-blue-900 shadow-2xl">
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent z-10"></div>
         {post.featuredImage ? (
-          <img 
-            src={post.featuredImage} 
+          <img
+            src={post.featuredImage}
             alt={post.title}
             className="w-full h-[400px] md:h-[500px] object-cover group-hover:scale-105 transition-transform duration-700"
+            loading="lazy"
           />
         ) : (
           <div className="w-full h-[400px] md:h-[500px] bg-gradient-to-br from-johnson-orange/30 to-johnson-blue/30"></div>
@@ -90,10 +91,11 @@ function BlogPostCard({ post }: { post: BlogPost }) {
         <div className="relative">
           {post.featuredImage ? (
             <div className="aspect-[16/10] w-full overflow-hidden bg-gray-100">
-              <img 
-                src={post.featuredImage} 
+              <img
+                src={post.featuredImage}
                 alt={post.title}
                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                loading="lazy"
               />
             </div>
           ) : (
