@@ -1,11 +1,76 @@
 # ============================================================================
 # Johnson Bros Plumbing - Docker Compose Configuration
-# Production deployment orchestration
+# Full stack: Database + MCP Server + App
 # ============================================================================
 
 version: '3.8'
 
 services:
+  # ==========================================================================
+  # PostgreSQL Database
+  # ==========================================================================
+  db:
+    image: postgres:16-alpine
+    container_name: johnsonbros-db
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: johnsonbros
+      POSTGRES_USER: johnsonbros
+      POSTGRES_PASSWORD: johnsonbros
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - johnsonbros-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U johnsonbros -d johnsonbros"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ==========================================================================
+  # MCP Server (Model Context Protocol)
+  # ==========================================================================
+  mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile.mcp
+    container_name: johnsonbros-mcp
+    ports:
+      - "3001:3001"
+    env_file:
+      - .env.docker
+    environment:
+      - NODE_ENV=development
+      - MCP_PORT=3001
+      - DATABASE_URL=postgresql://johnsonbros:johnsonbros@db:5432/johnsonbros
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - johnsonbros-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ==========================================================================
+  # Main Application (Express + React)
+  # ==========================================================================
   app:
     build:
       context: .
@@ -15,10 +80,22 @@ services:
     ports:
       - "5000:5000"
     env_file:
-      - .env.production
+      - .env.docker
     environment:
       - NODE_ENV=production
       - PORT=5000
+      - DATABASE_URL=postgresql://johnsonbros:johnsonbros@db:5432/johnsonbros
+      - MCP_URL=http://mcp:3001
+      - SKIP_MCP_SPAWN=true
+    depends_on:
+      db:
+        condition: service_healthy
+      mcp:
+        condition: service_healthy
+    networks:
+      - johnsonbros-network
+    volumes:
+      - ./logs:/app/logs
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:5000/health"]
@@ -26,55 +103,15 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-    volumes:
-      # Persist logs
-      - ./logs:/app/logs
-    networks:
-      - johnsonbros-network
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
         max-file: "3"
 
-  # Optional: MCP Server (uncomment if running separately)
-  # mcp:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile.mcp
-  #   container_name: johnsonbros-mcp
-  #   ports:
-  #     - "3001:3001"
-  #   env_file:
-  #     - .env.production
-  #   environment:
-  #     - NODE_ENV=production
-  #     - MCP_PORT=3001
-  #   restart: unless-stopped
-  #   depends_on:
-  #     app:
-  #       condition: service_healthy
-  #   networks:
-  #     - johnsonbros-network
-
-  # Optional: Redis for session store (uncomment if needed)
-  # redis:
-  #   image: redis:7-alpine
-  #   container_name: johnsonbros-redis
-  #   restart: unless-stopped
-  #   volumes:
-  #     - redis-data:/data
-  #   networks:
-  #     - johnsonbros-network
-  #   healthcheck:
-  #     test: ["CMD", "redis-cli", "ping"]
-  #     interval: 10s
-  #     timeout: 5s
-  #     retries: 5
-
 networks:
   johnsonbros-network:
     driver: bridge
 
-# volumes:
-#   redis-data:
+volumes:
+  postgres-data:

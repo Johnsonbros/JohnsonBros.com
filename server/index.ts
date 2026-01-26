@@ -284,5 +284,10 @@ app.use((req, res, next) => {
   };
 
   // Start MCP server with a small delay to ensure main server is ready
-  setTimeout(startMcpServer, 2000);
+  // Skip if SKIP_MCP_SPAWN is set (when running in Docker with separate MCP container)
+  if (process.env.SKIP_MCP_SPAWN !== 'true') {
+    setTimeout(startMcpServer, 2000);
+  } else {
+    log('Skipping MCP server spawn (SKIP_MCP_SPAWN=true, using external MCP container)');
+  }
 })();

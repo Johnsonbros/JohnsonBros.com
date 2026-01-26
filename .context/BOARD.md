@@ -2,7 +2,7 @@
 # Work Board
 
 > **Updated**: 2026-01-26 | **Phase**: 3 - SEO & Local Ranking | **Status**: IN PROGRESS
-> **Session**: 12 | **Key Achievement**: Bundle optimization (50% reduction), mobile usability, aOa tagging complete
+> **Session**: 13 | **Key Achievement**: Docker dev environment, TTS skill (/s), copyright 2026 fix
 
 ---
 
@@ -193,6 +193,10 @@ Test what works without full integrations. Focus on features that don't require 
 
 | # | Task | Output | Completed |
 |---|------|--------|-----------|
+| DEV-001 | Docker dev environment | docker-compose.yml + Dockerfile.mcp + SKIP_MCP_SPAWN flag | 2026-01-26 |
+| UI-001 | Copyright year fix | Footer.tsx 2025→2026 | 2026-01-26 |
+| TOOL-001 | TTS skill | /s and /speak skills using edge-tts | 2026-01-26 |
+| FIX-001 | Hook file restored | aoa-enforce-search.py recreated | 2026-01-26 |
 | SYS-001 | Docker Desktop fix | Cleared Windows disk space, Docker running | 2026-01-25 |
 | P2.5-012 | aOa architecture verification | Confirmed aOa runs locally only (not containerized) | 2026-01-25 |
 | P3-SEO-003 | Internal Linking System | NearbyServiceAreas component + serviceAreaAdjacency.ts + 25 pages standardized | 2026-01-25 |

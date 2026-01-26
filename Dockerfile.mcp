@@ -1,0 +1,51 @@
+# ============================================================================
+# Johnson Bros Plumbing - MCP Server Dockerfile
+# Lightweight container for Model Context Protocol server
+# ============================================================================
+
+FROM node:20-alpine
+
+# Install dumb-init for proper signal handling and wget for health checks
+RUN apk add --no-cache dumb-init wget
+
+# Create non-root user FIRST (before npm install)
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001 -G nodejs
+
+WORKDIR /app
+
+# Change ownership of workdir before copying files
+RUN chown nodejs:nodejs /app
+
+# Switch to non-root user BEFORE npm install
+# This way all installed files are owned by nodejs from the start
+USER nodejs
+
+# Copy package files first for better caching
+COPY --chown=nodejs:nodejs package*.json ./
+
+# Install all dependencies (MCP server needs various deps)
+# Files will be owned by nodejs automatically since we're running as nodejs
+RUN npm ci --legacy-peer-deps && npm cache clean --force
+
+# Copy source files needed for MCP server (with correct ownership)
+COPY --chown=nodejs:nodejs src/ ./src/
+COPY --chown=nodejs:nodejs shared/ ./shared/
+COPY --chown=nodejs:nodejs server/lib/ ./server/lib/
+COPY --chown=nodejs:nodejs server/db.ts ./server/
+COPY --chown=nodejs:nodejs server/src/ ./server/src/
+COPY --chown=nodejs:nodejs config/ ./config/
+COPY --chown=nodejs:nodejs tsconfig.json ./
+
+# Expose MCP port
+EXPOSE 3001
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3001/health || exit 1
+
+# Use dumb-init to handle signals properly
+ENTRYPOINT ["dumb-init", "--"]
+
+# Start MCP server with tsx (TypeScript execution)
+CMD ["npx", "tsx", "src/mcp-http-server.ts"]
