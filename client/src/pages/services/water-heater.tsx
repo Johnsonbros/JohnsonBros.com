@@ -79,10 +79,11 @@ export default function WaterHeater() {
           </h2>
           <div className="grid md:grid-cols-3 gap-8 mb-12">
             <div className="relative rounded-lg overflow-hidden shadow-lg">
-              <img 
-                src={emergencyWaterHeaterImg} 
-                alt="Water heater leak causing basement flooding" 
+              <img
+                src={emergencyWaterHeaterImg}
+                alt="Water heater leak causing basement flooding"
                 className="w-full h-64 object-cover"
+                loading="lazy"
                 data-testid="img-water-heater-leak"
               />
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
@@ -90,10 +91,11 @@ export default function WaterHeater() {
               </div>
             </div>
             <div className="relative rounded-lg overflow-hidden shadow-lg">
-              <img 
-                src={coldRadiatorImg} 
-                alt="No hot water or heat from water heater" 
+              <img
+                src={coldRadiatorImg}
+                alt="No hot water or heat from water heater"
                 className="w-full h-64 object-cover"
+                loading="lazy"
                 data-testid="img-no-heat"
               />
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
@@ -101,10 +103,11 @@ export default function WaterHeater() {
               </div>
             </div>
             <div className="relative rounded-lg overflow-hidden shadow-lg">
-              <img 
-                src={coldShowerImg} 
-                alt="Woman shocked with cold water while taking a shower due to a faulty circulator pump" 
+              <img
+                src={coldShowerImg}
+                alt="Woman shocked with cold water while taking a shower due to a faulty circulator pump"
                 className="w-full h-64 object-cover"
+                loading="lazy"
                 data-testid="img-no-hot-water"
               />
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">

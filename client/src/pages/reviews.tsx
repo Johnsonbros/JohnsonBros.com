@@ -140,7 +140,7 @@ export default function ReviewsPage() {
                   <CardContent className="p-6">
                     <div className="flex items-center gap-3 mb-4">
                       {review.profilePhoto ? (
-                        <img src={review.profilePhoto} alt="" className="h-12 w-12 rounded-full" />
+                        <img loading="lazy" src={review.profilePhoto} alt="" className="h-12 w-12 rounded-full" />
                       ) : (
                         <div className="h-12 w-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center font-bold text-xl">
                           {review.author[0]}

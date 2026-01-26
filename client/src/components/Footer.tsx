@@ -15,10 +15,11 @@ export default function Footer({ onBookService }: FooterProps) {
           {/* Company Info */}
           <div>
             <div className="mb-4 sm:mb-6">
-              <img 
-                src="/JB_logo_New_1756136293648.png" 
-                alt="Johnson Bros. Plumbing & Drain Cleaning" 
+              <img
+                src="/JB_logo_New_1756136293648.png"
+                alt="Johnson Bros. Plumbing & Drain Cleaning"
                 className="h-12 sm:h-14 w-auto"
+                loading="lazy"
                 data-testid="footer-company-logo"
               />
             </div>

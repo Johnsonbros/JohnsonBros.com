@@ -202,7 +202,7 @@ export default function GoogleReviewsSection() {
                   <CardContent className="p-8 relative z-10">
                     <div className="flex items-center gap-4 mb-6">
                       {review.profilePhoto ? (
-                        <img src={review.profilePhoto} alt={review.author} className="h-12 w-12 rounded-full border-2 border-white dark:border-slate-700 shadow-md object-cover" />
+                        <img loading="lazy" src={review.profilePhoto} alt={review.author} className="h-12 w-12 rounded-full border-2 border-white dark:border-slate-700 shadow-md object-cover" />
                       ) : (
                         <div className="h-12 w-12 rounded-full bg-johnson-blue/10 text-johnson-blue flex items-center justify-center font-black text-lg border-2 border-white dark:border-slate-700 shadow-md">
                           {review.author[0]}

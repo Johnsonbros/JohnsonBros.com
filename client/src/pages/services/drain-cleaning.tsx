@@ -131,10 +131,11 @@ export default function DrainCleaningServices() {
                 </h2>
                 <div className="grid md:grid-cols-2 gap-8 mb-12">
                   <div className="relative rounded-lg overflow-hidden shadow-lg">
-                    <img 
-                      src={dirtySinkImg} 
-                      alt="Clogged sink drain with standing water" 
+                    <img
+                      src={dirtySinkImg}
+                      alt="Clogged sink drain with standing water"
                       className="w-full h-64 object-cover"
+                      loading="lazy"
                       data-testid="img-clogged-sink"
                     />
                     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
@@ -142,10 +143,11 @@ export default function DrainCleaningServices() {
                     </div>
                   </div>
                   <div className="relative rounded-lg overflow-hidden shadow-lg">
-                    <img 
-                      src={slowDrainImg} 
-                      alt="Slow draining sink requiring professional cleaning" 
+                    <img
+                      src={slowDrainImg}
+                      alt="Slow draining sink requiring professional cleaning"
                       className="w-full h-64 object-cover"
+                      loading="lazy"
                       data-testid="img-slow-drain"
                     />
                     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
