@@ -411,10 +411,11 @@ export default function GablesCondoLanding() {
             </h2>
             <div className="grid md:grid-cols-2 gap-8 mb-12">
               <div className="relative rounded-lg overflow-hidden shadow-lg">
-                <img 
-                  src={emergencyImg} 
-                  alt="Professional emergency water heater repair service" 
+                <img
+                  src={emergencyImg}
+                  alt="Professional emergency water heater repair service"
                   className="w-full h-80 object-cover"
+                  loading="lazy"
                   data-testid="img-emergency-service"
                 />
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
@@ -422,10 +423,11 @@ export default function GablesCondoLanding() {
                 </div>
               </div>
               <div className="relative rounded-lg overflow-hidden shadow-lg">
-                <img 
-                  src={cleanFaucetImg} 
-                  alt="Quality faucet installation and plumbing fixtures" 
+                <img
+                  src={cleanFaucetImg}
+                  alt="Quality faucet installation and plumbing fixtures"
                   className="w-full h-80 object-cover"
+                  loading="lazy"
                   data-testid="img-quality-work"
                 />
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">

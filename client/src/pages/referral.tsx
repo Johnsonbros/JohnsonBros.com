@@ -289,10 +289,11 @@ export default function Referral() {
                 </div>
               </div>
               <div className="relative">
-                <img 
-                  src={heroImage} 
-                  alt="Friends celebrating together" 
+                <img
+                  src={heroImage}
+                  alt="Friends celebrating together"
                   className="rounded-2xl shadow-2xl w-full h-auto object-cover"
+                  loading="lazy"
                 />
                 <div className="absolute -bottom-4 -right-4 bg-green-500 text-white rounded-full p-4 shadow-lg">
                   <DollarSign className="h-12 w-12" />
