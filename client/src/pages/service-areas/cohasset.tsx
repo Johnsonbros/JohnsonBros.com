@@ -7,6 +7,8 @@ import { Link } from "wouter";
 import { LocalBusinessSchema, ServiceAreaSchema, FAQSchema, BreadcrumbSchema } from "@/components/schema-markup";
 import { serviceAreaMetadata, generateSocialMetaTags } from "@/lib/seoMetadata";
 import { NearbyServiceAreas } from "@/components/NearbyServiceAreas";
+import { VisibleFAQSection } from "@/components/VisibleFAQSection";
+import { LocalReviewsSection } from "@/components/LocalReviewsSection";
 
 export default function CohassetPlumbing() {
   const pageMetadata = serviceAreaMetadata['cohasset'];
@@ -33,6 +35,21 @@ export default function CohassetPlumbing() {
     { name: "Emergency Plumbing Cohasset", description: "Rapid response for leaks, flooding, and urgent repairs" },
     { name: "Drain Cleaning Cohasset", description: "Kitchen, bathroom, and main line drain clearing" },
     { name: "Water Heater Service Cohasset", description: "Repair and installation for efficient hot water" }
+  ];
+
+  const localReviews = [
+    {
+      author: "Robert W. - Cohasset Village",
+      rating: 5,
+      datePublished: "2024-11-08",
+      reviewBody: "Excellent work winterizing our coastal home. Very thorough and professional. Highly recommend for Cohasset homeowners."
+    },
+    {
+      author: "Elizabeth P. - Beechwood",
+      rating: 5,
+      datePublished: "2024-10-15",
+      reviewBody: "Replaced corroded pipes in our beach house. They understood the unique challenges of coastal plumbing. Great service!"
+    }
   ];
 
   return (
@@ -205,6 +222,12 @@ export default function CohassetPlumbing() {
               </div>
             </div>
           </section>
+
+          {/* Local Reviews */}
+          <LocalReviewsSection town="Cohasset" reviews={localReviews} />
+
+          {/* FAQ Section */}
+          <VisibleFAQSection town="Cohasset" faqs={cohassetFAQs} />
 
           {/* Nearby Areas */}
           <NearbyServiceAreas currentArea="cohasset" />

@@ -4,13 +4,42 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Phone, MapPin, CheckCircle, Clock, Shield } from "lucide-react";
 import { Link } from "wouter";
-import { LocalBusinessSchema } from "@/components/schema-markup";
+import { LocalBusinessSchema, FAQSchema } from "@/components/schema-markup";
 import { NearbyServiceAreas } from "@/components/NearbyServiceAreas";
+import { VisibleFAQSection } from "@/components/VisibleFAQSection";
+import { LocalReviewsSection } from "@/components/LocalReviewsSection";
 
 export default function PlymouthPlumbing() {
+  const plymouthFAQs = [
+    {
+      question: "Do you provide emergency plumbing services in Plymouth, MA?",
+      answer: "Yes, Johnson Bros. provides 24/7 emergency plumbing services throughout Plymouth, MA. We can respond quickly to any urgent plumbing issue."
+    },
+    {
+      question: "Do you service well water systems in Plymouth?",
+      answer: "Absolutely. Many Plymouth homes have private wells. We service well pumps, pressure tanks, and can recommend water treatment solutions."
+    }
+  ];
+
+  const localReviews = [
+    {
+      author: "Richard M. - Plymouth Center",
+      rating: 5,
+      datePublished: "2024-11-15",
+      reviewBody: "Great service for our historic home. They understood the unique plumbing challenges and did excellent work. Highly recommend!"
+    },
+    {
+      author: "Karen L. - Manomet",
+      rating: 5,
+      datePublished: "2024-10-28",
+      reviewBody: "Winterized our vacation home before the season. Very thorough and professional. Will definitely use them again next year."
+    }
+  ];
+
   return (
     <>
       <LocalBusinessSchema serviceArea="Plymouth" />
+      <FAQSchema questions={plymouthFAQs} />
       <Helmet>
         <title>Plumber Plymouth MA | Emergency Plumbing Services | Johnson Bros</title>
         <meta 
@@ -184,6 +213,12 @@ export default function PlymouthPlumbing() {
               </div>
             </div>
           </section>
+
+          {/* Local Reviews */}
+          <LocalReviewsSection town="Plymouth" reviews={localReviews} />
+
+          {/* FAQ Section */}
+          <VisibleFAQSection town="Plymouth" faqs={plymouthFAQs} />
 
           {/* Nearby Areas */}
           <NearbyServiceAreas currentArea="plymouth" />

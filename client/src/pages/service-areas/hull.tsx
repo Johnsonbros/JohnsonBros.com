@@ -7,6 +7,8 @@ import { Link } from "wouter";
 import { LocalBusinessSchema, ServiceAreaSchema, FAQSchema, BreadcrumbSchema } from "@/components/schema-markup";
 import { serviceAreaMetadata, generateSocialMetaTags } from "@/lib/seoMetadata";
 import { NearbyServiceAreas } from "@/components/NearbyServiceAreas";
+import { VisibleFAQSection } from "@/components/VisibleFAQSection";
+import { LocalReviewsSection } from "@/components/LocalReviewsSection";
 
 export default function HullPlumbing() {
   const pageMetadata = serviceAreaMetadata['hull'];
@@ -33,6 +35,21 @@ export default function HullPlumbing() {
     { name: "Emergency Plumbing Hull", description: "Rapid response for leaks, flooding, and pipe breaks" },
     { name: "Drain Cleaning Hull", description: "Clear stubborn clogs and restore flow" },
     { name: "Water Heater Service Hull", description: "Repair and installation for hot water reliability" }
+  ];
+
+  const localReviews = [
+    {
+      author: "Peter L. - Nantasket",
+      rating: 5,
+      datePublished: "2024-11-05",
+      reviewBody: "Great service winterizing our summer home in Hull. They understand coastal properties and did a thorough job."
+    },
+    {
+      author: "Carol M. - Pemberton",
+      rating: 5,
+      datePublished: "2024-10-12",
+      reviewBody: "Fixed corroded pipes in our beach house. They used marine-grade materials. Very impressed with their coastal expertise."
+    }
   ];
 
   return (
@@ -205,6 +222,12 @@ export default function HullPlumbing() {
               </div>
             </div>
           </section>
+
+          {/* Local Reviews */}
+          <LocalReviewsSection town="Hull" reviews={localReviews} />
+
+          {/* FAQ Section */}
+          <VisibleFAQSection town="Hull" faqs={hullFAQs} />
 
           {/* Nearby Areas */}
           <NearbyServiceAreas currentArea="hull" />

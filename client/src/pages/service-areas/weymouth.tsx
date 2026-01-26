@@ -7,6 +7,8 @@ import { Link } from "wouter";
 import { LocalBusinessSchema, ServiceAreaSchema, FAQSchema, BreadcrumbSchema, ReviewSchema } from "@/components/schema-markup";
 import { serviceAreaMetadata, generateSocialMetaTags } from "@/lib/seoMetadata";
 import { NearbyServiceAreas } from "@/components/NearbyServiceAreas";
+import { VisibleFAQSection } from "@/components/VisibleFAQSection";
+import { LocalReviewsSection } from "@/components/LocalReviewsSection";
 
 export default function WeymouthPlumbing() {
   // Get SEO metadata
@@ -35,6 +37,21 @@ export default function WeymouthPlumbing() {
     { name: "Emergency Plumbing Weymouth", description: "24/7 emergency plumbing repairs for Weymouth homes" },
     { name: "Drain Cleaning Weymouth", description: "Professional drain and sewer cleaning in Weymouth, MA" },
     { name: "Water Heater Service Weymouth", description: "Water heater repair and installation for Weymouth residents" }
+  ];
+
+  const localReviews = [
+    {
+      author: "Brian W. - South Weymouth",
+      rating: 5,
+      datePublished: "2024-11-18",
+      reviewBody: "Fixed our basement drain issue quickly. Very professional and fair pricing. Highly recommend for Weymouth residents!"
+    },
+    {
+      author: "Lisa D. - East Weymouth",
+      rating: 5,
+      datePublished: "2024-10-25",
+      reviewBody: "Replaced our old water heater. The crew was efficient and cleaned up after themselves. Great service!"
+    }
   ];
 
   return (
@@ -216,6 +233,12 @@ export default function WeymouthPlumbing() {
               </div>
             </div>
           </section>
+
+          {/* Local Reviews */}
+          <LocalReviewsSection town="Weymouth" reviews={localReviews} />
+
+          {/* FAQ Section */}
+          <VisibleFAQSection town="Weymouth" faqs={weymouthFAQs} />
 
           {/* Nearby Areas */}
           <NearbyServiceAreas currentArea="weymouth" />

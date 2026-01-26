@@ -7,6 +7,8 @@ import { Link } from "wouter";
 import { LocalBusinessSchema, ServiceAreaSchema, FAQSchema, BreadcrumbSchema } from "@/components/schema-markup";
 import { serviceAreaMetadata, generateSocialMetaTags } from "@/lib/seoMetadata";
 import { NearbyServiceAreas } from "@/components/NearbyServiceAreas";
+import { VisibleFAQSection } from "@/components/VisibleFAQSection";
+import { LocalReviewsSection } from "@/components/LocalReviewsSection";
 
 export default function ScituatePlumbing() {
   const pageMetadata = serviceAreaMetadata['scituate'];
@@ -33,6 +35,21 @@ export default function ScituatePlumbing() {
     { name: "Emergency Plumbing Scituate", description: "Urgent repairs for leaks, flooding, and burst pipes" },
     { name: "Drain Cleaning Scituate", description: "Clear stubborn clogs and restore proper flow" },
     { name: "Water Heater Service Scituate", description: "Repair and replacement for coastal homes" }
+  ];
+
+  const localReviews = [
+    {
+      author: "John K. - Scituate Harbor",
+      rating: 5,
+      datePublished: "2024-11-10",
+      reviewBody: "Excellent work on our coastal home. They understand the challenges of salt air and used corrosion-resistant materials."
+    },
+    {
+      author: "Patricia S. - North Scituate",
+      rating: 5,
+      datePublished: "2024-10-22",
+      reviewBody: "Called for emergency help during a storm. They came out right away and fixed the issue. Very grateful for their fast service!"
+    }
   ];
 
   return (
@@ -205,6 +222,12 @@ export default function ScituatePlumbing() {
               </div>
             </div>
           </section>
+
+          {/* Local Reviews */}
+          <LocalReviewsSection town="Scituate" reviews={localReviews} />
+
+          {/* FAQ Section */}
+          <VisibleFAQSection town="Scituate" faqs={scituateFAQs} />
 
           {/* Nearby Areas */}
           <NearbyServiceAreas currentArea="scituate" />

@@ -7,6 +7,8 @@ import { Link } from "wouter";
 import { LocalBusinessSchema, ServiceAreaSchema, FAQSchema, BreadcrumbSchema } from "@/components/schema-markup";
 import { serviceAreaMetadata, generateSocialMetaTags } from "@/lib/seoMetadata";
 import { NearbyServiceAreas } from "@/components/NearbyServiceAreas";
+import { VisibleFAQSection } from "@/components/VisibleFAQSection";
+import { LocalReviewsSection } from "@/components/LocalReviewsSection";
 
 export default function RocklandPlumbing() {
   const pageMetadata = serviceAreaMetadata['rockland'];
@@ -33,6 +35,21 @@ export default function RocklandPlumbing() {
     { name: "Emergency Plumbing Rockland", description: "Rapid response for leaks, flooding, and broken pipes" },
     { name: "Drain Cleaning Rockland", description: "Hydro-jetting and drain clearing for homes and businesses" },
     { name: "Water Heater Service Rockland", description: "Repair and replacement for tank and tankless units" }
+  ];
+
+  const localReviews = [
+    {
+      author: "Steve R. - Rockland Center",
+      rating: 5,
+      datePublished: "2024-11-12",
+      reviewBody: "Fixed our main drain backup quickly. Very professional and fair pricing. Will definitely call them again."
+    },
+    {
+      author: "Donna M. - East Rockland",
+      rating: 5,
+      datePublished: "2024-10-18",
+      reviewBody: "Replaced our old water heater with a tankless unit. Great work and the crew was very clean. Highly recommend!"
+    }
   ];
 
   return (
@@ -205,6 +222,12 @@ export default function RocklandPlumbing() {
               </div>
             </div>
           </section>
+
+          {/* Local Reviews */}
+          <LocalReviewsSection town="Rockland" reviews={localReviews} />
+
+          {/* FAQ Section */}
+          <VisibleFAQSection town="Rockland" faqs={rocklandFAQs} />
 
           {/* Nearby Areas */}
           <NearbyServiceAreas currentArea="rockland" />

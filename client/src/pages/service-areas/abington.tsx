@@ -7,6 +7,8 @@ import { Link } from "wouter";
 import { LocalBusinessSchema, ServiceAreaSchema, FAQSchema, BreadcrumbSchema, ReviewSchema } from "@/components/schema-markup";
 import { serviceAreaMetadata, generateSocialMetaTags } from "@/lib/seoMetadata";
 import { NearbyServiceAreas } from "@/components/NearbyServiceAreas";
+import { VisibleFAQSection } from "@/components/VisibleFAQSection";
+import { LocalReviewsSection } from "@/components/LocalReviewsSection";
 
 // Official Google Business Profile Data
 const ABINGTON_OFFICE = {
@@ -254,6 +256,12 @@ export default function AbingtonPlumbing() {
               </div>
             </div>
           </section>
+
+          {/* Local Reviews */}
+          <LocalReviewsSection town="Abington" reviews={localReviews} />
+
+          {/* FAQ Section */}
+          <VisibleFAQSection town="Abington" faqs={abingtonFAQs} />
 
           {/* Nearby Areas */}
           <NearbyServiceAreas currentArea="abington" />

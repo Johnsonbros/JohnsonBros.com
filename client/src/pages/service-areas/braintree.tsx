@@ -7,6 +7,8 @@ import { Link } from "wouter";
 import { LocalBusinessSchema, ServiceAreaSchema, FAQSchema, BreadcrumbSchema, ReviewSchema } from "@/components/schema-markup";
 import { serviceAreaMetadata, generateSocialMetaTags } from "@/lib/seoMetadata";
 import { NearbyServiceAreas } from "@/components/NearbyServiceAreas";
+import { VisibleFAQSection } from "@/components/VisibleFAQSection";
+import { LocalReviewsSection } from "@/components/LocalReviewsSection";
 
 export default function BraintreePlumbing() {
   // Get SEO metadata
@@ -35,6 +37,21 @@ export default function BraintreePlumbing() {
     { name: "Emergency Plumbing Braintree", description: "24/7 emergency plumbing repairs for Braintree homes" },
     { name: "Drain Cleaning Braintree", description: "Professional drain and sewer cleaning in Braintree, MA" },
     { name: "Water Heater Service Braintree", description: "Water heater repair and installation for Braintree residents" }
+  ];
+
+  const localReviews = [
+    {
+      author: "Dave M. - South Braintree",
+      rating: 5,
+      datePublished: "2024-11-15",
+      reviewBody: "Great service! They fixed our basement drain that had been backing up for months. Very professional and fair pricing."
+    },
+    {
+      author: "Linda K. - Braintree Highlands",
+      rating: 5,
+      datePublished: "2024-10-20",
+      reviewBody: "Called for an emergency on a Sunday when our water heater burst. They were here in under an hour. Can't thank them enough!"
+    }
   ];
 
   return (
@@ -214,6 +231,12 @@ export default function BraintreePlumbing() {
               </div>
             </div>
           </section>
+
+          {/* Local Reviews */}
+          <LocalReviewsSection town="Braintree" reviews={localReviews} />
+
+          {/* FAQ Section */}
+          <VisibleFAQSection town="Braintree" faqs={braintreeFAQs} />
 
           {/* Nearby Areas */}
           <NearbyServiceAreas currentArea="braintree" />

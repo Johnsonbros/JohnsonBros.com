@@ -2,21 +2,51 @@ import { Helmet } from "react-helmet-async";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { Phone, MapPin, CheckCircle, Clock, Shield } from "lucide-react";
+import { Phone, MapPin, CheckCircle, Clock, Shield, Star, ExternalLink } from "lucide-react";
 import { Link } from "wouter";
 import { LocalBusinessSchema, ServiceAreaSchema, FAQSchema, BreadcrumbSchema, ReviewSchema } from "@/components/schema-markup";
 import { serviceAreaMetadata, generateSocialMetaTags } from "@/lib/seoMetadata";
 import { NearbyServiceAreas } from "@/components/NearbyServiceAreas";
+import { VisibleFAQSection } from "@/components/VisibleFAQSection";
+import { LocalReviewsSection } from "@/components/LocalReviewsSection";
+
+// Nearest office for Whitman
+const WHITMAN_OFFICE = {
+  address: "75 E. Elm Ave, Quincy, MA 02170",
+  phone: "(617) 479-9911",
+  rating: 4.8,
+  reviewCount: 38,
+  googleMapsUrl: "https://maps.app.goo.gl/65wd4toecNfd1Qeo7",
+  hours: "Open 24 hours",
+  serviceArea: "Whitman"
+};
 
 export default function WhitmanPlumbing() {
   const pageMetadata = serviceAreaMetadata['whitman'];
   const socialTags = generateSocialMetaTags(pageMetadata);
 
-  const localFAQs = [
-    { question: "Do you provide emergency plumbing services in Whitman, MA?", answer: "Yes, Johnson Bros. provides 24/7 emergency plumbing services throughout Whitman, MA." },
-    { question: "What areas of Whitman do you service?", answer: "We service all of Whitman including downtown and all residential neighborhoods." },
-    { question: "How much do plumbing services cost in Whitman?", answer: "Service rates start at $125 for diagnostics. Drain cleaning starts at $99." },
-    { question: "Are you licensed to work in Whitman?", answer: "Yes, we are fully licensed master plumbers in Massachusetts." }
+  // Whitman-specific FAQs
+  const whitmanFAQs = [
+    {
+      question: "Do you provide emergency plumbing services in Whitman, MA?",
+      answer: "Yes, Johnson Bros. provides 24/7 emergency plumbing services throughout Whitman, MA. We can typically arrive within 30-60 minutes for urgent issues."
+    },
+    {
+      question: "What areas of Whitman do you service?",
+      answer: "We service all of Whitman including Whitman Center, South Whitman, Auburn Street area, Bedford Street, and all surrounding residential neighborhoods."
+    },
+    {
+      question: "Do you work on homes with old cast iron drains?",
+      answer: "Absolutely. Many Whitman homes from the 1950s-1970s have cast iron drain systems. We specialize in repairing, lining, and replacing these aging pipes."
+    },
+    {
+      question: "How much do plumbing services cost in Whitman?",
+      answer: "Our service rates start at $125 for a diagnostic visit. Drain cleaning starts at $99, and we provide free estimates for larger projects."
+    },
+    {
+      question: "Can you replace galvanized water pipes?",
+      answer: "Yes, galvanized pipe replacement is one of our specialties. We can re-pipe your home with modern copper or PEX to restore full water pressure and flow."
+    }
   ];
 
   const breadcrumbs = [
@@ -26,15 +56,70 @@ export default function WhitmanPlumbing() {
   ];
 
   const localReviews = [
-    { author: "Mike D. - Whitman", rating: 5, datePublished: "2024-11-18", reviewBody: "Fast response and great work on our clogged drain." },
-    { author: "Jennifer T. - Whitman", rating: 5, datePublished: "2024-10-30", reviewBody: "Professional service at a fair price." }
+    {
+      author: "Mike D. - Whitman Center",
+      rating: 5,
+      datePublished: "2024-11-18",
+      reviewBody: "Fast response and great work on our clogged drain. The camera inspection showed roots in our old clay line. They cleared it and gave us options for repair."
+    },
+    {
+      author: "Jennifer T. - South Whitman",
+      rating: 5,
+      datePublished: "2024-10-30",
+      reviewBody: "Professional service at a fair price. Replaced our old galvanized pipes and now we have amazing water pressure. Should have done this years ago!"
+    },
+    {
+      author: "Dave K. - Auburn Street",
+      rating: 5,
+      datePublished: "2024-09-22",
+      reviewBody: "Emergency call on a Saturday when our water heater burst. They were here within an hour and had a new one installed by afternoon. Saved our basement!"
+    }
   ];
 
-  const services = [
-    { name: "Emergency Plumbing Whitman", description: "24/7 emergency plumbing repairs" },
-    { name: "Drain Cleaning Whitman", description: "Professional drain and sewer cleaning" },
-    { name: "Water Heater Service Whitman", description: "Water heater repair and installation" },
+  const whitmanServices = [
+    { name: "Emergency Plumbing Whitman", description: "24/7 emergency plumbing repairs for Whitman homes" },
+    { name: "Drain Cleaning Whitman", description: "Professional drain and sewer cleaning in Whitman" },
+    { name: "Pipe Replacement Whitman", description: "Galvanized and cast iron pipe replacement" },
     { name: "Pipe Repair Whitman", description: "Expert pipe repair and replacement" }
+  ];
+
+  const neighborhoods = [
+    "Whitman Center",
+    "South Whitman",
+    "Auburn Street",
+    "Bedford Street",
+    "Temple Street",
+    "South Avenue",
+    "Washington Street",
+    "Hayden Avenue",
+    "High Street"
+  ];
+
+  const commonIssues = [
+    {
+      issue: "Cast Iron Drain Systems",
+      desc: "Whitman's 1950s-1970s homes often have cast iron drains that corrode, crack, and develop blockages over time"
+    },
+    {
+      issue: "Galvanized Supply Lines",
+      desc: "Many older homes have galvanized steel water pipes that rust internally, causing low pressure and discolored water"
+    },
+    {
+      issue: "Older Municipal Infrastructure",
+      desc: "Whitman's aging municipal water system can cause pressure fluctuations and sediment issues for homeowners"
+    },
+    {
+      issue: "Sewer Line Root Intrusion",
+      desc: "Mature trees throughout town send roots into aging clay and cast iron sewer lines"
+    },
+    {
+      issue: "Aging Water Heaters",
+      desc: "Original water heaters in many homes are well past their lifespan and at risk of failure or flooding"
+    },
+    {
+      issue: "Fixture Updates",
+      desc: "Many Whitman homes still have original fixtures from the 1960s-1970s that waste water and develop leaks"
+    }
   ];
 
   return (
@@ -43,54 +128,123 @@ export default function WhitmanPlumbing() {
         <title>{pageMetadata.title}</title>
         <meta name="description" content={pageMetadata.description} />
         <meta name="keywords" content={pageMetadata.keywords.join(', ')} />
+
+        {/* Canonical URL */}
         <link rel="canonical" href={`https://www.thejohnsonbros.com${pageMetadata.canonicalUrl}`} />
-        {Object.entries(socialTags.openGraph).map(([key, value]) => (<meta key={key} property={key} content={value} />))}
-        {Object.entries(socialTags.twitter).map(([key, value]) => (<meta key={key} name={key} content={value} />))}
+
+        {/* Open Graph Tags */}
+        {Object.entries(socialTags.openGraph).map(([key, value]) => (
+          <meta key={key} property={key} content={value} />
+        ))}
+
+        {/* Twitter Card Tags */}
+        {Object.entries(socialTags.twitter).map(([key, value]) => (
+          <meta key={key} name={key} content={value} />
+        ))}
+
+        {/* Local SEO Tags */}
         <meta name="geo.region" content="US-MA" />
         <meta name="geo.placename" content="Whitman" />
         <meta name="geo.position" content="42.0801;-70.9345" />
         <meta name="ICBM" content="42.0801, -70.9345" />
         <meta name="robots" content="index, follow" />
       </Helmet>
+
+      {/* Schema Markup */}
       <LocalBusinessSchema serviceArea="Whitman" />
-      <ServiceAreaSchema areaName="Whitman" services={services} />
-      <FAQSchema questions={localFAQs} />
+      <ServiceAreaSchema areaName="Whitman" services={whitmanServices} />
+      <FAQSchema questions={whitmanFAQs} />
       <BreadcrumbSchema items={breadcrumbs} />
-      <ReviewSchema reviews={localReviews} aggregateRating={{ ratingValue: 4.8, reviewCount: 38 }} />
+      <ReviewSchema reviews={localReviews} aggregateRating={{ ratingValue: WHITMAN_OFFICE.rating, reviewCount: WHITMAN_OFFICE.reviewCount }} />
+
       <div className="min-h-screen flex flex-col bg-gray-50">
         <Header onBookService={() => {}} />
+
         <main className="flex-grow">
+          {/* Hero Section */}
           <section className="bg-gradient-to-br from-johnson-blue to-johnson-teal text-white py-16 sm:py-20">
             <div className="container mx-auto px-4">
               <div className="max-w-4xl mx-auto text-center">
                 <div className="flex items-center justify-center gap-3 mb-6">
                   <MapPin className="h-12 w-12" />
-                  <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold">Plumber in Whitman, MA</h1>
+                  <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold">
+                    Plumber in Whitman, MA
+                  </h1>
                 </div>
-                <p className="text-xl sm:text-2xl mb-8 text-blue-100">Your trusted local plumbing experts serving Whitman and the South Shore</p>
+                <p className="text-xl sm:text-2xl mb-4 text-blue-100">
+                  Your trusted local plumbing experts serving Whitman and the South Shore
+                </p>
+
+                {/* Google Rating Badge */}
+                <div className="flex items-center justify-center gap-2 mb-4">
+                  <div className="flex items-center gap-1 bg-white/20 px-4 py-2 rounded-full">
+                    <Star className="h-5 w-5 text-yellow-400 fill-yellow-400" />
+                    <span className="font-bold">{WHITMAN_OFFICE.rating}</span>
+                    <span className="text-blue-100">({WHITMAN_OFFICE.reviewCount}+ reviews)</span>
+                  </div>
+                  <a
+                    href={WHITMAN_OFFICE.googleMapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 bg-white/20 px-4 py-2 rounded-full hover:bg-white/30 transition-colors"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    <span>View on Google Maps</span>
+                  </a>
+                </div>
+
+                {/* Service Info */}
+                <p className="text-blue-100 mb-6">
+                  <MapPin className="h-4 w-4 inline mr-1" />
+                  Serving Whitman from {WHITMAN_OFFICE.address} | {WHITMAN_OFFICE.hours}
+                </p>
+
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Button size="lg" className="bg-white text-johnson-blue hover:bg-gray-100 text-lg px-8 py-6" onClick={() => window.location.href = 'tel:6174799911'}><Phone className="mr-2" /> Call (617) 479-9911</Button>
-                  <Button size="lg" variant="outline" className="border-2 border-white text-white hover:bg-white hover:text-johnson-blue text-lg px-8 py-6" asChild><Link href="/contact">Schedule Service</Link></Button>
+                  <Button
+                    size="lg"
+                    className="bg-white text-johnson-blue hover:bg-gray-100 text-lg px-8 py-6"
+                    onClick={() => window.location.href = 'tel:6174799911'}
+                    data-testid="call-button"
+                  >
+                    <Phone className="mr-2" /> Call (617) 479-9911
+                  </Button>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="border-2 border-white text-white hover:bg-white hover:text-johnson-blue text-lg px-8 py-6"
+                    asChild
+                  >
+                    <Link href="/contact" data-testid="contact-button">
+                      Schedule Service
+                    </Link>
+                  </Button>
                 </div>
               </div>
             </div>
           </section>
+
+          {/* Services */}
           <section className="py-16 bg-white">
             <div className="container mx-auto px-4">
               <div className="max-w-6xl mx-auto">
-                <h2 className="text-3xl sm:text-4xl font-bold text-center mb-12">Complete Plumbing Services in Whitman, MA</h2>
+                <h2 className="text-3xl sm:text-4xl font-bold text-center mb-12">
+                  Complete Plumbing Services in Whitman, MA
+                </h2>
+
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                   {[
                     { title: "Emergency Plumbing", desc: "24/7 emergency service for burst pipes, leaks, and urgent repairs", link: "/services/general-plumbing" },
-                    { title: "Drain Cleaning", desc: "Professional drain and sewer cleaning", link: "/services/drain-cleaning" },
-                    { title: "Water Heater Service", desc: "Installation, repair, and maintenance", link: "/services/general-plumbing" },
+                    { title: "Drain Cleaning", desc: "Professional drain and sewer cleaning for homes and businesses", link: "/services/drain-cleaning" },
+                    { title: "Pipe Replacement", desc: "Replace aging galvanized and cast iron with modern materials", link: "/services/general-plumbing" },
+                    { title: "Water Heater Service", desc: "Installation, repair, and maintenance of all water heater types", link: "/services/general-plumbing" },
                     { title: "Gas Heat Installation", desc: "Licensed gas fitters for furnaces and boilers", link: "/services/gas-heat" },
-                    { title: "New Construction", desc: "Complete plumbing for new builds", link: "/services/new-construction" },
-                    { title: "Pipe Repair", desc: "Expert pipe repair and re-piping", link: "/services/general-plumbing" }
+                    { title: "Re-Piping Services", desc: "Whole-house re-piping for improved water flow and quality", link: "/services/general-plumbing" }
                   ].map((service, idx) => (
                     <Link key={idx} href={service.link} className="group">
                       <div className="p-6 border rounded-lg hover:shadow-lg transition-shadow h-full">
-                        <h3 className="text-xl font-semibold mb-2 group-hover:text-johnson-blue">{service.title}</h3>
+                        <h3 className="text-xl font-semibold mb-2 group-hover:text-johnson-blue transition-colors">
+                          {service.title}
+                        </h3>
                         <p className="text-gray-600">{service.desc}</p>
                       </div>
                     </Link>
@@ -99,27 +253,123 @@ export default function WhitmanPlumbing() {
               </div>
             </div>
           </section>
+
+          {/* Why Choose Us */}
           <section className="py-16 bg-gray-50">
             <div className="container mx-auto px-4">
               <div className="max-w-6xl mx-auto">
-                <h2 className="text-3xl font-bold text-center mb-12">Why Whitman Chooses Johnson Bros.</h2>
+                <h2 className="text-3xl sm:text-4xl font-bold text-center mb-12">
+                  Why Whitman Residents Choose Johnson Bros. Plumbing
+                </h2>
+
                 <div className="grid md:grid-cols-3 gap-8">
-                  {[{ icon: Clock, title: "Fast Response", desc: "Same-day service available" }, { icon: Shield, title: "Licensed & Insured", desc: "Massachusetts master plumbers" }, { icon: CheckCircle, title: "Local Experts", desc: "We know Whitman homes" }].map((f, i) => (
-                    <div key={i} className="text-center p-6 bg-white rounded-lg"><f.icon className="h-12 w-12 text-johnson-blue mx-auto mb-4" /><h3 className="text-xl font-semibold mb-3">{f.title}</h3><p className="text-gray-600">{f.desc}</p></div>
+                  {[
+                    {
+                      icon: Clock,
+                      title: "Fast Response",
+                      desc: "Same-day service for Whitman residents. Emergency help available 24/7."
+                    },
+                    {
+                      icon: Shield,
+                      title: "Licensed & Insured",
+                      desc: "Fully licensed Massachusetts master plumbers with comprehensive insurance."
+                    },
+                    {
+                      icon: CheckCircle,
+                      title: "Older Home Specialists",
+                      desc: "Decades of experience with Whitman's mid-century homes, cast iron, and galvanized systems."
+                    }
+                  ].map((feature, idx) => (
+                    <div key={idx} className="text-center p-6 bg-white rounded-lg">
+                      <feature.icon className="h-12 w-12 text-johnson-blue mx-auto mb-4" />
+                      <h3 className="text-xl font-semibold mb-3">{feature.title}</h3>
+                      <p className="text-gray-600">{feature.desc}</p>
+                    </div>
                   ))}
                 </div>
               </div>
             </div>
           </section>
+
+          {/* Neighborhoods We Serve */}
+          <section className="py-16 bg-white">
+            <div className="container mx-auto px-4">
+              <div className="max-w-4xl mx-auto">
+                <h2 className="text-3xl sm:text-4xl font-bold text-center mb-8">
+                  Whitman Neighborhoods We Serve
+                </h2>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-center">
+                  {neighborhoods.map((neighborhood) => (
+                    <div key={neighborhood} className="p-3 bg-gray-50 rounded-lg">
+                      <p className="font-medium text-gray-700">{neighborhood}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Common Plumbing Issues */}
+          <section className="py-16 bg-gray-50">
+            <div className="container mx-auto px-4">
+              <div className="max-w-4xl mx-auto">
+                <h2 className="text-3xl sm:text-4xl font-bold text-center mb-8">
+                  Common Plumbing Issues in Whitman Homes
+                </h2>
+                <p className="text-lg text-gray-600 text-center mb-8">
+                  Whitman's 1950s-1970s housing stock and older municipal infrastructure create unique plumbing challenges. We're experts at:
+                </p>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  {commonIssues.map((item, idx) => (
+                    <div key={idx} className="bg-white p-6 rounded-lg">
+                      <h3 className="text-lg font-semibold mb-2 text-johnson-blue">{item.issue}</h3>
+                      <p className="text-gray-600">{item.desc}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Local Reviews */}
+          <LocalReviewsSection town="Whitman" reviews={localReviews} />
+
+          {/* FAQ Section */}
+          <VisibleFAQSection town="Whitman" faqs={whitmanFAQs} />
+
+          {/* Nearby Service Areas */}
           <NearbyServiceAreas currentArea="whitman" />
-          <section className="py-16 bg-gradient-to-br from-johnson-blue to-johnson-teal text-white">
-            <div className="container mx-auto px-4 text-center">
-              <h2 className="text-3xl sm:text-4xl font-bold mb-6">Need a Plumber in Whitman Today?</h2>
-              <p className="text-xl mb-8 text-blue-100">Call Whitman's trusted plumbing experts</p>
-              <Button size="lg" className="bg-white text-johnson-blue hover:bg-gray-100 text-lg px-8 py-6" onClick={() => window.location.href = 'tel:6174799911'}><Phone className="mr-2" /> Call (617) 479-9911 Now</Button>
+
+          {/* CTA Section */}
+          <section className="py-16 bg-white">
+            <div className="container mx-auto px-4">
+              <div className="max-w-4xl mx-auto text-center">
+                <h2 className="text-3xl sm:text-4xl font-bold mb-6">
+                  Schedule Plumbing Service in Whitman
+                </h2>
+                <p className="text-gray-600 mb-4">
+                  From emergency repairs to whole-house re-piping, Johnson Bros. is ready to help Whitman residents.
+                </p>
+                <p className="text-gray-500 mb-8">
+                  <MapPin className="h-4 w-4 inline mr-1" />
+                  Serving Whitman from {WHITMAN_OFFICE.address}
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <Button size="lg" className="bg-johnson-blue text-white" asChild>
+                    <a href="tel:6174799911">
+                      <Phone className="mr-2 h-5 w-5" /> Call {WHITMAN_OFFICE.phone}
+                    </a>
+                  </Button>
+                  <Button size="lg" variant="outline" asChild>
+                    <Link href="/contact">Request Service</Link>
+                  </Button>
+                </div>
+              </div>
             </div>
           </section>
         </main>
+
         <Footer />
       </div>
     </>

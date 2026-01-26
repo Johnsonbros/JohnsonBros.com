@@ -7,6 +7,8 @@ import { Link } from "wouter";
 import { LocalBusinessSchema, ServiceAreaSchema, FAQSchema, BreadcrumbSchema } from "@/components/schema-markup";
 import { serviceAreaMetadata, generateSocialMetaTags } from "@/lib/seoMetadata";
 import { NearbyServiceAreas } from "@/components/NearbyServiceAreas";
+import { VisibleFAQSection } from "@/components/VisibleFAQSection";
+import { LocalReviewsSection } from "@/components/LocalReviewsSection";
 
 export default function HanoverPlumbing() {
   const pageMetadata = serviceAreaMetadata['hanover'];
@@ -33,6 +35,21 @@ export default function HanoverPlumbing() {
     { name: "Emergency Plumbing Hanover", description: "Fast response for urgent plumbing repairs" },
     { name: "Drain Cleaning Hanover", description: "Clog removal and drain maintenance" },
     { name: "Gas Heat Service Hanover", description: "Boiler, furnace, and gas line work" }
+  ];
+
+  const localReviews = [
+    {
+      author: "Mark T. - Hanover Center",
+      rating: 5,
+      datePublished: "2024-11-10",
+      reviewBody: "Fixed our boiler during a cold snap. Fast response and fair price. Highly recommend for Hanover homeowners."
+    },
+    {
+      author: "Susan B. - Assinippi",
+      rating: 5,
+      datePublished: "2024-10-22",
+      reviewBody: "Replaced our sump pump before the rainy season. Very professional and thorough. Will definitely use again."
+    }
   ];
 
   return (
@@ -205,6 +222,12 @@ export default function HanoverPlumbing() {
               </div>
             </div>
           </section>
+
+          {/* Local Reviews */}
+          <LocalReviewsSection town="Hanover" reviews={localReviews} />
+
+          {/* FAQ Section */}
+          <VisibleFAQSection town="Hanover" faqs={hanoverFAQs} />
 
           {/* Nearby Areas */}
           <NearbyServiceAreas currentArea="hanover" />

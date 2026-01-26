@@ -1,29 +1,116 @@
 /**
- * Conditional Analytics Loading
+ * Analytics & Tracking
  *
- * Only loads Google Analytics when user has given consent.
- * Provides stub functions when consent is not given.
+ * Loads Google Tag Manager (GTM), Google Analytics 4 (GA4), and Meta Pixel.
+ * GTM is the preferred method - configure GA4 and Meta Pixel as tags within GTM.
+ *
+ * Environment Variables:
+ * - VITE_GTM_ID: Google Tag Manager container ID (GTM-XXXXXXX) - RECOMMENDED
+ * - VITE_GA_MEASUREMENT_ID: GA4 measurement ID (G-XXXXXXX) - fallback
+ * - VITE_META_PIXEL_ID: Meta Pixel ID - fallback
  */
 
-import { hasAnalyticsConsent } from '@/hooks/useCookieConsent';
-
-// Google Analytics Measurement ID
+// Tracking IDs from environment
+const GTM_ID = import.meta.env.VITE_GTM_ID || '';
 const GA_MEASUREMENT_ID = import.meta.env.VITE_GA_MEASUREMENT_ID || '';
+const META_PIXEL_ID = import.meta.env.VITE_META_PIXEL_ID || '';
 
-// Track whether GA has been initialized
+// Track initialization state
+let gtmInitialized = false;
 let gaInitialized = false;
+let metaPixelInitialized = false;
 
-// Window extension is declared in monitoring/analytics.ts
-// Use optional chaining to handle undefined cases
+// Note: Window.dataLayer and Window.gtag are declared in monitoring/analytics.ts
+declare global {
+  interface Window {
+    fbq?: ((...args: unknown[]) => void) & {
+      callMethod?: (...args: unknown[]) => void;
+      queue: unknown[];
+      loaded: boolean;
+      version: string;
+      push: (...args: unknown[]) => void;
+    };
+    _fbq?: unknown;
+  }
+}
 
 /**
- * Load Google Analytics script dynamically
+ * Load Google Tag Manager (preferred method)
+ * GTM can manage GA4, Meta Pixel, and all other tags centrally
+ */
+function loadGTM(): Promise<void> {
+  return new Promise((resolve) => {
+    // Check for valid GTM ID
+    if (!GTM_ID || GTM_ID === 'GTM-XXXXXXX') {
+      resolve();
+      return;
+    }
+
+    // Don't load twice
+    if (gtmInitialized) {
+      resolve();
+      return;
+    }
+
+    // Check if script already exists
+    if (document.querySelector(`script[src*="googletagmanager.com/gtm.js"]`)) {
+      gtmInitialized = true;
+      resolve();
+      return;
+    }
+
+    // Initialize dataLayer
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({
+      'gtm.start': new Date().getTime(),
+      event: 'gtm.js'
+    });
+
+    // Create and load GTM script
+    const script = document.createElement('script');
+    script.async = true;
+    script.src = `https://www.googletagmanager.com/gtm.js?id=${GTM_ID}`;
+
+    script.onload = () => {
+      // Add noscript iframe for users with JS disabled
+      const noscript = document.createElement('noscript');
+      const iframe = document.createElement('iframe');
+      iframe.src = `https://www.googletagmanager.com/ns.html?id=${GTM_ID}`;
+      iframe.height = '0';
+      iframe.width = '0';
+      iframe.style.display = 'none';
+      iframe.style.visibility = 'hidden';
+      noscript.appendChild(iframe);
+      document.body.insertBefore(noscript, document.body.firstChild);
+
+      gtmInitialized = true;
+      console.log(`[Analytics] GTM loaded: ${GTM_ID}`);
+      resolve();
+    };
+
+    script.onerror = () => {
+      console.error('[Analytics] Failed to load GTM');
+      resolve();
+    };
+
+    document.head.appendChild(script);
+  });
+}
+
+/**
+ * Load Google Analytics 4 script directly (fallback if no GTM)
  */
 function loadGAScript(): Promise<void> {
   return new Promise((resolve, reject) => {
-    // Don't load if no measurement ID
-    if (!GA_MEASUREMENT_ID) {
-      console.warn('[Analytics] No GA_MEASUREMENT_ID configured');
+    // Skip if GTM is handling this or no measurement ID
+    if (gtmInitialized) {
+      console.log('[Analytics] GA4 managed by GTM');
+      resolve();
+      return;
+    }
+
+    // Check for valid GA measurement ID
+    if (!GA_MEASUREMENT_ID || GA_MEASUREMENT_ID === 'G-XXXXXXXXXX') {
       resolve();
       return;
     }
@@ -41,9 +128,9 @@ function loadGAScript(): Promise<void> {
       return;
     }
 
-    // Initialize dataLayer
+    // Initialize dataLayer and gtag
     window.dataLayer = window.dataLayer || [];
-    window.gtag = function gtag(...args: any[]) {
+    window.gtag = function gtag(...args: unknown[]) {
       window.dataLayer?.push(args);
     };
     window.gtag('js', new Date());
@@ -55,12 +142,10 @@ function loadGAScript(): Promise<void> {
 
     script.onload = () => {
       window.gtag?.('config', GA_MEASUREMENT_ID, {
-        // Anonymize IP by default
-        anonymize_ip: true,
-        // Don't send page views automatically - we'll control this
-        send_page_view: false,
+        send_page_view: true,
       });
       gaInitialized = true;
+      console.log(`[Analytics] GA4 loaded: ${GA_MEASUREMENT_ID}`);
       resolve();
     };
 
@@ -74,20 +159,109 @@ function loadGAScript(): Promise<void> {
 }
 
 /**
- * Initialize analytics based on consent
+ * Load Meta (Facebook) Pixel directly (fallback if no GTM)
+ */
+function loadMetaPixel(): Promise<void> {
+  return new Promise((resolve) => {
+    // Skip if GTM is handling this
+    if (gtmInitialized) {
+      console.log('[Analytics] Meta Pixel managed by GTM');
+      resolve();
+      return;
+    }
+
+    // Check for valid Pixel ID
+    if (!META_PIXEL_ID || META_PIXEL_ID === 'XXXXXXXXXXXXXXXX') {
+      resolve();
+      return;
+    }
+
+    // Don't load twice
+    if (metaPixelInitialized) {
+      resolve();
+      return;
+    }
+
+    // Check if script already exists
+    if (document.querySelector(`script[src*="connect.facebook.net"]`)) {
+      metaPixelInitialized = true;
+      resolve();
+      return;
+    }
+
+    // Initialize fbq function
+    type FbqFunction = ((...args: unknown[]) => void) & {
+      callMethod?: (...args: unknown[]) => void;
+      queue: unknown[];
+      loaded: boolean;
+      version: string;
+      push: (...args: unknown[]) => void;
+    };
+
+    const fbqFn: FbqFunction = Object.assign(
+      function fbq(...args: unknown[]) {
+        if (fbqFn.callMethod) {
+          fbqFn.callMethod.apply(fbqFn, args);
+        } else {
+          fbqFn.queue.push(args);
+        }
+      },
+      {
+        queue: [] as unknown[],
+        loaded: true,
+        version: '2.0',
+        push: function(...args: unknown[]) {
+          fbqFn.queue.push(args);
+        }
+      }
+    );
+
+    if (!window._fbq) window._fbq = fbqFn;
+    window.fbq = fbqFn;
+
+    // Load pixel script
+    const script = document.createElement('script');
+    script.async = true;
+    script.src = 'https://connect.facebook.net/en_US/fbevents.js';
+
+    script.onload = () => {
+      window.fbq?.('init', META_PIXEL_ID);
+      window.fbq?.('track', 'PageView');
+      metaPixelInitialized = true;
+      console.log(`[Analytics] Meta Pixel loaded: ${META_PIXEL_ID}`);
+      resolve();
+    };
+
+    script.onerror = () => {
+      console.error('[Analytics] Failed to load Meta Pixel');
+      resolve();
+    };
+
+    document.head.appendChild(script);
+  });
+}
+
+/**
+ * Initialize all analytics - loads automatically
  */
 export function initAnalytics(): void {
-  // Check consent
-  if (!hasAnalyticsConsent()) {
-    console.log('[Analytics] Analytics consent not given, skipping initialization');
-    return;
-  }
-
-  // Load GA script
-  loadGAScript()
+  // Try GTM first (manages everything)
+  loadGTM()
     .then(() => {
-      console.log('[Analytics] Google Analytics initialized');
-      // Send initial page view
+      if (gtmInitialized) {
+        console.log('[Analytics] GTM initialized - managing all tags');
+        trackPageView(window.location.pathname);
+        return;
+      }
+
+      // Fallback: Load individual scripts if no GTM
+      return Promise.all([
+        loadGAScript(),
+        loadMetaPixel()
+      ]);
+    })
+    .then(() => {
+      console.log('[Analytics] Analytics initialized');
       trackPageView(window.location.pathname);
     })
     .catch((error) => {
@@ -96,32 +270,72 @@ export function initAnalytics(): void {
 }
 
 /**
- * Track page view
+ * Track page view across all platforms
  */
 export function trackPageView(path: string, title?: string): void {
-  if (!hasAnalyticsConsent() || !gaInitialized) {
-    return;
+  const pageTitle = title || document.title;
+
+  // Send to GA4
+  if ((gaInitialized || gtmInitialized) && window.gtag) {
+    window.gtag('event', 'page_view', {
+      page_path: path,
+      page_title: pageTitle,
+      page_location: window.location.href,
+    });
   }
 
-  window.gtag?.('event', 'page_view', {
-    page_path: path,
-    page_title: title || document.title,
-    page_location: window.location.href,
-  });
+  // Send to GTM dataLayer
+  if (gtmInitialized && window.dataLayer) {
+    window.dataLayer.push({
+      event: 'page_view',
+      page_path: path,
+      page_title: pageTitle,
+      page_location: window.location.href,
+    });
+  }
+
+  // Send to Meta Pixel
+  if ((metaPixelInitialized || gtmInitialized) && window.fbq) {
+    window.fbq('track', 'PageView');
+  }
 }
 
 /**
- * Track custom event
+ * Track custom event across all platforms
  */
 export function trackEvent(
   eventName: string,
   params?: Record<string, unknown>
 ): void {
-  if (!hasAnalyticsConsent() || !gaInitialized) {
-    return;
+  // Send to GA4 via gtag
+  if ((gaInitialized || gtmInitialized) && window.gtag) {
+    window.gtag('event', eventName, params);
   }
 
-  window.gtag?.('event', eventName, params);
+  // Send to GTM dataLayer
+  if (gtmInitialized && window.dataLayer) {
+    window.dataLayer.push({
+      event: eventName,
+      ...params,
+    });
+  }
+
+  // Send to Meta Pixel
+  if ((metaPixelInitialized || gtmInitialized) && window.fbq) {
+    const metaEventMap: Record<string, string> = {
+      generate_lead: 'Lead',
+      contact: 'Contact',
+      phone_click: 'Contact',
+      booking_started: 'InitiateCheckout',
+      booking_submitted: 'Purchase',
+      booking_confirmed: 'Purchase',
+      form_submit: 'SubmitApplication',
+      page_view: 'PageView',
+    };
+
+    const metaEvent = metaEventMap[eventName] || eventName;
+    window.fbq('trackCustom', metaEvent, params);
+  }
 }
 
 /**
@@ -132,9 +346,7 @@ export function trackConversion(
   value?: number,
   currency?: string
 ): void {
-  if (!hasAnalyticsConsent() || !gaInitialized) {
-    return;
-  }
+  if (!gaInitialized && !gtmInitialized) return;
 
   window.gtag?.('event', 'conversion', {
     send_to: `${GA_MEASUREMENT_ID}/${conversionLabel}`,
@@ -193,42 +405,28 @@ export function trackPhoneClick(source: string): void {
  * Set user properties (for logged-in users)
  */
 export function setUserProperties(properties: Record<string, unknown>): void {
-  if (!hasAnalyticsConsent() || !gaInitialized) {
-    return;
-  }
-
+  if (!gaInitialized && !gtmInitialized) return;
   window.gtag?.('set', 'user_properties', properties);
 }
 
 /**
- * Listen for consent updates and initialize/disable analytics accordingly
+ * Initialize analytics system - call once when app loads
  */
-export function setupConsentListener(): void {
-  window.addEventListener('consentUpdated', (event: Event) => {
-    const customEvent = event as CustomEvent<{ analytics: boolean }>;
-    const { analytics } = customEvent.detail;
-
-    if (analytics && !gaInitialized) {
-      // User just gave consent - initialize analytics
-      initAnalytics();
-    } else if (!analytics && gaInitialized) {
-      // User withdrew consent - we can't unload the script, but we can
-      // stop sending events (hasAnalyticsConsent checks will fail)
-      console.log('[Analytics] Analytics consent withdrawn');
-    }
-  });
+export function bootstrapAnalytics(): void {
+  initAnalytics();
 }
 
 /**
- * Initialize analytics system
- * Call this once when the app loads
+ * Get tracking status (for debugging)
  */
-export function bootstrapAnalytics(): void {
-  // Set up listener for consent changes
-  setupConsentListener();
-
-  // Initialize if we already have consent
-  if (hasAnalyticsConsent()) {
-    initAnalytics();
-  }
+export function getTrackingStatus(): {
+  gtm: boolean;
+  ga4: boolean;
+  metaPixel: boolean;
+} {
+  return {
+    gtm: gtmInitialized,
+    ga4: gaInitialized,
+    metaPixel: metaPixelInitialized,
+  };
 }

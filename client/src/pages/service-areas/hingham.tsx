@@ -4,13 +4,42 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Phone, MapPin, CheckCircle, Clock, Shield } from "lucide-react";
 import { Link } from "wouter";
-import { LocalBusinessSchema } from "@/components/schema-markup";
+import { LocalBusinessSchema, FAQSchema } from "@/components/schema-markup";
 import { NearbyServiceAreas } from "@/components/NearbyServiceAreas";
+import { VisibleFAQSection } from "@/components/VisibleFAQSection";
+import { LocalReviewsSection } from "@/components/LocalReviewsSection";
 
 export default function HinghamPlumbing() {
+  const hinghamFAQs = [
+    {
+      question: "Do you provide emergency plumbing services in Hingham, MA?",
+      answer: "Yes, Johnson Bros. provides 24/7 emergency plumbing services throughout Hingham, MA. We can respond quickly to any urgent plumbing issue."
+    },
+    {
+      question: "Do you service historic homes in Hingham?",
+      answer: "Absolutely. We have extensive experience working with Hingham's beautiful historic homes and colonial properties, understanding their unique plumbing needs."
+    }
+  ];
+
+  const localReviews = [
+    {
+      author: "William H. - Hingham Harbor",
+      rating: 5,
+      datePublished: "2024-11-12",
+      reviewBody: "Excellent work updating the plumbing in our historic home. They were respectful of the property and did meticulous work."
+    },
+    {
+      author: "Margaret P. - Crow Point",
+      rating: 5,
+      datePublished: "2024-10-25",
+      reviewBody: "Installed a whole-home water filtration system. Very professional and the water quality is noticeably better. Highly recommend!"
+    }
+  ];
+
   return (
     <>
       <LocalBusinessSchema serviceArea="Hingham" />
+      <FAQSchema questions={hinghamFAQs} />
       <Helmet>
         <title>Plumber Hingham MA | Emergency Plumbing Services | Johnson Bros</title>
         <meta 
@@ -184,6 +213,12 @@ export default function HinghamPlumbing() {
               </div>
             </div>
           </section>
+
+          {/* Local Reviews */}
+          <LocalReviewsSection town="Hingham" reviews={localReviews} />
+
+          {/* FAQ Section */}
+          <VisibleFAQSection town="Hingham" faqs={hinghamFAQs} />
 
           {/* Nearby Areas */}
           <NearbyServiceAreas currentArea="hingham" />

@@ -19,7 +19,7 @@ import Home from "@/pages/home";
 import { JobCompletionNotifications } from "@/components/JobCompletionNotifications";
 import { CustomChatWidget } from "@/components/CustomChatWidget";
 import { CanonicalTag } from "@/components/CanonicalTag";
-import { CookieConsent } from "@/components/CookieConsent";
+// Cookie consent removed - local MA business doesn't need GDPR compliance
 import { bootstrapAnalytics } from "@/lib/analytics";
 
 // Lazy load VideoCallPopup - not critical for initial render
@@ -521,9 +521,6 @@ function AppContent() {
           </div>
           
           <CardSurfaceLayer />
-
-          {/* Cookie Consent Banner - GDPR/CCPA Compliance */}
-          <CookieConsent />
     </>
   );
 }

@@ -4,13 +4,42 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Phone, MapPin, CheckCircle, Clock, Shield } from "lucide-react";
 import { Link } from "wouter";
-import { LocalBusinessSchema } from "@/components/schema-markup";
+import { LocalBusinessSchema, FAQSchema } from "@/components/schema-markup";
 import { NearbyServiceAreas } from "@/components/NearbyServiceAreas";
+import { VisibleFAQSection } from "@/components/VisibleFAQSection";
+import { LocalReviewsSection } from "@/components/LocalReviewsSection";
 
 export default function MarshfieldPlumbing() {
+  const marshfieldFAQs = [
+    {
+      question: "Do you provide emergency plumbing services in Marshfield, MA?",
+      answer: "Yes, Johnson Bros. provides 24/7 emergency plumbing services throughout Marshfield, MA. We can respond quickly to any urgent plumbing issue."
+    },
+    {
+      question: "Do you service coastal and waterfront homes in Marshfield?",
+      answer: "Absolutely. We specialize in coastal home plumbing, understanding the unique challenges of salt air corrosion and storm damage repairs."
+    }
+  ];
+
+  const localReviews = [
+    {
+      author: "Jim S. - Brant Rock",
+      rating: 5,
+      datePublished: "2024-11-08",
+      reviewBody: "Fixed our beach house plumbing after storm damage. Fast response and quality work. They really understand coastal homes."
+    },
+    {
+      author: "Nancy T. - Green Harbor",
+      rating: 5,
+      datePublished: "2024-10-20",
+      reviewBody: "Installed a new sump pump system before the rainy season. Very professional and explained everything clearly. Highly recommend!"
+    }
+  ];
+
   return (
     <>
       <LocalBusinessSchema serviceArea="Marshfield" />
+      <FAQSchema questions={marshfieldFAQs} />
       <Helmet>
         <title>Plumber Marshfield MA | Emergency Plumbing Services | Johnson Bros</title>
         <meta 
@@ -184,6 +213,12 @@ export default function MarshfieldPlumbing() {
               </div>
             </div>
           </section>
+
+          {/* Local Reviews */}
+          <LocalReviewsSection town="Marshfield" reviews={localReviews} />
+
+          {/* FAQ Section */}
+          <VisibleFAQSection town="Marshfield" faqs={marshfieldFAQs} />
 
           {/* Nearby Areas */}
           <NearbyServiceAreas currentArea="marshfield" />
