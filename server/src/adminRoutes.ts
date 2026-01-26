@@ -2082,6 +2082,109 @@ router.get('/hcp/daily-stats', authenticate, requirePermission('dashboard.view')
   }
 });
 
+// Calendar view - combines jobs and estimates with real-time HCP data
+router.get('/calendar', authenticate, requirePermission('dashboard.view'), async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+
+    if (!startDate || !endDate) {
+      return res.status(400).json({ error: 'startDate and endDate are required' });
+    }
+
+    const start = new Date(startDate as string);
+    start.setUTCHours(0, 0, 0, 0);
+    const end = new Date(endDate as string);
+    end.setUTCHours(23, 59, 59, 999);
+
+    // Import HCP client
+    const { HousecallProClient } = await import('./housecall');
+    const hcpClient = HousecallProClient.getInstance();
+
+    // Fetch jobs and estimates from HCP API in parallel
+    const [jobs, estimates, employees] = await Promise.all([
+      hcpClient.getJobs({
+        scheduled_start_min: start.toISOString(),
+        scheduled_start_max: end.toISOString(),
+        work_status: ['scheduled', 'in_progress', 'completed'],
+      }),
+      hcpClient.getEstimates({
+        scheduled_start_min: start.toISOString(),
+        scheduled_start_max: end.toISOString(),
+        work_status: ['scheduled', 'in_progress', 'completed'],
+      }),
+      hcpClient.getEmployees(),
+    ]);
+
+    // Transform to calendar events
+    const events = [
+      ...jobs.map((job: any) => ({
+        id: job.id,
+        type: 'job' as const,
+        title: job.name || job.description || 'Job',
+        customerName: job.customer?.first_name
+          ? `${job.customer.first_name} ${job.customer.last_name || ''}`
+          : 'Unknown',
+        customerPhone: job.customer?.mobile_number || job.customer?.home_number,
+        startTime: job.schedule?.scheduled_start || job.work_timestamps?.started_at,
+        endTime: job.schedule?.scheduled_end || job.work_timestamps?.completed_at,
+        status: job.work_status || 'scheduled',
+        technicians: (job.assigned_employees || []).map((emp: any) => ({
+          id: emp.id,
+          name: `${emp.first_name || ''} ${emp.last_name || ''}`.trim(),
+          colorHex: emp.color_hex || '#6366f1',
+        })),
+        address: job.address
+          ? `${job.address.street || ''}, ${job.address.city || ''}`
+          : '',
+        amount: job.total_amount || 0,
+      })),
+      ...estimates.map((est: any) => ({
+        id: est.id,
+        type: 'estimate' as const,
+        title: est.name || 'Estimate',
+        customerName: est.customer?.first_name
+          ? `${est.customer.first_name} ${est.customer.last_name || ''}`
+          : 'Unknown',
+        customerPhone: est.customer?.mobile_number || est.customer?.home_number,
+        startTime: est.schedule?.scheduled_start || est.work_timestamps?.started_at,
+        endTime: est.schedule?.scheduled_end || est.work_timestamps?.completed_at,
+        status: est.work_status || 'scheduled',
+        technicians: (est.assigned_employees || []).map((emp: any) => ({
+          id: emp.id,
+          name: `${emp.first_name || ''} ${emp.last_name || ''}`.trim(),
+          colorHex: emp.color_hex || '#6366f1',
+        })),
+        address: est.address
+          ? `${est.address.street || ''}, ${est.address.city || ''}`
+          : '',
+        amount: est.options?.[0]?.total_amount || 0,
+      })),
+    ].filter((event) => event.startTime); // Only include events with a start time
+
+    // Sort by start time
+    events.sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+    // Transform employees list
+    const employeeList = (employees || []).map((emp: any) => ({
+      id: emp.id,
+      name: `${emp.first_name || ''} ${emp.last_name || ''}`.trim(),
+      colorHex: emp.color_hex || '#6366f1',
+    }));
+
+    res.json({
+      events,
+      employees: employeeList,
+      period: {
+        start: start.toISOString(),
+        end: end.toISOString(),
+      },
+    });
+  } catch (error) {
+    console.error('Calendar fetch error:', error);
+    res.status(500).json({ error: 'Failed to fetch calendar data' });
+  }
+});
+
 // Get estimates pipeline summary
 router.get('/hcp/estimates/pipeline', authenticate, requirePermission('dashboard.view'), async (req, res) => {
   try {

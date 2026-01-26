@@ -42,6 +42,7 @@ const ApiUsagePage = lazy(() => import("@/pages/admin/api-usage"));
 const ObservabilityDashboard = lazy(() => import("@/pages/admin/observability"));
 const CompetitorTracking = lazy(() => import("@/pages/admin/competitor-tracking"));
 const ZekeMcpAdmin = lazy(() => import("@/pages/admin/mcp-gateway"));
+const AdminCalendar = lazy(() => import("@/pages/admin/calendar"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 
 // Service Pages
@@ -165,6 +166,7 @@ function Router() {
           <Route path="/admin/observability" component={ObservabilityDashboard} />
           <Route path="/admin/competitors" component={CompetitorTracking} />
           <Route path="/admin/mcp" component={ZekeMcpAdmin} />
+          <Route path="/admin/calendar" component={AdminCalendar} />
 
           {/* Service Pages */}
           <Route path="/services/general-plumbing" component={GeneralPlumbing} />
