@@ -18,7 +18,14 @@ Thumbs.db
 
 # Claude Code local settings
 .claude/settings.local.json
+.claude/settings.local.json.pre-aoa-*
 .claude/hooks/intent-data.json
+
+# aOa local indexing files
+.aoa/
+
+# Screenshots
+screenshots/
 
 # Environment files (NEVER commit secrets)
 .env
