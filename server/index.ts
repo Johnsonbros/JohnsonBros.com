@@ -9,6 +9,7 @@ import { getErrorHandler, getSecurityConfig } from "./src/security/index";
 import { EnvValidator } from "./src/envValidator";
 import { setupShutdownHandlers } from "./src/shutdown";
 import { initObservability, addObservabilityErrorHandler, captureException } from "./src/observability";
+import { seoRedirectMiddleware, getRedirectCount } from "./src/redirects";
 
 // Validate environment variables on startup
 EnvValidator.validateOnStartup();
@@ -119,6 +120,11 @@ app.use((req, res, next) => {
 
   next();
 });
+
+// SEO Redirect middleware - handle old WordPress URLs
+// Must be before routes to catch legacy URLs first
+app.use(seoRedirectMiddleware);
+console.log(`[SEO] Loaded ${getRedirectCount()} redirect mappings for legacy URL handling`);
 
 // Request logging middleware
 app.use((req, res, next) => {

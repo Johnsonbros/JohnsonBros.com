@@ -2,7 +2,7 @@
 # Work Board
 
 > **Updated**: 2026-01-26 | **Phase**: 3 - SEO & Local Ranking | **Status**: IN PROGRESS
-> **Session**: 13 | **Key Achievement**: Docker dev environment, TTS skill (/s), copyright 2026 fix
+> **Session**: 14 | **Key Achievement**: Landing page tracking system, 301 redirects, lazy loading optimization
 
 ---
 
@@ -34,6 +34,11 @@
 | P3-SEO-001 | Monitor keyword rankings | Track positions for 25 towns | Google Search Console + manual checks | **Done** | 🟢 | - |
 | P3-SEO-002 | Build backlinks | Citations on local directories | Submit to Yelp, Angi, HomeAdvisor | **Strategy Ready** | 🟢 | GH |
 | P3-SEO-004 | Submit sitemaps | Google/Bing indexing faster | Generate & submit XML sitemaps | **Done** | 🟢 | - |
+| LP-001 | Landing page registry | Tracking config + admin dashboard | landingPages.ts + /admin/landing-pages | **Done** | 🟢 | - |
+| LP-002 | LandingPageBuilder analytics | UTM tracking, scroll depth, CTA events | LandingPageBuilder.tsx updates | **Done** | 🟢 | - |
+| LP-003 | 301 redirects for migration | 150+ old WordPress URLs redirected | server/src/redirects.ts middleware | **Done** | 🟢 | - |
+| PERF-001 | API call reduction | staleTime 5min, no refetchOnWindowFocus | 11 components updated | **Done** | 🟢 | - |
+| PERF-002 | Image lazy loading | loading="lazy" on below-fold images | 16+ images updated | **Done** | 🟢 | - |
 
 ---
 
@@ -138,16 +143,16 @@ Test what works without full integrations. Focus on features that don't require 
 
 ---
 
-## Phase 3: Integration Setup (Future)
+## Phase 3: Integration Setup
 
 | # | Task | Expected Output | Solution Pattern | Deps | Status | C | R |
 |---|------|-----------------|------------------|------|--------|---|---|
-| P3-001 | Configure HousecallPro | API key in .env | Get key from HCP dashboard | P2 complete | Backlog | 🟡 | GH |
-| P3-002 | Configure OpenAI | API key in .env | Get key from OpenAI | P2 complete | Backlog | 🟢 | - |
-| P3-003 | Configure Google Maps | API key in .env | Get key from GCP | P2 complete | Backlog | 🟡 | - |
-| P3-004 | Configure Twilio | API keys in .env | Get keys from Twilio | P2 complete | Backlog | 🟡 | - |
-| P3-005 | Test AI chat | Chat responds | Verify OpenAI integration | P3-002 | Backlog | 🟡 | - |
-| P3-006 | Test booking flow | Booking creates job in HCP | Full integration test | P3-001 | Backlog | 🟡 | 131 |
+| P3-001 | Configure HousecallPro | API key in .env | Get key from HCP dashboard | P2 complete | **Done** | 🟢 | - |
+| P3-002 | Configure OpenAI | API key in .env | Get key from OpenAI | P2 complete | **Done** | 🟢 | - |
+| P3-003 | Configure Google Maps | API key in .env | Get key from GCP | P2 complete | **Done** | 🟢 | - |
+| P3-004 | Configure Twilio | API keys in .env | Get keys from Twilio | P2 complete | **Done** | 🟢 | - |
+| P3-005 | Test AI chat | Chat responds | Verify OpenAI integration | P3-002 | Ready | 🟢 | - |
+| P3-006 | Test booking flow | Booking creates job in HCP | Full integration test | P3-001 | Ready | 🟢 | 131 |
 
 ---
 
@@ -193,6 +198,13 @@ Test what works without full integrations. Focus on features that don't require 
 
 | # | Task | Output | Completed |
 |---|------|--------|-----------|
+| LP-001 | Landing page tracking | landingPages.ts registry + /admin/landing-pages dashboard | 2026-01-26 |
+| LP-002 | Analytics in LandingPageBuilder | UTM tracking, scroll depth, time on page, CTA events | 2026-01-26 |
+| LP-003 | 301 redirects | 150+ old WordPress URL redirects in server/src/redirects.ts | 2026-01-26 |
+| PERF-001 | API call reduction | staleTime 5min, disabled refetchOnWindowFocus on 11 components | 2026-01-26 |
+| PERF-002 | Image lazy loading | loading="lazy" on 16+ below-fold images | 2026-01-26 |
+| SITEMAP-001 | Sitemap update | All 25 service areas now in sitemap.xml | 2026-01-26 |
+| MOBILE-001 | Mobile responsiveness | Fixed 25 service area pages + 3 shared components | 2026-01-26 |
 | DEV-001 | Docker dev environment | docker-compose.yml + Dockerfile.mcp + SKIP_MCP_SPAWN flag | 2026-01-26 |
 | UI-001 | Copyright year fix | Footer.tsx 2025→2026 | 2026-01-26 |
 | TOOL-001 | TTS skill | /s and /speak skills using edge-tts | 2026-01-26 |
