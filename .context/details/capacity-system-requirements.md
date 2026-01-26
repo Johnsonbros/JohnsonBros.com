@@ -81,21 +81,21 @@
 ## Technical Changes Needed
 
 ### Backend (capacity.ts)
-- [ ] Add weekend detection (Fri 5PM - Mon 8AM)
-- [ ] Add holiday detection/configuration
-- [ ] Change states from current 4 to new 5-state model
+- [x] Add weekend detection (Fri 5PM - Mon 8AM) ✅ 2026-01-26
+- [x] Add holiday detection/configuration ✅ 2026-01-26
+- [x] Change states from current 4 to new 7-state model ✅ 2026-01-26
 - [ ] Track "booked out" (today + tomorrow full) separately
 
 ### Frontend
-- [ ] Dynamic banners based on state
-- [ ] "$99 FREE" vs "$99" display logic
-- [ ] "Call for same-day" messaging after noon
-- [ ] Weekend emergency messaging with Monday booking
+- [x] Dynamic banners based on state ✅ 2026-01-26
+- [x] "$99 FREE" vs "$99" display logic ✅ 2026-01-26
+- [x] "Call for same-day" messaging after noon ✅ 2026-01-26
+- [x] Weekend emergency messaging with Monday booking ✅ 2026-01-26
 
 ### Configuration (capacity.yml)
-- [ ] Add holiday list
-- [ ] Add weekend hours config
-- [ ] Add banner copy for each state
+- [x] Add holiday list (2026 US holidays) ✅ 2026-01-26
+- [x] Add weekend hours config ✅ 2026-01-26
+- [x] Add banner copy for each state ✅ 2026-01-26
 
 ---
 

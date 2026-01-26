@@ -2,7 +2,7 @@
 # Work Board
 
 > **Updated**: 2026-01-26 | **Phase**: 3 - SEO & Local Ranking | **Status**: IN PROGRESS
-> **Session**: 10 | **Key Achievement**: aOa WSL mount fixed, 498 files indexed
+> **Session**: 11 | **Key Achievement**: Capacity system enhanced with weekend/holiday modes
 
 ---
 
@@ -26,6 +26,11 @@
 
 | # | Task | Expected Output | Solution Pattern | Status | C | R |
 |---|------|-----------------|------------------|--------|---|---|
+| CAP-001 | Weekend mode | WEEKEND_EMERGENCY state (Fri 5PM - Mon 8AM) | capacity.ts + config | **Done** | 🟢 | - |
+| CAP-002 | Holiday handling | HOLIDAY state with 2026 holidays list | capacity.ts + config | **Done** | 🟢 | - |
+| CAP-003 | After-cutoff state | AFTER_CUTOFF for post-noon same-day | capacity.ts | **Done** | 🟢 | - |
+| CAP-004 | Frontend banners | Capacity state banners in CapacityHero | CapacityHero.tsx | **Done** | 🟢 | - |
+| CAL-001 | Admin calendar | Mirror HCP calendar in admin | Research in progress | Queued | 🟡 | GH |
 | P3-SEO-001 | Monitor keyword rankings | Track positions for 25 towns | Google Search Console + manual checks | **Done** | 🟢 | - |
 | P3-SEO-002 | Build backlinks | Citations on local directories | Submit to Yelp, Angi, HomeAdvisor | **Strategy Ready** | 🟢 | GH |
 | P3-SEO-004 | Submit sitemaps | Google/Bing indexing faster | Generate & submit XML sitemaps | **Done** | 🟢 | - |
