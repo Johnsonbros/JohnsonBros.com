@@ -1,194 +1,260 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <!-- Homepage -->
   <url>
-    <loc>https://johnsonbrosplumbing.com</loc>
+    <loc>https://thejohnsonbros.com/</loc>
     <lastmod>2026-01-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
-
-  <!-- Service Areas Index -->
   <url>
-    <loc>https://johnsonbrosplumbing.com/service-areas</loc>
+    <loc>https://thejohnsonbros.com/blog</loc>
     <lastmod>2026-01-26</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://thejohnsonbros.com/contact</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://thejohnsonbros.com/referral</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://thejohnsonbros.com/about</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://thejohnsonbros.com/reviews</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://thejohnsonbros.com/service-areas</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://thejohnsonbros.com/family-discount</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://thejohnsonbros.com/privacy-policy</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://thejohnsonbros.com/terms-of-service</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://thejohnsonbros.com/services/general-plumbing</loc>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
-
-  <!-- Service Area Pages - 25 Towns -->
   <url>
-    <loc>https://johnsonbrosplumbing.com/service-areas/quincy</loc>
-    <lastmod>2026-01-26</lastmod>
+    <loc>https://thejohnsonbros.com/services/new-construction</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://thejohnsonbros.com/services/gas-heat</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://thejohnsonbros.com/services/drain-cleaning</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://thejohnsonbros.com/services/emergency-plumbing</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://thejohnsonbros.com/services/water-heater</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://thejohnsonbros.com/services/pipe-repair</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://thejohnsonbros.com/services/heating</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://thejohnsonbros.com/service/drain-cleaning-landing</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
-
   <url>
-    <loc>https://johnsonbrosplumbing.com/service-areas/milton</loc>
-    <lastmod>2026-01-26</lastmod>
+    <loc>https://thejohnsonbros.com/service/emergency-plumbing-landing</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
-
   <url>
-    <loc>https://johnsonbrosplumbing.com/service-areas/randolph</loc>
-    <lastmod>2026-01-26</lastmod>
+    <loc>https://thejohnsonbros.com/service/water-heater-landing</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
-
   <url>
-    <loc>https://johnsonbrosplumbing.com/service-areas/holbrook</loc>
-    <lastmod>2026-01-26</lastmod>
+    <loc>https://thejohnsonbros.com/service/pipe-repair-landing</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
-
   <url>
-    <loc>https://johnsonbrosplumbing.com/service-areas/braintree</loc>
-    <lastmod>2026-01-26</lastmod>
+    <loc>https://thejohnsonbros.com/service/sewer-line-landing</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
-
   <url>
-    <loc>https://johnsonbrosplumbing.com/service-areas/weymouth</loc>
-    <lastmod>2026-01-26</lastmod>
+    <loc>https://thejohnsonbros.com/landing/emergency</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
-
   <url>
-    <loc>https://johnsonbrosplumbing.com/service-areas/abington</loc>
-    <lastmod>2026-01-26</lastmod>
+    <loc>https://thejohnsonbros.com/landing/winter-prep</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
-
   <url>
-    <loc>https://johnsonbrosplumbing.com/service-areas/rockland</loc>
-    <lastmod>2026-01-26</lastmod>
+    <loc>https://thejohnsonbros.com/landing/drain-cleaning</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
-
   <url>
-    <loc>https://johnsonbrosplumbing.com/service-areas/hanover</loc>
-    <lastmod>2026-01-26</lastmod>
+    <loc>https://thejohnsonbros.com/service-areas/quincy</loc>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.9</priority>
   </url>
-
   <url>
-    <loc>https://johnsonbrosplumbing.com/service-areas/norwell</loc>
-    <lastmod>2026-01-26</lastmod>
+    <loc>https://thejohnsonbros.com/service-areas/abington</loc>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.9</priority>
   </url>
-
   <url>
-    <loc>https://johnsonbrosplumbing.com/service-areas/whitman</loc>
-    <lastmod>2026-01-26</lastmod>
+    <loc>https://thejohnsonbros.com/service-areas/braintree</loc>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.9</priority>
   </url>
-
   <url>
-    <loc>https://johnsonbrosplumbing.com/service-areas/stoughton</loc>
-    <lastmod>2026-01-26</lastmod>
+    <loc>https://thejohnsonbros.com/service-areas/weymouth</loc>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.9</priority>
   </url>
-
   <url>
-    <loc>https://johnsonbrosplumbing.com/service-areas/canton</loc>
-    <lastmod>2026-01-26</lastmod>
+    <loc>https://thejohnsonbros.com/service-areas/hingham</loc>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.9</priority>
   </url>
-
   <url>
-    <loc>https://johnsonbrosplumbing.com/service-areas/hingham</loc>
-    <lastmod>2026-01-26</lastmod>
+    <loc>https://thejohnsonbros.com/service-areas/milton</loc>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.9</priority>
   </url>
-
   <url>
-    <loc>https://johnsonbrosplumbing.com/service-areas/hull</loc>
-    <lastmod>2026-01-26</lastmod>
+    <loc>https://thejohnsonbros.com/service-areas/randolph</loc>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.9</priority>
   </url>
-
   <url>
-    <loc>https://johnsonbrosplumbing.com/service-areas/cohasset</loc>
-    <lastmod>2026-01-26</lastmod>
+    <loc>https://thejohnsonbros.com/service-areas/holbrook</loc>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.9</priority>
   </url>
-
   <url>
-    <loc>https://johnsonbrosplumbing.com/service-areas/scituate</loc>
-    <lastmod>2026-01-26</lastmod>
+    <loc>https://thejohnsonbros.com/service-areas/rockland</loc>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.9</priority>
   </url>
-
   <url>
-    <loc>https://johnsonbrosplumbing.com/service-areas/marshfield</loc>
-    <lastmod>2026-01-26</lastmod>
+    <loc>https://thejohnsonbros.com/service-areas/plymouth</loc>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.9</priority>
   </url>
-
   <url>
-    <loc>https://johnsonbrosplumbing.com/service-areas/pembroke</loc>
-    <lastmod>2026-01-26</lastmod>
+    <loc>https://thejohnsonbros.com/service-areas/marshfield</loc>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.9</priority>
   </url>
-
   <url>
-    <loc>https://johnsonbrosplumbing.com/service-areas/hanson</loc>
-    <lastmod>2026-01-26</lastmod>
+    <loc>https://thejohnsonbros.com/service-areas/hanover</loc>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.9</priority>
   </url>
-
   <url>
-    <loc>https://johnsonbrosplumbing.com/service-areas/east-bridgewater</loc>
-    <lastmod>2026-01-26</lastmod>
+    <loc>https://thejohnsonbros.com/service-areas/scituate</loc>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.9</priority>
   </url>
-
   <url>
-    <loc>https://johnsonbrosplumbing.com/service-areas/duxbury</loc>
-    <lastmod>2026-01-26</lastmod>
+    <loc>https://thejohnsonbros.com/service-areas/cohasset</loc>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.9</priority>
   </url>
-
   <url>
-    <loc>https://johnsonbrosplumbing.com/service-areas/plymouth</loc>
-    <lastmod>2026-01-26</lastmod>
+    <loc>https://thejohnsonbros.com/service-areas/hull</loc>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.9</priority>
   </url>
-
   <url>
-    <loc>https://johnsonbrosplumbing.com/service-areas/kingston</loc>
-    <lastmod>2026-01-26</lastmod>
+    <loc>https://thejohnsonbros.com/service-areas/norwell</loc>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.9</priority>
   </url>
-
   <url>
-    <loc>https://johnsonbrosplumbing.com/service-areas/halifax</loc>
-    <lastmod>2026-01-26</lastmod>
+    <loc>https://thejohnsonbros.com/service-areas/pembroke</loc>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://thejohnsonbros.com/service-areas/duxbury</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://thejohnsonbros.com/service-areas/kingston</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://thejohnsonbros.com/service-areas/canton</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://thejohnsonbros.com/service-areas/stoughton</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://thejohnsonbros.com/service-areas/east-bridgewater</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://thejohnsonbros.com/service-areas/halifax</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://thejohnsonbros.com/service-areas/hanson</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://thejohnsonbros.com/service-areas/whitman</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
   </url>
 </urlset>

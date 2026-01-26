@@ -120,23 +120,37 @@ export async function generateSitemap(): Promise<string> {
     });
   });
 
-  // Add service area pages (All service areas)
+  // Add service area pages (All 25 service areas)
   const serviceAreas = [
-    // Tier 1 - Primary markets
+    // Tier 1 - Primary markets (office locations)
     'quincy',
     'abington',
-    // Tier 2 - Secondary markets
+    // Tier 2 - Core service areas
     'braintree',
     'weymouth',
     'hingham',
-    // Tier 3 - Extended service area
+    'milton',
+    'randolph',
+    'holbrook',
+    'rockland',
+    // Tier 3 - Extended South Shore
     'plymouth',
     'marshfield',
-    'rockland',
     'hanover',
     'scituate',
     'cohasset',
-    'hull'
+    'hull',
+    'norwell',
+    'pembroke',
+    'duxbury',
+    'kingston',
+    // Tier 4 - Outer service area
+    'canton',
+    'stoughton',
+    'east-bridgewater',
+    'halifax',
+    'hanson',
+    'whitman',
   ];
 
   serviceAreas.forEach(area => {
