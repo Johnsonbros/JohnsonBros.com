@@ -17,7 +17,7 @@ export default function TruckSection() {
           {/* Truck Image */}
           <div className="relative">
             <img 
-              src="/truck_1756136293648.png" 
+              src="/truck_1756136293648.webp" 
               alt="Johnson Bros. Service Truck" 
               className="w-full h-auto rounded-xl shadow-2xl"
               loading="lazy"
