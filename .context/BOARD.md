@@ -1,8 +1,8 @@
 
 # Work Board
 
-> **Updated**: 2026-01-26 | **Phase**: 3 - SEO & Local Ranking | **Status**: IN PROGRESS
-> **Session**: 14 | **Key Achievement**: Landing page tracking system, 301 redirects, lazy loading optimization
+> **Updated**: 2026-01-29 | **Phase**: 3 - SEO & Local Ranking | **Status**: IN PROGRESS
+> **Session**: 16 | **Key Achievement**: 301 redirects, landing page analytics, image lazy loading complete
 
 ---
 
@@ -26,19 +26,29 @@
 
 | # | Task | Expected Output | Solution Pattern | Status | C | R |
 |---|------|-----------------|------------------|--------|---|---|
-| CAP-001 | Weekend mode | WEEKEND_EMERGENCY state (Fri 5PM - Mon 8AM) | capacity.ts + config | **Done** | 🟢 | - |
-| CAP-002 | Holiday handling | HOLIDAY state with 2026 holidays list | capacity.ts + config | **Done** | 🟢 | - |
-| CAP-003 | After-cutoff state | AFTER_CUTOFF for post-noon same-day | capacity.ts | **Done** | 🟢 | - |
-| CAP-004 | Frontend banners | Capacity state banners in CapacityHero | CapacityHero.tsx | **Done** | 🟢 | - |
-| CAL-001 | Admin calendar | Mirror HCP calendar in admin | /admin/calendar page | **Done** | 🟢 | - |
-| P3-SEO-001 | Monitor keyword rankings | Track positions for 25 towns | Google Search Console + manual checks | **Done** | 🟢 | - |
 | P3-SEO-002 | Build backlinks | Citations on local directories | Submit to Yelp, Angi, HomeAdvisor | **Strategy Ready** | 🟢 | GH |
-| P3-SEO-004 | Submit sitemaps | Google/Bing indexing faster | Generate & submit XML sitemaps | **Done** | 🟢 | - |
-| LP-001 | Landing page registry | Tracking config + admin dashboard | landingPages.ts + /admin/landing-pages | **Done** | 🟢 | - |
-| LP-002 | LandingPageBuilder analytics | UTM tracking, scroll depth, CTA events | LandingPageBuilder.tsx updates | **Done** | 🟢 | - |
-| LP-003 | 301 redirects for migration | 150+ old WordPress URLs redirected | server/src/redirects.ts middleware | **Done** | 🟢 | - |
-| PERF-001 | API call reduction | staleTime 5min, no refetchOnWindowFocus | 11 components updated | **Done** | 🟢 | - |
-| PERF-002 | Image lazy loading | loading="lazy" on below-fold images | 16+ images updated | **Done** | 🟢 | - |
+| P3-SEO-005 | Page speed optimization | Core Web Vitals green | Image compression (pending) | **Partial** | 🟢 | - |
+| IMG-001 | Large image compression | Compress 5 large images (14MB truck.png) | WebP conversion, resize | **Pending** | 🟢 | - |
+
+---
+
+## Recently Completed (Session 15-16)
+
+| # | Task | Output | Completed |
+|---|------|--------|-----------|
+| LP-003 | 301 redirects for migration | 150+ WordPress URLs redirected (server/src/redirects.ts) | 2026-01-29 |
+| LP-001 | Landing page registry | landingPages.ts + /admin/landing-pages dashboard | 2026-01-29 |
+| LP-002 | LandingPageBuilder analytics | UTM tracking, scroll depth, CTA events | 2026-01-29 |
+| PERF-002 | Image lazy loading | loading="lazy" on 16+ images (referral, landing, service pages) | 2026-01-29 |
+| PERF-001 | API call reduction | staleTime 5min, disabled refetchOnWindowFocus on 11 components | 2026-01-26 |
+| P3-SEO-005 | Bundle optimization | Main bundle 1.28MB to 635KB (50% reduction) via Vite chunks | 2026-01-26 |
+| CAP-001 | Weekend mode | WEEKEND_EMERGENCY state (Fri 5PM - Mon 8AM) | 2026-01-26 |
+| CAP-002 | Holiday handling | HOLIDAY state with 2026 holidays list | 2026-01-26 |
+| CAP-003 | After-cutoff state | AFTER_CUTOFF for post-noon same-day | 2026-01-26 |
+| CAP-004 | Frontend banners | Capacity state banners in CapacityHero | 2026-01-26 |
+| CAL-001 | Admin calendar | Mirror HCP calendar in admin | 2026-01-26 |
+| P3-SEO-001 | Keyword tracking plan | 125 keywords for 25 towns documented | 2026-01-26 |
+| P3-SEO-004 | Submit sitemaps | All 25 service areas in sitemap.xml | 2026-01-26 |
 
 ---
 
@@ -72,10 +82,11 @@
 
 | # | Task | Expected Output | Solution Pattern | Deps | Status | C | R |
 |---|------|-----------------|------------------|------|--------|---|---|
-| P3-SEO-002 | Build local citations | Listings on 10+ directories | Manual submissions | SEO-001 | **Strategy Ready** | 🟢 | - |
+| P3-SEO-002 | Build local citations | Listings on 10+ directories | Manual submissions | SEO-001 | **Strategy Ready** | 🟢 | GH |
 | P3-SEO-004 | XML sitemap update | sitemap.xml with all service pages | Generate + submit to GSC | SEO-001 | **Done** | 🟢 | - |
-| P3-SEO-005 | Page speed optimization | Core Web Vitals green | Vite chunks + image compression | SEO-001 | **Bundle Done** | 🟢 | - |
+| P3-SEO-005 | Page speed optimization | Core Web Vitals green | Bundle done, images pending | SEO-001 | **Partial** | 🟢 | - |
 | P3-SEO-006 | Mobile usability check | All pages mobile-friendly | Viewport, touch targets, padding | SEO-001 | **Done** | 🟢 | - |
+| IMG-001 | Large image compression | WebP conversion for 5 oversized images | Manual compression needed | - | **Pending** | 🟢 | - |
 
 ---
 
@@ -151,8 +162,9 @@ Test what works without full integrations. Focus on features that don't require 
 | P3-002 | Configure OpenAI | API key in .env | Get key from OpenAI | P2 complete | **Done** | 🟢 | - |
 | P3-003 | Configure Google Maps | API key in .env | Get key from GCP | P2 complete | **Done** | 🟢 | - |
 | P3-004 | Configure Twilio | API keys in .env | Get keys from Twilio | P2 complete | **Done** | 🟢 | - |
-| P3-005 | Test AI chat | Chat responds | Verify OpenAI integration | P3-002 | Ready | 🟢 | - |
-| P3-006 | Test booking flow | Booking creates job in HCP | Full integration test | P3-001 | Ready | 🟢 | 131 |
+| P3-005 | Test AI chat | Chat responds | Verify OpenAI integration | P3-002 | **Blocked** (needs real OPENAI_API_KEY) | 🟡 | - |
+| P3-006 | Test booking flow | Capacity API working | Full integration test | P3-001 | **Done** | 🟢 | - |
+| P3-007 | Service area pages | All 25 pages expanded | 377+ lines each with 7 sections | - | **Done** | 🟢 | - |
 
 ---
 
@@ -172,25 +184,35 @@ Test what works without full integrations. Focus on features that don't require 
 
 ## Current System State
 
-| Component | Previous (Linux) | Current (Windows) |
-|-----------|------------------|-------------------|
-| Server | Running :5000 | ✅ Running :5000 |
-| MCP Server | Running :3001 | ✅ Running :3001 (16 tools) |
-| Database | Docker :5433 | ✅ Docker :5433 |
-| Frontend | Running | ✅ Vite HMR active |
-| Node.js | - | ✅ v22.19.0 |
-| aOa | - | ✅ Local only (not containerized) |
-| Docker Desktop | - | ✅ Running (disk space cleared) |
+| Component | Status | Notes |
+|-----------|--------|-------|
+| Server | ✅ Running :5000 | Express + Vite |
+| MCP Server | ✅ Running :3001 | 16 tools available |
+| Database | ✅ Docker :5433 | PostgreSQL |
+| Frontend | ✅ Vite HMR active | React 19 |
+| Node.js | ✅ v22.19.0 | - |
+| aOa | ✅ Local | 498 files indexed, sub-ms search |
+| Docker Desktop | ✅ Running | - |
 
 ### API Integrations
 
-| Integration | Status | Impact |
-|-------------|--------|--------|
-| HousecallPro | ✅ Configured | Capacity sync working |
-| OpenAI | ✅ Configured | AI chat available |
+| Integration | Status | Notes |
+|-------------|--------|-------|
+| HousecallPro | ✅ Configured | Capacity API working |
+| OpenAI | ⚠️ Placeholder | Needs real key for AI chat |
 | Google Maps | ✅ Configured | Maps & geocoding available |
 | Twilio | ✅ Configured | SMS/voice available |
-| Neon Database | ✅ Connected | Cloud PostgreSQL |
+| PostgreSQL | ✅ Connected | Docker :5433 |
+
+### Pending Image Optimization
+
+| File | Size | Action Needed |
+|------|------|---------------|
+| truck_1756136293648.png | 14 MB | Compress to <500KB WebP |
+| image_1756134291758.png | 2.4 MB | WebP conversion |
+| image_1756125098554.png | 1.2 MB | WebP conversion |
+| banner-bg.png | 1.2 MB | WebP conversion |
+| banner-bg-emergency.png | 1.2 MB | WebP conversion |
 
 ---
 
@@ -198,15 +220,18 @@ Test what works without full integrations. Focus on features that don't require 
 
 | # | Task | Output | Completed |
 |---|------|--------|-----------|
-| LP-001 | Landing page tracking | landingPages.ts registry + /admin/landing-pages dashboard | 2026-01-26 |
-| LP-002 | Analytics in LandingPageBuilder | UTM tracking, scroll depth, time on page, CTA events | 2026-01-26 |
-| LP-003 | 301 redirects | 150+ old WordPress URL redirects in server/src/redirects.ts | 2026-01-26 |
+| LP-003 | 301 redirects | 150+ WordPress URL redirects (server/src/redirects.ts) | 2026-01-29 |
+| LP-001 | Landing page tracking | landingPages.ts registry + /admin/landing-pages dashboard | 2026-01-29 |
+| LP-002 | Analytics in LandingPageBuilder | UTM tracking, scroll depth, time on page, CTA events | 2026-01-29 |
+| PERF-002 | Image lazy loading | loading="lazy" on 16+ referral/landing/service images | 2026-01-29 |
+| P3-006 | Booking flow test | Capacity API tested - returns AFTER_CUTOFF correctly | 2026-01-26 |
+| P3-007 | Service area pages | All 25 pages verified expanded (229-379 lines each) | 2026-01-26 |
 | PERF-001 | API call reduction | staleTime 5min, disabled refetchOnWindowFocus on 11 components | 2026-01-26 |
-| PERF-002 | Image lazy loading | loading="lazy" on 16+ below-fold images | 2026-01-26 |
+| BUNDLE-001 | Vite manual chunks | Main bundle 1.28MB to 635KB (50% reduction) | 2026-01-26 |
 | SITEMAP-001 | Sitemap update | All 25 service areas now in sitemap.xml | 2026-01-26 |
 | MOBILE-001 | Mobile responsiveness | Fixed 25 service area pages + 3 shared components | 2026-01-26 |
 | DEV-001 | Docker dev environment | docker-compose.yml + Dockerfile.mcp + SKIP_MCP_SPAWN flag | 2026-01-26 |
-| UI-001 | Copyright year fix | Footer.tsx 2025→2026 | 2026-01-26 |
+| UI-001 | Copyright year fix | Footer.tsx 2025 to 2026 | 2026-01-26 |
 | TOOL-001 | TTS skill | /s and /speak skills using edge-tts | 2026-01-26 |
 | FIX-001 | Hook file restored | aoa-enforce-search.py recreated | 2026-01-26 |
 | SYS-001 | Docker Desktop fix | Cleared Windows disk space, Docker running | 2026-01-25 |

@@ -1,65 +1,52 @@
 # JohnsonBros - Current Session
 
-> **Session**: 10 | **Date**: 2026-01-26
+> **Session**: 16 | **Date**: 2026-01-29
 > **Phase**: 3 - SEO & Local Ranking | **Status**: IN PROGRESS | **Confidence**: Green
 
 ---
 
 ## Now
 
-Running parallel tasks:
-- **P2.5-008**: Tagging ~228 client files for aOa semantic search (haiku agent)
-- **P3-SEO-001**: Creating keyword ranking tracking plan (haiku agent)
+Phase 3 SEO work largely complete. Remaining items:
+- **IMG-001**: Large image compression (5 oversized images need WebP conversion)
+- **P3-SEO-002**: Local citation building (strategy documented, ready for manual execution)
 
-## Session 10 Summary
+## Recent Commits (main branch)
 
-**aOa Configuration Fixed:**
-- Added `/home:/wslhome:ro` volume mount to Docker for WSL paths
-- Set `CODEBASE_PATH` to JohnsonBros.com in aOa .env
-- Index now working: **498 files, 39K symbols, sub-ms search**
-
-**Parallel Task Execution:**
-- Launched P2.5-008 (tag client files) and P3-SEO-001 (keyword tracking) in parallel
-- 131 analysis: No 🔴 blockers, P3-SEO-002 (citations) needs GH research when ready
-
-## Session 09 Summary (Previous)
-
-**Docker Desktop Troubleshooting:**
-- Docker Desktop was crashing due to Windows disk space issues
-- Cleared disk space to resolve the issue
-
-**aOa Status Verification:**
-- aOa runs locally only (not in Docker for this repo)
-- Health check confirmed: Docker container, Redis, and Index all operational
+| Commit | Description |
+|--------|-------------|
+| `fcf0614` | feat(seo): Add 301 redirects for WordPress migration |
+| `9754e9c` | feat(analytics): Add landing page tracking and registry system |
+| `f7389b7` | Saved progress at the end of the loop |
+| `c5b5075` | perf: Add lazy loading to referral and landing page images |
+| `5e4102f` | perf: Add lazy loading to remaining service/blog images |
 
 ## Active
 
 | # | Task | Solution Pattern | C | R |
 |---|------|------------------|---|---|
-| P3-SEO-001 | Monitor keyword rankings | Google Search Console + manual SERP checks | Green | - |
-| P3-SEO-002 | Build local citations | Submit to Yelp, Angi, HomeAdvisor, etc. | Yellow | GH |
-| P3-SEO-004 | Submit XML sitemap | Generate + submit to Google Search Console | Green | - |
+| IMG-001 | Compress 5 large images | WebP conversion, manual resize | Green | - |
+| P3-SEO-002 | Build local citations | Submit to Yelp, Angi, HomeAdvisor | Green | GH |
 
-## Just Completed (Session 08)
+## Just Completed (Session 15-16)
 
-### Internal Linking System (P3-SEO-003)
+### Performance & SEO
 
-**New Files Created:**
-- `client/src/lib/serviceAreaAdjacency.ts` - Geographic adjacency data defining neighbor relationships for all 25 towns
-- `client/src/components/NearbyServiceAreas.tsx` - Reusable component for displaying nearby service areas with proper internal links
+- **301 Redirects**: 150+ old WordPress URLs redirected via `server/src/redirects.ts`
+- **Landing Page Registry**: `landingPages.ts` + `/admin/landing-pages` dashboard
+- **Analytics**: UTM tracking, scroll depth, CTA events in LandingPageBuilder
+- **Image Lazy Loading**: 16+ images now have `loading="lazy"`
+- **Bundle Optimization**: Main bundle 1.28MB to 635KB (50% reduction)
+- **Sitemap**: All 25 service areas included
 
-**Broken Links Fixed (8+):**
-- Boston, Brockton, Avon, West Bridgewater, Plympton - linked to non-existent pages
-- Replaced with links to actual service area pages within our coverage
+### Keyword Tracking Plan Created
 
-**Missing Sections Added (6 pages):**
-- abington.tsx, cohasset.tsx, hanover.tsx, hull.tsx, rockland.tsx, scituate.tsx
-- All now use the centralized NearbyServiceAreas component
+Comprehensive SEO keyword tracking plan documented in:
+`/home/njohnson89/code/JohnsonBros.com/.context/details/2026-01-26-seo-keyword-tracking.md`
 
-**Pages Standardized (25 total):**
-- All service area pages now use consistent internal linking
-- Links are validated against actual existing pages
-- Geographic proximity determines which neighbors are shown
+- 125 keywords across 25 towns
+- Tool recommendations (GSC, GA4, Ubersuggest)
+- Tracking templates and best practices
 
 ## Blocked
 
@@ -67,64 +54,44 @@ Running parallel tasks:
 
 ## Next
 
-1. **Submit XML sitemap** to Google Search Console with all service area URLs
-2. **Build local citations** - Yelp, Angi, HomeAdvisor, BBB, local chambers
-3. **Page speed audit** - Run Lighthouse on service area pages
-4. **Monitor rankings** - Track keyword positions over next 2-4 weeks
-5. **Commit untracked file** - `.claude/hooks/aoa-enforce-search.py`
+1. **Compress oversized images** - 5 large PNGs need WebP conversion (14MB truck, etc.)
+2. **Build local citations** - Manual directory submissions (Yelp, Angi, HomeAdvisor)
+3. **Submit sitemap to GSC** - Verify indexing of all 25 service area pages
+4. **Monitor rankings** - Set up Google Search Console tracking
 
 ---
 
-## Pending Git Commit
+## Pending Image Optimization
 
-**Untracked file to commit:**
-```
-.claude/hooks/aoa-enforce-search.py
-```
-
-This is an aOa hook file that should be added to version control.
-
----
-
-## SEO Coverage Summary
-
-**Total Towns: 25**
-
-| Region | Towns | Internal Links |
-|--------|-------|----------------|
-| **Primary** | Quincy, Milton, Weymouth, Braintree, Abington, Rockland, Hingham, Norwell | Cross-linked |
-| South Shore | Randolph, Holbrook, Canton, Stoughton, Hanover, Whitman, Hanson, East Bridgewater | Cross-linked |
-| Coastal | Hull, Cohasset, Scituate, Marshfield, Duxbury | Cross-linked |
-| Plymouth Area | Plymouth, Pembroke, Kingston, Halifax | Cross-linked |
+| File | Current Size | Target |
+|------|--------------|--------|
+| `truck_1756136293648.png` | 14 MB | <500KB WebP |
+| `image_1756134291758.png` | 2.4 MB | <300KB WebP |
+| `image_1756125098554.png` | 1.2 MB | <200KB WebP |
+| `banner-bg.png` | 1.2 MB | <200KB WebP |
+| `banner-bg-emergency.png` | 1.2 MB | <200KB WebP |
 
 ---
 
-## Key Files (Internal Linking)
+## Unstaged Git Changes
+
+Files modified but not committed:
+- `.aoa/README.md`
+- `.aoa/home.json`
+- `.aoa/whitelist.txt`
+- `.context/BOARD.md`
+
+---
+
+## Key Files
 
 | Purpose | Path |
 |---------|------|
-| Adjacency Data | `client/src/lib/serviceAreaAdjacency.ts` |
-| Link Component | `client/src/components/NearbyServiceAreas.tsx` |
-| Service Area Pages | `client/src/pages/service-areas/*.tsx` |
-| Routes | `client/src/App.tsx` |
-
----
-
-## Recent Git Activity
-
-**Latest Commits (main branch):**
-- `ff25c21` - Session progress: aOa hooks, skill updates, and codebase improvements
-- `38da414` - Automatically accept all cookies and hide the banner
-- `cb8e68a` - Automatically accept cookies and remove banner for all users
-
----
-
-## Related Docs
-
-| Doc | Purpose |
-|-----|---------|
-| [BOARD.md](BOARD.md) | Full work breakdown with traffic lights |
-| [details/2026-01-16-project-analysis.md](details/2026-01-16-project-analysis.md) | Codebase deep-dive |
+| Work Board | `.context/BOARD.md` |
+| Keyword Plan | `.context/details/2026-01-26-seo-keyword-tracking.md` |
+| Page Speed Plan | `.context/details/2026-01-26-page-speed-optimization.md` |
+| 301 Redirects | `server/src/redirects.ts` |
+| Landing Page Registry | `server/src/landingPages.ts` |
 
 ---
 
@@ -133,5 +100,5 @@ This is an aOa hook file that should be added to version control.
 ```bash
 cd /home/njohnson89/code/JohnsonBros.com
 npm run dev
-# Then open http://localhost:5000/service-areas to see all 25 towns with internal links
+# Server on :5000, MCP on :3001
 ```
